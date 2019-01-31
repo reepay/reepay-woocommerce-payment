@@ -392,13 +392,14 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			/** @var WC_Order_Item_Product $order_item */
 			$price        = $order->get_line_subtotal( $order_item, FALSE, FALSE );
 			$priceWithTax = $order->get_line_subtotal( $order_item, TRUE, FALSE );
+			$unitPrice    = round( $priceWithTax / $order_item->get_quantity(), 2 );
 			$tax          = $priceWithTax - $price;
 			$taxPercent   = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
 
 			$items[] = array(
 				'ordertext' => $order_item->get_name(),
 				'quantity'  => $order_item->get_quantity(),
-				'amount'    => round(100 * $priceWithTax),
+				'amount'    => round(100 * $unitPrice),
 				'vat'       => round($taxPercent / 100, 2),
 				'amount_incl_vat' => true // @todo
 			);
