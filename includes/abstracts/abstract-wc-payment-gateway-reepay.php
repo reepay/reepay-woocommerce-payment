@@ -387,21 +387,23 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @return array
 	 */
 	public function get_order_items($order) {
+		$pricesIncludeTax = wc_prices_include_tax();
+
 		$items = [];
 		foreach ( $order->get_items() as $order_item ) {
 			/** @var WC_Order_Item_Product $order_item */
 			$price        = $order->get_line_subtotal( $order_item, FALSE, FALSE );
 			$priceWithTax = $order->get_line_subtotal( $order_item, TRUE, FALSE );
-			$unitPrice    = round( $priceWithTax / $order_item->get_quantity(), 2 );
 			$tax          = $priceWithTax - $price;
 			$taxPercent   = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
+			$unitPrice    = round( ( $pricesIncludeTax ? $priceWithTax : $price ) / $order_item->get_quantity(), 2 );
 
 			$items[] = array(
 				'ordertext' => $order_item->get_name(),
 				'quantity'  => $order_item->get_quantity(),
 				'amount'    => round(100 * $unitPrice),
 				'vat'       => round($taxPercent / 100, 2),
-				'amount_incl_vat' => true // @todo
+				'amount_incl_vat' => $pricesIncludeTax
 			);
 		}
 
@@ -415,9 +417,9 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			$items[] = array(
 				'ordertext' => $order->get_shipping_method(),
 				'quantity'  => 1,
-				'amount'    => round(100 * $shippingWithTax),
+				'amount'    => round(100 * ( $pricesIncludeTax ? $shippingWithTax : $shipping ) ),
 				'vat'       => round($taxPercent / 100, 2),
-				'amount_incl_vat' => true // @todo
+				'amount_incl_vat' => $pricesIncludeTax
 			);
 		}
 
@@ -432,9 +434,9 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			$items[] = array(
 				'ordertext' => $order_fee->get_name(),
 				'quantity'  => 1,
-				'amount'    => round(100 * $feeWithTax),
+				'amount'    => round(100 * ( $pricesIncludeTax ? $feeWithTax : $fee ) ),
 				'vat'       => round($taxPercent / 100, 2),
-				'amount_incl_vat' => true // @todo
+				'amount_incl_vat' => $pricesIncludeTax
 			);
 		}
 
@@ -448,9 +450,9 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			$items[] = array(
 				'ordertext' => __( 'Discount', 'woocommerce-gateway-reepay-checkout' ),
 				'quantity'  => 1,
-				'amount'    => round(-100 * $discountWithTax),
+				'amount'    => round(-100 * ( $pricesIncludeTax ? $discountWithTax : $discount ) ),
 				'vat'       => round($taxPercent / 100, 2),
-				'amount_incl_vat' => true // @todo
+				'amount_incl_vat' => $pricesIncludeTax
 			);
 		}
 
