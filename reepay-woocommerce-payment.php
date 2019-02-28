@@ -49,6 +49,9 @@ class WC_ReepayCheckout {
 		// Add scripts and styles for admin
 		add_action( 'admin_enqueue_scripts', __CLASS__ . '::admin_enqueue_scripts' );
 
+		// Add Footer HTML
+		add_action( 'wp_footer', __CLASS__ . '::add_footer' );
+
 		// Add Admin Backend Actions
 		add_action( 'wp_ajax_reepay_capture', array(
 			$this,
@@ -59,6 +62,8 @@ class WC_ReepayCheckout {
 			$this,
 			'ajax_reepay_cancel'
 		) );
+
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-order-statuses.php' );
 	}
 
 	/**
@@ -101,6 +106,22 @@ class WC_ReepayCheckout {
 	 */
 	public function add_scripts() {
 		wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/assets/css/style.css', __FILE__ ), array(), FALSE, 'all' );
+	}
+
+	/**
+	 * Add Footer HTML
+	 */
+	public function add_footer() {
+		$settings = get_option( 'woocommerce_reepay_checkout_settings' );
+		if ( is_array( $settings ) && ! empty( $settings['logo_height'] ) ):
+		?>
+		<style type="text/css">
+			.reepay-logos .reepay-logo img {
+				height: <?php echo esc_html( $settings['logo_height'] ); ?>;
+			}
+		</style>
+		<?php
+		endif;
 	}
 
 	/**

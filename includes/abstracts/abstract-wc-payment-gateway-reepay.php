@@ -593,7 +593,16 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 
 		// Enable status change hook
 		add_action( 'woocommerce_order_status_changed', 'WC_ReepayCheckout::order_status_changed', 10, 4 );
+	}
 
+	/**
+	 * Set Authorized Status
+	 * @param WC_Order $order
+	 */
+	public function set_authorized_status($order)
+	{
+		$status = apply_filters( 'reepay_authorized_order_status', 'on-hold', $order->get_id(), $order );
+		self::update_order_status( $order, $status, __( 'Payment authorized.', 'woocommerce-gateway-reepay-checkout' ) );
 	}
 
 	/**

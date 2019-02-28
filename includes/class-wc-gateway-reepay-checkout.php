@@ -136,6 +136,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		// Payment confirmation
 		add_action( 'the_post', array( &$this, 'payment_confirm' ) );
 
+		// Authorized Status
+		add_filter( 'reepay_authorized_status', array(
+			$this,
+			'reepay_authorized_status'
+		), 10, 2 );
+
 		// Subscriptions
 		add_action( 'woocommerce_payment_complete', array( $this, 'add_subscription_card_id' ), 10, 1 );
 
@@ -273,6 +279,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					'discover' => __( 'Discover', 'woocommerce-gateway-reepay-checkout' ),
 				),
 				'select_buttons' => TRUE,
+			),
+			'logo_height'          => array(
+				'title'       => __( 'Logo Height', 'woocommerce-gateway-reepay-checkout' ),
+				'type'        => 'text',
+				'description' => __( 'Set Logo height. For example, 25px', 'woocommerce-gateway-reepay-checkout' ),
+				'default'     => ''
 			),
 		);
 	}
@@ -592,7 +604,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			$this->log( 'payment_confirm: ' . var_export($result, true) );
 			switch ($result['state']) {
 				case 'authorized':
-					$order->update_status( 'on-hold', __( 'Payment authorized.', 'woocommerce-gateway-reepay-checkout' ) );
+					$this->set_authorized_status( $order );
 					break;
 				case 'settled':
 					$order->payment_complete();
@@ -653,7 +665,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					$order->set_transaction_id( $data['transaction'] );
 					$order->save();
 					if ( ! $order->has_status( 'on-hold' ) ) {
-						$order->update_status( 'on-hold', __( 'Payment authorized.', 'woocommerce-gateway-reepay-checkout' ) );
+						$this->set_authorized_status( $order );
 					}
 
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
