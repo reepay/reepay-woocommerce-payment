@@ -22,7 +22,7 @@ class WC_Reepay_Order_Statuses {
 		add_filter( 'woocommerce_create_order', array(
 			$this,
 			'woocommerce_create_order'
-		), 10, 1 );
+		), 10, 2 );
 
 		// Add statuses for payment complete
 		add_filter( 'woocommerce_valid_order_statuses_for_payment_complete', array(
@@ -74,12 +74,15 @@ class WC_Reepay_Order_Statuses {
 
 	/**
 	 * @see WC_Checkout::create_order()
-	 * @param $data
+	 * @param int $order_id
+	 * @param WC_Checkout $checkout
 	 *
 	 * @return int|WP_Error
 	 */
-	public function woocommerce_create_order($data)
+	public function woocommerce_create_order($order_id, $checkout)
 	{
+		$data = $checkout->get_posted_data();
+
 		try {
 			$order_id           = absint( WC()->session->get( 'order_awaiting_payment' ) );
 			$cart_hash          = md5( wp_json_encode( wc_clean( WC()->cart->get_cart_for_session() ) ) . WC()->cart->total );
@@ -138,11 +141,11 @@ class WC_Reepay_Order_Statuses {
 			$order->set_shipping_tax( WC()->cart->get_shipping_tax() );
 			$order->set_total( WC()->cart->get_total( 'edit' ) );
 
-			WC()->checkout()->create_order_line_items( $order, WC()->cart );
-			WC()->checkout()->create_order_fee_lines( $order, WC()->cart );
-			WC()->checkout()->create_order_shipping_lines( $order, WC()->session->get( 'chosen_shipping_methods' ), WC()->shipping->get_packages() );
-			WC()->checkout()->create_order_tax_lines( $order, WC()->cart );
-			WC()->checkout()->create_order_coupon_lines( $order, WC()->cart );
+			$checkout->create_order_line_items( $order, WC()->cart );
+			$checkout->create_order_fee_lines( $order, WC()->cart );
+			$checkout->create_order_shipping_lines( $order, WC()->session->get( 'chosen_shipping_methods' ), WC()->shipping->get_packages() );
+			$checkout->create_order_tax_lines( $order, WC()->cart );
+			$checkout->create_order_coupon_lines( $order, WC()->cart );
 
 			/**
 			 * Action hook to adjust order before save.
