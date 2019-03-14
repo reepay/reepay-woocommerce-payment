@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<?php echo wpautop( wptexturize( $description ) ); ?>
 <?php endif; ?>
 
-<?php $gateway->logos = array_filter($gateway->logos, 'strlen'); ?>
+<?php $gateway->logos = array_filter((array) $gateway->logos, 'strlen'); ?>
 <?php if ( count( $gateway->logos ) > 0 ): ?>
     <ul class="reepay-logos">
 		<?php foreach ( $gateway->logos as $logo ): ?>
