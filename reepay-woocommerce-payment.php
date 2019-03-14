@@ -117,7 +117,8 @@ class WC_ReepayCheckout {
 		?>
 		<style type="text/css">
 			.reepay-logos .reepay-logo img {
-				height: <?php echo esc_html( $settings['logo_height'] ); ?>;
+				height: <?php echo esc_html( $settings['logo_height'] ); ?>px;
+				max-height: <?php echo esc_html( $settings['logo_height'] ); ?>px;
 			}
 		</style>
 		<?php
