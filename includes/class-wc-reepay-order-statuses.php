@@ -66,7 +66,7 @@ class WC_Reepay_Order_Statuses {
 			'title'       => __( 'Status: Reepay Settled', 'woocommerce-gateway-reepay-checkout' ),
 			'type'        => 'select',
 			'options'     => wc_get_order_statuses(),
-			'default'     => 'wc-processing'
+			'default'     => 'wc-completed'
 		);
 
 		return $form_fields;
