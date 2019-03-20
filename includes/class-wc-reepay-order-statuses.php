@@ -48,25 +48,41 @@ class WC_Reepay_Order_Statuses {
 	 * @return mixed
 	 */
 	public function form_fields($form_fields) {
+		$pending_statuses = wc_get_order_statuses();
+		unset(
+			$pending_statuses['wc-processing'],
+			$pending_statuses['wc-on-hold'],
+			$pending_statuses['wc-completed'],
+			$pending_statuses['wc-cancelled'],
+			$pending_statuses['wc-refunded'],
+			$pending_statuses['wc-failed']
+		);
+
 		$form_fields['status_created'] = array(
 			'title'       => __( 'Status: Reepay Created', 'woocommerce-gateway-reepay-checkout' ),
 			'type'        => 'select',
-			'options'     => wc_get_order_statuses(),
+			'options'     => $pending_statuses,
 			'default'     => 'wc-pending'
 		);
+
+		$authorized_statuses = wc_get_order_statuses();
+		unset($authorized_statuses['wc-pending']);
 
 		$form_fields['status_authorized'] = array(
 			'title'       => __( 'Status: Reepay Authorized', 'woocommerce-gateway-reepay-checkout' ),
 			'type'        => 'select',
-			'options'     => wc_get_order_statuses(),
+			'options'     => $authorized_statuses,
 			'default'     => 'wc-on-hold'
 		);
+
+		$settled_statuses = wc_get_order_statuses();
+		unset($settled_statuses['wc-pending']);
 
 		$form_fields['status_settled'] = array(
 			'title'       => __( 'Status: Reepay Settled', 'woocommerce-gateway-reepay-checkout' ),
 			'type'        => 'select',
-			'options'     => wc_get_order_statuses(),
-			'default'     => 'wc-completed'
+			'options'     => $settled_statuses,
+			'default'     => 'wc-processing'
 		);
 
 		return $form_fields;
