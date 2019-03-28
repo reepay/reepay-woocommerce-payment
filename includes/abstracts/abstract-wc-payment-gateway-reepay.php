@@ -134,8 +134,12 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 
 		$order->set_transaction_id( $result['transaction'] );
 		$order->save();
-		if ( ! $order->is_paid() ) {
-			$order->payment_complete( $result['transaction'] );
+
+		$order->payment_complete( $result['transaction'] );
+
+		if (defined('REEPAY_STATUS_SETTLED')) {
+			$order->set_status( REEPAY_STATUS_SETTLED );
+			$order->save();
 		}
 
 		$order->add_order_note( __( 'Transaction settled.', 'woocommerce-gateway-reepay-checkout' ) );

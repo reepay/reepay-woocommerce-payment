@@ -35,10 +35,26 @@ class WC_Reepay_Order_Statuses {
 			'woocommerce_payment_complete_order_status'
 		), 10, 3 );
 
+		add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 10 );
+
+		add_action( 'woocommerce_payment_complete', array($this, 'woocommerce_payment_complete'), 10, 1 );
+
 		add_filter( 'reepay_authorized_order_status', array(
 			$this,
 			'reepay_authorized_order_status'
 		), 10, 3 );
+	}
+
+	/**
+	 *
+	 */
+	public function plugins_loaded() {
+		// Add actions for complete statuses
+		$statuses = wc_get_order_statuses();
+		foreach ($statuses as $status => $label) {
+			$status = str_replace('wc-', '', $status);
+			add_action( 'woocommerce_payment_complete_order_status_' . $status, array($this, 'woocommerce_payment_complete'), 10, 1 );
+		}
 	}
 
 	/**
@@ -211,6 +227,18 @@ class WC_Reepay_Order_Statuses {
 		}
 
 		return $status;
+	}
+
+	/**
+	 * Payment Complete
+	 * @param $order_id
+	 */
+	public function woocommerce_payment_complete( $order_id ) {
+		$order = wc_get_order( $order_id );
+		if ( $order->get_payment_method() === 'reepay_checkout' && ! $order->has_status( REEPAY_STATUS_SETTLED ) ) {
+			$order->set_status( REEPAY_STATUS_SETTLED );
+			$order->save();
+		}
 	}
 
 	/**
