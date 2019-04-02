@@ -682,6 +682,10 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					update_post_meta( $order->get_id(), '_reepay_capture_transaction', $data['transaction'] );
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
+				case 'invoice_cancelled':
+					$order->update_status( 'cancelled', __( 'Cancelled by WebHook.', 'woocommerce-gateway-reepay-checkout' ) );
+					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+					break;
 				case 'invoice_refund':
 					$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice );
 					$credit_notes = $result['credit_notes'];
