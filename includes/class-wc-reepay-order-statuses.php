@@ -81,8 +81,17 @@ class WC_Reepay_Order_Statuses {
 			'default'     => 'wc-pending'
 		);
 
+		/**
+		 * wc-cancelled, wc-refunded, wc-failed
+		 */
+
 		$authorized_statuses = wc_get_order_statuses();
-		unset($authorized_statuses['wc-pending']);
+		unset(
+			$authorized_statuses['wc-pending'],
+			$authorized_statuses['wc-cancelled'],
+			$authorized_statuses['wc-refunded'],
+			$authorized_statuses['wc-failed']
+		);
 
 		$form_fields['status_authorized'] = array(
 			'title'       => __( 'Status: Reepay Authorized', 'woocommerce-gateway-reepay-checkout' ),
@@ -92,7 +101,12 @@ class WC_Reepay_Order_Statuses {
 		);
 
 		$settled_statuses = wc_get_order_statuses();
-		unset($settled_statuses['wc-pending']);
+		unset(
+			$settled_statuses['wc-pending'],
+			$settled_statuses['wc-cancelled'],
+			$settled_statuses['wc-refunded'],
+			$settled_statuses['wc-failed']
+		);
 
 		$form_fields['status_settled'] = array(
 			'title'       => __( 'Status: Reepay Settled', 'woocommerce-gateway-reepay-checkout' ),
