@@ -664,19 +664,14 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 
 					$order->set_transaction_id( $data['transaction'] );
 					$order->save();
-					if ( ! $order->has_status( 'on-hold' ) ) {
-						$this->set_authorized_status( $order );
-					}
+					$this->set_authorized_status( $order );
 
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
 				case 'invoice_settled':
 					$order->set_transaction_id( $data['transaction'] );
 					$order->save();
-					if ( ! $order->is_paid() ) {
-						$order->payment_complete( $data['transaction'] );
-					}
-
+					$order->payment_complete( $data['transaction'] );
 					$order->add_order_note( __( 'Transaction settled.', 'woocommerce-gateway-reepay-checkout' ) );
 
 					update_post_meta( $order->get_id(), '_reepay_capture_transaction', $data['transaction'] );
@@ -684,6 +679,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					break;
 				case 'invoice_cancelled':
 					$order->update_status( 'cancelled', __( 'Cancelled by WebHook.', 'woocommerce-gateway-reepay-checkout' ) );
+					update_post_meta( $order->get_id(), '_reepay_cancel_transaction', $data['transaction'] );
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
 				case 'invoice_refund':
