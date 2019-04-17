@@ -12,6 +12,6 @@ WordPress Version: 4.0 or higher
 Tested up to: 5.0.4
 
 # Download and installation
-Official download page https://wordpress.org/plugins/reepay-checkout-gateway/
-Installation guide https://intercom.help/reepay/reepay-plugins/woocommerce-plugin
+* Official download page https://wordpress.org/plugins/reepay-checkout-gateway/
+* Installation guide https://intercom.help/reepay/reepay-plugins/woocommerce-plugin
 
