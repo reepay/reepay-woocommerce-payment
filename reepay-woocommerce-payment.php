@@ -5,7 +5,7 @@
  * Description: Provides a Payment Gateway through Reepay for WooCommerce.
  * Author: AAIT
  * Author URI: #
- * Version: 1.1.3
+ * Version: 1.1.4
  * Text Domain: woocommerce-gateway-reepay-checkout
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -383,4 +383,3 @@ class WC_ReepayCheckout {
 }
 
 new WC_ReepayCheckout();
-
