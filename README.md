@@ -2,5 +2,16 @@
 
 The Official Reepay Woocommerce plugin has been made for you to use on your wordpress site. Click below to download and install.
 
-# Test 
-3.x - 5.x
+Use the reepay plugin for:
+* Regular Payments
+* Recurring Payments
+
+
+# Supported versions
+WordPress Version: 4.0 or higher
+Tested up to: 5.0.4
+
+# Download and installation
+Official download page https://wordpress.org/plugins/reepay-checkout-gateway/
+Installation guide https://intercom.help/reepay/reepay-plugins/woocommerce-plugin
+
