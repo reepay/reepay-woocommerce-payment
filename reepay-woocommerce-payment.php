@@ -37,8 +37,6 @@ class WC_ReepayCheckout {
 			'add_valid_order_statuses'
 		), 10, 2 );
 
-		// Status Change Actions
-		add_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10, 4 );
 
 		// Add meta boxes
 		//add_action( 'add_meta_boxes', __CLASS__ . '::add_meta_boxes' );
@@ -170,66 +168,6 @@ class WC_ReepayCheckout {
 		}
 
 		return $statuses;
-	}
-
-	/**
-	 * Order Status Change: Capture/Cancel
-	 *
-	 * @param $order_id
-	 * @param $from
-	 * @param $to
-	 * @param WC_Order $order
-	 */
-	public static function order_status_changed( $order_id, $from, $to, $order ) {
-		// We are need "on-hold" only
-		if ( $from !== 'on-hold' ) {
-			return;
-		}
-
-		$payment_method = $order->get_payment_method();
-		if ( ! in_array( $payment_method, self::PAYMENT_METHODS ) ) {
-			return;
-		}
-
-		// Get Payment Gateway
-		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
-
-		/** @var WC_Gateway_Reepay_Checkout $gateway */
-		$gateway = 	$gateways[ $payment_method ];
-
-		switch ( $to ) {
-			case 'cancelled':
-				// Cancel payment
-				if ( $gateway->can_cancel( $order ) ) {
-					try {
-						$gateway->cancel_payment( $order );
-					} catch ( Exception $e ) {
-						$message = $e->getMessage();
-						WC_Admin_Meta_Boxes::add_error( $message );
-
-						// Rollback
-						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'woocommerce-gateway-reepay-checkout' ), $message ) );
-					}
-				}
-				break;
-			case 'processing':
-			case 'completed':
-				// Capture payment
-				if ( $gateway->can_capture( $order ) ) {
-					try {
-						$gateway->capture_payment( $order );
-					} catch ( Exception $e ) {
-						$message = $e->getMessage();
-						WC_Admin_Meta_Boxes::add_error( $message );
-
-						// Rollback
-						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'woocommerce-gateway-reepay-checkout' ), $message ) );
-					}
-				}
-				break;
-			default:
-				// no break
-		}
 	}
 
 	/**

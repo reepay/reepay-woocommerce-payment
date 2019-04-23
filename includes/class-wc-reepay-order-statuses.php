@@ -43,6 +43,9 @@ class WC_Reepay_Order_Statuses {
 			$this,
 			'reepay_authorized_order_status'
 		), 10, 3 );
+
+		// Status Change Actions
+		add_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10, 4 );
 	}
 
 	/**
@@ -269,6 +272,64 @@ class WC_Reepay_Order_Statuses {
 		}
 
 		return $status;
+	}
+
+	/**
+	 * Order Status Change: Capture/Cancel
+	 *
+	 * @param $order_id
+	 * @param $from
+	 * @param $to
+	 * @param WC_Order $order
+	 */
+	public static function order_status_changed( $order_id, $from, $to, $order ) {
+		$payment_method = $order->get_payment_method();
+		if ( ! in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
+			return;
+		}
+
+		// Get Payment Gateway
+		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+
+		/** @var WC_Gateway_Reepay_Checkout $gateway */
+		$gateway = 	$gateways[ $payment_method ];
+
+		if ( ! $gateway ) {
+			return;
+		}
+
+		switch ( $to ) {
+			case 'cancelled':
+				// Cancel payment
+				if ( $gateway->can_cancel( $order ) ) {
+					try {
+						$gateway->cancel_payment( $order );
+					} catch ( Exception $e ) {
+						$message = $e->getMessage();
+						WC_Admin_Meta_Boxes::add_error( $message );
+
+						// Rollback
+						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'woocommerce-gateway-reepay-checkout' ), $message ) );
+					}
+				}
+				break;
+			case REEPAY_STATUS_SETTLED:
+				// Capture payment
+				if ( $gateway->can_capture( $order ) ) {
+					try {
+						$gateway->capture_payment( $order );
+					} catch ( Exception $e ) {
+						$message = $e->getMessage();
+						WC_Admin_Meta_Boxes::add_error( $message );
+
+						// Rollback
+						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'woocommerce-gateway-reepay-checkout' ), $message ) );
+					}
+				}
+				break;
+			default:
+				// no break
+		}
 	}
 }
 
