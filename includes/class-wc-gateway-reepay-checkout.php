@@ -161,7 +161,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		add_filter( 'woocommerce_subscription_validate_payment_meta', array(
 			$this,
 			'validate_subscription_payment_meta'
-		), 10, 2 );
+		), 10, 3 );
 
 		add_action( 'wcs_save_other_payment_meta', array( $this, 'save_subscription_payment_meta' ), 10, 4 );
 
@@ -839,6 +839,49 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 
 				// Add tokens
 				$tokens = explode( ',', $meta_value );
+				foreach ($tokens as $token_id) {
+					$token = new WC_Payment_Token_Reepay( $token_id );
+					if ( $token->get_id() ) {
+						$subscription->add_payment_token( $token );
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Clone Card ID when Subscription created
+	 *
+	 * @param $order_id
+	 */
+	public function add_subscription_card_id( $order_id ) {
+		$subscriptions = wcs_get_subscriptions_for_order( $order_id, array( 'order_type' => 'parent' ) );
+		foreach ( $subscriptions as $subscription ) {
+			$reepay_token = false;
+
+			/** @var WC_Subscription $subscription */
+			$tokens = $subscription->get_payment_tokens();
+			foreach ($tokens as $token_id) {
+				$token = new WC_Payment_Token_Reepay( $token_id );
+				if ( $token->get_gateway_id() !== $this->id ) {
+					continue;
+				}
+
+				if ( ! $token->get_id() ) {
+					continue;
+				}
+
+				$reepay_token = $token->get_token();
+				break;
+			}
+
+			if ( ! $reepay_token ) {
+				// Copy tokens from parent order
+				$parent_id = $subscription->get_parent_id();
+				$order = wc_get_order( $parent_id );
+				$tokens = $order->get_payment_tokens();
+
+				// Add tokens
 				foreach ($tokens as $token_id) {
 					$token = new WC_Payment_Token_Reepay( $token_id );
 					if ( $token->get_id() ) {
