@@ -46,6 +46,9 @@ class WC_Reepay_Order_Statuses {
 
 		// Status Change Actions
 		add_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10, 4 );
+
+		// Woocommerce Subscriptions
+		//add_filter( 'woocommerce_can_subscription_be_updated_to', array($this, 'subscription_be_updated_to'), 10, 3 );
 	}
 
 	/**
@@ -330,6 +333,24 @@ class WC_Reepay_Order_Statuses {
 			default:
 				// no break
 		}
+	}
+
+	/**
+	 * Allow statuses for update.
+	 *
+	 * @param $can_be_updated
+	 * @param $new_status
+	 * @param WC_Subscription $subscription
+	 *
+	 * @return bool
+	 */
+	public function subscription_be_updated_to($can_be_updated, $new_status, $subscription)
+	{
+		if ( $subscription->get_payment_method() === 'reepay_checkout' && $new_status === 'processing' ) {
+			$can_be_updated = true;
+		}
+
+		return $can_be_updated;
 	}
 }
 

@@ -89,7 +89,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			'subscription_payment_method_change',
 			'subscription_payment_method_change_customer',
 			'subscription_payment_method_change_admin',
-			//'multiple_subscriptions',
+			'multiple_subscriptions',
 		);
 
 		// Load the form fields.
@@ -405,7 +405,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 * @return void
 	 */
 	public function thankyou_page( $order_id ) {
-		//
+		// Add Subscription card id
+		$this->add_subscription_card_id( $order_id );
 	}
 
 	/**
@@ -443,7 +444,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			];
 
 			$result = $this->request('POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params);
-			$this->log('process_payment: ' . var_export($result, true));
+			$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
 
 			return array(
 				'result'             => 'success',
@@ -519,7 +520,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		}
 
 		$result = $this->request('POST', 'https://checkout-api.reepay.com/v1/session/charge', $params);
-		$this->log('process_payment: ' . var_export($result, true));
+		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
 
 		return array(
 			'result'             => 'success',
@@ -560,39 +561,59 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			return;
 		}
 
-		$this->log( 'payment_confirm: ' . var_export($_GET, true) );
-
+		$this->log( sprintf( '%s::%s Incoming data %s', __CLASS__, __METHOD__, var_export($_GET, true) ) );
 
 		// Save PaymentMethod for WC Subscriptions
 		if ( ! empty( $_GET['payment_method'] ) && self::order_contains_subscription( $order ) ) {
 			$reepay_token = wc_clean( $_GET['payment_method'] );
-			$customer_handle = $this->get_customer_handle( $order->get_user_id() );
-			$source = $this->get_reepay_cards( $customer_handle, $reepay_token );
 
-			$expiryDate = explode( '-', $source['exp_date'] );
+			// Check if token is exists in WooCommerce
+			$token = null;
+			$tokens = WC_Payment_Tokens::get_tokens( array(
+				'gateway_id' => $this->id,
+			) );
 
-			// Create Payment Token
-			$token = new WC_Payment_Token_Reepay();
-			$token->set_gateway_id( $this->id );
-			$token->set_token( $reepay_token );
-			$token->set_last4( substr( $source['masked_card'], -4 ) );
-			$token->set_expiry_year( 2000 + $expiryDate[1] );
-			$token->set_expiry_month( $expiryDate[0] );
-			$token->set_card_type( $source['card_type'] );
-			$token->set_user_id( $order->get_customer_id() );
-			$token->set_masked_card( $source['masked_card'] );
-
-			// Save Credit Card
-			$token->save();
-			if ( ! $token->get_id() ) {
-				//throw new Exception( __( 'There was a problem adding the card.', 'woocommerce-gateway-reepay-checkout' ) );
+			foreach ($tokens as $token1) {
+				if ( $token1->get_token() === $reepay_token ) {
+					$token = $token1;
+					break;
+				}
 			}
 
-			update_post_meta( $order->get_id(), '_reepay_source', $source );
-			update_post_meta( $order->get_id(), '_reepay_token_id', $token->get_id() );
-			update_post_meta( $order->get_id(), '_reepay_token', $reepay_token );
-			$order->add_payment_token( $token );
+			if ( ! $token ) {
+				// Create Payment Token
+				$customer_handle = $this->get_customer_handle( $order->get_user_id() );
+				$source = $this->get_reepay_cards( $customer_handle, $reepay_token );
+				$expiryDate = explode( '-', $source['exp_date'] );
 
+				$token = new WC_Payment_Token_Reepay();
+				$token->set_gateway_id( $this->id );
+				$token->set_token( $reepay_token );
+				$token->set_last4( substr( $source['masked_card'], -4 ) );
+				$token->set_expiry_year( 2000 + $expiryDate[1] );
+				$token->set_expiry_month( $expiryDate[0] );
+				$token->set_card_type( $source['card_type'] );
+				$token->set_user_id( $order->get_customer_id() );
+				$token->set_masked_card( $source['masked_card'] );
+
+				// Save Credit Card
+				$token->save();
+				if ( ! $token->get_id() ) {
+					//throw new Exception( __( 'There was a problem adding the card.', 'woocommerce-gateway-reepay-checkout' ) );
+				}
+			}
+
+			// Add token
+			WC_Gateway_Reepay_Checkout::add_payment_token( $order, $token->get_id() );
+			update_post_meta( $order->get_id(), '_reepay_source', $source );
+			$this->log( sprintf( '%s::%s Payment token #%s created for %s',
+				__CLASS__,
+				__METHOD__,
+				$token->get_id(),
+				$source['masked_card']
+			) );
+
+			// Complete payment if zero amount
 			if ( abs( $order->get_total() ) < 0.01 ) {
 				$order->payment_complete();
 			}
@@ -601,7 +622,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		// @todo Transaction ID should applied via WebHook
 		if ( ! empty( $_GET['invoice'] ) && $order_id === $this->get_orderid_by_handle( wc_clean( $_GET['invoice'] ) ) ) {
 			$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . wc_clean( $_GET['invoice'] ) );
-			$this->log( 'payment_confirm: ' . var_export($result, true) );
+			$this->log( sprintf( '%s::%s Invoice data %s', __CLASS__, __METHOD__, var_export($result, true) ) );
 			switch ($result['state']) {
 				case 'authorized':
 					$this->set_authorized_status( $order );
@@ -735,7 +756,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		}
 	}
 
-
 	/**
 	 * Update the card meta for a subscription
 	 * to complete a payment to make up for an automatic renewal payment which previously failed.
@@ -779,7 +799,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		$payment_meta[$this->id] = array(
 			'reepay_meta' => array(
 				'token_id' => array(
-					'value' => implode(',', $subscription->get_payment_tokens()),
+					'value' => implode( ',', $subscription->get_payment_tokens() ),
 					'label' => 'Card Token ID',
 				)
 			)
@@ -806,19 +826,21 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			}
 
 			$tokens = explode( ',', $payment_meta['reepay_meta']['token_id']['value'] );
-			foreach ( $tokens as $token_id ) {
-				$token = new WC_Payment_Token_Reepay( $token_id );
-				if ( ! $token->get_id() ) {
-					throw new Exception('This "Card Token ID" value not found.');
-				}
+			if ( count( $tokens ) > 1 ) {
+				throw new Exception('Only one "Card Token ID" is allowed.');
+			}
 
-				if ( $token->get_gateway_id() !== $this->id ) {
-					throw new Exception('This "Card Token ID" value should related to Reepay.');
-				}
+			$token = new WC_Payment_Token_Reepay( $tokens[0] );
+			if ( ! $token->get_id() ) {
+				throw new Exception('This "Card Token ID" value not found.');
+			}
 
-				if ( $token->get_user_id() !== $subscription->get_user_id() ) {
-					throw new Exception('Access denied for this "Card Token ID" value.');
-				}
+			if ( $token->get_gateway_id() !== $this->id ) {
+				throw new Exception('This "Card Token ID" value should related to Reepay.');
+			}
+
+			if ( $token->get_user_id() !== $subscription->get_user_id() ) {
+				throw new Exception('Access denied for this "Card Token ID" value.');
 			}
 		}
 	}
@@ -840,10 +862,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				// Add tokens
 				$tokens = explode( ',', $meta_value );
 				foreach ($tokens as $token_id) {
-					$token = new WC_Payment_Token_Reepay( $token_id );
-					if ( $token->get_id() ) {
-						$subscription->add_payment_token( $token );
-					}
+					WC_Gateway_Reepay_Checkout::add_payment_token( $subscription, $token_id );
 				}
 			}
 		}
@@ -855,38 +874,25 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 * @param $order_id
 	 */
 	public function add_subscription_card_id( $order_id ) {
+		if ( ! function_exists( 'wcs_get_subscriptions_for_order' ) ) {
+			return;
+		}
+
+		// Get subscriptions
 		$subscriptions = wcs_get_subscriptions_for_order( $order_id, array( 'order_type' => 'parent' ) );
 		foreach ( $subscriptions as $subscription ) {
-			$reepay_token = false;
-
+			// Try to search assigned token
 			/** @var WC_Subscription $subscription */
-			$tokens = $subscription->get_payment_tokens();
-			foreach ($tokens as $token_id) {
-				$token = new WC_Payment_Token_Reepay( $token_id );
-				if ( $token->get_gateway_id() !== $this->id ) {
-					continue;
-				}
 
-				if ( ! $token->get_id() ) {
-					continue;
-				}
-
-				$reepay_token = $token->get_token();
-				break;
-			}
-
-			if ( ! $reepay_token ) {
+			$tokens = get_post_meta( $subscription->get_id(), '_payment_tokens', true );
+			if ( empty( $tokens ) ) {
 				// Copy tokens from parent order
-				$parent_id = $subscription->get_parent_id();
-				$order = wc_get_order( $parent_id );
+				$order = wc_get_order( $order_id );
 				$tokens = $order->get_payment_tokens();
 
 				// Add tokens
 				foreach ($tokens as $token_id) {
-					$token = new WC_Payment_Token_Reepay( $token_id );
-					if ( $token->get_id() ) {
-						$subscription->add_payment_token( $token );
-					}
+					WC_Gateway_Reepay_Checkout::add_payment_token( $subscription, $token_id );
 				}
 			}
 		}
@@ -899,34 +905,50 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 * @param WC_Order $renewal_order
 	 */
 	public function scheduled_subscription_payment( $amount_to_charge, $renewal_order ) {
+		// Lookup token
 		try {
-			// Get payment token
-			$reepay_token = '';
-			$tokens = $renewal_order->get_payment_tokens();
-			foreach ($tokens as $token_id) {
-				$token = new WC_Payment_Token_Reepay( $token_id );
-				if ( $token->get_gateway_id() !== $this->id ) {
-					continue;
+			$token = WC_Gateway_Reepay_Checkout::get_payment_token( $renewal_order );
+			if ( ! $token ) {
+				// Get subscriptions
+				$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
+				foreach ( $subscriptions as $subscription ) {
+					/** @var WC_Subscription $subscription */
+					$token = WC_Gateway_Reepay_Checkout::get_payment_token( $subscription );
+					if ( $token ) {
+						break;
+					} else {
+						$token = WC_Gateway_Reepay_Checkout::get_payment_token( $subscription->get_parent() );
+					}
 				}
-
-				if ( ! $token->get_id() ) {
-					continue;
-				}
-
-				$reepay_token = $token->get_token();
-				break;
 			}
 
-			if ( empty( $reepay_token ) ) {
+			if ( ! $token ) {
+				throw new Exception( 'Payment token isn\'t exists' );
+			}
+
+			// Validate
+			if ( empty( $token->get_token() ) ) {
 				throw new Exception( 'Payment token is empty' );
 			}
+		} catch (Exception $e) {
+			$renewal_order->update_status( 'failed' );
+			$renewal_order->add_order_note(
+				sprintf( __( 'Error: "%s". %s.', 'woocommerce-gateway-reepay-checkout' ),
+					wc_price( $amount_to_charge ),
+					$e->getMessage()
+				)
+			);
 
-			// Charge payment
+			return;
+		}
+
+		// Charge payment
+		try {
 			$params = [
 				'handle' => $this->get_order_handle( $renewal_order ),
 				'amount' => round(100 * $amount_to_charge),
 				'currency' => $renewal_order->get_currency(),
-				'source' => $reepay_token,
+				'source' => $token->get_token(),
 				'settle' => $this->settle === 'yes',
 				'recurring' => $this->order_contains_subscription( $renewal_order ),
 				'customer' => [
@@ -980,7 +1002,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				];
 			}
 			$result = $this->request('POST', 'https://api.reepay.com/v1/charge', $params);
-			$this->log( $result );
+			$this->log( '%s::%s Charge: %s', sprintf( __CLASS__, __METHOD__, var_export( $result, true) ) );
 
 			// Check results
 			switch ( $result['state'] ) {
@@ -1005,7 +1027,13 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			}
 		} catch (Exception $e) {
 			$renewal_order->update_status( 'failed' );
-			$renewal_order->add_order_note( sprintf( __( 'Failed to charge "%s". %s.', 'woocommerce' ), wc_price( $amount_to_charge ), $e->getMessage() ) );
+			$renewal_order->add_order_note(
+				sprintf( __( 'Failed to charge "%s". Error: %s. Token ID: %s', 'woocommerce-gateway-reepay-checkout' ),
+					wc_price( $amount_to_charge ),
+					$e->getMessage(),
+					$token->get_id()
+				)
+			);
 		}
 	}
 
