@@ -291,6 +291,11 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @throws Exception
 	 */
 	public function request($method, $url, $params = array()) {
+		$start = microtime(true);
+		if ( $this->debug === 'yes' ) {
+			$this->log( sprintf('Request: %s %s %s', $method, $url, json_encode( $params, JSON_PRETTY_PRINT ) ) );
+		}
+
 		$key = $this->test_mode === 'yes' ? $this->private_key_test : $this->private_key;
 
 		$curl = curl_init();
@@ -322,7 +327,13 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		}
 		$body = curl_exec($curl);
 		$info = curl_getinfo($curl);
-		$code = (int)($info['http_code'] / 100);
+		$code = (int) ($info['http_code'] / 100);
+
+		if ( $this->debug === 'yes' ) {
+			$time = microtime(true) - $start;
+			$this->log( sprintf( '[%.4F] HTTP Code: %s. Response: %s', $time, $info['http_code'], $body ) );
+		}
+
 		switch ($code) {
 			case 0:
 				$error = curl_error($curl);
