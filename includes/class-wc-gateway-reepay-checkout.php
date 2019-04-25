@@ -745,6 +745,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
+				case 'invoice_created':
+					// @todo
+					$this->log( sprintf( 'WebHook: Invoice created: %s', var_export( $invoice, true ) ) );
+					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+					break;
 				default:
 					$this->log( sprintf( 'WebHook: Unknown event type: %s', $data['event_type'] ) );
 			}
@@ -1002,7 +1007,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				];
 			}
 			$result = $this->request('POST', 'https://api.reepay.com/v1/charge', $params);
-			$this->log( '%s::%s Charge: %s', sprintf( __CLASS__, __METHOD__, var_export( $result, true) ) );
+			$this->log( sprintf( '%s::%s Charge: %s', __CLASS__, __METHOD__, var_export( $result, true) ) );
 
 			// Check results
 			switch ( $result['state'] ) {
@@ -1023,9 +1028,15 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					update_post_meta( $renewal_order->get_id(), 'reepay_charge', '1' );
 					break;
 				default:
-					throw new Exception('Generic error');
+					throw new Exception( 'Generic error' );
 			}
 		} catch (Exception $e) {
+			if ( mb_strpos($e->getMessage(), 'Invoice already settled', 0, 'UTF-8') !== false ) {
+				$renewal_order->payment_complete();
+				$renewal_order->add_order_note( __( 'Transaction already settled.', 'woocommerce-gateway-reepay-checkout' ) );
+				return;
+			}
+
 			$renewal_order->update_status( 'failed' );
 			$renewal_order->add_order_note(
 				sprintf( __( 'Failed to charge "%s". Error: %s. Token ID: %s', 'woocommerce-gateway-reepay-checkout' ),
