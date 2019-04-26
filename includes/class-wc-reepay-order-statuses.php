@@ -49,6 +49,16 @@ class WC_Reepay_Order_Statuses {
 
 		// Woocommerce Subscriptions
 		//add_filter( 'woocommerce_can_subscription_be_updated_to', array($this, 'subscription_be_updated_to'), 10, 3 );
+
+		add_filter( 'wc_order_is_editable', array(
+			$this,
+			'is_editable'
+		), 10, 2 );
+
+		add_filter( 'woocommerce_order_is_paid', array(
+			$this,
+			'is_paid'
+		), 10, 2 );
 	}
 
 	/**
@@ -364,6 +374,41 @@ class WC_Reepay_Order_Statuses {
 
 		return $can_be_updated;
 	}
+
+	/**
+	 * Checks if an order can be edited, specifically for use on the Edit Order screen.
+	 *
+	 * @param $is_editable
+	 * @param WC_Order $order
+	 * @return bool
+	 */
+	public function is_editable( $is_editable, $order ) {
+		if ( $order->get_payment_method() === 'reepay_checkout' ) {
+			if ( in_array( $order->get_status(), array( REEPAY_STATUS_CREATED, REEPAY_STATUS_AUTHORIZED ) ) ) {
+				$is_editable = true;
+			}
+		}
+
+		return $is_editable;
+	}
+
+	/**
+	 * Returns if an order has been paid for based on the order status.
+	 *
+	 * @param $is_paid
+	 * @param WC_Order $order
+	 * @return bool
+	 */
+	public function is_paid( $is_paid, $order ) {
+		if ( $order->get_payment_method() === 'reepay_checkout' ) {
+			if ( in_array( $order->get_status(), array( REEPAY_STATUS_SETTLED ) ) ) {
+				$is_paid = true;
+			}
+		}
+
+		return $is_paid;
+	}
+
 }
 
 new WC_Reepay_Order_Statuses();
