@@ -761,6 +761,20 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					$this->log( sprintf( 'WebHook: Invoice created: %s', var_export( $invoice, true ) ) );
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
+				case 'customer_created':
+					$user_id = $this->get_userid_by_handle( $customer );
+					if ( ! $user_id ) {
+						if ( strpos( $customer, 'customer-' ) !== false ) {
+							$user_id = (int) str_replace( 'customer-', '', $customer );
+							if ( $user_id > 0 ) {
+								update_user_meta( $user_id, 'reepay_customer_id', $customer );
+								$this->log( sprintf( 'WebHook: Customer created: %s', var_export( $customer, true ) ) );
+							}
+						}
+					}
+
+					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+					break;
 				default:
 					$this->log( sprintf( 'WebHook: Unknown event type: %s', $data['event_type'] ) );
 			}
