@@ -256,8 +256,12 @@ class WC_Reepay_Order_Statuses {
 	public function woocommerce_payment_complete( $order_id ) {
 		$order = wc_get_order( $order_id );
 		if ( $order->get_payment_method() === 'reepay_checkout' && ! $order->has_status( REEPAY_STATUS_SETTLED ) ) {
-			$order->set_status( REEPAY_STATUS_SETTLED );
-			$order->save();
+			if ( WC_Payment_Gateway_Reepay::order_contains_subscription( $order ) ) {
+				$order->add_order_note( __( 'Payment completed', 'woocommerce-gateway-reepay-checkout' ) );
+			} else {
+				$order->set_status( REEPAY_STATUS_SETTLED );
+				$order->save();
+			}
 		}
 	}
 
@@ -271,7 +275,11 @@ class WC_Reepay_Order_Statuses {
 	 */
 	public function reepay_authorized_order_status( $status, $order_id, $order ) {
 		if ( $order->get_payment_method() === 'reepay_checkout' ) {
-			$status = REEPAY_STATUS_AUTHORIZED;
+			if ( WC_Payment_Gateway_Reepay::order_contains_subscription( $order ) ) {
+				$status = 'on-hold';
+			} else {
+				$status = REEPAY_STATUS_AUTHORIZED;
+			}
 		}
 
 		return $status;
@@ -288,6 +296,10 @@ class WC_Reepay_Order_Statuses {
 	public static function order_status_changed( $order_id, $from, $to, $order ) {
 		$payment_method = $order->get_payment_method();
 		if ( ! in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
+			return;
+		}
+
+		if ( WC_Payment_Gateway_Reepay::order_contains_subscription( $order ) ) {
 			return;
 		}
 
