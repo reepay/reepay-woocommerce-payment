@@ -236,31 +236,50 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	}
 
 	/**
-	 * Add Card ID when Subscription created
+	 * Add payment token.
 	 *
-	 * @param $order_id
+	 * @param WC_Order $order
+	 * @param int $token_id
 	 */
-	public function add_subscription_card_id( $order_id ) {
-		if ( ! function_exists( 'wcs_get_subscriptions_for_order' ) ) {
-			return;
+	public static function add_payment_token( $order, $token_id ) {
+		$token = new WC_Payment_Token_Reepay( $token_id );
+		if ( $token->get_id() ) {
+			// Delete tokens
+			delete_post_meta( $order->get_id(), '_payment_tokens' );
+
+			// Reload order
+			$order = wc_get_order( $order->get_id() );
+
+			// Add payment token
+			$order->add_payment_token( $token );
+			update_post_meta( $order->get_id(), '_reepay_token_id', $token->get_id() );
+			update_post_meta( $order->get_id(), '_reepay_token', $token->get_token() );
 		}
+	}
 
-		$subscriptions = wcs_get_subscriptions_for_order( $order_id, array( 'order_type' => 'parent' ) );
-		foreach ( $subscriptions as $subscription ) {
-			/** @var WC_Subscription $subscription */
-			$tokens = $subscription->get_payment_tokens();
-			if ( count( $tokens ) === 0 ) {
-				$tokens = $subscription->get_parent()->get_payment_tokens();
-				foreach ( $tokens as $token_id ) {
-					$token = new WC_Payment_Token_Reepay( $token_id );
-					if ( $token->get_gateway_id() !== $this->id ) {
-						continue;
-					}
-
-					$subscription->add_payment_token( $token );
-				}
+	/**
+	 * Get payment token.
+	 *
+	 * @param WC_Order $order
+	 *
+	 * @return WC_Payment_Token_Reepay|false
+	 */
+	public static function get_payment_token( $order ) {
+		$tokens = $order->get_payment_tokens();
+		foreach ($tokens as $token_id) {
+			$token = new WC_Payment_Token_Reepay( $token_id );
+			if ( ! $token->get_id() ) {
+				continue;
 			}
+
+			if ( $token->get_gateway_id() !== 'reepay_checkout' ) {
+				continue;
+			}
+
+			return $token;
 		}
+
+		return false;
 	}
 
 	/**
@@ -272,6 +291,11 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @throws Exception
 	 */
 	public function request($method, $url, $params = array()) {
+		$start = microtime(true);
+		if ( $this->debug === 'yes' ) {
+			$this->log( sprintf('Request: %s %s %s', $method, $url, json_encode( $params, JSON_PRETTY_PRINT ) ) );
+		}
+
 		$key = $this->test_mode === 'yes' ? $this->private_key_test : $this->private_key;
 
 		$curl = curl_init();
@@ -303,7 +327,13 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		}
 		$body = curl_exec($curl);
 		$info = curl_getinfo($curl);
-		$code = (int)($info['http_code'] / 100);
+		$code = (int) ($info['http_code'] / 100);
+
+		if ( $this->debug === 'yes' ) {
+			$time = microtime(true) - $start;
+			$this->log( sprintf( '[%.4F] HTTP Code: %s. Response: %s', $time, $info['http_code'], $body ) );
+		}
+
 		switch ($code) {
 			case 0:
 				$error = curl_error($curl);
@@ -709,10 +739,10 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @return string
 	 */
 	public function get_order_handle( $order ) {
-		$handle = get_post_meta($order->get_id(), '_reepay_order', TRUE );
+		$handle = get_post_meta( $order->get_id(), '_reepay_order', TRUE );
 		if ( empty( $handle ) ) {
 			$handle = 'order-' . $order->get_id();
-			update_post_meta($order->get_id(), '_reepay_order', $handle );
+			update_post_meta( $order->get_id(), '_reepay_order', $handle );
 		}
 
 		return $handle;
