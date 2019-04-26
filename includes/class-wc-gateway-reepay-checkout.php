@@ -653,8 +653,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			}
 
 			// Get Secret
-			$result = $this->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
-			$secret = $result['secret'];
+			if ( ! ( $secret = get_transient( 'reepay_webhook_settings_secret' ) ) ) {
+				$result = $this->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
+				$secret = $result['secret'];
+
+				set_transient( 'reepay_webhook_settings_secret', $secret, HOUR_IN_SECONDS );
+			}
 
 			// Verify secret
 			$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
@@ -667,7 +671,14 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 
 			// Get Order by handle
 			$order_id = $this->get_orderid_by_handle( $invoice );
-			$order    = wc_get_order( $order_id );
+			if ( ! $order_id ) {
+				throw new Exception( sprintf( 'Invoice #%s isn\'t exists in store.', $invoice ) );
+			}
+
+			$order = wc_get_order( $order_id );
+			if ( ! $order ) {
+				throw new Exception( sprintf( 'Order #%s isn\'t exists in store.', $order_id ) );
+			}
 
 			// Check transaction is applied
 			if ( $order->get_transaction_id() === $data['transaction'] ) {
