@@ -653,8 +653,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			}
 
 			// Get Secret
-			$result = $this->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
-			$secret = $result['secret'];
+			if ( ! ( $secret = get_transient( 'reepay_webhook_settings_secret' ) ) ) {
+				$result = $this->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
+				$secret = $result['secret'];
+
+				set_transient( 'reepay_webhook_settings_secret', $secret, HOUR_IN_SECONDS );
+			}
 
 			// Verify secret
 			$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
@@ -667,7 +671,14 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 
 			// Get Order by handle
 			$order_id = $this->get_orderid_by_handle( $invoice );
-			$order    = wc_get_order( $order_id );
+			if ( ! $order_id ) {
+				throw new Exception( sprintf( 'Invoice #%s isn\'t exists in store.', $invoice ) );
+			}
+
+			$order = wc_get_order( $order_id );
+			if ( ! $order ) {
+				throw new Exception( sprintf( 'Order #%s isn\'t exists in store.', $order_id ) );
+			}
 
 			// Check transaction is applied
 			if ( $order->get_transaction_id() === $data['transaction'] ) {
@@ -748,6 +759,20 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				case 'invoice_created':
 					// @todo
 					$this->log( sprintf( 'WebHook: Invoice created: %s', var_export( $invoice, true ) ) );
+					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+					break;
+				case 'customer_created':
+					$user_id = $this->get_userid_by_handle( $customer );
+					if ( ! $user_id ) {
+						if ( strpos( $customer, 'customer-' ) !== false ) {
+							$user_id = (int) str_replace( 'customer-', '', $customer );
+							if ( $user_id > 0 ) {
+								update_user_meta( $user_id, 'reepay_customer_id', $customer );
+								$this->log( sprintf( 'WebHook: Customer created: %s', var_export( $customer, true ) ) );
+							}
+						}
+					}
+
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
 				default:

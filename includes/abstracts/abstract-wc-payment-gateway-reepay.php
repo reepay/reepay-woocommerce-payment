@@ -739,10 +739,10 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @return string
 	 */
 	public function get_order_handle( $order ) {
-		$handle = get_post_meta($order->get_id(), '_reepay_order', TRUE );
+		$handle = get_post_meta( $order->get_id(), '_reepay_order', TRUE );
 		if ( empty( $handle ) ) {
 			$handle = 'order-' . $order->get_id();
-			update_post_meta($order->get_id(), '_reepay_order', $handle );
+			update_post_meta( $order->get_id(), '_reepay_order', $handle );
 		}
 
 		return $handle;
