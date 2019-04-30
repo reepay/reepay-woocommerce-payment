@@ -68,7 +68,9 @@ class WC_ReepayCheckout {
 
 		// Add Upgrade Notice
 		if ( version_compare( get_option( 'woocommerce_reepay_version', '1.0.0' ), '1.1.0', '<' ) ) {
-			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
+		    if ( function_exists( 'wcs_get_users_subscriptions' ) ) {
+			    add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
+            }
 		}
 	}
 
