@@ -119,7 +119,7 @@ class WC_ReepayCheckout {
 	/**
 	 * Add Footer HTML
 	 */
-	public function add_footer() {
+	public static function add_footer() {
 		$settings = get_option( 'woocommerce_reepay_checkout_settings' );
 		if ( is_array( $settings ) && ! empty( $settings['logo_height'] ) ):
 		?>
