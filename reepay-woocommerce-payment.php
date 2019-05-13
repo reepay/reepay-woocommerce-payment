@@ -113,7 +113,8 @@ class WC_ReepayCheckout {
 	 * Add Scripts
 	 */
 	public function add_scripts() {
-		wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/assets/css/style.css', __FILE__ ), array(), FALSE, 'all' );
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+		wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/assets/css/style' . $suffix . '.css', __FILE__ ), array(), FALSE, 'all' );
 	}
 
 	/**
@@ -262,7 +263,8 @@ class WC_ReepayCheckout {
 	public static function admin_enqueue_scripts( $hook ) {
 		if ( $hook === 'post.php' ) {
 			// Scripts
-			wp_register_script( 'reepay-admin-js', plugin_dir_url( __FILE__ ) . 'assets/js/admin.js' );
+			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+			wp_register_script( 'reepay-admin-js', plugin_dir_url( __FILE__ ) . 'assets/js/admin' . $suffix . '.js' );
 
 			// Localize the script
 			$translation_array = array(
