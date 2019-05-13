@@ -328,7 +328,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 * @return void
 	 */
 	public function payment_scripts() {
-		if ( ! is_cart() && ! is_checkout() && ! isset( $_GET['pay_for_order'] ) && ! is_add_payment_method_page() && ! is_product() ) {
+		if ( ! is_checkout() && ! isset( $_GET['pay_for_order'] ) && ! is_add_payment_method_page() ) {
 			return;
 		}
 
@@ -336,11 +336,9 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			return;
 		}
 
-		// @todo Add suffix
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-
 		wp_enqueue_script( 'reepay-checkout', 'https://checkout.reepay.com/checkout.js', array(), FALSE, FALSE );
-		wp_register_script( 'wc-gateway-reepay-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkout.js', array(
+		wp_register_script( 'wc-gateway-reepay-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkout' . $suffix . '.js', array(
 			'jquery',
 			'wc-checkout',
 			'reepay-checkout',

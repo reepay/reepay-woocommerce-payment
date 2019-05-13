@@ -1,9 +1,7 @@
 .reepay-logos {
-	display: inline-block;
-}
+  display: inline-block; }
 
 .reepay-logo {
-	float: left;
-	display: inline-block;
-	padding: 5px;
-}
+  float: left;
+  display: inline-block;
+  padding: 5px; }
