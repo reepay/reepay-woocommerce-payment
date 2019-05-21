@@ -152,6 +152,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 
 		add_action( 'wcs_resubscribe_order_created', array( $this, 'delete_resubscribe_meta' ), 10 );
 
+		add_filter( 'wcs_renewal_order_created', array( __CLASS__, 'renewal_order_created' ), 10, 2 );
+
 		// Allow store managers to manually set card id as the payment method on a subscription
 		add_filter( 'woocommerce_subscription_payment_meta', array(
 			$this,
@@ -812,6 +814,31 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	public function delete_resubscribe_meta( $resubscribe_order ) {
 		// Delete tokens
 		delete_post_meta( $resubscribe_order->get_id(), '_payment_tokens' );
+	}
+
+	/**
+	 * Create a renewal order to record a scheduled subscription payment.
+	 * Remove Reepay order handler from renewal order.
+	 *
+	 * @param $renewal_order
+	 * @param $subscription
+	 *
+	 * @return bool|WC_Order|WC_Order_Refund
+	 */
+	public function renewal_order_created( $renewal_order, $subscription ) {
+		if ( ! is_object( $subscription ) ) {
+			$subscription = wcs_get_subscription( $subscription );
+		}
+
+		if ( ! is_object( $renewal_order ) ) {
+			$renewal_order = wc_get_order( $renewal_order );
+		}
+
+		if ( $renewal_order->get_payment_method() === $this->id ) {
+			delete_post_meta( $renewal_order->get_id(), '_reepay_order' );
+		}
+
+		return $renewal_order;
 	}
 
 	/**
