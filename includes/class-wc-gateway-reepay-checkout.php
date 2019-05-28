@@ -601,17 +601,18 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				if ( ! $token->get_id() ) {
 					//throw new Exception( __( 'There was a problem adding the card.', 'woocommerce-gateway-reepay-checkout' ) );
 				}
+
+				update_post_meta( $order->get_id(), '_reepay_source', $source );
+				$this->log( sprintf( '%s::%s Payment token #%s created for %s',
+					__CLASS__,
+					__METHOD__,
+					$token->get_id(),
+					$source['masked_card']
+				) );
 			}
 
 			// Add token
 			WC_Gateway_Reepay_Checkout::add_payment_token( $order, $token->get_id() );
-			update_post_meta( $order->get_id(), '_reepay_source', $source );
-			$this->log( sprintf( '%s::%s Payment token #%s created for %s',
-				__CLASS__,
-				__METHOD__,
-				$token->get_id(),
-				$source['masked_card']
-			) );
 
 			// Complete payment if zero amount
 			if ( abs( $order->get_total() ) < 0.01 ) {
