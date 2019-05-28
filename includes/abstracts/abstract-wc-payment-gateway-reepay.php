@@ -734,38 +734,25 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	}
 
 	/**
+	 * Get Reepay Order Handle.
+	 *
 	 * @param WC_Order $order
 	 *
 	 * @return string
 	 */
 	public function get_order_handle( $order ) {
-		$handle = get_post_meta( $order->get_id(), '_reepay_order', TRUE );
-		if ( empty( $handle ) ) {
-			$handle = 'order-' . $order->get_id();
-			update_post_meta( $order->get_id(), '_reepay_order', $handle );
-		}
-
-		return $handle;
+		return apply_filters( 'reepay_order_handle', $order->get_id(), $order );
 	}
 
 	/**
+	 * Get Order Id by Reepay Order Handle.
+	 *
 	 * @param $handle
 	 *
 	 * @return bool|string|null
 	 */
 	public function get_orderid_by_handle( $handle ) {
-		global $wpdb;
-		$query = "
-			SELECT post_id FROM {$wpdb->prefix}postmeta 
-			LEFT JOIN {$wpdb->prefix}posts ON ({$wpdb->prefix}posts.ID = {$wpdb->prefix}postmeta.post_id)
-			WHERE meta_key = %s AND meta_value = %s;";
-		$sql = $wpdb->prepare( $query, '_reepay_order', $handle );
-		$order_id = $wpdb->get_var( $sql );
-		if ( ! $order_id ) {
-			return false;
-		}
-
-		return $order_id;
+		return apply_filters( 'reepay_get_order', $handle );
 	}
 
 	/**

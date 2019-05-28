@@ -61,7 +61,7 @@ class WC_ReepayCheckout {
 			'ajax_reepay_cancel'
 		) );
 
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-order-statuses.php' );
+		$this->includes();
 
 		// Add admin menu
 		add_action( 'admin_menu', array( &$this, 'admin_menu' ), 99 );
@@ -72,6 +72,11 @@ class WC_ReepayCheckout {
 			    add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
             }
 		}
+	}
+
+	public function includes() {
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-order.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-order-statuses.php' );
 	}
 
 	/**
