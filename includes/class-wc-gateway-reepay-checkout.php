@@ -650,7 +650,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			$this->log( sprintf( 'WebHook: Post data: %s', var_export( $raw_body, true ) ) );
 			$data = @json_decode( $raw_body, true );
 			if ( ! $data ) {
-				throw new Exception( 'Missed parameters' );
+				throw new Exception( 'Missing parameters' );
 			}
 
 			// Get Secret
@@ -667,8 +667,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				throw new Exception( 'Signature verification failed' );
 			}
 
-			$invoice  = $data['invoice'];
-			$customer = $data['customer'];
+			if ( ! isset( $data['invoice'] ) ) {
+				throw new Exception( 'Missing Invoice parameter' );
+			}
+
+			$invoice = $data['invoice'];
 
 			// Get Order by handle
 			$order_id = $this->get_orderid_by_handle( $invoice );
@@ -763,6 +766,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
 				case 'customer_created':
+					$customer = $data['customer'];
 					$user_id = $this->get_userid_by_handle( $customer );
 					if ( ! $user_id ) {
 						if ( strpos( $customer, 'customer-' ) !== false ) {
