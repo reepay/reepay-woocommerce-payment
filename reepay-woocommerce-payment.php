@@ -20,6 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WC_ReepayCheckout {
 	const PAYMENT_METHODS = array('reepay_token' , 'reepay_checkout');
 
+	public static $db_version = '1.2.2';
+
 	/**
 	 * Constructor
 	 */
@@ -61,17 +63,15 @@ class WC_ReepayCheckout {
 			'ajax_reepay_cancel'
 		) );
 
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-order-statuses.php' );
+		$this->includes();
 
 		// Add admin menu
 		add_action( 'admin_menu', array( &$this, 'admin_menu' ), 99 );
+	}
 
-		// Add Upgrade Notice
-		if ( version_compare( get_option( 'woocommerce_reepay_version', '1.2.0' ), '1.2.0', '<' ) ) {
-		    if ( function_exists( 'wcs_get_users_subscriptions' ) ) {
-			    add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
-            }
-		}
+	public function includes() {
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-order.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-order-statuses.php' );
 	}
 
 	/**
@@ -96,6 +96,13 @@ class WC_ReepayCheckout {
 	public function init() {
 		// Localization
 		load_plugin_textdomain( 'woocommerce-gateway-reepay-checkout', FALSE, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+
+		// Show Upgrade notification
+		if ( version_compare( get_option( 'woocommerce_reepay_version', self::$db_version ), self::$db_version, '<' ) ) {
+			if ( function_exists( 'wcs_get_users_subscriptions' ) ) {
+				add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
+			}
+		}
 	}
 
 	/**
