@@ -64,7 +64,7 @@ foreach ( $subscriptions as $subscription ) {
 	// Check subscription's token
 	$subscriptions_tokens = get_post_meta( $subscription->get_id(), '_payment_tokens', true );
 	if ( empty( $subscriptions_tokens ) ) {
-		WC_Gateway_Reepay_Checkout::add_payment_token( $subscription, $token_id );
+		WC_Gateway_Reepay_Checkout::assign_payment_token( $subscription, $token );
 		$log->add( $handler, sprintf( '[SUCCESS] Token #%s assigned to subscription #%s.', $token->get_id(), $subscription->get_id() ) );
 	}
 
@@ -74,7 +74,7 @@ foreach ( $subscriptions as $subscription ) {
 		/** WC_Order $order */
 		$order_tokens = get_post_meta( $order->get_id(), '_payment_tokens', true );
 		if ( empty( $order_tokens ) ) {
-			WC_Gateway_Reepay_Checkout::add_payment_token( $order, $token_id );
+			WC_Gateway_Reepay_Checkout::assign_payment_token( $order, $token );
 			$log->add( $handler, sprintf( '[SUCCESS] Token #%s assigned to order #%s.', $token->get_id(), $order->get_id() ) );
 		}
 	}
