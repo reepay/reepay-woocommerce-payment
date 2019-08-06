@@ -719,6 +719,10 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				'postal_code' => $order->get_shipping_postcode(),
 				'state_or_province' => $order->get_shipping_state()
 			];
+
+			if (!strlen($params['order']['shipping_address'])) {
+				$params['order']['shipping_address'] = $params['order']['billing_address'];
+            }
 		}
 
 		$result = $this->request('POST', 'https://checkout-api.reepay.com/v1/session/charge', $params);
@@ -784,8 +788,14 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 
 		// @todo Transaction ID should applied via WebHook
 		if ( ! empty( $_GET['invoice'] ) && $order_id === $this->get_orderid_by_handle( wc_clean( $_GET['invoice'] ) ) ) {
-			$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . wc_clean( $_GET['invoice'] ) );
-			$this->log( sprintf( '%s::%s Invoice data %s', __CLASS__, __METHOD__, var_export($result, true) ) );
+			try {
+				$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . wc_clean( $_GET['invoice'] ) );
+				$this->log( sprintf( '%s::%s Invoice data %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
+            } catch (Exception $e) {
+			    $this->log( sprintf( '%s::%s API Error: %s', __CLASS__, __METHOD__, var_export( $e->getMessage(), true ) ) );
+			    return;
+            }
+
 			switch ($result['state']) {
 				case 'authorized':
 					$this->set_authorized_status( $order );
@@ -1336,7 +1346,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				    }
 
 				    $order->set_transaction_id( $result['transaction'] );
-				    $order->update_status( 'on-hold', __( 'Payment authorized.', 'woocommerce-gateway-reepay-checkout' ) );
+				    //$order->update_status( 'on-hold', __( 'Payment authorized.', 'woocommerce-gateway-reepay-checkout' ) );
+				    $this->set_authorized_status( $order );
 				    update_post_meta( $order->get_id(), 'reepay_charge', '0' );
 				    break;
 			    case 'settled':

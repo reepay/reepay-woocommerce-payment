@@ -480,6 +480,20 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 				return json_decode($body, true);
 			case 4:
 			case 5:
+				if ( mb_strpos( $body, 'Request rate limit exceeded', 0, 'UTF-8' ) !== false ) {
+					global $request_retry;
+					if ($request_retry) {
+						throw new Exception( 'Reepay: Request rate limit exceeded' );
+					}
+
+					sleep(10);
+					$request_retry = true;
+					$result = $this->request($method, $url, $params);
+					$request_retry = false;
+
+					return  $result;
+				}
+
 				throw new Exception(sprintf('API Error: %s. HTTP Code: %s', $body, $info['http_code']));
 			default:
 				throw new Exception(sprintf('Invalid HTTP Code: %s', $info['http_code']));
