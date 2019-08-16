@@ -1037,9 +1037,14 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	public function add_subscription_payment_meta( $payment_meta, $subscription ) {
 		$reepay_token = get_post_meta( $subscription->get_id(), '_reepay_token', true );
 
+		// If token wasn't stored in Subscription
+		if ( empty( $reepay_token ) ) {
+			$reepay_token = get_post_meta( $subscription->get_parent()->get_id(), '_reepay_token', true );
+        }
+
 		$payment_meta[$this->id] = array(
 			'post_meta' => array(
-				'reepay_token' => array(
+				'_reepay_token' => array(
 					'value' => $reepay_token,
 					'label' => 'Reepay Token',
 				)
@@ -1062,11 +1067,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 */
 	public function validate_subscription_payment_meta( $payment_method_id, $payment_meta, $subscription ) {
 		if ( $payment_method_id === $this->id ) {
-			if ( empty( $payment_meta['post_meta']['reepay_token']['value'] ) ) {
+			if ( empty( $payment_meta['post_meta']['_reepay_token']['value'] ) ) {
 				throw new Exception( 'A "Reepay Token" value is required.' );
 			}
 
-			$tokens = explode( ',', $payment_meta['post_meta']['reepay_token']['value'] );
+			$tokens = explode( ',', $payment_meta['post_meta']['_reepay_token']['value'] );
 			if ( count( $tokens ) > 1 ) {
 				throw new Exception( 'Only one "Reepay Token" is allowed.' );
 			}
@@ -1096,7 +1101,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 */
 	public function save_subscription_payment_meta( $subscription, $meta_table, $meta_key, $meta_value ) {
 		if ( $subscription->get_payment_method() === $this->id ) {
-			if ( $meta_table === 'reepay_meta' && $meta_key === 'token_id' ) {
+			if ( $meta_table === 'post_meta' && $meta_key === '_reepay_token' ) {
 				// Add tokens
 				$tokens = explode( ',', $meta_value );
 				foreach ( $tokens as $reepay_token ) {
