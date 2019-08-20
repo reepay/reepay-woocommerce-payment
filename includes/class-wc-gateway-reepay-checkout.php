@@ -798,10 +798,10 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 
 			switch ($result['state']) {
 				case 'authorized':
-					$this->set_authorized_status( $order );
+					//$this->set_authorized_status( $order );
 					break;
 				case 'settled':
-					$order->payment_complete();
+					//$order->payment_complete();
 					break;
 				default:
 					// @todo Order failed?
@@ -809,7 +809,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		}
 
 		// Lock payment confirmation
-		update_post_meta( $order->get_id(), '_reepay_payment_confirmed', 1 );
+		//update_post_meta( $order->get_id(), '_reepay_payment_confirmed', 1 );
 	}
 
 	/**
