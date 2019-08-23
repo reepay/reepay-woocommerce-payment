@@ -25,7 +25,7 @@ gulp.task('css:build:watch', function () {
 });
 
 gulp.task('js:build', function () {
-    return gulp.src('./assets/js/*.js', '!./assets/js/*.min.js')
+    return gulp.src(['./assets/js/*.js', '!./assets/js/*.min.js'])
         .pipe(sourcemaps.init())
         .pipe(uglify())
         .pipe(rename(function (path) {

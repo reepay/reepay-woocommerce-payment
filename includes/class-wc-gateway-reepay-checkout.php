@@ -303,15 +303,57 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 * @return void
 	 */
 	public function admin_options() {
+		// Check that WebHook was installed
+		$token = $this->test_mode ? md5( $this->private_key_test ) : md5( $this->private_key );
+
 		wc_get_template(
 			'admin/admin-options.php',
 			array(
 				'gateway' => $this,
+                'webhook_installed' => get_option( 'woocommerce_reepay_webhook_' . $token ) === 'installed'
 			),
 			'',
 			dirname( __FILE__ ) . '/../templates/'
 		);
 	}
+
+	/**
+	 * Processes and saves options.
+	 * If there is an error thrown, will continue to save and validate fields, but will leave the erroring field out.
+	 *
+	 * @return bool was anything saved?
+	 */
+	public function process_admin_options() {
+		$result = parent::process_admin_options();
+
+		// Reload settings
+		$this->init_settings();
+		$this->private_key      = isset( $this->settings['private_key'] ) ? $this->settings['private_key'] : $this->private_key;
+		$this->private_key_test = isset( $this->settings['private_key_test'] ) ? $this->settings['private_key_test'] : $this->private_key_test;
+		$this->test_mode        = isset( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $this->test_mode;
+
+		// Check that WebHook was installed
+		$token = $this->test_mode ? md5( $this->private_key_test ) : md5( $this->private_key );
+
+		// Install WebHook
+		if ( get_option( 'woocommerce_reepay_webhook_' . $token ) !== 'installed' ) {
+			try {
+				$data = array(
+					'urls' => array( WC()->api_request_url( get_class( $this ) ) ),
+					'disabled' => false,
+				);
+				$result = $this->request('PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data);
+				$this->log( sprintf( 'WebHook is successfully created: %s', var_export( $result, true ) ) );
+				update_option( 'woocommerce_reepay_webhook_' . $token, 'installed' );
+				WC_Admin_Settings::add_message( __( 'Reepay: WebHook is successfully created', 'woocommerce-gateway-reepay-checkout' ) );
+			} catch ( Exception $e ) {
+				$this->log( sprintf( 'WebHook creation is failed: %s', var_export( $result, true ) ) );
+				WC_Admin_Settings::add_error( sprintf( __( 'Reepay: WebHook creation is failed: %s', 'woocommerce-gateway-reepay-checkout' ), var_export( $result, true ) ) );
+			}
+		}
+
+		return $result;
+    }
 
 	/**
 	 * Admin notice warning
@@ -954,6 +996,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
+                case 'customer_payment_method_added':
+	                // @todo
+	                $this->log( sprintf( 'WebHook: TODO: customer_payment_method_added: %s', var_export( $data, true ) ) );
+	                $this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+                    break;
 				default:
 					$this->log( sprintf( 'WebHook: Unknown event type: %s', $data['event_type'] ) );
 			}
