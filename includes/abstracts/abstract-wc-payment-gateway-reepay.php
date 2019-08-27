@@ -398,22 +398,15 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @return WC_Payment_Token_Reepay|false
 	 */
 	public static function get_payment_token( $reepay_token ) {
-		$tokens = WC_Payment_Tokens::get_tokens( array(
-			'gateway_id' => 'reepay_checkout',
-		) );
+		global $wpdb;
 
-		foreach ($tokens as $token) {
-			/** @var  WC_Payment_Token_Reepay $token */
-			if ( $token->get_gateway_id() !== 'reepay_checkout' ) {
-				continue;
-			}
-
-			if ( $token->get_token() === $reepay_token ) {
-				return $token;
-			}
+		$query = "SELECT token_id FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE token = '%s';";
+		$token_id = $wpdb->get_var( $wpdb->prepare( $query, $reepay_token ) );
+		if ( ! $token_id ) {
+			return false;
 		}
 
-		return false;
+		return WC_Payment_Tokens::get( $token_id );
 	}
 
 	/**
