@@ -639,9 +639,16 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				return false;
 			}
 
-			// Charge payment
-			if ( true !== ( $result = $this->reepay_charge( $order, $token, $order->get_total() ) ) ) {
-				wc_add_notice( $result, 'error' );
+			if ( abs( $order->get_total() ) < 0.01 ) {
+			    // Don't charge payment if zero amount
+				$order->payment_complete();
+			} else {
+				// Charge payment
+				if ( true !== ( $result = $this->reepay_charge( $order, $token, $order->get_total() ) ) ) {
+					wc_add_notice( $result, 'error' );
+
+					return false;
+				}
             }
 
 			try {
