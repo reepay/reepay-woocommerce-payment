@@ -72,7 +72,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 * Save CC
 	 * @var string
 	 */
-	public $save_cc = 'no';
+	public $save_cc = 'yes';
 
 	/**
 	 * Init
