@@ -802,7 +802,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 */
 	public static function wcs_is_payment_change() {
 		return class_exists( 'WC_Subscriptions_Change_Payment_Gateway', FALSE ) &&
-		       WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
+			   WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
 	}
 
 	/**

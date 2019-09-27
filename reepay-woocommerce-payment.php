@@ -72,14 +72,14 @@ class WC_ReepayCheckout {
 		add_action( 'admin_menu', array( &$this, 'admin_menu' ), 99 );
 	}
 
-    /**
-   	 * Install
-   	 */
-   	public static function install() {
-   		if ( ! get_option( 'woocommerce_reepay_version' ) ) {
-   			add_option( 'woocommerce_reepay_version', self::$db_version );
-   		}
-   	}
+	/**
+	 * Install
+	 */
+	public static function install() {
+		if ( ! get_option( 'woocommerce_reepay_version' ) ) {
+			add_option( 'woocommerce_reepay_version', self::$db_version );
+		}
+	}
 
 	public function includes() {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-order.php' );
