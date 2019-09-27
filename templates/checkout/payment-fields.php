@@ -11,15 +11,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 <?php $gateway->logos = array_filter((array) $gateway->logos, 'strlen'); ?>
 <?php if ( count( $gateway->logos ) > 0 ): ?>
-    <ul class="reepay-logos">
+	<ul class="reepay-logos">
 		<?php foreach ( $gateway->logos as $logo ): ?>
-            <li class="reepay-logo">
+			<li class="reepay-logo">
 				<?php
 				$image_url = plugins_url( '/assets/images/' . $logo . '.png', dirname( __FILE__ ) . '/../../../' );
 				$method    = $gateway->form_fields['logos']['options'][$logo];
 				?>
-                <img src="<?php echo esc_url( $image_url ) ?>" alt="<?php echo esc_html( sprintf( __( 'Pay with %s on Reepay', 'woocommerce-gateway-reepay-checkout' ), $method ) ); ?>">
-            </li>
+				<img src="<?php echo esc_url( $image_url ) ?>" alt="<?php echo esc_html( sprintf( __( 'Pay with %s on Reepay', 'woocommerce-gateway-reepay-checkout' ), $method ) ); ?>">
+			</li>
 		<?php endforeach; ?>
-    </ul>
+	</ul>
 <?php endif; ?>

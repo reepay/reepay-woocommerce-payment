@@ -39,7 +39,7 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC
 		<?php echo esc_html( $this->get_meta('masked_card') ); ?>
 		<?php echo esc_html( $this->get_expiry_month() . '/' . substr( $this->get_expiry_year(), 2 ) ); ?>
 
-        <?php
+		<?php
 		$display = ob_get_contents();
 		ob_end_clean();
 		return $display;
@@ -95,21 +95,21 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC
 	 * @return boolean True if the token is default
 	 */
 	public function is_default() {
-	    // Mark Method as Checked on "Payment Change" page
+		// Mark Method as Checked on "Payment Change" page
 		if ( WC_Gateway_Reepay_Checkout::wcs_is_payment_change() &&
-             isset( $_GET['change_payment_method'] ) &&
-             abs( $_GET['change_payment_method'] ) > 0 )
+			 isset( $_GET['change_payment_method'] ) &&
+			 abs( $_GET['change_payment_method'] ) > 0 )
 		{
-		    $subscription = wcs_get_subscription( $_GET['change_payment_method'] );
+			$subscription = wcs_get_subscription( $_GET['change_payment_method'] );
 			$tokens = $subscription->get_payment_tokens();
 			foreach ( $tokens as $token_id ) {
-			    if ( $this->get_id() == $token_id ) {
-			        return true;
-                }
-            }
+				if ( $this->get_id() == $token_id ) {
+					return true;
+				}
+			}
 
-            return false;
-        }
+			return false;
+		}
 
 		return parent::is_default();
 	}
@@ -136,9 +136,9 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC
 	}
 
 	/**
-     * Controls the output for credit cards on the my account page.
+	 * Controls the output for credit cards on the my account page.
 	 * @param $method
-     * @return void
+	 * @return void
 	 */
 	public static function wc_account_payment_methods_column_method( $method ) {
 		if ( in_array( $method['method']['gateway'], WC_ReepayCheckout::PAYMENT_METHODS ) ) {
@@ -148,7 +148,7 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC
 		}
 
 		// Default output
-        // @see woocommerce/myaccount/payment-methods.php
+		// @see woocommerce/myaccount/payment-methods.php
 		if ( ! empty( $method['method']['last4'] ) ) {
 			/* translators: 1: credit card type 2: last 4 digits */
 			echo sprintf( __( '%1$s ending in %2$s', 'woocommerce' ), esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) ), esc_html( $method['method']['last4'] ) );
@@ -158,7 +158,7 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC
 	}
 
 	/**
-     * Fix html on Payment methods list
+	 * Fix html on Payment methods list
 	 * @param string $html
 	 * @param WC_Payment_Token $token
 	 * @param WC_Payment_Gateway $gateway
