@@ -26,6 +26,9 @@ class WC_ReepayCheckout {
 	 * Constructor
 	 */
 	public function __construct() {
+		// Activation
+		register_activation_hook( __FILE__, __CLASS__ . '::install' );
+
 		// Actions
 		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
 		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
@@ -68,6 +71,15 @@ class WC_ReepayCheckout {
 		// Add admin menu
 		add_action( 'admin_menu', array( &$this, 'admin_menu' ), 99 );
 	}
+
+    /**
+   	 * Install
+   	 */
+   	public static function install() {
+   		if ( ! get_option( 'woocommerce_reepay_version' ) ) {
+   			add_option( 'woocommerce_reepay_version', self::$db_version );
+   		}
+   	}
 
 	public function includes() {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-order.php' );
@@ -371,14 +383,14 @@ class WC_ReepayCheckout {
 	public static function upgrade_notice() {
 		if ( current_user_can( 'update_plugins' ) ) {
 			?>
-            <div id="message" class="error">
-                <p>
+			<div id="message" class="error">
+				<p>
 					<?php
 					echo esc_html__( 'Warning! WooCommerce Reepay Checkout plugin requires to update the database structure.', 'woocommerce-gateway-reepay-checkout' );
 					echo ' ' . sprintf( esc_html__( 'Please click %s here %s to start upgrade.', 'woocommerce-gateway-reepay-checkout' ), '<a href="' . esc_url( admin_url( 'admin.php?page=wc-reepay-upgrade' ) ) . '">', '</a>' );
 					?>
-                </p>
-            </div>
+				</p>
+			</div>
 			<?php
 		}
 	}
