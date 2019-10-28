@@ -21,7 +21,7 @@ if ( ! function_exists( 'wcs_get_users_subscriptions' ) ) {
 // Gateway
 $gateway = new WC_Gateway_Reepay_Checkout();
 
-$log->add( $handler, 'Start upgrade....' );
+$log->add( $handler, sprintf( 'Start upgrade %s....', basename( __FILE__ ) ) );
 
 try {
 	// Load Subscriptions
@@ -49,20 +49,20 @@ try {
 		$token_id = get_post_meta( $subscription->get_id(), '_reepay_token_id', true );
 		if ( empty( $token_id ) ) {
 			update_post_meta( $subscription->get_id(), '_reepay_token_id', $token->get_id() );
-			$log->add( $handler, sprintf( '[INFO] Subscription #%s. Token ID is filled.', $subscription->get_id() ) );
+			$log->add( $handler, sprintf( '[SUCCESS] Subscription #%s. Token ID was filled.', $subscription->get_id() ) );
 		}
 
 		// Check Token
 		$reepay_token = get_post_meta( $subscription->get_id(), '_reepay_token', true );
 		if ( empty( $reepay_token ) ) {
 			update_post_meta( $subscription->get_id(), '_reepay_token', $token->get_token() );
-			$log->add( $handler, sprintf( '[INFO] Subscription #%s. Token is filled.', $subscription->get_id() ) );
+			$log->add( $handler, sprintf( '[SUCCESS] Subscription #%s. Token was filled.', $subscription->get_id() ) );
 		}
 	}
 } catch (Exception $e) {
-	$log->add( $handler, sprintf( '[ERROR] Upgrade failed. Details: %s. %s', $e->getMessage(), $e->getTraceAsString() ) );
+	$log->add( $handler, sprintf( '[ERROR] Upgrade is failed. Details: %s. %s', $e->getMessage(), $e->getTraceAsString() ) );
 
-	throw new Exception( 'Upgrade failed. Please check logs.' );
+	throw new Exception( 'Upgrade is failed. Please check logs.' );
 }
 
 $log->add( $handler, 'Upgrade has been completed!' );

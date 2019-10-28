@@ -21,7 +21,7 @@ if ( ! function_exists( 'wcs_get_users_subscriptions' ) ) {
 // Gateway
 $gateway = new WC_Gateway_Reepay_Checkout();
 
-$log->add( $handler, 'Start upgrade....' );
+$log->add( $handler, sprintf( 'Start upgrade %s....', basename( __FILE__ ) ) );
 
 // Load Subscriptions
 $subscriptions = array();
