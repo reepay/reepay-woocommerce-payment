@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WC_ReepayCheckout {
 	const PAYMENT_METHODS = array('reepay_token' , 'reepay_checkout');
 
-	public static $db_version = '1.2.2';
+	public static $db_version = '1.2.3';
 
 	/**
 	 * Constructor

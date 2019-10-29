@@ -14,7 +14,7 @@ $handler = 'wc-reepay-update';
 
 // Preliminary checking
 if ( ! function_exists( 'wcs_get_users_subscriptions' ) ) {
-	$log->add( $handler, '[INFO] WooCommerce Subscription don\'t installed' );
+	$log->add( $handler, '[INFO] WooCommerce Subscription is not installed' );
 	return;
 }
 
