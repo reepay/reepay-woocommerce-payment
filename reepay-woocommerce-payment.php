@@ -3,7 +3,7 @@
  * Plugin Name: WooCommerce Reepay Checkout Gateway
  * Description: Provides a Payment Gateway through Reepay for WooCommerce.
  * Author: AAIT
- * Version: 1.1.16
+ * Version: 1.1.17
  * Text Domain: woocommerce-gateway-reepay-checkout
  * Domain Path: /languages
  * WC requires at least: 3.0.0
