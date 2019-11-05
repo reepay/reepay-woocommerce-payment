@@ -1,10 +1,8 @@
 <?php
 /*
  * Plugin Name: WooCommerce Reepay Checkout Gateway
- * Plugin URI: #
  * Description: Provides a Payment Gateway through Reepay for WooCommerce.
  * Author: AAIT
- * Author URI: #
  * Version: 1.1.16
  * Text Domain: woocommerce-gateway-reepay-checkout
  * Domain Path: /languages
