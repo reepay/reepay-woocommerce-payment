@@ -1,11 +1,9 @@
 <?php
 /*
  * Plugin Name: WooCommerce Reepay Checkout Gateway
- * Plugin URI: #
  * Description: Provides a Payment Gateway through Reepay for WooCommerce.
  * Author: AAIT
- * Author URI: #
- * Version: 1.1.16
+ * Version: 1.1.17
  * Text Domain: woocommerce-gateway-reepay-checkout
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -20,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WC_ReepayCheckout {
 	const PAYMENT_METHODS = array('reepay_token' , 'reepay_checkout');
 
-	public static $db_version = '1.2.2';
+	public static $db_version = '1.2.3';
 
 	/**
 	 * Constructor

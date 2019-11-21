@@ -125,6 +125,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
         }
 
 		add_action( 'admin_notices', array( $this, 'admin_notice_warning' ) );
+		
+		add_action( 'admin_notices', array( $this, 'general_admin_notice') );
 
 		// JS Scrips
 		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
@@ -213,36 +215,26 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			'title'          => array(
 				'title'       => __( 'Title', 'woocommerce-gateway-reepay-checkout' ),
 				'type'        => 'text',
-				'description' => __( 'This controls the title which the user sees during checkout.', 'woocommerce-gateway-reepay-checkout' ),
+				'description' => __( 'This controls the title which the user sees during checkout', 'woocommerce-gateway-reepay-checkout' ),
 				'default'     => __( 'Reepay Checkout', 'woocommerce-gateway-reepay-checkout' )
 			),
 			'description'    => array(
 				'title'       => __( 'Description', 'woocommerce-gateway-reepay-checkout' ),
 				'type'        => 'text',
-				'description' => __( 'This controls the description which the user sees during checkout.', 'woocommerce-gateway-reepay-checkout' ),
+				'description' => __( 'This controls the description which the user sees during checkout', 'woocommerce-gateway-reepay-checkout' ),
 				'default'     => __( 'Reepay Checkout', 'woocommerce-gateway-reepay-checkout' ),
 			),
 			'private_key' => array(
-				'title'       => __( 'Private key', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Live Private Key', 'woocommerce-gateway-reepay-checkout' ),
 				'type'        => 'text',
-				'description' => __( 'Private key', 'woocommerce-gateway-reepay-checkout' ),
+				'description' => __( 'Insert your private key from your live account', 'woocommerce-gateway-reepay-checkout' ),
 				'default'     => $this->private_key
 			),
 			'private_key_test' => array(
-				'title'       => __( 'Private key Test', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Test Private Key', 'woocommerce-gateway-reepay-checkout' ),
 				'type'        => 'text',
-				'description' => __( 'Private key Test', 'woocommerce-gateway-reepay-checkout' ),
+				'description' => __( 'Insert your private key from your Reepay test account', 'woocommerce-gateway-reepay-checkout' ),
 				'default'     => $this->private_key_test
-			),
-			'payment_type' => array(
-				'title'       => __( 'Payment Type', 'woocommerce-gateway-reepay-checkout' ),
-				'description'    => __( 'Payment Type', 'woocommerce-gateway-reepay-checkout' ),
-				'type'        => 'select',
-				'options'     => array(
-					self::METHOD_WINDOW  => 'Window',
-					self::METHOD_OVERLAY => 'Overlay',
-				),
-				'default'     => $this->payment_type
 			),
 			'test_mode'       => array(
 				'title'   => __( 'Test Mode', 'woocommerce-gateway-reepay-checkout' ),
@@ -250,14 +242,25 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				'label'   => __( 'Enable Test Mode', 'woocommerce-gateway-reepay-checkout' ),
 				'default' => $this->test_mode
 			),
+			'payment_type' => array(
+				'title'       => __( 'Payment Window Display', 'woocommerce-gateway-reepay-checkout' ),
+				'description'    => __( 'Choose between a redirect window or a overlay window', 'woocommerce-gateway-reepay-checkout' ),
+				'type'        => 'select',
+				'options'     => array(
+					self::METHOD_WINDOW  => 'Window',
+					self::METHOD_OVERLAY => 'Overlay',
+				),
+				'default'     => $this->payment_type
+			),
 			'settle'       => array(
-				'title'   => __( 'Capture automatically', 'woocommerce-gateway-reepay-checkout' ),
+				'title'   => __( 'Instant Settle', 'woocommerce-gateway-reepay-checkout' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Capture automatically', 'woocommerce-gateway-reepay-checkout' ),
+				'label'   => __( 'Enable instant settle', 'woocommerce-gateway-reepay-checkout' ),
+				'description'    => __( 'Instant Settle will charge your customers right away', 'woocommerce-gateway-reepay-checkout' ),
 				'default' => $this->settle
 			),
 			'language'     => array(
-				'title'       => __( 'Language', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Language In Payment Window', 'woocommerce-gateway-reepay-checkout' ),
 				'type'        => 'select',
 				'options'     => array(
 					''       => __( 'Detect Automatically', 'woocommerce-gateway-reepay-checkout' ),
@@ -286,8 +289,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				'default' => $this->debug
 			),
 			'logos'             => array(
-				'title'          => __( 'Payment logos', 'woocommerce-gateway-reepay-checkout' ),
-				'description'    => __( 'Payment logos on checkout', 'woocommerce-gateway-reepay-checkout' ),
+				'title'          => __( 'Payment Logos', 'woocommerce-gateway-reepay-checkout' ),
+				'description'    => __( 'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Reepay Dashboard', 'woocommerce-gateway-reepay-checkout' ),
 				'type'           => 'multiselect',
 				'css'            => 'height: 250px',
 				'options'        => array(
@@ -310,7 +313,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			'logo_height'          => array(
 				'title'       => __( 'Logo Height', 'woocommerce-gateway-reepay-checkout' ),
 				'type'        => 'text',
-				'description' => __( 'Set Logo height. For example, 25px', 'woocommerce-gateway-reepay-checkout' ),
+				'description' => __( 'Set the Logo height in pixels', 'woocommerce-gateway-reepay-checkout' ),
 				'default'     => ''
 			),
 		);
@@ -388,6 +391,31 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			);
 		}
 	}
+
+	function general_admin_notice(){
+		wp_register_style( 'style',  plugin_dir_url( __FILE__ ) . '../assets/css/style.min.css' );
+		wp_enqueue_style( 'style' );
+		wp_register_script( 'js',  plugin_dir_url( __FILE__ ) . '../assets/js/noticeVideo.min.js' );
+    	wp_enqueue_script( 'js' );
+		
+		global $pagenow;
+   		if ( $_GET['page'] == 'wc-settings' && $_GET['tab'] == 'checkout' && $_GET['section'] == 'reepay_checkout' )  {
+			echo 	'
+					<div class="notice notice-info">
+						<p>Dette er dine genrelle indstilinger. Her kan du ændre dit overordnede navn på dit website, dit websites URL, tidszone og meget mere.
+							<a href="javascript:showYoutubeVideo()">Reepay Youtube Guide</a>
+						</p>
+					</div>
+					
+					<div id="youtubeWrapper" class="youtubeWrapper" onclick="hideYoutubeVideo()">
+						<div id="youtubeGuide" class="invisible container">
+							<iframe src="https://www.youtube.com/embed/pi3Fm3mGS-4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="video"></iframe>
+						</div>
+					</div>
+					 ';
+		}			 
+	}
+
 
 	/**
 	 * payment_scripts function.
@@ -1572,6 +1600,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 
 		exit();
 	}
+	
 }
 
 // Register Gateway

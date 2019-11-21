@@ -14,14 +14,14 @@ $handler = 'wc-reepay-update';
 
 // Preliminary checking
 if ( ! function_exists( 'wcs_get_users_subscriptions' ) ) {
-	$log->add( $handler, '[INFO] WooCommerce Subscription don\'t installed' );
+	$log->add( $handler, '[INFO] WooCommerce Subscription is not installed' );
 	return;
 }
 
 // Gateway
 $gateway = new WC_Gateway_Reepay_Checkout();
 
-$log->add( $handler, 'Start upgrade....' );
+$log->add( $handler, sprintf( 'Start upgrade %s....', basename( __FILE__ ) ) );
 
 // Load Subscriptions
 $subscriptions = array();
