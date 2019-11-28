@@ -882,7 +882,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @return string
 	 */
 	public function get_order_handle( $order ) {
-		return apply_filters( 'reepay_order_handle', $order->get_id(), $order );
+		return apply_filters( 'reepay_order_handle', null, $order->get_id(), $order );
 	}
 
 	/**
@@ -893,7 +893,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @return bool|string|null
 	 */
 	public function get_orderid_by_handle( $handle ) {
-		return apply_filters( 'reepay_get_order', $handle );
+		return apply_filters( 'reepay_get_order', null, $handle );
 	}
 
 	/**

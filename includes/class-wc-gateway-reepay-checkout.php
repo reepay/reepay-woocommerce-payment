@@ -1282,7 +1282,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 						/** @var WC_Subscription $subscription */
 						$reepay_token = get_post_meta( $subscription->get_id(), '_reepay_token', true );
 						if ( empty( $reepay_token ) ) {
-							$reepay_token = get_post_meta( $subscription->get_parent->get_id(), '_reepay_token', true );
+							$reepay_token = get_post_meta( $subscription->get_parent()->get_id(), '_reepay_token', true );
 						}
 					}
 				}
@@ -1302,6 +1302,13 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			// Validate
 			if ( empty( $token->get_token() ) ) {
 				throw new Exception( 'Payment token is empty' );
+			}
+
+			// Fix the reepay order value to prevent "Invoice already settled"
+			$currently = get_post_meta( $renewal_order->get_id(), '_reepay_order', true );
+			$shouldBe = 'order-' . $renewal_order->get_id();
+			if ( $currently !== $shouldBe ) {
+				update_post_meta( $renewal_order->get_id(), '_reepay_order', $shouldBe );
 			}
 
 			// Charge payment
