@@ -125,8 +125,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
         }
 
 		add_action( 'admin_notices', array( $this, 'admin_notice_warning' ) );
-		
-		add_action( 'admin_notices', array( $this, 'general_admin_notice') );
 
 		// JS Scrips
 		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
@@ -300,6 +298,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					'visa-electron' => __( 'Visa Electron', 'woocommerce-gateway-reepay-checkout' ),
 					'maestro' => __( 'Maestro', 'woocommerce-gateway-reepay-checkout' ),
 					'mobilepay' => __( 'MobilePay Online', 'woocommerce-gateway-reepay-checkout' ),
+					'applepay' => __( 'ApplePay', 'woocommerce-gateway-reepay-checkout' ),
 					'viabill' => __( 'Viabill', 'woocommerce-gateway-reepay-checkout' ),
 					'forbrugsforeningen' => __( 'Forbrugsforeningen', 'woocommerce-gateway-reepay-checkout' ),
 					'amex' => __( 'AMEX', 'woocommerce-gateway-reepay-checkout' ),
@@ -391,31 +390,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			);
 		}
 	}
-
-	function general_admin_notice(){
-		wp_register_style( 'style',  plugin_dir_url( __FILE__ ) . '../assets/css/style.min.css' );
-		wp_enqueue_style( 'style' );
-		wp_register_script( 'js',  plugin_dir_url( __FILE__ ) . '../assets/js/noticeVideo.min.js' );
-    	wp_enqueue_script( 'js' );
-		
-		global $pagenow;
-   		if ( $_GET['page'] == 'wc-settings' && $_GET['tab'] == 'checkout' && $_GET['section'] == 'reepay_checkout' )  {
-			echo 	'
-					<div class="notice notice-info">
-						<p>Dette er dine genrelle indstilinger. Her kan du ændre dit overordnede navn på dit website, dit websites URL, tidszone og meget mere.
-							<a href="javascript:showYoutubeVideo()">Reepay Youtube Guide</a>
-						</p>
-					</div>
-					
-					<div id="youtubeWrapper" class="youtubeWrapper" onclick="hideYoutubeVideo()">
-						<div id="youtubeGuide" class="invisible container">
-							<iframe src="https://www.youtube.com/embed/pi3Fm3mGS-4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="video"></iframe>
-						</div>
-					</div>
-					 ';
-		}			 
-	}
-
 
 	/**
 	 * payment_scripts function.
