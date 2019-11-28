@@ -298,6 +298,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					'visa-electron' => __( 'Visa Electron', 'woocommerce-gateway-reepay-checkout' ),
 					'maestro' => __( 'Maestro', 'woocommerce-gateway-reepay-checkout' ),
 					'mobilepay' => __( 'MobilePay Online', 'woocommerce-gateway-reepay-checkout' ),
+					'applepay' => __( 'ApplePay', 'woocommerce-gateway-reepay-checkout' ),
 					'viabill' => __( 'Viabill', 'woocommerce-gateway-reepay-checkout' ),
 					'forbrugsforeningen' => __( 'Forbrugsforeningen', 'woocommerce-gateway-reepay-checkout' ),
 					'amex' => __( 'AMEX', 'woocommerce-gateway-reepay-checkout' ),
@@ -1573,6 +1574,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 
 		exit();
 	}
+	
 }
 
 // Register Gateway

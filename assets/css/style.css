@@ -1,5 +1,5 @@
 .reepay-logos {
-  display: inline-block; }
+  display: table-cell; }
 
 .reepay-logo {
   float: left;
