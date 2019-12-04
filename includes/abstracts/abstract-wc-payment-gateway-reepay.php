@@ -832,6 +832,20 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 */
 	public function get_customer_handle( $user_id ) {
 		if ( ! $user_id ) {
+			if ( is_admin() ) {
+				if ( session_status() === PHP_SESSION_NONE ) {
+					session_start();
+				}
+
+				$guest_id = isset( $_SESSION['reepay_guest'] ) ? $_SESSION['reepay_guest'] : null;
+				if ( empty( $guest_id ) ) {
+					$guest_id = 'guest-' . wp_generate_password(12, false);
+					$_SESSION['reepay_guest'] = $guest_id;
+				}
+
+				return $guest_id;
+			}
+
 			$guest_id = WC()->session->get( 'reepay_guest' );
 			if ( empty( $guest_id ) ) {
 				$guest_id = WC()->session->generate_customer_id();
