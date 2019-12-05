@@ -802,6 +802,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		$result = $this->request('POST', 'https://checkout-api.reepay.com/v1/session/charge', $params);
 		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
 
+		if ( is_checkout_pay_page() ) {
+		    wp_redirect( $result['url'] );
+		    return;
+        }
+
 		return array(
 			'result'             => 'success',
 			'redirect'           => '#!reepay-checkout',
