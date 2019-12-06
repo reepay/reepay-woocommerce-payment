@@ -846,8 +846,12 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 
 					$result = get_transient( 'reepay_invoice_' . $handle );
 					if ( ! $result ) {
-						$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . wc_clean( $handle ) );
-						set_transient( 'reepay_invoice_' . $handle, $result, 5 * MINUTE_IN_SECONDS );
+						try {
+							$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . wc_clean( $handle ) );
+							set_transient( 'reepay_invoice_' . $handle, $result, 5 * MINUTE_IN_SECONDS );
+						} catch (Exception $e) {
+							//
+						}
 					}
 
 					if ( is_array( $result ) && isset( $result['customer'] ) ) {
