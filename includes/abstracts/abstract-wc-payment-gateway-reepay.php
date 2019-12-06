@@ -832,27 +832,39 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 */
 	public function get_customer_handle( $user_id ) {
 		if ( ! $user_id ) {
-			if ( is_admin() ) {
-				if ( session_status() === PHP_SESSION_NONE ) {
-					session_start();
-				}
-
-				$guest_id = isset( $_SESSION['reepay_guest'] ) ? $_SESSION['reepay_guest'] : null;
-				if ( empty( $guest_id ) ) {
-					$guest_id = 'guest-' . wp_generate_password(12, false);
-					$_SESSION['reepay_guest'] = $guest_id;
-				}
-
-				return $guest_id;
+			if ( session_status() === PHP_SESSION_NONE ) {
+				session_start();
 			}
 
-			$guest_id = WC()->session->get( 'reepay_guest' );
+			// Workaround: Allow to pay exist orders by guests
+			if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) {
+				if ( $order_id = wc_get_order_id_by_order_key( $_GET['key'] ) ) {
+					$order = wc_get_order( $order_id );
+
+					// Get customer handle by order
+	                $handle = $this->get_order_handle( $order );
+
+					$result = get_transient( 'reepay_invoice_' . $handle );
+					if ( ! $result ) {
+						$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . wc_clean( $handle ) );
+						set_transient( 'reepay_invoice_' . $handle, $result, 5 * MINUTE_IN_SECONDS );
+					}
+
+					if ( is_array( $result ) && isset( $result['customer'] ) ) {
+						$guest_id = $result['customer'];
+						//WC()->session->set( 'reepay_guest', $guest_id );
+						$_SESSION['reepay_guest1'] = $guest_id;
+					}
+				}
+            }
+
+			$guest_id = isset( $_SESSION['reepay_guest1'] ) ? $_SESSION['reepay_guest1'] : null;
 			if ( empty( $guest_id ) ) {
-				$guest_id = WC()->session->generate_customer_id();
-				WC()->session->set( 'reepay_guest', $guest_id );
+				$guest_id = 'guest-' . wp_generate_password(12, false);
+				$_SESSION['reepay_guest1'] = $guest_id;
 			}
 
-			return 'guest-' . $guest_id;
+			return $guest_id;
 		}
 
 		$handle = get_user_meta( $user_id, 'reepay_customer_id', TRUE );
