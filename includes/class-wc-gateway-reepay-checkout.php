@@ -805,8 +805,22 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
 
 		if ( is_checkout_pay_page() ) {
-		    wp_redirect( $result['url'] );
-		    return;
+		    if ( $this->payment_type === self::METHOD_OVERLAY ) {
+			    return array(
+				    'result'             => 'success',
+				    'redirect'           => sprintf( '#!reepay-pay?rid=%s&accept_url=%s&cancel_url=%s',
+                        $result['id'],
+                        html_entity_decode( $this->get_return_url( $order ) ),
+                        html_entity_decode( $order->get_cancel_order_url() )
+                    ),
+			    );
+            } else {
+			    return array(
+				    'result'             => 'success',
+				    'redirect'           => $result['url'],
+			    );
+            }
+
         }
 
 		return array(
