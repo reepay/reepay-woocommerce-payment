@@ -959,6 +959,47 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				return;
 			}
 
+			// Get Invoice data
+			try {
+				$invoice_data = $result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice );
+            } catch ( Exception $e ) {
+				$invoice_data = array();
+            }
+
+			// Check if order status was applied
+            if ( in_array( $data['event_type'], [
+	            'invoice_created',
+	            'invoice_authorized',
+	            'invoice_settled',
+	            'invoice_cancelled',
+	            'invoice_refund'
+            ] ) ) {
+	            switch ( $invoice_data['state'] ) {
+		            case 'authorized':
+			            if ( $order->get_status() === REEPAY_STATUS_AUTHORIZED ) {
+				            $this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
+				            http_response_code(200);
+				            return;
+			            }
+			            break;
+		            case 'settled':
+			            if ( $order->get_status() === REEPAY_STATUS_SETTLED ) {
+				            $this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
+				            http_response_code(200);
+				            return;
+			            }
+			            break;
+		            case 'cancelled':
+			            if ( $order->has_status( 'cancelled' )) {
+				            $this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
+				            http_response_code(200);
+				            return;
+			            }
+			            break;
+	            }
+            }
+
+			// Check invoice state
 			switch ( $data['event_type'] ) {
 				case 'invoice_authorized':
 					// Reduce stock
@@ -988,8 +1029,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
 				case 'invoice_refund':
-					$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice );
-					$credit_notes = $result['credit_notes'];
+					$credit_notes = $invoice_data['credit_notes'];
 					foreach ($credit_notes as $credit_note) {
 						// Get registered credit notes
 						$credit_note_ids = get_post_meta( $order->get_id(), '_reepay_credit_note_ids', TRUE );
