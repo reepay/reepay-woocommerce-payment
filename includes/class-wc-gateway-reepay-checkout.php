@@ -980,10 +980,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 						return;
 					}
 
-					// Add transaction ID
-					$order->set_transaction_id( $data['transaction'] );
-					$order->save();
-
 					if ( $order->get_status() === REEPAY_STATUS_AUTHORIZED ) {
 						$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
 						http_response_code( 200 );
@@ -1014,7 +1010,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 						return;
 					}
 
-					// Add transaction ID
+					if ( $order->get_status() === REEPAY_STATUS_SETTLED ) {
+						$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
+						http_response_code( 200 );
+						return;
+					}
+
 					$order->set_transaction_id( $data['transaction'] );
 					$order->save();
 
@@ -1044,9 +1045,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 						return;
 					}
 
-					// Add transaction ID
-					$order->set_transaction_id( $data['transaction'] );
-					$order->save();
+					if ( $order->get_status() === REEPAY_STATUS_SETTLED ) {
+						$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
+						http_response_code( 200 );
+						return;
+					}
 
 					if ( $order->has_status( 'cancelled' ) ) {
 						$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
@@ -1123,9 +1126,9 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					try {
 						// Get Order by handle
 						$order = $this->get_order_by_handle( $data['invoice'] );
-					} catch ( Exception $e ) {
+                    } catch ( Exception $e ) {
 						$this->log( sprintf( 'WebHook: %s', $e->getMessage() ) );
-					}
+                    }
 
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
