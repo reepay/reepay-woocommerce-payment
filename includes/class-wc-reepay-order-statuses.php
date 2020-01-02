@@ -59,6 +59,11 @@ class WC_Reepay_Order_Statuses {
 			$this,
 			'is_paid'
 		), 10, 2 );
+
+		add_filter( 'woocommerce_cancel_unpaid_order', array(
+			$this,
+			'cancel_unpaid_order'
+		), 10, 3 );
 	}
 
 	/**
@@ -407,6 +412,23 @@ class WC_Reepay_Order_Statuses {
 		}
 
 		return $is_paid;
+	}
+
+	/**
+	 * Disable pending cancellation for Reepay Orders
+	 *
+	 * @param bool $is_cancel
+	 * @param bool $is_checkout
+	 * @param WC_Order $order
+	 *
+	 * @return bool
+	 */
+	public function cancel_unpaid_order( $is_cancel, $is_checkout, $order ) {
+		if ( in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS ) ) {
+			$is_cancel = false;
+		}
+
+		return $is_cancel;
 	}
 
 }
