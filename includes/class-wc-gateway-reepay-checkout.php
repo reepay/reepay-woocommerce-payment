@@ -121,8 +121,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 
 		// Disable "Add payment method" if the CC saving is disabled
 		if ( $this->save_cc !== 'yes' && ($key = array_search('add_payment_method', $this->supports)) !== false ) {
-            unset($this->supports[$key]);
-        }
+			unset($this->supports[$key]);
+		}
 
 		add_action( 'admin_notices', array( $this, 'admin_notice_warning' ) );
 
@@ -447,8 +447,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		);
 
 		if ( ( $this->save_cc === 'yes' && ! is_add_payment_method_page() ) ||
-             ( self::wcs_cart_have_subscription() || self::wcs_is_payment_change() )
-        ):
+			 ( self::wcs_cart_have_subscription() || self::wcs_is_payment_change() )
+		):
 			$this->tokenization_script();
 			$this->saved_payment_methods();
 			$this->save_payment_method_checkbox();
@@ -563,13 +563,13 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 */
 	public function process_payment( $order_id ) {
 		$order           = wc_get_order( $order_id );
-        $token_id        = 'new';
-        $maybe_save_card = false;
+		$token_id        = 'new';
+		$maybe_save_card = false;
 
 		if ( $this->save_cc === 'yes' ) {
-            $token_id        = isset( $_POST['wc-reepay_checkout-payment-token'] ) ? wc_clean( $_POST['wc-reepay_checkout-payment-token'] ) : 'new';
-    		$maybe_save_card = isset( $_POST['wc-reepay_checkout-new-payment-method'] ) && (bool) $_POST['wc-reepay_checkout-new-payment-method'];
-        }
+			$token_id        = isset( $_POST['wc-reepay_checkout-payment-token'] ) ? wc_clean( $_POST['wc-reepay_checkout-payment-token'] ) : 'new';
+			$maybe_save_card = isset( $_POST['wc-reepay_checkout-new-payment-method'] ) && (bool) $_POST['wc-reepay_checkout-new-payment-method'];
+		}
 
 		// Switch of Payment Method
 		if ( self::wcs_is_payment_change() ) {
@@ -805,23 +805,23 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
 
 		if ( is_checkout_pay_page() ) {
-		    if ( $this->payment_type === self::METHOD_OVERLAY ) {
-			    return array(
-				    'result'             => 'success',
-				    'redirect'           => sprintf( '#!reepay-pay?rid=%s&accept_url=%s&cancel_url=%s',
-                        $result['id'],
-                        html_entity_decode( $this->get_return_url( $order ) ),
-                        html_entity_decode( $order->get_cancel_order_url() )
-                    ),
-			    );
-            } else {
-			    return array(
-				    'result'             => 'success',
-				    'redirect'           => $result['url'],
-			    );
-            }
+			if ( $this->payment_type === self::METHOD_OVERLAY ) {
+				return array(
+					'result'             => 'success',
+					'redirect'           => sprintf( '#!reepay-pay?rid=%s&accept_url=%s&cancel_url=%s',
+						$result['id'],
+						html_entity_decode( $this->get_return_url( $order ) ),
+						html_entity_decode( $order->get_cancel_order_url() )
+					),
+				);
+			} else {
+				return array(
+					'result'             => 'success',
+					'redirect'           => $result['url'],
+				);
+			}
 
-        }
+		}
 
 		return array(
 			'result'             => 'success',
@@ -913,7 +913,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 */
 	public function return_handler() {
 		try {
-			// @todo Check 52.18.114.235
 			$raw_body = file_get_contents( 'php://input' );
 			$this->log( sprintf( 'WebHook: Initialized %s from %s', $_SERVER['REQUEST_URI'], $_SERVER['REMOTE_ADDR'] ) );
 			$this->log( sprintf( 'WebHook: Post data: %s', var_export( $raw_body, true ) ) );
@@ -936,72 +935,28 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				throw new Exception( 'Signature verification failed' );
 			}
 
-			if ( ! isset( $data['invoice'] ) ) {
-				throw new Exception( 'Missing Invoice parameter' );
-			}
-
-			$invoice = $data['invoice'];
-
-			// Get Order by handle
-			$order_id = $this->get_orderid_by_handle( $invoice );
-			if ( ! $order_id ) {
-				throw new Exception( sprintf( 'Invoice #%s isn\'t exists in store.', $invoice ) );
-			}
-
-			$order = wc_get_order( $order_id );
-			if ( ! $order ) {
-				throw new Exception( sprintf( 'Order #%s isn\'t exists in store.', $order_id ) );
-			}
-
-			// Check transaction is applied
-			if ( $order->get_transaction_id() === $data['transaction'] ) {
-				$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
-				return;
-			}
-
-			// Get Invoice data
-			try {
-				$invoice_data = $result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice );
-            } catch ( Exception $e ) {
-				$invoice_data = array();
-            }
-
-			// Check if order status was applied
-            if ( in_array( $data['event_type'], [
-	            'invoice_created',
-	            'invoice_authorized',
-	            'invoice_settled',
-	            'invoice_cancelled',
-	            'invoice_refund'
-            ] ) ) {
-	            switch ( $invoice_data['state'] ) {
-		            case 'authorized':
-			            if ( $order->get_status() === REEPAY_STATUS_AUTHORIZED ) {
-				            $this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
-				            http_response_code(200);
-				            return;
-			            }
-			            break;
-		            case 'settled':
-			            if ( $order->get_status() === REEPAY_STATUS_SETTLED ) {
-				            $this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
-				            http_response_code(200);
-				            return;
-			            }
-			            break;
-		            case 'cancelled':
-			            if ( $order->has_status( 'cancelled' )) {
-				            $this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
-				            http_response_code(200);
-				            return;
-			            }
-			            break;
-	            }
-            }
-
 			// Check invoice state
 			switch ( $data['event_type'] ) {
 				case 'invoice_authorized':
+					if ( ! isset( $data['invoice'] ) ) {
+						throw new Exception( 'Missing Invoice parameter' );
+					}
+
+					// Get Order by handle
+					$order = $this->get_order_by_handle( $data['invoice'] );
+
+					// Check transaction is applied
+					if ( $order->get_transaction_id() === $data['transaction'] ) {
+						$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
+						return;
+					}
+
+					if ( $order->get_status() === REEPAY_STATUS_AUTHORIZED ) {
+						$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
+						http_response_code( 200 );
+						return;
+					}
+
 					// Reduce stock
 					$order_stock_reduced = $order->get_meta( '_order_stock_reduced' );
 					if ( ! $order_stock_reduced ) {
@@ -1015,6 +970,25 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
 				case 'invoice_settled':
+					if ( ! isset( $data['invoice'] ) ) {
+						throw new Exception( 'Missing Invoice parameter' );
+					}
+
+					// Get Order by handle
+					$order = $this->get_order_by_handle( $data['invoice'] );
+
+					// Check transaction is applied
+					if ( $order->get_transaction_id() === $data['transaction'] ) {
+						$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
+						return;
+					}
+
+					if ( $order->get_status() === REEPAY_STATUS_SETTLED ) {
+						$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
+						http_response_code( 200 );
+						return;
+					}
+
 					$order->set_transaction_id( $data['transaction'] );
 					$order->save();
 					$order->payment_complete( $data['transaction'] );
@@ -1024,11 +998,50 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
 				case 'invoice_cancelled':
+					if ( ! isset( $data['invoice'] ) ) {
+						throw new Exception( 'Missing Invoice parameter' );
+					}
+
+					// Get Order by handle
+					$order = $this->get_order_by_handle( $data['invoice'] );
+
+					// Check transaction is applied
+					if ( $order->get_transaction_id() === $data['transaction'] ) {
+						$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
+						return;
+					}
+
+					if ( $order->get_status() === REEPAY_STATUS_SETTLED ) {
+						$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
+						http_response_code( 200 );
+						return;
+					}
+
+					if ( $order->has_status( 'cancelled' ) ) {
+						$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
+						http_response_code( 200 );
+						return;
+					}
+
 					$order->update_status( 'cancelled', __( 'Cancelled by WebHook.', 'woocommerce-gateway-reepay-checkout' ) );
 					update_post_meta( $order->get_id(), '_reepay_cancel_transaction', $data['transaction'] );
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
 				case 'invoice_refund':
+					if ( ! isset( $data['invoice'] ) ) {
+						throw new Exception( 'Missing Invoice parameter' );
+					}
+
+					// Get Order by handle
+					$order = $this->get_order_by_handle( $data['invoice'] );
+
+					// Get Invoice data
+					try {
+						$invoice_data = $result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $data['invoice'] );
+					} catch ( Exception $e ) {
+						$invoice_data = [];
+					}
+
 					$credit_notes = $invoice_data['credit_notes'];
 					foreach ($credit_notes as $credit_note) {
 						// Get registered credit notes
@@ -1050,7 +1063,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 						$refund = wc_create_refund( array(
 							'amount'   => $amount,
 							'reason'   => $reason,
-							'order_id' => $order_id
+							'order_id' => $order->get_id()
 						) );
 
 						if ( $refund ) {
@@ -1070,8 +1083,19 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
 				case 'invoice_created':
-					// @todo
-					$this->log( sprintf( 'WebHook: Invoice created: %s', var_export( $invoice, true ) ) );
+					if ( ! isset( $data['invoice'] ) ) {
+						throw new Exception( 'Missing Invoice parameter' );
+					}
+
+					$this->log( sprintf( 'WebHook: Invoice created: %s', var_export( $data['invoice'], true ) ) );
+
+					try {
+						// Get Order by handle
+						$order = $this->get_order_by_handle( $data['invoice'] );
+                    } catch ( Exception $e ) {
+						$this->log( sprintf( 'WebHook: %s', $e->getMessage() ) );
+                    }
+
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
 				case 'customer_created':
@@ -1085,6 +1109,10 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 								$this->log( sprintf( 'WebHook: Customer created: %s', var_export( $customer, true ) ) );
 							}
 						}
+
+						if ( ! $user_id ) {
+							$this->log( sprintf( 'WebHook: Customer doesn\'t exists: %s', var_export( $customer, true ) ) );
+						}
 					}
 
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
@@ -1096,6 +1124,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					break;
 				default:
 					$this->log( sprintf( 'WebHook: Unknown event type: %s', $data['event_type'] ) );
+					throw new Exception( sprintf( 'Unknown event type: %s', $data['event_type'] ) );
 			}
 
 			http_response_code(200);

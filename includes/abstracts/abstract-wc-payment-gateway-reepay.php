@@ -927,6 +927,29 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	}
 
 	/**
+	 * Get Order By Reepay Order Handle.
+	 * @param $handle
+	 *
+	 * @return false|WC_Order
+	 * @throws Exception
+	 */
+	public function get_order_by_handle( $handle ) {
+		// Get Order by handle
+		$order_id = $this->get_orderid_by_handle( $handle );
+		if ( ! $order_id ) {
+			throw new Exception( sprintf( 'Invoice #%s isn\'t exists in store.', $handle ) );
+		}
+
+		// Get Order
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			throw new Exception( sprintf( 'Order #%s isn\'t exists in store.', $order_id ) );
+		}
+
+		return $order;
+	}
+
+	/**
 	 * Get Language
 	 * @return string
 	 */
