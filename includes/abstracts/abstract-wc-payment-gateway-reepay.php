@@ -832,13 +832,43 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 */
 	public function get_customer_handle( $user_id ) {
 		if ( ! $user_id ) {
-			$guest_id = WC()->session->get( 'reepay_guest' );
-			if ( empty( $guest_id ) ) {
-				$guest_id = WC()->session->generate_customer_id();
-				WC()->session->set( 'reepay_guest', $guest_id );
+			if ( session_status() === PHP_SESSION_NONE ) {
+				session_start();
 			}
 
-			return 'guest-' . $guest_id;
+			// Workaround: Allow to pay exist orders by guests
+			if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) {
+				if ( $order_id = wc_get_order_id_by_order_key( $_GET['key'] ) ) {
+					$order = wc_get_order( $order_id );
+
+					// Get customer handle by order
+	                $handle = $this->get_order_handle( $order );
+
+					$result = get_transient( 'reepay_invoice_' . $handle );
+					if ( ! $result ) {
+						try {
+							$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . wc_clean( $handle ) );
+							set_transient( 'reepay_invoice_' . $handle, $result, 5 * MINUTE_IN_SECONDS );
+						} catch (Exception $e) {
+							//
+						}
+					}
+
+					if ( is_array( $result ) && isset( $result['customer'] ) ) {
+						$guest_id = $result['customer'];
+						//WC()->session->set( 'reepay_guest', $guest_id );
+						$_SESSION['reepay_guest1'] = $guest_id;
+					}
+				}
+            }
+
+			$guest_id = isset( $_SESSION['reepay_guest1'] ) ? $_SESSION['reepay_guest1'] : null;
+			if ( empty( $guest_id ) ) {
+				$guest_id = 'guest-' . wp_generate_password(12, false);
+				$_SESSION['reepay_guest1'] = $guest_id;
+			}
+
+			return $guest_id;
 		}
 
 		$handle = get_user_meta( $user_id, 'reepay_customer_id', TRUE );
@@ -882,7 +912,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @return string
 	 */
 	public function get_order_handle( $order ) {
-		return apply_filters( 'reepay_order_handle', $order->get_id(), $order );
+		return apply_filters( 'reepay_order_handle', null, $order->get_id(), $order );
 	}
 
 	/**
@@ -893,7 +923,30 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @return bool|string|null
 	 */
 	public function get_orderid_by_handle( $handle ) {
-		return apply_filters( 'reepay_get_order', $handle );
+		return apply_filters( 'reepay_get_order', null, $handle );
+	}
+
+	/**
+	 * Get Order By Reepay Order Handle.
+	 * @param $handle
+	 *
+	 * @return false|WC_Order
+	 * @throws Exception
+	 */
+	public function get_order_by_handle( $handle ) {
+		// Get Order by handle
+		$order_id = $this->get_orderid_by_handle( $handle );
+		if ( ! $order_id ) {
+			throw new Exception( sprintf( 'Invoice #%s isn\'t exists in store.', $handle ) );
+		}
+
+		// Get Order
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			throw new Exception( sprintf( 'Order #%s isn\'t exists in store.', $order_id ) );
+		}
+
+		return $order;
 	}
 
 	/**
