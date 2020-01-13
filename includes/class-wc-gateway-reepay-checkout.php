@@ -883,31 +883,52 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 
 		// @todo Transaction ID should applied via WebHook
 		if ( ! empty( $_GET['invoice'] ) && $order_id === $this->get_orderid_by_handle( wc_clean( $_GET['invoice'] ) ) ) {
-			try {
-				$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . wc_clean( $_GET['invoice'] ) );
-				$this->log( sprintf( '%s::%s Invoice data %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
-			} catch (Exception $e) {
-				$this->log( sprintf( '%s::%s API Error: %s', __CLASS__, __METHOD__, var_export( $e->getMessage(), true ) ) );
-				return;
-			}
+			// Wait updates by WebHook
+			@set_time_limit( 0 );
+			@ini_set( 'max_execution_time', '0' );
 
-			switch ($result['state']) {
-				case 'authorized':
-					$this->set_authorized_status( $order );
+			$attempts = 0;
+			$status_failback = false;
+			do {
+				usleep( 500 );
+				$attempts++;
+				if ( $attempts > 12 ) {
+					$status_failback = true;
 					break;
-				case 'settled':
-					$order->payment_complete();
-					$order->add_order_note( __( 'Transaction settled.', 'woocommerce-gateway-reepay-checkout' ) );
-					//update_post_meta( $order->get_id(), '_reepay_capture_transaction', $data['transaction'] );
-					break;
-                case 'cancelled':
-	                $order->update_status( 'cancelled', __( 'Cancelled.', 'woocommerce-gateway-reepay-checkout' ) );
-                    break;
-                case 'failed':
-	                $order->update_status( 'failed', __( 'Failed.', 'woocommerce-gateway-reepay-checkout' ) );
-                    break;
-				default:
-					// @todo Order failed?
+				}
+
+				clean_post_cache( $order_id );
+				$order = wc_get_order( $order_id );
+			} while ( $order->has_status( apply_filters( 'woocommerce_default_order_status', 'pending' ) ) );
+
+			// Update order status
+			if ( $status_failback ) {
+				try {
+					$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . wc_clean( $_GET['invoice'] ) );
+					$this->log( sprintf( '%s::%s Invoice data %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
+				} catch (Exception $e) {
+					$this->log( sprintf( '%s::%s API Error: %s', __CLASS__, __METHOD__, var_export( $e->getMessage(), true ) ) );
+					return;
+				}
+
+				switch ($result['state']) {
+					case 'authorized':
+						$this->set_authorized_status( $order );
+						break;
+					case 'settled':
+						$order->payment_complete();
+						$order->add_order_note( __( 'Transaction settled.', 'woocommerce-gateway-reepay-checkout' ) );
+						//update_post_meta( $order->get_id(), '_reepay_capture_transaction', $data['transaction'] );
+						break;
+					case 'cancelled':
+						$order->update_status( 'cancelled', __( 'Cancelled.', 'woocommerce-gateway-reepay-checkout' ) );
+						break;
+					case 'failed':
+						$order->update_status( 'failed', __( 'Failed.', 'woocommerce-gateway-reepay-checkout' ) );
+						break;
+					default:
+						// @todo Order failed?
+				}
 			}
 		}
 
@@ -942,10 +963,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			if ( $check !== $data['signature'] ) {
 				throw new Exception( 'Signature verification failed' );
 			}
-
-			// Wait some time
-			set_time_limit(0);
-			sleep(30);
 
 			// Check invoice state
 			switch ( $data['event_type'] ) {
@@ -1106,9 +1123,9 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					try {
 						// Get Order by handle
 						$order = $this->get_order_by_handle( $data['invoice'] );
-                    } catch ( Exception $e ) {
+					} catch ( Exception $e ) {
 						$this->log( sprintf( 'WebHook: %s', $e->getMessage() ) );
-                    }
+					}
 
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
