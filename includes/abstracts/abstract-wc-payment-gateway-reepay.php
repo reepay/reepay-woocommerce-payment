@@ -941,10 +941,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		}
 
 		// Get Order
-<<<<<<< HEAD
 		clean_post_cache( $order_id );
-=======
->>>>>>> ajour with latest version
 		$order = wc_get_order( $order_id );
 		if ( ! $order ) {
 			throw new Exception( sprintf( 'Order #%s isn\'t exists in store.', $order_id ) );
