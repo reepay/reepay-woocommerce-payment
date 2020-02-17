@@ -125,7 +125,10 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		}
 
 		try {
-			$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle . '/settle' );
+			$params = [
+				'amount' => $amount * 100,
+			];
+			$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle . '/settle', $params );
 		} catch ( Exception $e ) {
 			throw new Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
 		}
