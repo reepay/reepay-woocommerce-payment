@@ -41,7 +41,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 * @var string
 	 */
 	public $settle = array(
-		'online', 'virtual', 'physical', 'recurring'
+		'online_virtual', 'physical', 'recurring'
 	);
 
 	/**
