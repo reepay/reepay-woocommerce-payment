@@ -40,7 +40,9 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 * Settle
 	 * @var string
 	 */
-	public $settle = 'yes';
+	public $settle = array(
+		'online', 'virtual', 'physical', 'recurring'
+	);
 
 	/**
 	 * Debug Mode
@@ -250,12 +252,17 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				),
 				'default'     => $this->payment_type
 			),
-			'settle'       => array(
-				'title'   => __( 'Instant Settle', 'woocommerce-gateway-reepay-checkout' ),
-				'type'    => 'checkbox',
-				'label'   => __( 'Enable instant settle', 'woocommerce-gateway-reepay-checkout' ),
+			'settle'             => array(
+				'title'          => __( 'Instant Settle', 'woocommerce-gateway-reepay-checkout' ),
 				'description'    => __( 'Instant Settle will charge your customers right away', 'woocommerce-gateway-reepay-checkout' ),
-				'default' => $this->settle
+				'type'           => 'multiselect',
+				'css'            => 'height: 150px',
+				'options'        => array(
+					'online_virtual'       => __( 'Instant Settle online / virtualproducts', 'woocommerce-gateway-reepay-checkout' ),
+					'physical'      => __( 'Instant Settle physical  products', 'woocommerce-gateway-reepay-checkout' ),
+					'recurring'      => __( 'Instant Settle recurring (subscription)  products', 'woocommerce-gateway-reepay-checkout' ),
+				),
+				'select_buttons' => TRUE,
 			),
 			'language'     => array(
 				'title'       => __( 'Language In Payment Window', 'woocommerce-gateway-reepay-checkout' ),
@@ -732,11 +739,16 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				'cancel_url'         => $order->get_cancel_order_url()
 			);
 		}
-
+		
+		//
+		// Calculate if the order is to be settled instantly (from products and configuration)
+		//
+		$settleInstant = $this->order_instant_settle($order);
+		
 		// Initialize Payment
 		$params = [
 			'locale' => $this->get_language(),
-			'settle' => $this->settle === 'yes',
+			'settle' => $settleInstant,
 			'recurring' => $maybe_save_card || self::order_contains_subscription( $order ) || self::wcs_is_payment_change(),
 			'order' => [
 				'handle' => $this->get_order_handle( $order ),
@@ -831,6 +843,66 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			'accept_url'         => $this->get_return_url( $order ),
 			'cancel_url'         => $order->get_cancel_order_url()
 		);
+	}
+	
+	/**
+	 * Validates if an order is to be settled instantly based by the order items
+	 * @Param $order - is the WooCommerce order object
+	 * @return bool - set to true if the order is to be settled instantly
+	 */
+	public function order_instant_settle($order) {
+		//
+		// 3 x different states if an order should be settled instant
+		//
+		$orderCanInstantSettle = array(
+			"online_virtual" => true,
+			"physical" => true,
+			"recurring" => true
+		);	
+		
+		//
+		// flag if the product is recurring
+		//
+		$isRecurring = self::order_contains_subscription( $order );		
+		
+		//
+		// Now walk through the order-lines and check per order if it is virtual, downloadable, recurring or physical
+		// if any of the items doesn't match the reepay instant settle configuration, the flag is set as false
+		//
+		foreach ( $order->get_items() as $item ) {
+			$_product = $order->get_product_from_item( $item );				// fetch product details from the order
+			$isVirtual = $_product->is_virtual();							// flag if the product is virtual
+			$isDownload = $_product->is_downloadable();						// flag if the product is downloadable
+			
+			//
+			// Invalidate options if mitch match
+			//
+			if ( $isVirtual && !in_array("online_virtual", $this->settle) ) {
+				$orderCanInstantSettle["online_virtual"] = false;
+				break;
+			} else if ( $isDownload && !in_array("online_virtual", $this->settle) ) {
+				$orderCanInstantSettle["online_virtual"] = false;
+				break;
+			} else if ( $isRecurring && !in_array("recurring", $this->settle) ) {
+				$orderCanInstantSettle["recurring"] = false;
+				break;
+			} else if ( !$isVirtual && !$isDownload && !in_array("physical", $this->settle) ) {
+				$orderCanInstantSettle["physical"] = false;
+				break;
+			}
+		}
+		
+		//
+		// Only instant settle if all variations are true
+		//
+		$res = ((bool) (
+			$orderCanInstantSettle["online_virtual"] && 
+			$orderCanInstantSettle["physical"] && 
+			$orderCanInstantSettle["recurring"]
+		));
+		
+		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, "instant settle: " . var_export($res, true) ) );
+		return $res;
 	}
 
 	/**
@@ -1486,14 +1558,20 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 */
 	protected function reepay_charge( $order, $token, $amount = null )
 	{
+		
 		// @todo Use order lines instead of amount
 		try {
+			//
+			// Calculate if the order is to be instant settled
+			//
+			$instantSettle = order_instant_settle( $order );
+			
 			$params = [
 				'handle' => $this->get_order_handle( $order ),
 				'amount' => round(100 * $amount),
 				'currency' => $order->get_currency(),
 				'source' => $token->get_token(),
-				'settle' => $this->settle === 'yes',
+				'settle' => $instantSettle,
 				'recurring' => $this->order_contains_subscription( $order ),
 				'customer' => [
 					'test' => $this->test_mode === 'yes',
