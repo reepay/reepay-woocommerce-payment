@@ -53,7 +53,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 * @var string
 	 */
 	public $language = 'en_US';
-
+	
 	/**
 	 * Logos
 	 * @var array
@@ -779,6 +779,10 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			'cancel_url' => $order->get_cancel_order_url()
 		];
 
+		if( strtolower( $order->get_payment_method() ) === 'mobilepay_gateway' ){
+			$params['payment_methods'] = ['mobilepay'];
+		}
+		
 		if ($order->needs_shipping_address()) {
 			$params['order']['shipping_address'] = [
 				'attention' => '',
