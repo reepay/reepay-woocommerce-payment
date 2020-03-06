@@ -854,7 +854,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			return;
 		}
 
-		if ( ! $order_id = wc_get_order_id_by_order_key( $_GET['key'] ) ) {
+		if ( ! $order_id = wc_get_order_id_by_order_key( $_GET['key'] ) ) { 
 			return;
 		}
 
@@ -862,7 +862,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			return;
 		}
 
-		if ( $order->get_payment_method() !== $this->id ) {
+		if ( $order->get_payment_method() !== 'reepay_checkout' || $order->get_payment_method() !== 'mobilepay_gateway' ) {
 			return;
 		}
 
