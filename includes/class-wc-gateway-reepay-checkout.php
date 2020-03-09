@@ -53,13 +53,13 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 * @var string
 	 */
 	public $language = 'en_US';
-	
+
 	/**
 	 * Logos
 	 * @var array
 	 */
 	public $logos = array(
-		'dankort', 'visa', 'mastercard', 'visa-electron', 'maestro', 'mobilepay', 'viabill'
+		'dankort', 'visa', 'mastercard', 'visa-electron', 'maestro', 'mobilepay', 'viabill', 'applepay', 'paypal'
 	);
 
 	/**
@@ -125,6 +125,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		}
 
 		add_action( 'admin_notices', array( $this, 'admin_notice_warning' ) );
+		add_action( 'admin_notices', array( $this, 'setup_notice' ) );
 
 		// JS Scrips
 		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
@@ -297,6 +298,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					'mastercard' => __( 'MasterCard', 'woocommerce-gateway-reepay-checkout' ),
 					'visa-electron' => __( 'Visa Electron', 'woocommerce-gateway-reepay-checkout' ),
 					'maestro' => __( 'Maestro', 'woocommerce-gateway-reepay-checkout' ),
+					'paypal' => __( 'Paypal', 'woocommerce-gateway-reepay-checkout' ),
 					'mobilepay' => __( 'MobilePay Online', 'woocommerce-gateway-reepay-checkout' ),
 					'applepay' => __( 'ApplePay', 'woocommerce-gateway-reepay-checkout' ),
 					'viabill' => __( 'Viabill', 'woocommerce-gateway-reepay-checkout' ),
@@ -389,6 +391,35 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				esc_html( $message_href )
 			);
 		}
+	}
+	function setup_notice(){
+		wp_register_style( 'style',  plugin_dir_url( __FILE__ ) . '../assets/css/style.min.css' );
+		wp_enqueue_style( 'style' );
+		wp_register_script( 'js',  plugin_dir_url( __FILE__ ) . '../assets/js/noticeVideo.min.js' );
+    	wp_enqueue_script( 'js' );
+		
+		global $pagenow;
+   		if ( $_GET['page'] == 'wc-settings' && $_GET['tab'] == 'checkout' && $_GET['section'] == 'reepay_checkout' )  {
+			echo 	'
+					<div class="notice notice-info">
+						<p>This is the Reepay plugin settings. First time here? Follow this 
+							<a href="javascript:showYoutubeVideo()">guide</a> 
+							to setup your reepay plugin! 
+						</p>
+					</div>
+					
+					<div id="youtubeWrapper" class="youtubeWrapper" style="
+						visibility: collapse; 
+						position: absolute;
+						z-index: 1;
+						"
+						onclick="hideYoutubeVideo()">
+						<div id="youtubeGuide" class="invisible container">
+							<iframe src="https://www.youtube.com/embed/pi3Fm3mGS-4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="video"></iframe>
+						</div>
+					</div>
+					 ';
+		}			 
 	}
 
 	/**
@@ -779,10 +810,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			'cancel_url' => $order->get_cancel_order_url()
 		];
 
-		if( strtolower( $order->get_payment_method() ) === 'mobilepay_gateway' ){
-			$params['payment_methods'] = ['mobilepay'];
-		}
-		
 		if ($order->needs_shipping_address()) {
 			$params['order']['shipping_address'] = [
 				'attention' => '',
@@ -854,7 +881,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			return;
 		}
 
-		if ( ! $order_id = wc_get_order_id_by_order_key( $_GET['key'] ) ) { 
+		if ( ! $order_id = wc_get_order_id_by_order_key( $_GET['key'] ) ) {
 			return;
 		}
 
@@ -862,7 +889,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			return;
 		}
 
-		if ( $order->get_payment_method() !== 'reepay_checkout' || $order->get_payment_method() !== 'mobilepay_gateway' ) {
+		if ( $order->get_payment_method() !== $this->id ) {
 			return;
 		}
 

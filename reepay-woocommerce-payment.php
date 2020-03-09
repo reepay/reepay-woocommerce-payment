@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 
 class WC_ReepayCheckout {
-	const PAYMENT_METHODS = array('reepay_token' , 'reepay_checkout', 'mobilepay_gateway'); 
+	const PAYMENT_METHODS = array('reepay_token' , 'reepay_checkout');
 
 	public static $db_version = '1.2.3';
 
@@ -124,7 +124,6 @@ class WC_ReepayCheckout {
 		include_once( dirname( __FILE__ ) . '/includes/interfaces/class-wc-payment-gateway-reepay-interface.php' );
 		include_once( dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-payment-gateway-reepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-checkout.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-mobilepay-gateway.php');
 	}
 
 	/**
@@ -167,19 +166,17 @@ class WC_ReepayCheckout {
 		if ( ! isset( $gateways[ $class_name ] ) ) {
 			// Initialize instance
 			if ( $gateway = new $class_name ) {
-				array_push($gateways, $class_name);
+				$gateways[] = $class_name;
 
 				// Register gateway instance
 				add_filter( 'woocommerce_payment_gateways', function ( $methods ) use ( $gateway ) {
 					$methods[] = $gateway;
+
 					return $methods;
 				} );
 			}
 		}
 	}
-
-
-
 
 	/**
 	 * Allow processing/completed statuses for capture
@@ -397,7 +394,5 @@ class WC_ReepayCheckout {
 		}
 	}
 }
-
-
 
 new WC_ReepayCheckout();
