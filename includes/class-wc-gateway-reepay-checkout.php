@@ -125,6 +125,10 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		if ( $this->save_cc !== 'yes' && ($key = array_search('add_payment_method', $this->supports)) !== false ) {
 			unset($this->supports[$key]);
 		}
+		
+		if (!is_array($this->settle)) {
+			$this->settle = array();
+		}
 
 		add_action( 'admin_notices', array( $this, 'admin_notice_warning' ) );
 
@@ -743,7 +747,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		//
 		// Calculate if the order is to be settled instantly (from products and configuration)
 		//
-		$settleInstant = $this->order_instant_settle($order);
+		$instant_settle_ary = $this->order_instant_settle( $order );
 		
 		// Initialize Payment
 		$params = [
@@ -813,6 +817,9 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			}
 		}
 
+		//$this->log( sprintf( '%s::%s Charge params %s', __CLASS__, __METHOD__, var_export( $params, true ) ) );
+		//return;
+		
 		$result = $this->request('POST', 'https://checkout-api.reepay.com/v1/session/charge', $params);
 		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
 
@@ -848,9 +855,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	/**
 	 * Validates if an order is to be settled instantly based by the order items
 	 * @Param $order - is the WooCommerce order object
+	 * @Param $order_settle_amount - is a reference to the variable which will contain the calculated settle amount. That value is used if the entire order cannot be captured
 	 * @return bool - set to true if the order is to be settled instantly
 	 */
-	public function order_instant_settle($order) {
+	public function order_instant_settle( $order ) {
+		$instant_settle = false;
 		//
 		// 3 x different states if an order should be settled instant
 		//
@@ -866,43 +875,77 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		$isRecurring = self::order_contains_subscription( $order );		
 		
 		//
+		// Increment this value with the amount to settle
+		//
+		$instant_settle_amount = 0;
+		
+		//
+		// Total number products
+		//
+		$order_products_count = 0;
+		
+		//
+		//
+		//
+		$instant_settle_products_count = 0;
+		
+		//
 		// Now walk through the order-lines and check per order if it is virtual, downloadable, recurring or physical
 		// if any of the items doesn't match the reepay instant settle configuration, the flag is set as false
 		//
 		foreach ( $order->get_items() as $item ) {
+			$quantity = $item->get_quantity();
 			$_product = $order->get_product_from_item( $item );				// fetch product details from the order
 			$isVirtual = $_product->is_virtual();							// flag if the product is virtual
 			$isDownload = $_product->is_downloadable();						// flag if the product is downloadable
-			
+			$productAmount = ( $quantity * $_product->price * 100 );		// get the product price;
+				
+			//echo "is download: " . $isDownload; exit();
+			//$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, "product: " . var_export($_product, true) ) ); 
+		
 			//
 			// Invalidate options if mitch match
 			//
-			if ( $isVirtual && !in_array("online_virtual", $this->settle) ) {
+			if ( $isVirtual && !in_array("online_virtual", $this->settle ) ) {
 				$orderCanInstantSettle["online_virtual"] = false;
+				$productAmount = 0;
 				break;
-			} else if ( $isDownload && !in_array("online_virtual", $this->settle) ) {
+			} else if ( $isDownload && !in_array("online_virtual", $this->settle ) ) {
 				$orderCanInstantSettle["online_virtual"] = false;
+				$productAmount = 0;
 				break;
-			} else if ( $isRecurring && !in_array("recurring", $this->settle) ) {
+			} else if ( $isRecurring && !in_array( "recurring", $this->settle ) ) {
 				$orderCanInstantSettle["recurring"] = false;
+				$productAmount = 0;
 				break;
-			} else if ( !$isVirtual && !$isDownload && !in_array("physical", $this->settle) ) {
+			} else if ( !$isVirtual && !$isDownload && !in_array( "physical", $this->settle ) ) {
 				$orderCanInstantSettle["physical"] = false;
+				$productAmount = 0;
 				break;
 			}
+			
+			if ($productAmount > 0) $instant_settle_products_count++;
+			$instant_settle_amount += $productAmount;
+			$order_products_count++;
 		}
 		
 		//
 		// Only instant settle if all variations are true
 		//
-		$res = ((bool) (
+		$instant_settle = ((bool) (
 			$orderCanInstantSettle["online_virtual"] && 
 			$orderCanInstantSettle["physical"] && 
 			$orderCanInstantSettle["recurring"]
 		));
 		
-		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, "instant settle: " . var_export($res, true) ) );
-		return $res;
+		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, "instant settle (" . $instant_settle . ") amount: " . $instant_settle_amount . ", order items: " . count( $order->get_items() ) ) ); 
+		
+		return array (
+			"instant_settle" => $instant_settle,
+			"instant_settle_amount" => $instant_settle_amount,
+			"order_products_count" => $order_products_count,
+			"instant_settle_products_count" => $instant_settle_products_count
+		);
 	}
 
 	/**
@@ -964,7 +1007,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			do {
 				usleep( 500 );
 				$attempts++;
-				if ( $attempts > 12 ) {
+				if ( $attempts > 30 ) {
 					$status_failback = true;
 					break;
 				}
@@ -973,8 +1016,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				$order = wc_get_order( $order_id );
 			} while ( $order->has_status( apply_filters( 'woocommerce_default_order_status', 'pending' ) ) );
 
+//$this->process_instant_settle( $order );
+//exit();
 			// Update order status
 			if ( $status_failback ) {
+				$this->log( sprintf( '%s::%s Processing status_fallback ', __CLASS__, __METHOD__ ) );
 				try {
 					$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . wc_clean( $_GET['invoice'] ) );
 					$this->log( sprintf( '%s::%s Invoice data %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
@@ -983,9 +1029,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					return;
 				}
 
+				$this->log( sprintf( '%s::%s status_fallback state %s ', __CLASS__, __METHOD__, $result['state'] ) );
 				switch ($result['state']) {
 					case 'authorized':
 						$this->set_authorized_status( $order );
+						$this->process_instant_settle( $order );
 						break;
 					case 'settled':
 						$order->payment_complete();
@@ -1006,6 +1054,68 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 
 		// Lock payment confirmation
 		//update_post_meta( $order->get_id(), '_reepay_payment_confirmed', 1 );
+	}
+	
+	public function process_instant_settle( $order ) {
+		//
+		// Calculate if the order is to be instant settled
+		//
+		$instant_settle_ary = (object)$this->order_instant_settle( $order );
+		
+		$this->log( sprintf( '%s::%s instant-settle-array calculated %s', __CLASS__, __METHOD__, var_export( $instant_settle_ary, true ) ) );
+		
+		$settle_amount = 0;
+		
+		if ( count( $order->get_items() ) == $instant_settle_ary->instant_settle_products_count ) {
+			$settle_amount = $order->get_total() * 100;
+		} else {
+			$settle_amount = $instant_settle_ary->instant_settle_amount;
+		}
+		
+		$this->log( sprintf( '%s::%s Settle amount %s', __CLASS__, __METHOD__, $settle_amount ) );
+		
+		//
+		// If settle
+		//
+		if ($settle_amount > 0) {
+			$this->log( sprintf( '%s::%s Settle amount towards reepay %s', __CLASS__, __METHOD__, $settle_amount ) );
+			$params = array (
+				"amount" => $settle_amount
+			);
+			//
+			//
+			//
+			try {
+				$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/order-' . $order->get_id() . '/settle', $params );
+				//$this->log( sprintf( '%s::%s Invoice settled success %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
+			} catch (Exception $e) {
+				$this->log( sprintf( '%s::%s API Error: %s', __CLASS__, __METHOD__, var_export( $e->getMessage(), true ) ) );
+				return false;
+			}
+			
+			//
+			// If entire order is settled - go and mark as complete
+			//
+			if ( ( $order->get_total() * 100) == $settle_amount) {
+				//
+				// Log the order has been fully settled
+				//
+				$order->add_order_note( __( 'Transaction settled with amount ' . number_format( $settle_amount / 100, 2, wc_get_price_decimal_separator(), '' ) . '.', 'woocommerce-gateway-reepay-checkout' ) );
+				//
+				// Set the order as settled
+				//
+				// $order->payment_complete();
+			} else {
+				//
+				// Partly settle
+				// Log the amout 
+				//
+				$order->add_order_note( __( 'Transaction partly settled with amount ' . number_format( $settle_amount / 100, 2, wc_get_price_decimal_separator(), '' ) . '.', 'woocommerce-gateway-reepay-checkout' ) );
+			}
+		}
+		
+		//print_r($instant_settle_ary); exit();
+		return true;
 	}
 
 	/**
@@ -1067,6 +1177,9 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					if ( ! $order_stock_reduced ) {
 						wc_reduce_stock_levels( $order->get_id() );
 					}
+					
+					// process instant settle
+					$this->process_instant_settle( $order );
 
 					$this->set_authorized_status( $order );
 
@@ -1096,8 +1209,16 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 						return;
 					}
 
-					$order->payment_complete( $data['transaction'] );
-					$order->add_order_note( __( 'Transaction settled.', 'woocommerce-gateway-reepay-checkout' ) );
+					//
+					// Only complete the order if... partly settle is disabled 
+					//
+					$instant_settle_ary = (object)$this->order_instant_settle( $order );
+					if ( $instant_settle_ary->instant_settle_amount == 0 ) {
+						$order->payment_complete( $data['transaction'] );
+						$order->add_order_note( __( 'Transaction settled.', 'woocommerce-gateway-reepay-checkout' ) );
+					} else {
+						// $order->add_order_note( __( 'Transaction already partly settled.', 'woocommerce-gateway-reepay-checkout' ) );
+					}
 
 					update_post_meta( $order->get_id(), '_reepay_capture_transaction', $data['transaction'] );
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
@@ -1564,14 +1685,14 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			//
 			// Calculate if the order is to be instant settled
 			//
-			$instantSettle = order_instant_settle( $order );
+			//$instant_settle_ary = $this->order_instant_settle( $order );
 			
 			$params = [
 				'handle' => $this->get_order_handle( $order ),
 				'amount' => round(100 * $amount),
 				'currency' => $order->get_currency(),
 				'source' => $token->get_token(),
-				'settle' => $instantSettle,
+				// 'settle' => $instantSettle,
 				'recurring' => $this->order_contains_subscription( $order ),
 				'customer' => [
 					'test' => $this->test_mode === 'yes',
@@ -1641,9 +1762,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					update_post_meta( $order->get_id(), 'reepay_charge', '0' );
 					break;
 				case 'settled':
-					$order->payment_complete( $result['transaction'] );
-					$order->add_order_note( __( 'Transaction settled.', 'woocommerce-gateway-reepay-checkout' ) );
-					update_post_meta( $order->get_id(), 'reepay_charge', '1' );
+					$instant_settle_ary = (object)$this->order_instant_settle( $order );
+					if ($instant_settle_ary->instant_settle_amount == 0) {
+						$order->payment_complete( $result['transaction'] );
+						$order->add_order_note( __( 'Transaction settled.', 'woocommerce-gateway-reepay-checkout' ) );
+						update_post_meta( $order->get_id(), 'reepay_charge', '1' );
+					}
 					break;
 				default:
 					throw new Exception( 'Generic error' );
