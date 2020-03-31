@@ -752,7 +752,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		// Initialize Payment
 		$params = [
 			'locale' => $this->get_language(),
-			'settle' => $settleInstant,
+			//'settle' => $settleInstant,
 			'recurring' => $maybe_save_card || self::order_contains_subscription( $order ) || self::wcs_is_payment_change(),
 			'order' => [
 				'handle' => $this->get_order_handle( $order ),
@@ -1016,8 +1016,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				$order = wc_get_order( $order_id );
 			} while ( $order->has_status( apply_filters( 'woocommerce_default_order_status', 'pending' ) ) );
 
-//$this->process_instant_settle( $order );
-//exit();
 			// Update order status
 			if ( $status_failback ) {
 				$this->log( sprintf( '%s::%s Processing status_fallback ', __CLASS__, __METHOD__ ) );
@@ -1087,7 +1085,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			//
 			try {
 				$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/order-' . $order->get_id() . '/settle', $params );
-				//$this->log( sprintf( '%s::%s Invoice settled success %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
 			} catch (Exception $e) {
 				$this->log( sprintf( '%s::%s API Error: %s', __CLASS__, __METHOD__, var_export( $e->getMessage(), true ) ) );
 				return false;
@@ -1104,7 +1101,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				//
 				// Set the order as settled
 				//
-				// $order->payment_complete();
+				$order->payment_complete();
 			} else {
 				//
 				// Partly settle
@@ -1114,7 +1111,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			}
 		}
 		
-		//print_r($instant_settle_ary); exit();
 		return true;
 	}
 
@@ -1178,10 +1174,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 						wc_reduce_stock_levels( $order->get_id() );
 					}
 					
+					// set order a<s authorized
+					$this->set_authorized_status( $order );
+					
 					// process instant settle
 					$this->process_instant_settle( $order );
-
-					$this->set_authorized_status( $order );
 
 					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 					break;
