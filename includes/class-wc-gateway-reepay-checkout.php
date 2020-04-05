@@ -930,13 +930,10 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		}
 		
 		//
-		// Only instant settle if all variations are true
+		// Only instant settle if online_virtual and physical are true
+		// OR recurring is true
 		//
-		$instant_settle = ((bool) (
-			$orderCanInstantSettle["online_virtual"] && 
-			$orderCanInstantSettle["physical"] && 
-			$orderCanInstantSettle["recurring"]
-		));
+		$instant_settle = ((bool) ( ( $orderCanInstantSettle["online_virtual"] && $orderCanInstantSettle["physical"]) || $orderCanInstantSettle["recurring"] ) );
 		
 		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, "instant settle (" . $instant_settle . ") amount: " . $instant_settle_amount . ", order items: " . count( $order->get_items() ) ) ); 
 		
