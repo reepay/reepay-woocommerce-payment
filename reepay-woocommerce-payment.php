@@ -220,7 +220,7 @@ class WC_ReepayCheckout {
 	 * Add meta boxes in admin
 	 * @return void
 	 */
-	public static function add_meta_boxes() {
+	public function add_meta_boxes() {
 		/*global $post_id;
 		if ( $order = wc_get_order( $post_id ) ) {
 			$payment_method = $order->get_payment_method();
