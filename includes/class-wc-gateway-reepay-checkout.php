@@ -75,6 +75,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 * @var string
 	 */
 	public $save_cc = 'yes';
+	
+	/**
+	 * Skip order lines to Reepay and use order totals instead
+	 */
+	public $skip_order_lines = 0;
 
 	/**
 	 * Init
@@ -120,6 +125,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		$this->debug            = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->logos            = isset( $this->settings['logos'] ) ? $this->settings['logos'] : $this->logos;
 		$this->payment_type     = isset( $this->settings['payment_type'] ) ? $this->settings['payment_type'] : $this->payment_type;
+		$this->skip_order_lines = isset( $this->settings['skip_order_lines'] ) ? $this->settings['skip_order_lines'] : $this->skip_order_lines;
 
 		// Disable "Add payment method" if the CC saving is disabled
 		if ( $this->save_cc !== 'yes' && ($key = array_search('add_payment_method', $this->supports)) !== false ) {
@@ -326,6 +332,16 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				'description' => __( 'Set the Logo height in pixels', 'woocommerce-gateway-reepay-checkout' ),
 				'default'     => ''
 			),
+			'skip_order_lines' => array(
+				'title'       => __( 'Skip order lines', 'woocommerce-gateway-reepay-checkout' ),
+				'description'    => __( 'Select if order lines should not be send to Reepay', 'woocommerce-gateway-reepay-checkout' ),
+				'type'        => 'select',
+				'options'     => array(
+					0 => 'Include order lines',
+					1  => 'Skip order lines'
+				),
+				'default'     => $this->skip_order_lines
+			)
 		);
 	}
 
@@ -748,6 +764,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		// Calculate if the order is to be settled instantly (from products and configuration)
 		//
 		$instant_settle_ary = $this->order_instant_settle( $order );
+		$this->log( sprintf( '%s::%s Skip orderlines is set to %s', __CLASS__, __METHOD__, $this->skip_order_lines ) );
 		
 		// Initialize Payment
 		$params = [
@@ -757,8 +774,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 			'order' => [
 				'handle' => $this->get_order_handle( $order ),
 				'generate_handle' => false,
-				//'amount' => round(100 * $order->get_total()),
-				'order_lines' => $this->get_order_items( $order ),
+				'amount' => $this->skip_order_lines == 1 ? round(100 * $order->get_total()) : null,
+				'order_lines' => $this->skip_order_lines == 0 ? $this->get_order_items( $order ) : null,
 				'currency' => $order->get_currency(),
 				'customer' => [
 					'test' => $this->test_mode === 'yes',
