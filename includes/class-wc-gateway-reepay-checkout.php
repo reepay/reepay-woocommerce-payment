@@ -125,7 +125,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		}
 
 		add_action( 'admin_notices', array( $this, 'admin_notice_warning' ) );
-		add_action( 'admin_notices', array( $this, 'setup_notice' ) );
 
 		// JS Scrips
 		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
@@ -395,35 +394,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 				esc_html( $message_href )
 			);
 		}
-	}
-	function setup_notice(){
-		wp_register_style( 'style',  plugin_dir_url( __FILE__ ) . '../assets/css/style.min.css' );
-		wp_enqueue_style( 'style' );
-		wp_register_script( 'js',  plugin_dir_url( __FILE__ ) . '../assets/js/noticeVideo.min.js' );
-    	wp_enqueue_script( 'js' );
-		
-		global $pagenow;
-   		if ( $_GET['page'] == 'wc-settings' && $_GET['tab'] == 'checkout' && $_GET['section'] == 'reepay_checkout' )  {
-			echo 	'
-					<div class="notice notice-info">
-						<p>This is the Reepay plugin settings. First time here? Follow this 
-							<a href="javascript:showYoutubeVideo()">guide</a> 
-							to setup your reepay plugin! 
-						</p>
-					</div>
-					
-					<div id="youtubeWrapper" class="youtubeWrapper" style="
-						visibility: collapse; 
-						position: absolute;
-						z-index: 1;
-						"
-						onclick="hideYoutubeVideo()">
-						<div id="youtubeGuide" class="invisible container">
-							<iframe src="https://www.youtube.com/embed/pi3Fm3mGS-4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="video"></iframe>
-						</div>
-					</div>
-					 ';
-		}			 
 	}
 
 	/**
