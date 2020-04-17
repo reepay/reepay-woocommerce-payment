@@ -59,7 +59,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 * @var array
 	 */
 	public $logos = array(
-		'dankort', 'visa', 'mastercard', 'visa-electron', 'maestro', 'mobilepay', 'viabill', 'applepay', 'paypal', 'klarna', 'klarna-pay-later', 'klarna-pay-now', 'resursbank'
+		'dankort', 'visa', 'mastercard', 'visa-electron', 'maestro', 'mobilepay', 'viabill', 'applepay', 'paypal', 'klarna-pay-later', 'klarna-pay-now', 'resursbank'
 	);
 
 	/**
