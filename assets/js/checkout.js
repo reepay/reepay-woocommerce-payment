@@ -1,5 +1,4 @@
 /* global wc_checkout_params */
-/* global Reepay */
 
 // Preload ModalCheckout
 window.rp = new Reepay.ModalCheckout();
@@ -13,7 +12,7 @@ jQuery( function( $ ) {
     }
 
     $( document ).ajaxComplete( function ( event, xhr, settings ) {
-        if ( ( settings.url === wc_checkout_params.checkout_url ) || ( settings.url.indexOf( 'wc-ajax=complete_order' ) > -1 ) ) {
+        if ( settings.url === wc_checkout_params.checkout_url ) {
             const data = xhr.responseText;
 
             // Parse
