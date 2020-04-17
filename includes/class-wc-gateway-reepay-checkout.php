@@ -59,7 +59,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 * @var array
 	 */
 	public $logos = array(
-		'dankort', 'visa', 'mastercard', 'visa-electron', 'maestro', 'mobilepay', 'viabill', 'applepay', 'paypal', 'klarna', 'klarna-pay-later', 'klarna-pay-now'
+		'dankort', 'visa', 'mastercard', 'visa-electron', 'maestro', 'mobilepay', 'viabill', 'applepay', 'paypal', 'klarna', 'klarna-pay-later', 'klarna-pay-now', 'resursbank'
 	);
 
 	/**
@@ -305,6 +305,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					'klarnapaylater' => __( 'KlarnaPayLater', 'woocommerce-gateway-reepay-checkout' ),
 					'klarnasliceit' => __( 'KlarnaSliceIt', 'woocommerce-gateway-reepay-checkout' ),
 					'viabill' => __( 'Viabill', 'woocommerce-gateway-reepay-checkout' ),
+					'resursbank' => __( 'Resurs Bank', 'woocommerce-gateway-reepay-checkout' ),
 					'forbrugsforeningen' => __( 'Forbrugsforeningen', 'woocommerce-gateway-reepay-checkout' ),
 					'amex' => __( 'AMEX', 'woocommerce-gateway-reepay-checkout' ),
 					'jcb' => __( 'JCB', 'woocommerce-gateway-reepay-checkout' ),
