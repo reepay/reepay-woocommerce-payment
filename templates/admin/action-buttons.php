@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 ?>
 
-<?php if ( $gateway->can_capture( $order ) || true ): ?>
+<?php if ( $gateway->can_capture( $order ) ): ?>
 	<button id="reepay_capture"
 			type="button" class="button button-primary"
 			data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>"

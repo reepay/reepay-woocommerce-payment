@@ -428,9 +428,21 @@ class WC_Reepay_Order_Statuses {
 	 *
 	 * @return bool
 	 */
-	public function cancel_unpaid_order( $is_cancel, $is_checkout, $order ) {
+	public function cancel_unpaid_order( $is_cancel, $order ) {
+		//
+		// Fetch gateway module for the 
+		//
+		$payment_method = $order->get_payment_method();
+		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+		$gateway = 	$gateways[ $payment_method ];
+		
+		//
+		// Now set the flag if auto-cancel is enabled or not
+		//
 		if ( in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS ) ) {
-			$is_cancel = false;
+			if ( $gateway->disable_order_autocancel == 1 ) {
+				$is_cancel = false;
+			}
 		}
 
 		return $is_cancel;
