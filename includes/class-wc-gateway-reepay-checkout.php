@@ -80,6 +80,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 	 * Skip order lines to Reepay and use order totals instead
 	 */
 	public $skip_order_lines = 0;
+	
+	/**
+	 * If automatically cancel inpaid orders should be ignored
+	 */
+	public $disable_order_autocancel = 0;
 
 	/**
 	 * Init
@@ -126,6 +131,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 		$this->logos            = isset( $this->settings['logos'] ) ? $this->settings['logos'] : $this->logos;
 		$this->payment_type     = isset( $this->settings['payment_type'] ) ? $this->settings['payment_type'] : $this->payment_type;
 		$this->skip_order_lines = isset( $this->settings['skip_order_lines'] ) ? $this->settings['skip_order_lines'] : $this->skip_order_lines;
+		$this->disable_order_autocancel = isset( $this->settings['disable_order_autocancel'] ) ? $this->settings['disable_order_autocancel'] : $this->disable_order_autocancel;
 
 		// Disable "Add payment method" if the CC saving is disabled
 		if ( $this->save_cc !== 'yes' && ($key = array_search('add_payment_method', $this->supports)) !== false ) {
@@ -341,6 +347,16 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					1  => 'Skip order lines'
 				),
 				'default'     => $this->skip_order_lines
+			),
+			'disable_order_autocancel' => array(
+				'title'       => __( 'Disable order auto-cancel', 'woocommerce-gateway-reepay-checkout' ),
+				'description'    => __( 'If the automatic woocommerce unpaid order auto-cancel should be ignored' ),
+				'type'        => 'select',
+				'options'     => array(
+					0 => 'Enable auto-cancel',
+					1  => 'Ignore / disable auto-cancel'
+				),
+				'default'     => $this->disable_order_autocancel
 			)
 		);
 	}
