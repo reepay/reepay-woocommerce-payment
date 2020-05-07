@@ -320,7 +320,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Payment_Gateway_Reepay {
 					'mastercard' => __( 'MasterCard', 'woocommerce-gateway-reepay-checkout' ),
 					'visa-electron' => __( 'Visa Electron', 'woocommerce-gateway-reepay-checkout' ),
 					'maestro' => __( 'Maestro', 'woocommerce-gateway-reepay-checkout' ),
-					'paypal' => __( 'Paypal', 'woocommerce-gateway-reepay-checkout' ),
+					'paypal_logo' => __( 'Paypal', 'woocommerce-gateway-reepay-checkout' ),
 					'mobilepay' => __( 'MobilePay Online', 'woocommerce-gateway-reepay-checkout' ),
 					'applepay' => __( 'ApplePay', 'woocommerce-gateway-reepay-checkout' ),
 					'klarna-pay-now' => __( 'KlarnaPayNow', 'woocommerce-gateway-reepay-checkout' ),
