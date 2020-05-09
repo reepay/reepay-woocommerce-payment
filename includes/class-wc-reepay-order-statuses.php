@@ -309,6 +309,7 @@ class WC_Reepay_Order_Statuses {
 	 * @param WC_Order $order
 	 */
 	public static function order_status_changed( $order_id, $from, $to, $order ) {
+		
 		$payment_method = $order->get_payment_method();
 		if ( ! in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
 			return;
@@ -346,8 +347,12 @@ class WC_Reepay_Order_Statuses {
 			case REEPAY_STATUS_SETTLED:
 				// Capture payment
 				if ( $gateway->can_capture( $order ) ) {
+					
+					$order_data = $gateway->get_invoice_data( $order );
+					$amount = $order_data["authorized_amount"] - $order_data["settled_amount"];
+					$amount = (float)((float)$amount / 100);
 					try {
-						$gateway->capture_payment( $order );
+						$gateway->capture_payment( $order, $amount );
 					} catch ( Exception $e ) {
 						$message = $e->getMessage();
 						WC_Admin_Meta_Boxes::add_error( $message );
@@ -423,9 +428,21 @@ class WC_Reepay_Order_Statuses {
 	 *
 	 * @return bool
 	 */
-	public function cancel_unpaid_order( $is_cancel, $is_checkout, $order ) {
+	public function cancel_unpaid_order( $is_cancel, $order ) {
+		//
+		// Fetch gateway module for the 
+		//
+		$payment_method = $order->get_payment_method();
+		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+		$gateway = 	$gateways[ $payment_method ];
+		
+		//
+		// Now set the flag if auto-cancel is enabled or not
+		//
 		if ( in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS ) ) {
-			$is_cancel = false;
+			if ( $gateway->disable_order_autocancel == 1 ) {
+				$is_cancel = false;
+			}
 		}
 
 		return $is_cancel;

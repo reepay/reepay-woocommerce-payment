@@ -27,16 +27,34 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		if ( ! $amount ) {
 			$amount = $order->get_total();
 		}
-
+		
+		//$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, "Amount to capture: " . $amount ) );
+		
 		$handle = $this->get_order_handle( $order );
 
 		try {
+			
 			$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $handle );
+			//$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, var_export($result, true) ) );
+			//exit();
 		} catch (Exception $e) {
 			return FALSE;
 		}
+		
+		$authorizedAmount = $result['authorized_amount'];
+		$settledAmount = $result['settled_amount'];
+		$refundedAmount = $result['refunded_amount'];
 
-		return $result['state'] === 'authorized';
+		// $this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, "STATE: " . $result['state'] ) );
+		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, "authorizedAmount: " . $authorizedAmount ) );
+		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, "settledAmount: " . $settledAmount ) );
+		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, "amount: " . $amount ) );
+		
+		//exit();
+		return (
+			( $result['state'] === 'authorized' ) || 
+			( $result['state'] === 'settled' && $authorizedAmount >= $settledAmount + $amount  )
+		);
 	}
 
 	/**
@@ -58,12 +76,16 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		$handle = $this->get_order_handle( $order );
 
 		try {
+			//$this->log( sprintf( '%s::%s Try to cancel %s', __CLASS__, __METHOD__, $order ) );
 			$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $handle );
+			$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, json_encode($result) ) );
 		} catch (Exception $e) {
 			return FALSE;
 		}
 
-		return $result['state'] === 'authorized';
+		// return $result['state'] === 'authorized' || ( $result['state'] === "settled" && $result["settled_amount"] < $result["authorized_amount"] );
+		// can only cancel payments when the state is authorized (partly void is not supported yet)
+		return ( $result['state'] === 'authorized' );
 	}
 
 	/**
@@ -76,6 +98,13 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	public function can_refund( $order, $amount = FALSE ) {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
+		}
+		
+		//
+		// Check if hte order is cancelled - if so - then return as nothing has happened
+		//
+		if ( $order->get_meta( '_reepay_order_cancelled', true ) === "1" ) {
+			return;
 		}
 
 		if ( $order->get_payment_method() !== $this->id ) {
@@ -110,6 +139,13 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
+		
+		//
+		// Check if hte order is cancelled - if so - then return as nothing has happened
+		//
+		if ( $order->get_meta( '_reepay_order_cancelled', true ) === "1" ) {
+			return;
+		}
 
 		if ( ! $amount ) {
 			$amount = $order->get_total();
@@ -125,24 +161,29 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		}
 
 		try {
-			$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle . '/settle' );
+			$params = [
+				'amount' => $amount * 100,
+			];
+			$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle . '/settle', $params );
 		} catch ( Exception $e ) {
-			throw new Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
+			throw new Exception( sprintf( 'API Error (capture_payment): %s', $e->getMessage() ) );
 		}
-
+		
 		update_post_meta( $order->get_id(), '_reepay_capture_transaction', $result['transaction'] );
 
 		$order->set_transaction_id( $result['transaction'] );
 		$order->save();
+		
+		if ( !$amount) {
+			$order->payment_complete( $result['transaction'] );
 
-		$order->payment_complete( $result['transaction'] );
+			if (defined('REEPAY_STATUS_SETTLED')) {
+				$order->set_status( REEPAY_STATUS_SETTLED );
+				$order->save();
+			}
 
-		if (defined('REEPAY_STATUS_SETTLED')) {
-			$order->set_status( REEPAY_STATUS_SETTLED );
-			$order->save();
+			$order->add_order_note( __( 'Transaction settled.', 'woocommerce-gateway-reepay-checkout' ) );
 		}
-
-		$order->add_order_note( __( 'Transaction settled.', 'woocommerce-gateway-reepay-checkout' ) );
 	}
 
 	/**
@@ -157,6 +198,13 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
+		
+		//
+		// Check if hte order is cancelled - if so - then return as nothing has happened
+		//
+		if ( $order->get_meta( '_reepay_order_cancelled', true ) === "1" ) {
+			return;
+		}
 
 		if ( ! $this->can_cancel( $order ) ) {
 			throw new Exception( 'Payment can\'t be cancelled.' );
@@ -170,7 +218,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		try {
 			$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle . '/cancel' );
 		} catch ( Exception $e ) {
-			throw new Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
+			throw new Exception( sprintf( 'API Error (cancel_payment): %s', $e->getMessage() ) );
 		}
 
 		update_post_meta($order->get_id(), '_reepay_cancel_transaction', $result['transaction'] );
@@ -197,6 +245,13 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
+		
+		//
+		// Check if hte order is cancelled - if so - then return as nothing has happened
+		//
+		if ( $order->get_meta( '_reepay_order_cancelled', true ) === "1" ) {
+			return;
+		}
 
 		if ( ! $this->can_refund( $order, $amount ) ) {
 			throw new Exception( 'Payment can\'t be refunded.' );
@@ -214,7 +269,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			];
 			$result = $this->request( 'POST', 'https://api.reepay.com/v1/refund', $params );
 		} catch ( Exception $e ) {
-			throw new Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
+			throw new Exception( sprintf( 'API Error (refund_payment): %s', $e->getMessage() ) );
 		}
 
 		// Save Credit Note ID
@@ -487,7 +542,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 					return  $result;
 				}
 
-				throw new Exception(sprintf('API Error: %s. HTTP Code: %s', $body, $info['http_code']));
+				throw new Exception(sprintf('API Error (request): %s. HTTP Code: %s', $body, $info['http_code']));
 			default:
 				throw new Exception(sprintf('Invalid HTTP Code: %s', $info['http_code']));
 		}
@@ -968,5 +1023,25 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		}
 
 		return 'en_US';
+	}
+	
+	public function get_invoice_data( $order ) {
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+
+		if ( $order->get_payment_method() !== $this->id ) {
+			return FALSE;
+		}
+
+		$handle = $this->get_order_handle( $order );
+
+		try {
+			
+			$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $handle );
+			return $result;
+		} catch (Exception $e) {
+			return FALSE;
+		}
 	}
 }

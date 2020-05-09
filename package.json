@@ -8,7 +8,7 @@
     "node-sass": "^4.11.0"
   },
   "devDependencies": {
-    "gulp": "^4.0.1",
+    "gulp": "^4.0.2",
     "gulp-minify-css": "^1.2.4",
     "gulp-rename": "^1.4.0",
     "gulp-sourcemaps": "^2.6.5",
