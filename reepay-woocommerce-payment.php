@@ -639,6 +639,10 @@ class WC_ReepayCheckout {
 			}
 		}
 	}
+
+	public function meta_box_subscription() {
+	    $this->meta_box_payment();
+	}
 	
 	/*
 	 * Formats a minor unit value into float with two decimals
