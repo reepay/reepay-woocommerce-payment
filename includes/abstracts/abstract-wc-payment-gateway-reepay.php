@@ -618,57 +618,49 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			$product = $item->get_product();
 			$priceWithTax = $order->get_line_subtotal( $item, true, false );
 
-			switch ( true ) {
-				case ( in_array(self::SETTLE_PHYSICAL, $this->settle ) ):
-					if ( ! self::wcs_is_subscription_product( $product )
-					     && $product->needs_shipping()
-					     && ! $product->is_downloadable()
-					) {
-						$debug[] = [
-							'product' => $product->get_id(),
-							'price' => $priceWithTax,
-							'type' => self::SETTLE_PHYSICAL
-						];
+			if ( in_array(self::SETTLE_PHYSICAL, $this->settle, true ) &&
+			     ( ! self::wcs_is_subscription_product( $product ) &&
+			       $product->needs_shipping() &&
+			       ! $product->is_downloadable() )
+			) {
+				$debug[] = [
+					'product' => $product->get_id(),
+					'name'    => $item->get_name(),
+					'price'   => $priceWithTax,
+					'type'    => self::SETTLE_PHYSICAL
+				];
 
-						$physical = true;
-						$total += $priceWithTax;
+				$physical = true;
+				$total += $priceWithTax;
+			} elseif ( in_array(self::SETTLE_VIRTUAL, $this->settle, true ) &&
+			     ( ! self::wcs_is_subscription_product( $product ) &&
+			       ( $product->is_virtual() || $product->is_downloadable() ) )
+			) {
+				$debug[] = [
+					'product' => $product->get_id(),
+					'name'    => $item->get_name(),
+					'price'   => $priceWithTax,
+					'type'    => self::SETTLE_VIRTUAL
+				];
 
-						break;
-					}
+				$onlineVirtual = true;
+				$total += $priceWithTax;
 
-					// no break
-				case ( in_array(self::SETTLE_VIRTUAL, $this->settle ) ):
-					if ( ! self::wcs_is_subscription_product( $product )
-					     && ( $product->is_virtual() || $product->is_downloadable() )
-					) {
-						$debug[] = [
-							'product' => $product->get_id(),
-							'price' => $priceWithTax,
-							'type' => self::SETTLE_VIRTUAL
-						];
+				break;
+			} elseif ( in_array(self::SETTLE_RECURRING, $this->settle, true ) &&
+			     self::wcs_is_subscription_product( $product )
+			) {
+				$debug[] = [
+					'product' => $product->get_id(),
+					'name'    => $item->get_name(),
+					'price'   => $priceWithTax,
+					'type'    => self::SETTLE_RECURRING
+				];
 
-						$onlineVirtual = true;
-						$total += $priceWithTax;
+				$recurring = true;
+				$total += $priceWithTax;
 
-						break;
-					}
-
-					// no break
-				case ( in_array(self::SETTLE_RECURRING, $this->settle ) ):
-					if ( self::wcs_is_subscription_product( $product ) ) {
-						$debug[] = [
-							'product' => $product->get_id(),
-							'price' => $priceWithTax,
-							'type' => self::SETTLE_RECURRING
-						];
-
-						$recurring = true;
-						$total += $priceWithTax;
-
-						break;
-					}
-
-					// no break
+				break;
 			}
 		}
 
@@ -725,7 +717,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		$result->is_instant_settle = $onlineVirtual || $physical || $recurring;
 		$result->settle_amount = $total;
 		$result->debug = $debug;
-		$result->settle = $this->settle;
+		$result->settings = $this->settle;
 
 		return $result;
 	}
