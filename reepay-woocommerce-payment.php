@@ -248,10 +248,10 @@ class WC_ReepayCheckout {
 						&$this,
 						'meta_box_payment',
 					], 'shop_order', 'side', 'high' );
-					add_meta_box( 'reepay-payment-actions', __( 'Reepay Subscription', 'woocommerce-gateway-reepay-checkout' ), [
-						&$this,
-						'meta_box_subscription',
-					], 'shop_subscription', 'side', 'high' );
+					//add_meta_box( 'reepay-payment-actions', __( 'Reepay Subscription', 'woocommerce-gateway-reepay-checkout' ), [
+					//	&$this,
+					//	'meta_box_subscription',
+					//], 'shop_subscription', 'side', 'high' );
 				}
 			}
 		}
