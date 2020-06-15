@@ -326,7 +326,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 				continue;
 			}
 
-			if ( $token->get_gateway_id() !== 'reepay_checkout' ) {
+			if ( ! in_array( $token->get_gateway_id(), WC_ReepayCheckout::PAYMENT_METHODS, true ) ) {
 				continue;
 			}
 
@@ -611,8 +611,6 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 
 		// Now walk through the order-lines and check per order if it is virtual, downloadable, recurring or physical
 		foreach ( $order->get_items() as $item ) {
-			$this->log($item);
-
 			/** @var WC_Order_Item_Product $order_item */
 			/** @var WC_Product $product */
 			$product = $item->get_product();
@@ -730,15 +728,21 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @return void
 	 */
 	public function process_instant_settle( $order ) {
+		if ( ! empty ( $order->get_meta('_is_instant_settled' ) ) ) {
+			return;
+		}
+
 		// Calculate if the order is to be instant settled
 		$instant_settle = $this->calculate_instant_settle( $order );
 		$toSettle = $instant_settle->settle_amount;
 		$this->log( sprintf( '%s::%s instant-settle-array calculated %s', __CLASS__, __METHOD__, var_export( $instant_settle, true ) ) );
 
 		if ( $toSettle >= 0.001 ) {
-			$this->log( sprintf( '%s::%s Settle amount towards reepay %s', __CLASS__, __METHOD__, $toSettle ) );
 			try {
 				$this->reepay_settle( $order, $toSettle );
+
+				$order->add_meta_data('_is_instant_settled', '1');
+				$order->save_meta_data();
 			} catch ( Exception $e ) {
 				$this->log( sprintf( '%s::%s Error: %s', __CLASS__, __METHOD__, $e->getMessage() ) );
 			}
@@ -1290,16 +1294,14 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 				) );
 
 				$this->log( sprintf( '%s::%s Settle Charge: %s', __CLASS__, __METHOD__, var_export( $result, true) ) );
+
+				if ( 'failed' === $result['state'] ) {
+					throw new Exception( 'Settle has been failed.' );
+				}
 			} catch (Exception $e) {
 				// Workaround: Check if the invoice has been settled before to prevent "Invoice already settled"
 				if ( mb_strpos( $e->getMessage(), 'Invoice already settled', 0, 'UTF-8') !== false ) {
-					$result = array(
-						'state' => 'settled',
-						'amount' => round($order->get_total() * 100),
-						'transaction' => $order->get_transaction_id()
-					);
-
-					return $this->process_charge_result( $order, $result );
+					return;
 				}
 
 				$this->log( sprintf( '%s::%s API Error: %s', __CLASS__, __METHOD__, var_export( $e->getMessage(), true ) ) );
@@ -1312,7 +1314,35 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 				return;
 			}
 
-			$this->process_charge_result( $order, $result );
+			// @todo Check $result['processing']
+			// @todo Check $result['authorized_amount']
+			// @todo Check state $result['state']
+
+			// Set transaction Id
+			$order->set_transaction_id( $result['transaction'] );
+			$order->save();
+
+			update_post_meta( $order->get_id(), '_reepay_capture_transaction', $result['transaction'] );
+
+			// Add order note
+			$order->add_order_note(
+				sprintf(
+					__( 'Payment has been settled. Amount: %s. Transaction: %s', 'woocommerce-gateway-reepay-checkout' ),
+					wc_price( $amount ),
+					$result['transaction']
+				)
+			);
+
+			// Check the amount and change the order status to settled if needs
+			try {
+				$result = $this->get_invoice_data( $order );
+
+				if ( $result['authorized_amount'] === $result['settled_amount'] ) {
+					WC_Reepay_Order_Statuses::set_settled_status( $order );
+				}
+			} catch (Exception $e) {
+				// Silence is golden
+			}
 		}
 	}
 

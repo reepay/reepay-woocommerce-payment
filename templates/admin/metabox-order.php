@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <span class='reepay-balance__currency'>
                 <?php echo esc_html( $order_data['currency'] ); ?>
             </span>
-            <?php echo wc_price( $order_data['authorized_amount'] - $order_data['settled_amount'] ); ?>
+            <?php echo wc_price( ( $order_data['authorized_amount'] - $order_data['settled_amount'] ) / 100 ); ?>
         </span>
     </li>
 	<li class="reepay-admin-section-li">
@@ -41,7 +41,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <span class='reepay-balance__currency'>
                 <?php echo esc_html( $order_data['currency'] ); ?>
             </span>
-            <?php echo wc_price( $order_data['authorized_amount'] ); ?>
+            <?php echo wc_price( $order_data['authorized_amount'] / 100 ); ?>
         </span>
     </li>
 	<li class="reepay-admin-section-li">
@@ -52,7 +52,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <span class='reepay-balance__currency'>
                 <?php echo esc_html( $order_data['currency'] ); ?>
             </span>
-            <?php echo wc_price( $order_data['settled_amount'] ); ?>
+            <?php echo wc_price( $order_data['settled_amount'] / 100 ); ?>
         </span>
     </li>
 	<li class="reepay-admin-section-li">
@@ -63,14 +63,14 @@ if ( ! defined( 'ABSPATH' ) ) {
             <span class='reepay-balance__currency'>
                 <?php echo esc_html( $order_data['currency'] ); ?>
             </span>
-            <?php echo wc_price( $order_data['refunded_amount'] ); ?>
+            <?php echo wc_price( $order_data['refunded_amount'] / 100 ); ?>
         </span>
     </li>
 	<li style='font-size: xx-small'>&nbsp;</li>
 	<?php if ($order_data['settled_amount'] == 0 && 'cancelled' != $order_data['state'] && !$order_is_cancelled): ?>
 		<li class="reepay-full-width">
             <a class="button button-primary" data-action="reepay_capture" id="reepay_capture" data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>" data-order-id="<?php echo $order_id; ?>" data-confirm="<?php echo __( 'You are about to CAPTURE this payment', 'woocommerce-gateway-reepay-checkout' ); ?>">
-                <?php echo sprintf( __( 'Capture Full Amount (%s)', 'woocommerce-gateway-reepay-checkout' ), wc_price( $order_data['authorized_amount'] ) ); ?>
+                <?php echo sprintf( __( 'Capture Full Amount (%s)', 'woocommerce-gateway-reepay-checkout' ), wc_price( $order_data['authorized_amount'] / 100 ) ); ?>
             </a>
         </li>
 	<?php endif; ?>
@@ -93,7 +93,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <?php echo __( 'Capture amount', 'woocommerce-gateway-reepay-checkout' ); ?>:
             </span>
             <span class="reepay-partly_capture_amount">
-                <input id='reepay-capture_partly_amount-field' class='reepay-capture_partly_amount-field' type='number' min="0.00" step="0.01" size='6' value="<?php echo $order_data['authorized_amount'] - $order_data['settled_amount']; ?>" />
+                <input id='reepay-capture_partly_amount-field' class='reepay-capture_partly_amount-field' type='number' min="0.00" step="0.01" size='6' value="<?php echo ( $order_data['authorized_amount'] - $order_data['settled_amount'] ) / 100; ?>" />
             </span>
         </li>
 		<li class="reepay-full-width">
@@ -113,7 +113,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <?php echo __( 'Refund amount', 'woocommerce-gateway-reepay-checkout' ); ?>:
             </span>
             <span class="reepay-partly_refund_amount">
-                <input id='reepay-refund_partly_amount-field' class='reepay-refund_partly_amount-field' type='number' size='6' min="0.00" step="0.01" value="<?php echo  $order_data['settled_amount'] - $order_data['refunded_amount']; ?>" />
+                <input id='reepay-refund_partly_amount-field' class='reepay-refund_partly_amount-field' type='number' size='6' min="0.00" step="0.01" value="<?php echo ( $order_data['settled_amount'] - $order_data['refunded_amount'] ) / 100; ?>" />
             </span>
         </li>
 		<li class="reepay-full-width">
