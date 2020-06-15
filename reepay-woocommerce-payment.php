@@ -16,7 +16,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 
 class WC_ReepayCheckout {
-	const PAYMENT_METHODS = array('reepay_token' , 'reepay_checkout');
+	const PAYMENT_METHODS = array(
+		'reepay_checkout',
+        'reepay_applepay',
+        'reepay_klarna_pay_later',
+        'reepay_klarna_pay_now',
+        'reepay_mobilepay',
+        'reepay_paypal',
+        'reepay_resurs',
+        'reepay_swish',
+        'reepay_viabill'
+    );
 
 	public static $db_version = '1.2.3';
 
@@ -141,7 +151,16 @@ class WC_ReepayCheckout {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-payment-token-reepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/interfaces/class-wc-payment-gateway-reepay-interface.php' );
 		include_once( dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-payment-gateway-reepay.php' );
+		include_once( dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-gateway-reepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-checkout.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-mobilepay.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-viabill.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-pay-later.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-pay-now.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-resurs.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-swish.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-paypal.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-apple-pay.php' );
 	}
 
 	/**

@@ -153,7 +153,11 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC
 			/* translators: 1: credit card type 2: last 4 digits */
 			echo sprintf( __( '%1$s ending in %2$s', 'woocommerce' ), esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) ), esc_html( $method['method']['last4'] ) );
 		} else {
-			echo esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) );
+		    if ( isset( $method['method']['brand'] ) ) {
+			    echo esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) );
+		    } else {
+			    echo esc_html( wc_get_credit_card_type_label( 'visa' ) );
+		    }
 		}
 	}
 
