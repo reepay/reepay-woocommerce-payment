@@ -31,6 +31,7 @@ class WC_Gateway_Reepay_Viabill extends WC_Gateway_Reepay {
 			'products',
 			'refunds',
 		);
+		$this->logos        = array( 'viabill' );
 
 		parent::__construct();
 

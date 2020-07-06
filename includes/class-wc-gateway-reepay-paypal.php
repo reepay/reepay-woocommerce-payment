@@ -31,6 +31,7 @@ class WC_Gateway_Reepay_Paypal extends WC_Gateway_Reepay {
 			'products',
 			'refunds',
 		);
+		$this->logos        = array( 'paypal' );
 
 		parent::__construct();
 

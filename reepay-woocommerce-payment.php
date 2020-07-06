@@ -177,11 +177,15 @@ class WC_ReepayCheckout {
 	public static function add_footer() {
 		$settings = get_option( 'woocommerce_reepay_checkout_settings' );
 		if ( is_array( $settings ) && ! empty( $settings['logo_height'] ) ):
+			$logo_height = $settings['logo_height'];
+            if ( is_numeric( $logo_height ) ) {
+	            $logo_height .= 'px';
+            }
 		?>
 		<style type="text/css">
 			.reepay-logos .reepay-logo img {
-				height: <?php echo esc_html( $settings['logo_height'] ); ?>px !important;
-				max-height: <?php echo esc_html( $settings['logo_height'] ); ?>px !important;
+				height: <?php echo esc_html( $logo_height ); ?> !important;
+				max-height: <?php echo esc_html( $logo_height ); ?> !important;
 			}
 		</style>
 		<?php

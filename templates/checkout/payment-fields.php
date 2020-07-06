@@ -16,9 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<li class="reepay-logo">
 				<?php
 				$image_url = plugins_url( '/assets/images/' . $logo . '.png', dirname( __FILE__ ) . '/../../../' );
-				$method    = $gateway->form_fields['logos']['options'][$logo];
 				?>
-				<img src="<?php echo esc_url( $image_url ) ?>" alt="<?php echo esc_html( sprintf( __( 'Pay with %s on Reepay', 'woocommerce-gateway-reepay-checkout' ), $method ) ); ?>">
+				<img src="<?php echo esc_url( $image_url ) ?>" alt="<?php echo esc_html( sprintf( __( 'Pay with %s on Reepay', 'woocommerce-gateway-reepay-checkout' ), $gateway->method_title ) ); ?>">
 			</li>
 		<?php endforeach; ?>
 	</ul>

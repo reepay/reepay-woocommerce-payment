@@ -31,6 +31,7 @@ class WC_Gateway_Reepay_Mobilepay extends WC_Gateway_Reepay {
 			'products',
 			'refunds',
 		);
+		$this->logos        = array( 'mobilepay' );
 
 		parent::__construct();
 

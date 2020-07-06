@@ -31,6 +31,7 @@ class WC_Gateway_Reepay_Resurs extends WC_Gateway_Reepay {
 			'products',
 			'refunds',
 		);
+		$this->logos        = array( 'resurs' );
 
 		parent::__construct();
 

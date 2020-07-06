@@ -31,6 +31,7 @@ class WC_Gateway_Reepay_Klarna_Pay_Now extends WC_Gateway_Reepay {
 			'products',
 			'refunds',
 		);
+		$this->logos        = array( 'klarna-pay-now' );
 
 		parent::__construct();
 

@@ -31,6 +31,7 @@ class WC_Gateway_Reepay_Swish extends WC_Gateway_Reepay {
 			'products',
 			'refunds',
 		);
+		$this->logos        = array( 'swish' );
 
 		parent::__construct();
 

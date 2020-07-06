@@ -31,6 +31,7 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 			'products',
 			'refunds',
 		);
+		$this->logos        = array( 'applepay' );
 
 		parent::__construct();
 
