@@ -465,7 +465,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			],
 			'accept_url' => $this->get_return_url( $order ),
 			'cancel_url' => $order->get_cancel_order_url(),
-			'payment_methods' => $this->payment_methods
 		];
 
 		if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
