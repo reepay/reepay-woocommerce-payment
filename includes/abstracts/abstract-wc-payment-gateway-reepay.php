@@ -1501,10 +1501,10 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 				$logos = $this->logos;
 				$logo = array_shift( $logos );
 
-				return untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/assets/images/' . $logo;
+				return untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/images/' . $logo . '.png';
 		}
 
-		return untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/assets/images/' . $image;
+		return untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/images/' . $image;
 	}
 
 }

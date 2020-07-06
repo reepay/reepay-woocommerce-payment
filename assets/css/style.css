@@ -97,6 +97,7 @@
   /* NEW, Spec - Firefox, Chrome, Opera */ }
 
 .reepay-capture_partly_amount-field {
+  width: 90px;
   font-size: small;
   max-height: 20px;
   min-height: 1px !important;
