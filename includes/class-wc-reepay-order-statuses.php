@@ -67,7 +67,7 @@ class WC_Reepay_Order_Statuses {
 
 		add_filter( 'woocommerce_cancel_unpaid_order', array(
 			$this,
-			'prevent_cancellation'
+			'cancel_unpaid_order'
 		), 10, 2 );
 	}
 
@@ -550,29 +550,30 @@ class WC_Reepay_Order_Statuses {
 	}
 
 	/**
-	 * Disable pending cancellation for Reepay Orders
+	 * Prevent the pending cancellation for Reepay Orders if allowed
 	 *
-	 * @param bool $is_cancel
+	 * @see wc_cancel_unpaid_orders()
+	 * @param bool $maybe_cancel
 	 * @param WC_Order $order
 	 *
 	 * @return bool
 	 */
-	public function prevent_cancellation( $is_cancel, $order ) {
-		// Fetch gateway module for the
-		$payment_method = $order->get_payment_method();
-		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
-		if ( isset( $gateways[ $payment_method ] ) ) {
-			$gateway = $gateways[ $payment_method ];
+	public function cancel_unpaid_order( $maybe_cancel, $order ) {
+		if ( in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS ) ) {
+			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+			$payment_method = $order->get_payment_method();
+			if ( isset( $gateways[ $payment_method ] ) ) {
+				/** @var WC_Gateway_Reepay $gateway */
+				$gateway = $gateways[ $payment_method ];
 
-			// Now set the flag if auto-cancel is enabled or not
-			if ( in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS ) ) {
-				if ( $gateway->disable_order_autocancel === 'yes' ) {
+				// Now set the flag if auto-cancel is enabled or not
+				if ( 'yes' !== $gateway->enable_order_autocancel ) {
 					return false;
 				}
 			}
 		}
 
-		return $is_cancel;
+		return $maybe_cancel;
 	}
 
 }

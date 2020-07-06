@@ -66,7 +66,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		$this->payment_type             = isset( $this->settings['payment_type'] ) ? $this->settings['payment_type'] : $this->payment_type;
 		$this->payment_methods          = isset( $this->settings['payment_methods'] ) ? $this->settings['payment_methods'] : $this->payment_methods;
 		$this->skip_order_lines         = isset( $this->settings['skip_order_lines'] ) ? $this->settings['skip_order_lines'] : $this->skip_order_lines;
-		$this->disable_order_autocancel = isset( $this->settings['disable_order_autocancel'] ) ? $this->settings['disable_order_autocancel'] : $this->disable_order_autocancel;
+		$this->enable_order_autocancel  = isset( $this->settings['enable_order_autocancel'] ) ? $this->settings['enable_order_autocancel'] : $this->enable_order_autocancel;
 
 		// Disable "Add payment method" if the CC saving is disabled
 		if ( $this->save_cc !== 'yes' && ($key = array_search('add_payment_method', $this->supports)) !== false ) {
@@ -318,15 +318,15 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				),
 				'default'     => $this->skip_order_lines
 			),
-			'disable_order_autocancel' => array(
-				'title'       => __( 'Disable order auto-cancel', 'woocommerce-gateway-reepay-checkout' ),
-				'description'    => __( 'If the automatic woocommerce unpaid order auto-cancel should be ignored' ),
+			'enable_order_autocancel' => array(
+				'title'       => __( 'The automatic order auto-cancel', 'woocommerce-gateway-reepay-checkout' ),
+				'description'    => __( 'The automatic order auto-cancel', 'woocommerce-gateway-reepay-checkout' ),
 				'type'        => 'select',
 				'options'     => array(
 					'yes' => 'Enable auto-cancel',
 					'no'  => 'Ignore / disable auto-cancel'
 				),
-				'default'     => $this->disable_order_autocancel
+				'default'     => $this->enable_order_autocancel
 			)
 		);
 	}

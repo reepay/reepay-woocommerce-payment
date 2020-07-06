@@ -16,6 +16,36 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	const SETTLE_FEE = 'fee';
 
 	/**
+	 * Get parent settings
+	 *
+	 * @return array
+	 */
+	public function get_parent_settings() {
+		// Get setting from parent method
+		$settings = get_option( 'woocommerce_reepay_checkout_settings' );
+		if ( ! is_array( $settings ) ) {
+			$settings = array();
+		}
+
+		return array_merge( array(
+			'enabled'                 => 'no',
+			'private_key'             => $this->private_key,
+			'private_key_test'        => $this->private_key_test,
+			'test_mode'               => $this->test_mode,
+			'payment_type'            => $this->payment_type,
+			'payment_methods'         => $this->payment_methods,
+			'settle'                  => $this->settle,
+			'language'                => $this->language,
+			'save_cc'                 => $this->save_cc,
+			'debug'                   => $this->debug,
+			'logos'                   => $this->logos,
+			'logo_height'             => $this->logo_height,
+			'skip_order_lines'        => $this->skip_order_lines,
+			'enable_order_autocancel' => $this->enable_order_autocancel
+		), $settings );
+	}
+
+	/**
 	 * Check is Capture possible
 	 *
 	 * @param WC_Order|int $order

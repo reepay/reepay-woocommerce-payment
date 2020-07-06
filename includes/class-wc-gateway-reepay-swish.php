@@ -47,20 +47,17 @@ class WC_Gateway_Reepay_Swish extends WC_Gateway_Reepay {
 		$this->description              = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
 
 		// Load setting from parent method
-		$settings = get_option( 'woocommerce_reepay_checkout_settings' );
-		if ( !is_array( $settings ) ) {
-			$settings = array();
-		}
+		$settings = $this->get_parent_settings();
 
-		$this->private_key              = $settings['private_key'];
-		$this->private_key_test         = $settings['private_key_test'];
-		$this->test_mode                = $settings['test_mode'];
-		$this->settle                   = $settings['settle'];
-		$this->language                 = $settings['language'];
-		$this->debug                    = $settings['debug'];
-		$this->payment_type             = $settings['payment_type'];
-		$this->skip_order_lines         = $settings['skip_order_lines'];
-		$this->disable_order_autocancel = $settings['disable_order_autocancel'];
+		$this->private_key             = $settings['private_key'];
+		$this->private_key_test        = $settings['private_key_test'];
+		$this->test_mode               = $settings['test_mode'];
+		$this->settle                  = $settings['settle'];
+		$this->language                = $settings['language'];
+		$this->debug                   = $settings['debug'];
+		$this->payment_type            = $settings['payment_type'];
+		$this->skip_order_lines        = $settings['skip_order_lines'];
+		$this->enable_order_autocancel = $settings['enable_order_autocancel'];
 
 		// Actions
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
