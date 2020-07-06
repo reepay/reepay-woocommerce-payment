@@ -171,14 +171,4 @@ jQuery(document).ready(function ($) {
 			}
 		});
 	});
-	
-	$(document).on('blur', '#reepay-capture_partly_amount-field', function (e) {
-		var val = parseFloat($(this).val().replace(",", "."));
-		$(this).val(val.toFixed(2).replace(".", ","));
-	});
-	
-	$(document).on('blur', '#reepay-refund_partly_amount-field', function (e) {
-		var val = parseFloat($(this).val().replace(",", "."));
-		$(this).val(val.toFixed(2).replace(".", ","));
-	});
 });
