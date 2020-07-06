@@ -302,8 +302,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'description'    => __( 'Select if order lines should not be send to Reepay', 'woocommerce-gateway-reepay-checkout' ),
 				'type'        => 'select',
 				'options'     => array(
-					'yes' => 'Include order lines',
-					'no'  => 'Skip order lines'
+					'no'   => 'Include order lines',
+					'yes'  => 'Skip order lines'
 				),
 				'default'     => $this->skip_order_lines
 			),
