@@ -402,13 +402,14 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			dirname( __FILE__ ) . '/../templates/'
 		);
 
+		// The "Save card or use existed" form should appears when active or when the cart has a subscription
 		if ( ( $this->save_cc === 'yes' && ! is_add_payment_method_page() ) ||
 			 ( self::wcs_cart_have_subscription() || self::wcs_is_payment_change() )
-		):
+		) {
 			$this->tokenization_script();
 			$this->saved_payment_methods();
 			$this->save_payment_method_checkbox();
-		endif;
+        }
 	}
 
 	/**
