@@ -1147,7 +1147,13 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			throw new Exception('Unable to get invoice data.');
 		}
 
-		return $this->get_invoice_by_handle( $this->get_order_handle( $order ) );
+		$order_data = $this->get_invoice_by_handle( $this->get_order_handle( $order ) );
+
+		return array_merge( array(
+			'authorized_amount' => 0,
+			'settled_amount'    => 0,
+			'refunded_amount'   => 0
+		), $order_data );
 	}
 
 	/**

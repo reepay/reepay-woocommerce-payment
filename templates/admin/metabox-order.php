@@ -67,7 +67,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         </span>
     </li>
 	<li style='font-size: xx-small'>&nbsp;</li>
-	<?php if ($order_data['settled_amount'] == 0 && 'cancelled' != $order_data['state'] && !$order_is_cancelled): ?>
+	<?php if ($order_data['settled_amount'] == 0 && ! in_array( $order_data['state'], array( 'cancelled', 'created') ) && !$order_is_cancelled): ?>
 		<li class="reepay-full-width">
             <a class="button button-primary" data-action="reepay_capture" id="reepay_capture" data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>" data-order-id="<?php echo $order_id; ?>" data-confirm="<?php echo __( 'You are about to CAPTURE this payment', 'woocommerce-gateway-reepay-checkout' ); ?>">
                 <?php echo sprintf( __( 'Capture Full Amount (%s)', 'woocommerce-gateway-reepay-checkout' ), wc_price( $order_data['authorized_amount'] / 100 ) ); ?>
@@ -75,7 +75,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         </li>
 	<?php endif; ?>
 
-	<?php if ($order_data['settled_amount'] == 0 && 'cancelled' != $order_data['state'] && !$order_is_cancelled): ?>
+	<?php if ($order_data['settled_amount'] == 0 && ! in_array( $order_data['state'], array( 'cancelled', 'created') ) && !$order_is_cancelled): ?>
 		<li class="reepay-full-width">
             <a class="button" data-action="reepay_cancel" id="reepay_cancel" data-confirm="<?php echo __( 'You are about to CANCEL this payment', 'woocommerce-gateway-reepay-checkout' ); ?>" data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>" data-order-id="<?php echo $order_id; ?>">
                 <?php echo __( 'Cancel remaining balance', 'woocommerce-gateway-reepay-checkout' ); ?>
@@ -84,7 +84,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<li style='font-size: xx-small'>&nbsp;</li>
 	<?php endif; ?>
 
-	<?php if ($order_data['authorized_amount'] > $order_data['settled_amount'] && 'cancelled' != $order_data['state'] && !$order_is_cancelled): ?>
+	<?php if ($order_data['authorized_amount'] > $order_data['settled_amount'] && ! in_array( $order_data['state'], array( 'cancelled', 'created') ) && !$order_is_cancelled): ?>
 		<li class="reepay-admin-section-li-header">
             <?php echo __( 'Partly capture', 'woocommerce-gateway-reepay-checkout' ); ?>
         </li>
@@ -104,7 +104,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<li style='font-size: xx-small'>&nbsp;</li>
 	<?php endif; ?>
 
-	<?php if ( $order_data['settled_amount'] > $order_data['refunded_amount'] && 'cancelled' != $order_data['state'] && !$order_is_cancelled ): ?>
+	<?php if ( $order_data['settled_amount'] > $order_data['refunded_amount'] && ! in_array( $order_data['state'], array( 'cancelled', 'created') ) && !$order_is_cancelled ): ?>
 		<li class="reepay-admin-section-li-header">
             <?php echo __( 'Partly refund', 'woocommerce-gateway-reepay-checkout' ); ?>
         </li>
@@ -136,15 +136,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<li class="reepay-admin-section-li-small">
         <?php echo $order_data["id"]; ?>
     </li>
-	<li class="reepay-admin-section-li-header-small">
-        <?php echo __( 'Card number', 'woocommerce-gateway-reepay-checkout' ); ?>
-    </li>
-	<li class="reepay-admin-section-li-small">
-        <?php echo WC_ReepayCheckout::formatCreditCard( $order_data['transactions'][0]['card_transaction']['masked_card']); ?>
-    </li>
-	<p>
-        <center>
-            <img src="<?php echo WC_ReepayCheckout::get_logo( $order_data['transactions'][0]['card_transaction']['card_type'] ); ?>" class="reepay-admin-card-logo" />
-        </center>
-    </p>
+	<?php if ( isset( $order_data['transactions'][0] ) ): ?>
+        <li class="reepay-admin-section-li-header-small">
+			<?php echo __( 'Card number', 'woocommerce-gateway-reepay-checkout' ); ?>
+        </li>
+        <li class="reepay-admin-section-li-small">
+			<?php echo WC_ReepayCheckout::formatCreditCard( $order_data['transactions'][0]['card_transaction']['masked_card'] ); ?>
+        </li>
+        <p>
+            <center>
+                <img src="<?php echo WC_ReepayCheckout::get_logo( $order_data['transactions'][0]['card_transaction']['card_type'] ); ?>" class="reepay-admin-card-logo" />
+            </center>
+        </p>
+	<?php endif; ?>
 </ul>
