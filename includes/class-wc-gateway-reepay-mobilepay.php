@@ -26,7 +26,7 @@ class WC_Gateway_Reepay_Mobilepay extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_mobilepay';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Mobilepay', 'woocommerce-gateway-reepay-checkout' );
-		$this->icon         = apply_filters( 'woocommerce_reepay_mobilepay_icon', plugins_url( '/assets/images/mobilepay.png', dirname( __FILE__ ) ) );
+		//$this->icon         = apply_filters( 'woocommerce_reepay_mobilepay_icon', plugins_url( '/assets/images/mobilepay.png', dirname( __FILE__ ) ) );
 		$this->supports     = array(
 			'products',
 			'refunds',

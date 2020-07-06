@@ -26,7 +26,7 @@ class WC_Gateway_Reepay_Klarna_Pay_Now extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_klarna_pay_now';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Klarna Pay Now', 'woocommerce-gateway-reepay-checkout' );
-		$this->icon         = apply_filters( 'woocommerce_reepay_klarna_pn_icon', plugins_url( '/assets/images/klarna-pay-now.png', dirname( __FILE__ ) ) );
+		//$this->icon         = apply_filters( 'woocommerce_reepay_klarna_pn_icon', plugins_url( '/assets/images/klarna-pay-now.png', dirname( __FILE__ ) ) );
 		$this->supports     = array(
 			'products',
 			'refunds',

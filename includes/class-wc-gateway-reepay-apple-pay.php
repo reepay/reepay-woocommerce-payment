@@ -26,7 +26,7 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_applepay';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Apple Pay', 'woocommerce-gateway-reepay-checkout' );
-		$this->icon         = apply_filters( 'woocommerce_reepay_applepay_icon', plugins_url( '/assets/images/applepay.png', dirname( __FILE__ ) ) );
+		//$this->icon         = apply_filters( 'woocommerce_reepay_applepay_icon', plugins_url( '/assets/images/applepay.png', dirname( __FILE__ ) ) );
 		$this->supports     = array(
 			'products',
 			'refunds',
