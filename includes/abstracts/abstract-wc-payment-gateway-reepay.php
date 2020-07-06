@@ -905,19 +905,19 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @return bool
 	 */
 	public static function wcs_cart_have_subscription() {
-		if ( ! class_exists( 'WC_Product_Subscription', FALSE ) ) {
-			return FALSE;
+		if ( ! class_exists( 'WC_Subscriptions_Product' ) ) {
+			return false;
 		}
 
 		// Check is Recurring Payment
 		$cart = WC()->cart->get_cart();
 		foreach ( $cart as $key => $item ) {
-			if ( is_object( $item['data'] ) && get_class( $item['data'] ) === 'WC_Product_Subscription' ) {
-				return TRUE;
+			if ( is_object( $item['data'] ) && WC_Subscriptions_Product::is_subscription( $item['data'] ) ) {
+				return true;
 			}
 		}
 
-		return FALSE;
+		return false;
 	}
 
 	/**

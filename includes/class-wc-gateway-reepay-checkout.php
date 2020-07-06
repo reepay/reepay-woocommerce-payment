@@ -130,6 +130,17 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			'maybe_render_subscription_payment_method'
 		), 10, 2 );
 
+		// Lock "Save card" if needs
+		add_filter(
+			'woocommerce_payment_gateway_save_new_payment_method_option_html',
+			array(
+				$this,
+				'save_new_payment_method_option_html',
+			),
+			10,
+			2
+		);
+
 		// Action for "Add Payment Method"
 		add_action( 'wp_ajax_reepay_card_store', array( $this, 'reepay_card_store' ) );
 		add_action( 'wp_ajax_nopriv_reepay_card_store', array( $this, 'reepay_card_store' ) );
@@ -397,29 +408,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			$this->tokenization_script();
 			$this->saved_payment_methods();
 			$this->save_payment_method_checkbox();
-
-			// Lock "Save to Account" for Recurring Payments / Payment Change
-			if ( self::wcs_cart_have_subscription() || self::wcs_is_payment_change() ):
-				?>
-				<script type="application/javascript">
-					( function ($) {
-						$( document ).ready( function () {
-							$( 'input[name="wc-reepay_checkout-new-payment-method"]' ).prop( {
-								'checked' : true,
-								'disabled': true
-							} );
-						} );
-
-						$( document ).on( 'updated_checkout', function () {
-							$( 'input[name="wc-reepay_checkout-new-payment-method"]' ).prop( {
-								'checked' : true,
-								'disabled': true
-							} );
-						} ) ;
-					} ( jQuery ) );
-				</script>
-			<?php
-			endif;
 		endif;
 	}
 
@@ -812,6 +800,37 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		}
 
 		return $payment_method_to_display;
+	}
+
+	/**
+	 * Modify "Save to account" to lock that if needs.
+	 *
+	 * @param string $html
+	 * @param WC_Payment_Gateway $gateway
+	 *
+	 * @return string
+	 */
+	public function save_new_payment_method_option_html( $html, $gateway ) {
+		if ( $gateway->id !== $this->id ) {
+			return $html;
+		}
+
+		// Lock "Save to Account" for Recurring Payments / Payment Change
+		if ( self::wcs_cart_have_subscription() || self::wcs_is_payment_change() ) {
+			// Load XML
+			libxml_use_internal_errors( true );
+			$doc = new \DOMDocument();
+			$status = @$doc->loadXML( $html );
+			if ( false !== $status ) {
+				$item = $doc->getElementsByTagName('input')->item( 0 );
+				$item->setAttribute('checked','checked' );
+				$item->setAttribute('disabled','disabled' );
+
+				$html = $doc->saveHTML($doc->documentElement);
+			}
+		}
+
+		return $html;
 	}
 
 	/**
