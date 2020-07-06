@@ -570,7 +570,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
 		// If token wasn't stored in Subscription
 		if ( empty( $reepay_token ) ) {
-		    if ( $order = $subscription->get_parent() ) {
+			$order = $subscription->get_parent();
+		    if ( $order ) {
 			    $reepay_token = get_post_meta( $order->get_id(), '_reepay_token', true );
 		    }
 		}
