@@ -1432,4 +1432,79 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			)
 		);
 	}
+
+	/**
+	 * Converts a Reepay card_type into a logo.
+	 *
+	 * @param string $card_type is the Reepay card type
+	 *
+	 * @return string the logo
+	 */
+	public function get_logo( $card_type ) {
+		switch ( $card_type ) {
+			case 'visa':
+				$image = 'visa.png';
+				break;
+			case 'mc':
+				$image = 'mastercard.png';
+				break;
+			case 'dankort':
+			case 'visa_dk':
+				$image = 'dankort.png';
+				break;
+			case 'ffk':
+				$image = 'forbrugsforeningen.png';
+				break;
+			case 'visa_elec':
+				$image = 'visa-electron.png';
+				break;
+			case 'maestro':
+				$image = 'maestro.png';
+				break;
+			case 'amex':
+				$image = 'american-express.png';
+				break;
+			case 'diners':
+				$image = 'diners.png';
+				break;
+			case 'discover':
+				$image = 'discover.png';
+				break;
+			case 'jcb':
+				$image = 'jcb.png';
+				break;
+			case 'mobilepay':
+				$image = 'mobilepay.png';
+				break;
+			case 'viabill':
+				$image = 'viabill.png';
+				break;
+			case 'klarna_pay_later':
+			case 'klarna_pay_now':
+				$image = 'klarna.png';
+				break;
+			case 'resurs':
+				$image = 'resurs.png';
+				break;
+			case 'china_union_pay':
+				$image = 'cup.png';
+				break;
+			case 'paypal':
+				$image = 'paypal.png';
+				break;
+			case 'applepay':
+				$image = 'applepay.png';
+				break;
+			default:
+				//$image = 'reepay.png';
+				// Use an image of payment method
+				$logos = $this->logos;
+				$logo = array_shift( $logos );
+
+				return untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/assets/images/' . $logo;
+		}
+
+		return untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/assets/images/' . $image;
+	}
+
 }

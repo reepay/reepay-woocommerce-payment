@@ -136,7 +136,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<li class="reepay-admin-section-li-small">
         <?php echo $order_data["id"]; ?>
     </li>
-	<?php if ( isset( $order_data['transactions'][0] ) ): ?>
+	<?php if ( isset( $order_data['transactions'][0] ) && isset( $order_data['transactions'][0]['card_transaction'] ) ): ?>
         <li class="reepay-admin-section-li-header-small">
 			<?php echo __( 'Card number', 'woocommerce-gateway-reepay-checkout' ); ?>
         </li>
@@ -144,9 +144,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<?php echo WC_ReepayCheckout::formatCreditCard( $order_data['transactions'][0]['card_transaction']['masked_card'] ); ?>
         </li>
         <p>
-            <center>
-                <img src="<?php echo WC_ReepayCheckout::get_logo( $order_data['transactions'][0]['card_transaction']['card_type'] ); ?>" class="reepay-admin-card-logo" />
-            </center>
+        <center>
+            <img src="<?php echo $gateway->get_logo( $order_data['transactions'][0]['card_transaction']['card_type'] ); ?>" class="reepay-admin-card-logo" />
+        </center>
         </p>
 	<?php endif; ?>
 </ul>
