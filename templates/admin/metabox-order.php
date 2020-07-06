@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         </span>
         <span class="reepay-balance__amount">
             <span class='reepay-balance__currency'>
-                <?php echo esc_html( $order_data['currency'] ); ?>
+                &nbsp;
             </span>
             <?php echo wc_price( ( $order_data['authorized_amount'] - $order_data['settled_amount'] ) / 100 ); ?>
         </span>
@@ -39,7 +39,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         </span>
         <span class="reepay-balance__amount">
             <span class='reepay-balance__currency'>
-                <?php echo esc_html( $order_data['currency'] ); ?>
+                &nbsp;
             </span>
             <?php echo wc_price( $order_data['authorized_amount'] / 100 ); ?>
         </span>
@@ -50,7 +50,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         </span>
         <span class="reepay-balance__amount">
             <span class='reepay-balance__currency'>
-                <?php echo esc_html( $order_data['currency'] ); ?>
+                &nbsp;
             </span>
             <?php echo wc_price( $order_data['settled_amount'] / 100 ); ?>
         </span>
@@ -61,7 +61,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         </span>
         <span class="reepay-balance__amount">
             <span class='reepay-balance__currency'>
-                <?php echo esc_html( $order_data['currency'] ); ?>
+                &nbsp;
             </span>
             <?php echo wc_price( $order_data['refunded_amount'] / 100 ); ?>
         </span>
