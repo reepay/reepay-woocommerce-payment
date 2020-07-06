@@ -59,4 +59,13 @@ interface WC_Payment_Gateway_Reepay_Interface {
 	 * @return void
 	 */
 	public function refund_payment( $order, $amount, $reason );
+
+	/**
+	 * Converts a Reepay card_type into a logo.
+	 *
+	 * @param string $card_type is the Reepay card type
+	 *
+	 * @return string the logo
+	 */
+	public function get_logo( $card_type );
 }

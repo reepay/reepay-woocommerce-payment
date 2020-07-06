@@ -66,7 +66,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		$this->payment_type             = isset( $this->settings['payment_type'] ) ? $this->settings['payment_type'] : $this->payment_type;
 		$this->payment_methods          = isset( $this->settings['payment_methods'] ) ? $this->settings['payment_methods'] : $this->payment_methods;
 		$this->skip_order_lines         = isset( $this->settings['skip_order_lines'] ) ? $this->settings['skip_order_lines'] : $this->skip_order_lines;
-		$this->disable_order_autocancel = isset( $this->settings['disable_order_autocancel'] ) ? $this->settings['disable_order_autocancel'] : $this->disable_order_autocancel;
+		$this->enable_order_autocancel  = isset( $this->settings['enable_order_autocancel'] ) ? $this->settings['enable_order_autocancel'] : $this->enable_order_autocancel;
 
 		// Disable "Add payment method" if the CC saving is disabled
 		if ( $this->save_cc !== 'yes' && ($key = array_search('add_payment_method', $this->supports)) !== false ) {
@@ -129,6 +129,17 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			$this,
 			'maybe_render_subscription_payment_method'
 		), 10, 2 );
+
+		// Lock "Save card" if needs
+		add_filter(
+			'woocommerce_payment_gateway_save_new_payment_method_option_html',
+			array(
+				$this,
+				'save_new_payment_method_option_html',
+			),
+			10,
+			2
+		);
 
 		// Action for "Add Payment Method"
 		add_action( 'wp_ajax_reepay_card_store', array( $this, 'reepay_card_store' ) );
@@ -302,20 +313,20 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'description'    => __( 'Select if order lines should not be send to Reepay', 'woocommerce-gateway-reepay-checkout' ),
 				'type'        => 'select',
 				'options'     => array(
-					'yes' => 'Include order lines',
-					'no'  => 'Skip order lines'
+					'no'   => 'Include order lines',
+					'yes'  => 'Skip order lines'
 				),
 				'default'     => $this->skip_order_lines
 			),
-			'disable_order_autocancel' => array(
-				'title'       => __( 'Disable order auto-cancel', 'woocommerce-gateway-reepay-checkout' ),
-				'description'    => __( 'If the automatic woocommerce unpaid order auto-cancel should be ignored' ),
+			'enable_order_autocancel' => array(
+				'title'       => __( 'The automatic order auto-cancel', 'woocommerce-gateway-reepay-checkout' ),
+				'description'    => __( 'The automatic order auto-cancel', 'woocommerce-gateway-reepay-checkout' ),
 				'type'        => 'select',
 				'options'     => array(
 					'yes' => 'Enable auto-cancel',
 					'no'  => 'Ignore / disable auto-cancel'
 				),
-				'default'     => $this->disable_order_autocancel
+				'default'     => $this->enable_order_autocancel
 			)
 		);
 	}
@@ -391,36 +402,14 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			dirname( __FILE__ ) . '/../templates/'
 		);
 
+		// The "Save card or use existed" form should appears when active or when the cart has a subscription
 		if ( ( $this->save_cc === 'yes' && ! is_add_payment_method_page() ) ||
 			 ( self::wcs_cart_have_subscription() || self::wcs_is_payment_change() )
-		):
+		) {
 			$this->tokenization_script();
 			$this->saved_payment_methods();
 			$this->save_payment_method_checkbox();
-
-			// Lock "Save to Account" for Recurring Payments / Payment Change
-			if ( self::wcs_cart_have_subscription() || self::wcs_is_payment_change() ):
-				?>
-				<script type="application/javascript">
-					( function ($) {
-						$( document ).ready( function () {
-							$( 'input[name="wc-reepay_checkout-new-payment-method"]' ).prop( {
-								'checked' : true,
-								'disabled': true
-							} );
-						} );
-
-						$( document ).on( 'updated_checkout', function () {
-							$( 'input[name="wc-reepay_checkout-new-payment-method"]' ).prop( {
-								'checked' : true,
-								'disabled': true
-							} );
-						} ) ;
-					} ( jQuery ) );
-				</script>
-			<?php
-			endif;
-		endif;
+        }
 	}
 
 	/**
@@ -570,7 +559,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
 		// If token wasn't stored in Subscription
 		if ( empty( $reepay_token ) ) {
-		    if ( $order = $subscription->get_parent() ) {
+			$order = $subscription->get_parent();
+		    if ( $order ) {
 			    $reepay_token = get_post_meta( $order->get_id(), '_reepay_token', true );
 		    }
 		}
@@ -811,6 +801,37 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		}
 
 		return $payment_method_to_display;
+	}
+
+	/**
+	 * Modify "Save to account" to lock that if needs.
+	 *
+	 * @param string $html
+	 * @param WC_Payment_Gateway $gateway
+	 *
+	 * @return string
+	 */
+	public function save_new_payment_method_option_html( $html, $gateway ) {
+		if ( $gateway->id !== $this->id ) {
+			return $html;
+		}
+
+		// Lock "Save to Account" for Recurring Payments / Payment Change
+		if ( self::wcs_cart_have_subscription() || self::wcs_is_payment_change() ) {
+			// Load XML
+			libxml_use_internal_errors( true );
+			$doc = new \DOMDocument();
+			$status = @$doc->loadXML( $html );
+			if ( false !== $status ) {
+				$item = $doc->getElementsByTagName('input')->item( 0 );
+				$item->setAttribute('checked','checked' );
+				$item->setAttribute('disabled','disabled' );
+
+				$html = $doc->saveHTML($doc->documentElement);
+			}
+		}
+
+		return $html;
 	}
 
 	/**

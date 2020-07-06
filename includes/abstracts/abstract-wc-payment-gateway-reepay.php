@@ -16,6 +16,36 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	const SETTLE_FEE = 'fee';
 
 	/**
+	 * Get parent settings
+	 *
+	 * @return array
+	 */
+	public function get_parent_settings() {
+		// Get setting from parent method
+		$settings = get_option( 'woocommerce_reepay_checkout_settings' );
+		if ( ! is_array( $settings ) ) {
+			$settings = array();
+		}
+
+		return array_merge( array(
+			'enabled'                 => 'no',
+			'private_key'             => $this->private_key,
+			'private_key_test'        => $this->private_key_test,
+			'test_mode'               => $this->test_mode,
+			'payment_type'            => $this->payment_type,
+			'payment_methods'         => $this->payment_methods,
+			'settle'                  => $this->settle,
+			'language'                => $this->language,
+			'save_cc'                 => $this->save_cc,
+			'debug'                   => $this->debug,
+			'logos'                   => $this->logos,
+			'logo_height'             => $this->logo_height,
+			'skip_order_lines'        => $this->skip_order_lines,
+			'enable_order_autocancel' => $this->enable_order_autocancel
+		), $settings );
+	}
+
+	/**
 	 * Check is Capture possible
 	 *
 	 * @param WC_Order|int $order
@@ -905,19 +935,19 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @return bool
 	 */
 	public static function wcs_cart_have_subscription() {
-		if ( ! class_exists( 'WC_Product_Subscription', FALSE ) ) {
-			return FALSE;
+		if ( ! class_exists( 'WC_Subscriptions_Product' ) ) {
+			return false;
 		}
 
 		// Check is Recurring Payment
 		$cart = WC()->cart->get_cart();
 		foreach ( $cart as $key => $item ) {
-			if ( is_object( $item['data'] ) && get_class( $item['data'] ) === 'WC_Product_Subscription' ) {
-				return TRUE;
+			if ( is_object( $item['data'] ) && WC_Subscriptions_Product::is_subscription( $item['data'] ) ) {
+				return true;
 			}
 		}
 
-		return FALSE;
+		return false;
 	}
 
 	/**
@@ -1147,7 +1177,13 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			throw new Exception('Unable to get invoice data.');
 		}
 
-		return $this->get_invoice_by_handle( $this->get_order_handle( $order ) );
+		$order_data = $this->get_invoice_by_handle( $this->get_order_handle( $order ) );
+
+		return array_merge( array(
+			'authorized_amount' => 0,
+			'settled_amount'    => 0,
+			'refunded_amount'   => 0
+		), $order_data );
 	}
 
 	/**
@@ -1426,4 +1462,79 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			)
 		);
 	}
+
+	/**
+	 * Converts a Reepay card_type into a logo.
+	 *
+	 * @param string $card_type is the Reepay card type
+	 *
+	 * @return string the logo
+	 */
+	public function get_logo( $card_type ) {
+		switch ( $card_type ) {
+			case 'visa':
+				$image = 'visa.png';
+				break;
+			case 'mc':
+				$image = 'mastercard.png';
+				break;
+			case 'dankort':
+			case 'visa_dk':
+				$image = 'dankort.png';
+				break;
+			case 'ffk':
+				$image = 'forbrugsforeningen.png';
+				break;
+			case 'visa_elec':
+				$image = 'visa-electron.png';
+				break;
+			case 'maestro':
+				$image = 'maestro.png';
+				break;
+			case 'amex':
+				$image = 'american-express.png';
+				break;
+			case 'diners':
+				$image = 'diners.png';
+				break;
+			case 'discover':
+				$image = 'discover.png';
+				break;
+			case 'jcb':
+				$image = 'jcb.png';
+				break;
+			case 'mobilepay':
+				$image = 'mobilepay.png';
+				break;
+			case 'viabill':
+				$image = 'viabill.png';
+				break;
+			case 'klarna_pay_later':
+			case 'klarna_pay_now':
+				$image = 'klarna.png';
+				break;
+			case 'resurs':
+				$image = 'resurs.png';
+				break;
+			case 'china_union_pay':
+				$image = 'cup.png';
+				break;
+			case 'paypal':
+				$image = 'paypal.png';
+				break;
+			case 'applepay':
+				$image = 'applepay.png';
+				break;
+			default:
+				//$image = 'reepay.png';
+				// Use an image of payment method
+				$logos = $this->logos;
+				$logo = array_shift( $logos );
+
+				return untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/images/' . $logo . '.png';
+		}
+
+		return untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/images/' . $image;
+	}
+
 }

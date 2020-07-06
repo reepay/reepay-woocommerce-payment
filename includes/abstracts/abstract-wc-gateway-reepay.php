@@ -86,6 +86,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	public $save_cc = 'yes';
 
 	/**
+	 * Logo Height
+	 * @var string
+	 */
+	public $logo_height = '';
+
+	/**
 	 * Skip order lines to Reepay and use order totals instead
 	 */
 	public $skip_order_lines = 'no';
@@ -93,7 +99,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	/**
 	 * If automatically cancel inpaid orders should be ignored
 	 */
-	public $disable_order_autocancel = 'no';
+	public $enable_order_autocancel = 'no';
 
 	/**
 	 * Payment methods.
@@ -126,7 +132,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 		$this->logos                    = isset( $this->settings['logos'] ) ? $this->settings['logos'] : $this->logos;
 		$this->payment_type             = isset( $this->settings['payment_type'] ) ? $this->settings['payment_type'] : $this->payment_type;
 		$this->skip_order_lines         = isset( $this->settings['skip_order_lines'] ) ? $this->settings['skip_order_lines'] : $this->skip_order_lines;
-		$this->disable_order_autocancel = isset( $this->settings['disable_order_autocancel'] ) ? $this->settings['disable_order_autocancel'] : $this->disable_order_autocancel;
+		$this->enable_order_autocancel  = isset( $this->settings['enable_order_autocancel'] ) ? $this->settings['enable_order_autocancel'] : $this->enable_order_autocancel;
 
 		if (!is_array($this->settle)) {
 			$this->settle = array();
@@ -209,7 +215,14 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	 * @return void
 	 */
 	public function payment_fields() {
-		parent::payment_fields();
+		wc_get_template(
+			'checkout/payment-fields.php',
+			array(
+				'gateway' => $this,
+			),
+			'',
+			dirname( __FILE__ ) . '/../../templates/'
+		);
 	}
 
 	/**
@@ -458,7 +471,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			],
 			'accept_url' => $this->get_return_url( $order ),
 			'cancel_url' => $order->get_cancel_order_url(),
-			'payment_methods' => $this->payment_methods
 		];
 
 		if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
