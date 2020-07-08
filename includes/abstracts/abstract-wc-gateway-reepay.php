@@ -170,6 +170,27 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	}
 
 	/**
+	 * Return the gateway's icon.
+	 *
+	 * @return string
+	 */
+	public function get_icon() {
+		$html = '';
+		$logos = array_filter( (array) $this->logos, 'strlen' );
+		if ( count( $logos ) > 0 ) {
+			$html = '<ul class="reepay-logos">';
+			foreach ( $logos as $logo ) {
+				$html .= '<li class="reepay-logo">';
+				$html .= '<img src="' . esc_url( plugins_url( '/assets/images/' . $logo . '.png', dirname( __FILE__ ) . '/../../../' ) ) . '" alt="' . esc_attr( sprintf( __( 'Pay with %s on Reepay', 'woocommerce-gateway-reepay-checkout' ), $this->get_title() ) ). '" />';
+				$html .= '</li>';
+			}
+			$html .= '</ul>';
+		}
+
+		return apply_filters( 'woocommerce_gateway_icon', $html, $this->id );
+	}
+
+	/**
 	 * payment_scripts function.
 	 *
 	 * Outputs scripts used for payment

@@ -8,17 +8,3 @@ if ( ! defined( 'ABSPATH' ) ) {
 <?php if ( $description = $gateway->get_description() ): ?>
 	<?php echo wpautop( wptexturize( $description ) ); ?>
 <?php endif; ?>
-
-<?php $gateway->logos = array_filter((array) $gateway->logos, 'strlen'); ?>
-<?php if ( count( $gateway->logos ) > 0 ): ?>
-	<ul class="reepay-logos">
-		<?php foreach ( $gateway->logos as $logo ): ?>
-			<li class="reepay-logo">
-				<?php
-				$image_url = plugins_url( '/assets/images/' . $logo . '.png', dirname( __FILE__ ) . '/../../../' );
-				?>
-				<img src="<?php echo esc_url( $image_url ) ?>" alt="<?php echo esc_html( sprintf( __( 'Pay with %s on Reepay', 'woocommerce-gateway-reepay-checkout' ), $gateway->method_title ) ); ?>">
-			</li>
-		<?php endforeach; ?>
-	</ul>
-<?php endif; ?>
