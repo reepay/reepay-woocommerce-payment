@@ -171,4 +171,6 @@ jQuery(document).ready(function ($) {
 			}
 		});
 	});
+
+	$( '#reepay-capture_partly_amount-field, #reepay-refund_partly_amount-field' ).inputmask({ alias: "currency", groupSeparator: '' });
 });

@@ -343,7 +343,20 @@ class WC_ReepayCheckout {
 		if ( $hook === 'post.php' ) {
 			// Scripts
 			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-			wp_register_script( 'reepay-admin-js', plugin_dir_url( __FILE__ ) . 'assets/js/admin' . $suffix . '.js' );
+			wp_register_script(
+                'reepay-js-input-mask',
+                plugin_dir_url( __FILE__ ) . 'assets/js/jquery.inputmask' . $suffix . '.js',
+                array( 'jquery'),
+                '5.0.3'
+            );
+			wp_register_script(
+                'reepay-admin-js',
+                plugin_dir_url( __FILE__ ) . 'assets/js/admin' . $suffix . '.js',
+                array(
+                    'jquery',
+	                'reepay-js-input-mask'
+                )
+            );
 			wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/assets/css/style' . $suffix . '.css', __FILE__ ), array(), FALSE, 'all' );
 
 			// Localize the script

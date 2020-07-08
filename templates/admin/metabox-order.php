@@ -93,7 +93,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <?php echo __( 'Capture amount', 'woocommerce-gateway-reepay-checkout' ); ?>:
             </span>
             <span class="reepay-partly_capture_amount">
-                <input id='reepay-capture_partly_amount-field' class='reepay-capture_partly_amount-field' type='number' min="0.00" step="0.01" size='6' value="<?php echo ( $order_data['authorized_amount'] - $order_data['settled_amount'] ) / 100; ?>" />
+                <input id='reepay-capture_partly_amount-field' class='reepay-capture_partly_amount-field' type='text' min="0.00" step="0.01" size='6' value="<?php echo ( $order_data['authorized_amount'] - $order_data['settled_amount'] ) / 100; ?>" />
             </span>
         </li>
 		<li class="reepay-full-width">
@@ -113,7 +113,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <?php echo __( 'Refund amount', 'woocommerce-gateway-reepay-checkout' ); ?>:
             </span>
             <span class="reepay-partly_refund_amount">
-                <input id='reepay-refund_partly_amount-field' class='reepay-refund_partly_amount-field' type='number' size='6' min="0.00" step="0.01" value="<?php echo ( $order_data['settled_amount'] - $order_data['refunded_amount'] ) / 100; ?>" />
+                <input id='reepay-refund_partly_amount-field' class='reepay-refund_partly_amount-field' type='text' size='6' min="0.00" step="0.01" value="<?php echo ( $order_data['settled_amount'] - $order_data['refunded_amount'] ) / 100; ?>" />
             </span>
         </li>
 		<li class="reepay-full-width">
