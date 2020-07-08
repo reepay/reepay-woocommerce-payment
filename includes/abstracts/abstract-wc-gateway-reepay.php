@@ -246,12 +246,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	 */
 	public function process_payment( $order_id ) {
 		$order           = wc_get_order( $order_id );
-		$token_id        = 'new';
-		$maybe_save_card = false;
+		$token_id        = isset( $_POST['wc-' . $this->id . '-payment-token'] ) ? wc_clean( $_POST['wc-' . $this->id . '-payment-token'] ) : 'new';
+		$maybe_save_card = isset( $_POST['wc-' . $this->id . '-new-payment-method'] ) && (bool) $_POST['wc-' . $this->id . '-new-payment-method'];
 
-		if ( $this->save_cc === 'yes' ) {
-			$token_id        = isset( $_POST['wc-' . $this->id . '-payment-token'] ) ? wc_clean( $_POST['wc-' . $this->id . '-payment-token'] ) : 'new';
-			$maybe_save_card = isset( $_POST['wc-' . $this->id . '-new-payment-method'] ) && (bool) $_POST['wc-' . $this->id . '-new-payment-method'];
+		if ( 'yes' !== $this->save_cc ) {
+			$token_id = 'new';
+			$maybe_save_card = false;
 		}
 
 		// Switch of Payment Method
@@ -338,7 +338,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 		}
 
 		// Try to charge with saved token
-		if ( $token_id !== 'new' ) {
+		if ( absint( $token_id ) > 0 ) {
 			$token = new WC_Payment_Token_Reepay( $token_id );
 			if ( ! $token->get_id() ) {
 				wc_add_notice( __( 'Failed to load token.', 'woocommerce-gateway-reepay-checkout' ), 'error' );
