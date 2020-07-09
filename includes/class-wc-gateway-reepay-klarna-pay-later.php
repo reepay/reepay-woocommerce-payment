@@ -10,7 +10,7 @@ class WC_Gateway_Reepay_Klarna_Pay_Later extends WC_Gateway_Reepay {
 	 * @var array
 	 */
 	public $logos = array(
-		'klarna-pay-later',
+		'klarna',
 	);
 
 	/**
@@ -31,7 +31,7 @@ class WC_Gateway_Reepay_Klarna_Pay_Later extends WC_Gateway_Reepay {
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'klarna-pay-later' );
+		$this->logos        = array( 'klarna' );
 
 		parent::__construct();
 

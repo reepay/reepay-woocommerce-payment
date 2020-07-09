@@ -170,6 +170,27 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	}
 
 	/**
+	 * Return the gateway's icon.
+	 *
+	 * @return string
+	 */
+	public function get_icon() {
+		$html = '';
+		$logos = array_filter( (array) $this->logos, 'strlen' );
+		if ( count( $logos ) > 0 ) {
+			$html = '<ul class="reepay-logos">';
+			foreach ( $logos as $logo ) {
+				$html .= '<li class="reepay-logo">';
+				$html .= '<img src="' . esc_url( plugins_url( '/assets/images/' . $logo . '.png', dirname( __FILE__ ) . '/../../../' ) ) . '" alt="' . esc_attr( sprintf( __( 'Pay with %s on Reepay', 'woocommerce-gateway-reepay-checkout' ), $this->get_title() ) ). '" />';
+				$html .= '</li>';
+			}
+			$html .= '</ul>';
+		}
+
+		return apply_filters( 'woocommerce_gateway_icon', $html, $this->id );
+	}
+
+	/**
 	 * payment_scripts function.
 	 *
 	 * Outputs scripts used for payment
@@ -246,12 +267,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	 */
 	public function process_payment( $order_id ) {
 		$order           = wc_get_order( $order_id );
-		$token_id        = 'new';
-		$maybe_save_card = false;
+		$token_id        = isset( $_POST['wc-' . $this->id . '-payment-token'] ) ? wc_clean( $_POST['wc-' . $this->id . '-payment-token'] ) : 'new';
+		$maybe_save_card = isset( $_POST['wc-' . $this->id . '-new-payment-method'] ) && (bool) $_POST['wc-' . $this->id . '-new-payment-method'];
 
-		if ( $this->save_cc === 'yes' ) {
-			$token_id        = isset( $_POST['wc-' . $this->id . '-payment-token'] ) ? wc_clean( $_POST['wc-' . $this->id . '-payment-token'] ) : 'new';
-			$maybe_save_card = isset( $_POST['wc-' . $this->id . '-new-payment-method'] ) && (bool) $_POST['wc-' . $this->id . '-new-payment-method'];
+		if ( 'yes' !== $this->save_cc ) {
+			$token_id = 'new';
+			$maybe_save_card = false;
 		}
 
 		// Switch of Payment Method
@@ -338,7 +359,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 		}
 
 		// Try to charge with saved token
-		if ( $token_id !== 'new' ) {
+		if ( absint( $token_id ) > 0 ) {
 			$token = new WC_Payment_Token_Reepay( $token_id );
 			if ( ! $token->get_id() ) {
 				wc_add_notice( __( 'Failed to load token.', 'woocommerce-gateway-reepay-checkout' ), 'error' );

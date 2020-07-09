@@ -660,6 +660,8 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 
 				$physical = true;
 				$total += $priceWithTax;
+
+				continue;
 			} elseif ( in_array(self::SETTLE_VIRTUAL, $this->settle, true ) &&
 			     ( ! self::wcs_is_subscription_product( $product ) &&
 			       ( $product->is_virtual() || $product->is_downloadable() ) )
@@ -674,7 +676,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 				$onlineVirtual = true;
 				$total += $priceWithTax;
 
-				break;
+				continue;
 			} elseif ( in_array(self::SETTLE_RECURRING, $this->settle, true ) &&
 			     self::wcs_is_subscription_product( $product )
 			) {
@@ -688,7 +690,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 				$recurring = true;
 				$total += $priceWithTax;
 
-				break;
+				continue;
 			}
 		}
 
