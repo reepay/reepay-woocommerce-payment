@@ -290,7 +290,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 					'applepay' => __( 'ApplePay', 'woocommerce-gateway-reepay-checkout' ),
 					'klarna' => __( 'Klarna', 'woocommerce-gateway-reepay-checkout' ),
 					'viabill' => __( 'Viabill', 'woocommerce-gateway-reepay-checkout' ),
-					'resursbank' => __( 'Resurs Bank', 'woocommerce-gateway-reepay-checkout' ),
+					'resurs' => __( 'Resurs Bank', 'woocommerce-gateway-reepay-checkout' ),
 					'forbrugsforeningen' => __( 'Forbrugsforeningen', 'woocommerce-gateway-reepay-checkout' ),
 					'amex' => __( 'AMEX', 'woocommerce-gateway-reepay-checkout' ),
 					'jcb' => __( 'JCB', 'woocommerce-gateway-reepay-checkout' ),
