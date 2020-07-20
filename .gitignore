@@ -3,3 +3,6 @@
 
 #Ignore node_modules
 node_modules
+
+#Ignore PHP storm config
+.idea
