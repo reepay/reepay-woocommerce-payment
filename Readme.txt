@@ -2,7 +2,7 @@
 Contributors: reepaydenmark,aaitse
 Tags: payment,reepay, subscription, visa, mastercard, dankort, mobilepay, woocommerce
 Requires at least: 4.0
-Tested up to: 5.3.2
+Tested up to: 5.4.2
 Requires PHP: 7.0
 Stable tag: trunk
 License: GPL
@@ -19,7 +19,7 @@ The Reepay plugin extends WooCommerce allowing you to take payments on your stor
 See installation guide right here: https://intercom.help/reepay/reepay-plugins/woocommerce-plugin
 
 == Changelog ==
-v 1.2.4 - Smaller bugfixes, Please see this video for further instructions on how to set up payment methods in WooCommerce with the new enhancements. https://youtu.be/dk083Yj4Lpg
+v 1.2.5 - Smaller bugfixes, Please see this video for further instructions on how to set up payment methods in WooCommerce with the new enhancements. https://youtu.be/dk083Yj4Lpg
 v 1.2.2 - Small visual improvements
 v 1.2.1 - Smaller bugfixes
 v 1.2.0 - Lot of chanegs including direct actions on an order in woorcommerce.
