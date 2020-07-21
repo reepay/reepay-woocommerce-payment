@@ -104,11 +104,12 @@
   text-align: center; }
 
 #payment .wc_payment_methods li label {
-  display: flex !important; }
+  display: flex !important;
+  align-items: center; }
   #payment .wc_payment_methods li label .reepay-logos {
     display: flex;
     flex-wrap: wrap;
-    margin-left: auto;
+    margin: 0 0 0 auto;
     justify-content: flex-end;
     max-width: 300px; }
     #payment .wc_payment_methods li label .reepay-logos .reepay-logo img {
