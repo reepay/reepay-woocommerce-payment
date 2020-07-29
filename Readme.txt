@@ -2,7 +2,7 @@
 Contributors: reepaydenmark,aaitse
 Tags: payment,reepay, subscription, visa, mastercard, dankort, mobilepay, woocommerce
 Requires at least: 4.0
-Tested up to: 5.3.2
+Tested up to: 5.4.2
 Requires PHP: 7.0
 Stable tag: trunk
 License: GPL
