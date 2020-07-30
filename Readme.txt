@@ -20,6 +20,7 @@ See installation guide right here: https://intercom.help/reepay/reepay-plugins/w
 
 == Changelog ==
 v 1.2.5 - Smaller bugfixes, Please see this video for further instructions on how to set up payment methods in WooCommerce with the new enhancements. https://youtu.be/dk083Yj4Lpg
+v 1.2.4 - Small visual improvements
 v 1.2.2 - Small visual improvements
 v 1.2.1 - Smaller bugfixes
 v 1.2.0 - Lot of chanegs including direct actions on an order in woorcommerce.
