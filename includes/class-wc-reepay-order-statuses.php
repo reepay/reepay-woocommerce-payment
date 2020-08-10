@@ -349,6 +349,10 @@ class WC_Reepay_Order_Statuses {
 	 */
 	public static function set_authorized_status( $order, $note = null, $transaction_id = null )
 	{
+		if ( 'authorized' === get_post_meta( $order->get_id(), '_reepay_state', true ) ) {
+			return;
+		}
+
 		// Reduce stock
 		$order_stock_reduced = $order->get_meta( '_order_stock_reduced' );
 		if ( ! $order_stock_reduced ) {
@@ -361,6 +365,9 @@ class WC_Reepay_Order_Statuses {
 			$note,
 			$transaction_id
 		);
+
+
+		update_post_meta( $order->get_id(), '_reepay_state', 'authorized' );
 	}
 
 	/**
@@ -376,6 +383,10 @@ class WC_Reepay_Order_Statuses {
 		// Check if the payment has been settled fully
 		$payment_method = $order->get_payment_method();
 		if ( ! in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
+			return;
+		}
+
+		if ( 'settled' === get_post_meta( $order->get_id(), '_reepay_state', true ) ) {
 			return;
 		}
 
@@ -398,6 +409,8 @@ class WC_Reepay_Order_Statuses {
 			if ( $note ) {
 				$order->add_order_note( $note );
 			}
+
+			update_post_meta( $order->get_id(), '_reepay_state', 'settled' );
 		}
 	}
 
