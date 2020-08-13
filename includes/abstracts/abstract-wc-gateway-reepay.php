@@ -698,233 +698,256 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 				throw new Exception( 'Signature verification failed' );
 			}
 
-			// Check invoice state
-			switch ( $data['event_type'] ) {
-				case 'invoice_authorized':
-					if ( ! isset( $data['invoice'] ) ) {
-						throw new Exception( 'Missing Invoice parameter' );
-					}
+			// Create Background Process Task
+			$background_process = new WC_Background_Reepay_Queue();
+			$background_process->push_to_queue(
+				array(
+					'payment_method_id' => $this->id,
+					'webhook_data'      => $raw_body,
+				)
+			);
+			$background_process->save();
 
-					// Get Order by handle
-					$order = $this->get_order_by_handle( $data['invoice'] );
-
-					// Check transaction is applied
-					if ( $order->get_transaction_id() === $data['transaction'] ) {
-						$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
-						return;
-					}
-
-					// Add transaction ID
-					$order->set_transaction_id( $data['transaction'] );
-					$order->save();
-
-					// Check if the order has been marked as authorized before
-					if ( $order->get_status() === REEPAY_STATUS_AUTHORIZED ) {
-						$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
-						http_response_code( 200 );
-						return;
-					}
-
-					// Fetch the Invoice data at the moment
-					try {
-						$invoice_data = $this->get_invoice_by_handle( $data['invoice'] );
-					} catch ( Exception $e ) {
-						$invoice_data = array();
-					}
-
-					$this->log( sprintf( 'WebHook: Invoice data: %s', var_export( $invoice_data, true ) ) );
-
-					// set order as authorized
-					WC_Reepay_Order_Statuses::set_authorized_status(
-						$order,
-						sprintf(
-							__( 'Payment has been authorized. Amount: %s. Transaction: %s', 'woocommerce-gateway-reepay-checkout' ),
-							wc_price( $invoice_data['amount'] / 100 ),
-							$data['transaction']
-						),
-						$data['transaction']
-					);
-
-					// Settle an authorized payment instantly if possible
-					$this->process_instant_settle( $order );
-
-					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
-					break;
-				case 'invoice_settled':
-					if ( ! isset( $data['invoice'] ) ) {
-						throw new Exception( 'Missing Invoice parameter' );
-					}
-
-					// Get Order by handle
-					$order = $this->get_order_by_handle( $data['invoice'] );
-
-					// Check transaction is applied
-					if ( $order->get_transaction_id() === $data['transaction'] ) {
-						$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
-						return;
-					}
-
-					// Check if the order has been marked as settled before
-					if ( $order->get_status() === REEPAY_STATUS_SETTLED ) {
-						$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
-						http_response_code( 200 );
-						return;
-					}
-
-					// Fetch the Invoice data at the moment
-					try {
-						$invoice_data = $this->get_invoice_by_handle( $data['invoice'] );
-					} catch ( Exception $e ) {
-						$invoice_data = array();
-					}
-
-					$this->log( sprintf( 'WebHook: Invoice data: %s', var_export( $invoice_data, true ) ) );
-
-					WC_Reepay_Order_Statuses::set_settled_status(
-						$order,
-						sprintf(
-							__( 'Payment has been settled. Amount: %s. Transaction: %s', 'woocommerce-gateway-reepay-checkout' ),
-							wc_price( $invoice_data['amount'] / 100 ),
-							$data['transaction']
-						),
-						$data['transaction']
-					);
-
-					update_post_meta( $order->get_id(), '_reepay_capture_transaction', $data['transaction'] );
-					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
-					break;
-				case 'invoice_cancelled':
-					if ( ! isset( $data['invoice'] ) ) {
-						throw new Exception( 'Missing Invoice parameter' );
-					}
-
-					// Get Order by handle
-					$order = $this->get_order_by_handle( $data['invoice'] );
-
-					// Check transaction is applied
-					if ( $order->get_transaction_id() === $data['transaction'] ) {
-						$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
-						return;
-					}
-
-					// Add transaction ID
-					$order->set_transaction_id( $data['transaction'] );
-					$order->save();
-
-					if ( $order->has_status( 'cancelled' ) ) {
-						$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
-						http_response_code( 200 );
-						return;
-					}
-
-					$order->update_status( 'cancelled', __( 'Cancelled by WebHook.', 'woocommerce-gateway-reepay-checkout' ) );
-					update_post_meta( $order->get_id(), '_reepay_cancel_transaction', $data['transaction'] );
-					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
-					break;
-				case 'invoice_refund':
-					if ( ! isset( $data['invoice'] ) ) {
-						throw new Exception( 'Missing Invoice parameter' );
-					}
-
-					// Get Order by handle
-					$order = $this->get_order_by_handle( $data['invoice'] );
-
-					// Get Invoice data
-					try {
-						$invoice_data = $this->get_invoice_by_handle( $data['invoice'] );
-					} catch ( Exception $e ) {
-						$invoice_data = array();
-					}
-
-					$credit_notes = $invoice_data['credit_notes'];
-					foreach ($credit_notes as $credit_note) {
-						// Get registered credit notes
-						$credit_note_ids = get_post_meta( $order->get_id(), '_reepay_credit_note_ids', TRUE );
-						if ( ! is_array( $credit_note_ids ) ) {
-							$credit_note_ids = array();
-						}
-
-						// Check is refund already registered
-						if ( in_array( $credit_note['id'], $credit_note_ids ) ) {
-							continue;
-						}
-
-						$credit_note_id = $credit_note['id'];
-						$amount = $credit_note['amount'] / 100;
-						$reason = sprintf( __( 'Credit Note Id #%s.', 'woocommerce-gateway-reepay-checkout' ), $credit_note_id );
-
-						// Create Refund
-						$refund = wc_create_refund( array(
-							'amount'   => $amount,
-							'reason'   => $reason,
-							'order_id' => $order->get_id()
-						) );
-
-						if ( $refund ) {
-							// Save Credit Note ID
-							$credit_note_ids = array_merge( $credit_note_ids, $credit_note_id );
-							update_post_meta( $order->get_id(), '_reepay_credit_note_ids', $credit_note_ids );
-
-							$order->add_order_note(
-								sprintf( __( 'Refunded: %s. Reason: %s', 'woocommerce-gateway-reepay-checkout' ),
-									wc_price( $amount ),
-									$reason
-								)
-							);
-						}
-					}
-
-					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
-					break;
-				case 'invoice_created':
-					if ( ! isset( $data['invoice'] ) ) {
-						throw new Exception( 'Missing Invoice parameter' );
-					}
-
-					$this->log( sprintf( 'WebHook: Invoice created: %s', var_export( $data['invoice'], true ) ) );
-
-					try {
-						// Get Order by handle
-						$order = $this->get_order_by_handle( $data['invoice'] );
-					} catch ( Exception $e ) {
-						$this->log( sprintf( 'WebHook: %s', $e->getMessage() ) );
-					}
-
-					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
-					break;
-				case 'customer_created':
-					$customer = $data['customer'];
-					$user_id = $this->get_userid_by_handle( $customer );
-					if ( ! $user_id ) {
-						if ( strpos( $customer, 'customer-' ) !== false ) {
-							$user_id = (int) str_replace( 'customer-', '', $customer );
-							if ( $user_id > 0 ) {
-								update_user_meta( $user_id, 'reepay_customer_id', $customer );
-								$this->log( sprintf( 'WebHook: Customer created: %s', var_export( $customer, true ) ) );
-							}
-						}
-
-						if ( ! $user_id ) {
-							$this->log( sprintf( 'WebHook: Customer doesn\'t exists: %s', var_export( $customer, true ) ) );
-						}
-					}
-
-					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
-					break;
-				case 'customer_payment_method_added':
-					// @todo
-					$this->log( sprintf( 'WebHook: TODO: customer_payment_method_added: %s', var_export( $data, true ) ) );
-					$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
-					break;
-				default:
-					$this->log( sprintf( 'WebHook: Unknown event type: %s', $data['event_type'] ) );
-					throw new Exception( sprintf( 'Unknown event type: %s', $data['event_type'] ) );
-			}
+			$this->log(
+				sprintf( 'WebHook: Task enqueued. ID: %s',
+					$data['id']
+				)
+			);
 
 			http_response_code(200);
 		} catch (Exception $e) {
 			$this->log( sprintf(  'WebHook: Error: %s', $e->getMessage() ) );
 			http_response_code(400);
+		}
+	}
+
+	/**
+	 * Process WebHook.
+	 *
+	 * @param array $data
+	 */
+	public function process_webhook( $data ) {
+		// Check invoice state
+		switch ( $data['event_type'] ) {
+			case 'invoice_authorized':
+				if ( ! isset( $data['invoice'] ) ) {
+					throw new Exception( 'Missing Invoice parameter' );
+				}
+
+				// Get Order by handle
+				$order = $this->get_order_by_handle( $data['invoice'] );
+
+				// Check transaction is applied
+				if ( $order->get_transaction_id() === $data['transaction'] ) {
+					$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
+					return;
+				}
+
+				// Add transaction ID
+				$order->set_transaction_id( $data['transaction'] );
+				$order->save();
+
+				// Check if the order has been marked as authorized before
+				if ( $order->get_status() === REEPAY_STATUS_AUTHORIZED ) {
+					$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
+					http_response_code( 200 );
+					return;
+				}
+
+				// Fetch the Invoice data at the moment
+				try {
+					$invoice_data = $this->get_invoice_by_handle( $data['invoice'] );
+				} catch ( Exception $e ) {
+					$invoice_data = array();
+				}
+
+				$this->log( sprintf( 'WebHook: Invoice data: %s', var_export( $invoice_data, true ) ) );
+
+				// set order as authorized
+				WC_Reepay_Order_Statuses::set_authorized_status(
+					$order,
+					sprintf(
+						__( 'Payment has been authorized. Amount: %s. Transaction: %s', 'woocommerce-gateway-reepay-checkout' ),
+						wc_price( $invoice_data['amount'] / 100 ),
+						$data['transaction']
+					),
+					$data['transaction']
+				);
+
+				// Settle an authorized payment instantly if possible
+				$this->process_instant_settle( $order );
+
+				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+				break;
+			case 'invoice_settled':
+				if ( ! isset( $data['invoice'] ) ) {
+					throw new Exception( 'Missing Invoice parameter' );
+				}
+
+				// Get Order by handle
+				$order = $this->get_order_by_handle( $data['invoice'] );
+
+				// Check transaction is applied
+				if ( $order->get_transaction_id() === $data['transaction'] ) {
+					$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
+					return;
+				}
+
+				// Check if the order has been marked as settled before
+				if ( $order->get_status() === REEPAY_STATUS_SETTLED ) {
+					$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
+					http_response_code( 200 );
+					return;
+				}
+
+				// Fetch the Invoice data at the moment
+				try {
+					$invoice_data = $this->get_invoice_by_handle( $data['invoice'] );
+				} catch ( Exception $e ) {
+					$invoice_data = array();
+				}
+
+				$this->log( sprintf( 'WebHook: Invoice data: %s', var_export( $invoice_data, true ) ) );
+
+				WC_Reepay_Order_Statuses::set_settled_status(
+					$order,
+					sprintf(
+						__( 'Payment has been settled. Amount: %s. Transaction: %s', 'woocommerce-gateway-reepay-checkout' ),
+						wc_price( $invoice_data['amount'] / 100 ),
+						$data['transaction']
+					),
+					$data['transaction']
+				);
+
+				update_post_meta( $order->get_id(), '_reepay_capture_transaction', $data['transaction'] );
+				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+				break;
+			case 'invoice_cancelled':
+				if ( ! isset( $data['invoice'] ) ) {
+					throw new Exception( 'Missing Invoice parameter' );
+				}
+
+				// Get Order by handle
+				$order = $this->get_order_by_handle( $data['invoice'] );
+
+				// Check transaction is applied
+				if ( $order->get_transaction_id() === $data['transaction'] ) {
+					$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
+					return;
+				}
+
+				// Add transaction ID
+				$order->set_transaction_id( $data['transaction'] );
+				$order->save();
+
+				if ( $order->has_status( 'cancelled' ) ) {
+					$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
+					http_response_code( 200 );
+					return;
+				}
+
+				$order->update_status( 'cancelled', __( 'Cancelled by WebHook.', 'woocommerce-gateway-reepay-checkout' ) );
+				update_post_meta( $order->get_id(), '_reepay_cancel_transaction', $data['transaction'] );
+				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+				break;
+			case 'invoice_refund':
+				if ( ! isset( $data['invoice'] ) ) {
+					throw new Exception( 'Missing Invoice parameter' );
+				}
+
+				// Get Order by handle
+				$order = $this->get_order_by_handle( $data['invoice'] );
+
+				// Get Invoice data
+				try {
+					$invoice_data = $this->get_invoice_by_handle( $data['invoice'] );
+				} catch ( Exception $e ) {
+					$invoice_data = array();
+				}
+
+				$credit_notes = $invoice_data['credit_notes'];
+				foreach ($credit_notes as $credit_note) {
+					// Get registered credit notes
+					$credit_note_ids = get_post_meta( $order->get_id(), '_reepay_credit_note_ids', TRUE );
+					if ( ! is_array( $credit_note_ids ) ) {
+						$credit_note_ids = array();
+					}
+
+					// Check is refund already registered
+					if ( in_array( $credit_note['id'], $credit_note_ids ) ) {
+						continue;
+					}
+
+					$credit_note_id = $credit_note['id'];
+					$amount = $credit_note['amount'] / 100;
+					$reason = sprintf( __( 'Credit Note Id #%s.', 'woocommerce-gateway-reepay-checkout' ), $credit_note_id );
+
+					// Create Refund
+					$refund = wc_create_refund( array(
+						'amount'   => $amount,
+						'reason'   => $reason,
+						'order_id' => $order->get_id()
+					) );
+
+					if ( $refund ) {
+						// Save Credit Note ID
+						$credit_note_ids = array_merge( $credit_note_ids, $credit_note_id );
+						update_post_meta( $order->get_id(), '_reepay_credit_note_ids', $credit_note_ids );
+
+						$order->add_order_note(
+							sprintf( __( 'Refunded: %s. Reason: %s', 'woocommerce-gateway-reepay-checkout' ),
+								wc_price( $amount ),
+								$reason
+							)
+						);
+					}
+				}
+
+				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+				break;
+			case 'invoice_created':
+				if ( ! isset( $data['invoice'] ) ) {
+					throw new Exception( 'Missing Invoice parameter' );
+				}
+
+				$this->log( sprintf( 'WebHook: Invoice created: %s', var_export( $data['invoice'], true ) ) );
+
+				try {
+					// Get Order by handle
+					$order = $this->get_order_by_handle( $data['invoice'] );
+				} catch ( Exception $e ) {
+					$this->log( sprintf( 'WebHook: %s', $e->getMessage() ) );
+				}
+
+				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+				break;
+			case 'customer_created':
+				$customer = $data['customer'];
+				$user_id = $this->get_userid_by_handle( $customer );
+				if ( ! $user_id ) {
+					if ( strpos( $customer, 'customer-' ) !== false ) {
+						$user_id = (int) str_replace( 'customer-', '', $customer );
+						if ( $user_id > 0 ) {
+							update_user_meta( $user_id, 'reepay_customer_id', $customer );
+							$this->log( sprintf( 'WebHook: Customer created: %s', var_export( $customer, true ) ) );
+						}
+					}
+
+					if ( ! $user_id ) {
+						$this->log( sprintf( 'WebHook: Customer doesn\'t exists: %s', var_export( $customer, true ) ) );
+					}
+				}
+
+				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+				break;
+			case 'customer_payment_method_added':
+				// @todo
+				$this->log( sprintf( 'WebHook: TODO: customer_payment_method_added: %s', var_export( $data, true ) ) );
+				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+				break;
+			default:
+				$this->log( sprintf( 'WebHook: Unknown event type: %s', $data['event_type'] ) );
+				throw new Exception( sprintf( 'Unknown event type: %s', $data['event_type'] ) );
 		}
 	}
 }
