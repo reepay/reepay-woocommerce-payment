@@ -102,6 +102,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	public $enable_order_autocancel = 'no';
 
 	/**
+	 * Email address for notification about failed webhooks
+	 * @var string
+	 */
+	public $failed_webhooks_email = '';
+
+	/**
 	 * Payment methods.
 	 *
 	 * @var array|null
