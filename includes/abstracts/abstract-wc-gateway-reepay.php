@@ -587,12 +587,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			return;
 		}
 
-		$confirmed = get_post_meta( $order->get_id(), '_reepay_payment_confirmed', true );
-		if ( ! empty ( $confirmed ) ) {
-			return;
-		}
-
-		$this->log( sprintf( '%s::%s Incoming data %s', __CLASS__, __METHOD__, var_export($_GET, true) ) );
+		$this->log( sprintf( 'accept_url: Incoming data: %s', var_export($_GET, true) ) );
 
 		// Save Payment Method
 		$maybe_save_card = get_post_meta( $order->get_id(), '_reepay_maybe_save_card', true );
@@ -606,74 +601,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			$order->payment_complete();
 		}
 
-		// @todo Transaction ID should applied via WebHook
 		if ( ! empty( $_GET['invoice'] ) && $order_id === $this->get_orderid_by_handle( wc_clean( $_GET['invoice'] ) ) ) {
-			// Wait updates by WebHook
-			//@set_time_limit( 0 );
-			//@ini_set( 'max_execution_time', '0' );
-
-			$attempts = 0;
-			$status_failback = false;
-			do {
-				usleep( 500 );
-				$attempts++;
-				if ( $attempts > 30 ) {
-					$status_failback = true;
-					break;
-				}
-
-				clean_post_cache( $order_id );
-				$order = wc_get_order( $order_id );
-			} while ( $order->has_status( apply_filters( 'woocommerce_default_order_status', 'pending' ) ) );
-
-			// Update order status
-			if ( $status_failback ) {
-				$this->log( sprintf( '%s::%s Processing status_fallback ', __CLASS__, __METHOD__ ) );
-				try {
-					$result = $this->get_invoice_by_handle( wc_clean( $_GET['invoice'] ) );
-				} catch (Exception $e) {
-					return;
-				}
-
-				$this->log( sprintf( '%s::%s status_fallback state %s ', __CLASS__, __METHOD__, $result['state'] ) );
-				switch ($result['state']) {
-					case 'authorized':
-						WC_Reepay_Order_Statuses::set_authorized_status(
-							$order,
-							sprintf(
-								__( 'Payment has been authorized. Amount: %s.', 'woocommerce-gateway-reepay-checkout' ),
-								wc_price( $result['amount'] / 100 )
-							)
-						);
-
-						// Settle an authorized payment instantly if possible
-						$this->process_instant_settle( $order );
-						break;
-					case 'settled':
-						WC_Reepay_Order_Statuses::set_settled_status(
-							$order,
-							sprintf(
-								__( 'Payment has been settled. Amount: %s.', 'woocommerce-gateway-reepay-checkout' ),
-								wc_price( $result['amount'] / 100 )
-							)
-						);
-
-						//update_post_meta( $order->get_id(), '_reepay_capture_transaction', $data['transaction'] );
-						break;
-					case 'cancelled':
-						$order->update_status( 'cancelled', __( 'Cancelled.', 'woocommerce-gateway-reepay-checkout' ) );
-						break;
-					case 'failed':
-						$order->update_status( 'failed', __( 'Failed.', 'woocommerce-gateway-reepay-checkout' ) );
-						break;
-					default:
-						// @todo Order failed?
-				}
-			}
+			$this->process_order_confirmation( wc_clean( $_GET['invoice'] ) );
 		}
-
-		// Lock payment confirmation
-		//update_post_meta( $order->get_id(), '_reepay_payment_confirmed', 1 );
 	}
 
 	/**
@@ -704,21 +634,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 				throw new Exception( 'Signature verification failed' );
 			}
 
-			// Create Background Process Task
-			$background_process = new WC_Background_Reepay_Queue();
-			$background_process->push_to_queue(
-				array(
-					'payment_method_id' => $this->id,
-					'webhook_data'      => $raw_body,
-				)
-			);
-			$background_process->save();
-
-			$this->log(
-				sprintf( 'WebHook: Task enqueued. ID: %s',
-					$data['id']
-				)
-			);
+			$this->process_webhook( $data );
 
 			http_response_code(200);
 		} catch (Exception $e) {
@@ -728,9 +644,99 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	}
 
 	/**
+	 * Process the order confirmation using accept_url.
+	 *
+	 * @param string $invoice_id
+	 *
+	 * @return void
+	 */
+	public function process_order_confirmation( $invoice_id ) {
+		$order_id = $this->get_orderid_by_handle( $invoice_id );
+		$order    = wc_get_order( $order_id );
+
+		// Update order status
+		$this->log( sprintf( 'accept_url: Processing status update %s', $invoice_id ) );
+		try {
+			$result = $this->get_invoice_by_handle( wc_clean( $_GET['invoice'] ) );
+		} catch ( Exception $e ) {
+			return;
+		}
+
+		$this->log( sprintf( 'accept_url: invoice state: %s. Invoice ID: %s ', $result['state'], $invoice_id ) );
+		switch ( $result['state'] ) {
+			case 'authorized':
+				// Check if the order has been marked as authorized before
+				if ( $order->get_status() === REEPAY_STATUS_AUTHORIZED ) {
+					$this->log( sprintf( 'accept_url: Order %s has been authorized before', $order_id ) );
+					return;
+				}
+
+				// Lock the order
+				self::lock_order( $order->get_id() );
+
+				WC_Reepay_Order_Statuses::set_authorized_status(
+					$order,
+					sprintf(
+						__( 'Payment has been authorized. Amount: %s.', 'woocommerce-gateway-reepay-checkout' ),
+						wc_price( $result['amount'] / 100 )
+					)
+				);
+
+				// Settle an authorized payment instantly if possible
+				$this->process_instant_settle( $order );
+
+				// Unlock the order
+				self::unlock_order( $order->get_id() );
+
+				$this->log( sprintf( 'accept_url: Order %s has been marked as authorized', $order_id ) );
+				break;
+			case 'settled':
+				// Check if the order has been marked as settled before
+				if ( $order->get_status() === REEPAY_STATUS_SETTLED ) {
+					$this->log( sprintf( 'accept_url: Order %s has been settled before', $order_id ) );
+					return;
+				}
+
+				// Lock the order
+				self::lock_order( $order->get_id() );
+
+				WC_Reepay_Order_Statuses::set_settled_status(
+					$order,
+					sprintf(
+						__( 'Payment has been settled. Amount: %s.', 'woocommerce-gateway-reepay-checkout' ),
+						wc_price( $result['amount'] / 100 )
+					)
+				);
+
+				// Unlock the order
+				self::unlock_order( $order->get_id() );
+
+				$this->log( sprintf( 'accept_url: Order %s has been marked as settled', $order_id ) );
+
+				break;
+			case 'cancelled':
+				$order->update_status( 'cancelled', __( 'Cancelled.', 'woocommerce-gateway-reepay-checkout' ) );
+
+				$this->log( sprintf( 'accept_url: Order %s has been marked as cancelled', $order_id ) );
+
+				break;
+			case 'failed':
+				$order->update_status( 'failed', __( 'Failed.', 'woocommerce-gateway-reepay-checkout' ) );
+
+				$this->log( sprintf( 'accept_url: Order %s has been marked as failed', $order_id ) );
+
+				break;
+			default:
+				// no break
+		}
+	}
+
+	/**
 	 * Process WebHook.
 	 *
 	 * @param array $data
+	 *
+	 * @return void
 	 */
 	public function process_webhook( $data ) {
 		// Check invoice state
@@ -749,16 +755,29 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 					return;
 				}
 
-				// Add transaction ID
-				$order->set_transaction_id( $data['transaction'] );
-				$order->save();
+				// Wait to be unlocked
+				$needs_reload = self::wait_for_unlock( $order->get_id() );
+				if ( $needs_reload ) {
+					$order = wc_get_order( $order->get_id() );
+				}
 
 				// Check if the order has been marked as authorized before
 				if ( $order->get_status() === REEPAY_STATUS_AUTHORIZED ) {
-					$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
+					$this->log( sprintf( 'WebHook: Event type: %s success. But the order had status early: %s',
+						$data['event_type'],
+						$order->get_status()
+					) );
+
 					http_response_code( 200 );
 					return;
 				}
+
+				// Lock the order
+				self::lock_order( $order->get_id() );
+
+				// Add transaction ID
+				$order->set_transaction_id( $data['transaction'] );
+				$order->save();
 
 				// Fetch the Invoice data at the moment
 				try {
@@ -783,6 +802,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 				// Settle an authorized payment instantly if possible
 				$this->process_instant_settle( $order );
 
+				// Unlock the order
+				self::unlock_order( $order->get_id() );
+
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			case 'invoice_settled':
@@ -793,6 +815,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 				// Get Order by handle
 				$order = $this->get_order_by_handle( $data['invoice'] );
 
+				// Wait to be unlocked
+				$needs_reload = self::wait_for_unlock( $order->get_id() );
+				if ( $needs_reload ) {
+					$order = wc_get_order( $order->get_id() );
+				}
+
 				// Check transaction is applied
 				if ( $order->get_transaction_id() === $data['transaction'] ) {
 					$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
@@ -801,10 +829,17 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 
 				// Check if the order has been marked as settled before
 				if ( $order->get_status() === REEPAY_STATUS_SETTLED ) {
-					$this->log( sprintf( 'WebHook: Event type: %s success. Order status: %s', $data['event_type'], $order->get_status() ) );
+					$this->log( sprintf( 'WebHook: Event type: %s success. But the order had status early: %s',
+						$data['event_type'],
+						$order->get_status()
+					) );
+
 					http_response_code( 200 );
 					return;
 				}
+
+				// Lock the order
+				self::lock_order( $order->get_id() );
 
 				// Fetch the Invoice data at the moment
 				try {
@@ -826,6 +861,10 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 				);
 
 				update_post_meta( $order->get_id(), '_reepay_capture_transaction', $data['transaction'] );
+
+				// Unlock the order
+				self::unlock_order( $order->get_id() );
+
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			case 'invoice_cancelled':
@@ -955,5 +994,89 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 				$this->log( sprintf( 'WebHook: Unknown event type: %s', $data['event_type'] ) );
 				throw new Exception( sprintf( 'Unknown event type: %s', $data['event_type'] ) );
 		}
+	}
+
+	/**
+	 * Enqueue the webhook processing.
+	 *
+	 * @param $raw_body
+	 *
+	 * @return void
+	 */
+	public function enqueue_webhook_processing( $raw_body )
+	{
+		$data = @json_decode( $raw_body, true );
+
+		// Create Background Process Task
+		$background_process = new WC_Background_Reepay_Queue();
+		$background_process->push_to_queue(
+			array(
+				'payment_method_id' => $this->id,
+				'webhook_data'      => $raw_body,
+			)
+		);
+		$background_process->save();
+
+		$this->log(
+			sprintf( 'WebHook: Task enqueued. ID: %s',
+				$data['id']
+			)
+		);
+	}
+
+	/**
+	 * Lock the order.
+	 *
+	 * @see wait_for_unlock()
+	 * @param mixed $order_id
+	 *
+	 * @return void
+	 */
+	public static function lock_order( $order_id ) {
+		update_post_meta( $order_id, '_reepay_locked', '1' );
+	}
+
+	/**
+	 * Unlock the order.
+	 *
+	 * @see wait_for_unlock()
+	 * @param mixed $order_id
+	 *
+	 * @return void
+	 */
+	public static function unlock_order( $order_id ) {
+		delete_post_meta( $order_id, '_reepay_locked' );
+	}
+
+	/**
+	 * Wait for unlock.
+	 *
+	 * @param $order_id
+	 *
+	 * @return bool
+	 */
+	public static function wait_for_unlock( $order_id ) {
+		@set_time_limit( 0 );
+		@ini_set( 'max_execution_time', '0' );
+
+		$is_locked = (bool) get_post_meta( $order_id, '_reepay_locked', true );
+		$needs_reload = false;
+		$attempts = 0;
+		while ( $is_locked ) {
+			usleep( 500 );
+			$attempts++;
+			if ( $attempts > 30 ) {
+				break;
+			}
+
+			wp_cache_delete( $order_id, 'post_meta' );
+			$is_locked = (bool) get_post_meta( $order_id, '_reepay_locked', true );
+			if ( $is_locked ) {
+				$needs_reload = true;
+				clean_post_cache( $order_id );
+			}
+		}
+
+		return $needs_reload;
 	}
 }
