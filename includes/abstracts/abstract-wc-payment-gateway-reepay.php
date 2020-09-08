@@ -623,6 +623,26 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			);
 		}
 
+		// Add "Gift Up!" discount
+		if ( defined( 'GIFTUP_ORDER_META_CODE_KEY' ) &&
+		     defined( 'GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY' )
+		) {
+			if ( $order->meta_exists(GIFTUP_ORDER_META_CODE_KEY) ) {
+				$code              = $order->get_meta( GIFTUP_ORDER_META_CODE_KEY );
+				$requested_balance = $order->get_meta( GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY );
+
+				if ( $requested_balance > 0 ) {
+					$items[] = array(
+						'ordertext' => sprintf( __( 'Gift card (%s)', 'woocommerce-gateway-reepay-checkout' ), $code ),
+						'quantity'  => 1,
+						'amount'    => round(-100 * $requested_balance ),
+						'vat'       => 0,
+						'amount_incl_vat' => $pricesIncludeTax
+					);
+				}
+			}
+		}
+
 		return $items;
 	}
 
