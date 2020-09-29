@@ -207,7 +207,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'type'           => 'multiselect',
 				'css'            => 'height: 250px',
 				'options'     => array(
-					'cart'  => 'All available debit / credit cards',
+					'card'  => 'All available debit / credit cards',
 					'dankort' => 'Dankort',
 					'visa' => 'VISA',
 					'visa_dk' => 'VISA/Dankort',
