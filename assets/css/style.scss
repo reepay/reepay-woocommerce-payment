@@ -91,7 +91,7 @@
 	max-width: 100px;
 }
 
-.reepay-partly_capture_amount {
+.reepay-partly_capture_amount, .reepay-partly_refund_amount {
 	background-color: #f9f9f9;
 	box-sizing: border-box;
 	float: left;
@@ -109,10 +109,27 @@
 	display: flex;         /* NEW, Spec - Firefox, Chrome, Opera */
 }
 
-.reepay-capture_partly_amount-field {
+.reepay-capture_partly_amount-field, .reepay-refund_partly_amount-field {
 	width: 90px;
 	font-size: small;
 	max-height: 20px;
 	min-height: 1px !important;
 	text-align: center; 
+}
+
+#payment .wc_payment_methods li label {
+	display: flex !important;
+	align-items: center;
+
+	.reepay-logos {
+		display: flex;
+		flex-wrap: wrap;
+		margin: 0 0 0 auto;
+		justify-content: flex-end;
+		max-width: 300px;
+
+		.reepay-logo img {
+			margin: .25rem;
+		}
+	}
 }
