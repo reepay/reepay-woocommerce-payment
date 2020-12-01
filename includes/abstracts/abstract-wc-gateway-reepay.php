@@ -108,6 +108,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	public $failed_webhooks_email = '';
 
 	/**
+	 * If webhooks have been configured
+	 * @var string
+	 */
+	public $is_webhook_configured = 'no';
+
+	/**
 	 * Payment methods.
 	 *
 	 * @var array|null
@@ -601,8 +607,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			$order->payment_complete();
 		}
 
-		if ( ! empty( $_GET['invoice'] ) && $order_id === $this->get_orderid_by_handle( wc_clean( $_GET['invoice'] ) ) ) {
-			$this->process_order_confirmation( wc_clean( $_GET['invoice'] ) );
+		// Update the order status if webhook wasn't configured
+		if ( 'no' === $this->is_webhook_configured ) {
+			if ( ! empty( $_GET['invoice'] ) && $order_id === $this->get_orderid_by_handle( wc_clean( $_GET['invoice'] ) ) ) {
+				$this->process_order_confirmation( wc_clean( $_GET['invoice'] ) );
+			}
 		}
 	}
 
