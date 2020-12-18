@@ -12,6 +12,7 @@ class WC_Reepay_Update {
 		'1.2.1' => 'updates/update-1.2.0.php',
 		'1.2.2' => 'updates/update-1.2.2.php',
 		'1.2.3' => 'updates/update-1.2.3.php',
+		'1.2.9' => 'updates/update-1.2.9.php',
 	);
 
 	/**
