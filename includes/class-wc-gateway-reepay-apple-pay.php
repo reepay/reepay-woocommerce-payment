@@ -98,6 +98,23 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 			),
 		);
 	}
+
+	/**
+	 * Check if the gateway is available for use.
+	 *
+	 * @return bool
+	 */
+	public function is_available() {
+		if ('yes' === parent::is_available()) {
+			if ( strpos( $_SERVER['HTTP_USER_AGENT'], 'Safari' ) &&
+			    ! strpos( $_SERVER['HTTP_USER_AGENT'], 'Chrome' )
+			) {
+				return 'yes';
+			}
+		}
+
+		return 'no';
+	}
 }
 
 // Register Gateway
