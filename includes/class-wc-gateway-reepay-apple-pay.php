@@ -105,15 +105,15 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 	 * @return bool
 	 */
 	public function is_available() {
-		if ('yes' === parent::is_available()) {
+		if ( parent::is_available() ) {
 			if ( strpos( $_SERVER['HTTP_USER_AGENT'], 'Safari' ) &&
 			    ! strpos( $_SERVER['HTTP_USER_AGENT'], 'Chrome' )
 			) {
-				return 'yes';
+				return true;
 			}
 		}
 
-		return 'no';
+		return false;
 	}
 }
 
