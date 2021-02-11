@@ -48,6 +48,7 @@ class WC_ReepayCheckout {
 		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
 		add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ) );
 		add_action( 'woocommerce_loaded', array( $this, 'woocommerce_loaded' ), 40 );
+		add_action( 'init', __CLASS__ . '::may_add_notices' );
 
 		add_action( 'wp_enqueue_scripts', array( $this, 'add_scripts' ) );
 
@@ -182,6 +183,55 @@ class WC_ReepayCheckout {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-swish.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-paypal.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-apple-pay.php' );
+	}
+
+	/**
+	 * Add notices
+	 */
+	public function may_add_notices() {
+		// Check if WooCommerce is missing
+		if ( ! class_exists( 'WooCommerce', false ) || ! defined( 'WC_ABSPATH' ) ) {
+			add_action( 'admin_notices', __CLASS__ . '::missing_woocommerce_notice' );
+		}
+	}
+
+	/**
+	 * Check if WooCommerce is missing, and deactivate the plugin if needs
+	 */
+	public static function missing_woocommerce_notice() {
+		?>
+        <div id="message" class="error">
+            <p class="main">
+                <strong>
+                    <?php echo esc_html__(
+                            'WooCommerce is inactive or missing.',
+                            'woocommerce-gateway-reepay-checkout'
+                    );
+                    ?>
+                </strong>
+            </p>
+            <p>
+				<?php
+				echo esc_html__(
+				        'WooCommerce plugin is inactive or missing. Please install and active it.',
+                        'woocommerce-gateway-reepay-checkout'
+                );
+				echo '<br />';
+				echo sprintf(
+				/* translators: 1: plugin name */                        esc_html__(
+					'%1$s will be deactivated.',
+					'woocommerce-gateway-reepay-checkout'
+				),
+					'WooCommerce Reepay Checkout Gateway'
+				);
+
+				?>
+            </p>
+        </div>
+		<?php
+
+		// Deactivate the plugin
+		deactivate_plugins( plugin_basename( __FILE__ ), true );
 	}
 
 	/**
