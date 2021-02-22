@@ -75,6 +75,10 @@ class WC_Reepay_Order_Statuses {
 	 *
 	 */
 	public function plugins_loaded() {
+		if ( ! function_exists( 'wc_get_order_statuses' ) ) {
+			return;
+		}
+
 		// Add actions for complete statuses
 		$statuses = wc_get_order_statuses();
 		foreach ($statuses as $status => $label) {
