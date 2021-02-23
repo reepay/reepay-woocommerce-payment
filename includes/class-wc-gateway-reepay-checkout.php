@@ -192,6 +192,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'label'   => __( 'Enable Test Mode', 'woocommerce-gateway-reepay-checkout' ),
 				'default' => $this->test_mode
 			),
+			'is_webhook_configured' => array(
+				'title'   => __( 'Webhook status', 'woocommerce-gateway-reepay-checkout' ),
+				'type'    => 'webhook_status',
+				'label'   => __( 'Webhook status', 'woocommerce-gateway-reepay-checkout' ),
+				'default' => $this->test_mode
+			),
 			'payment_type' => array(
 				'title'       => __( 'Payment Window Display', 'woocommerce-gateway-reepay-checkout' ),
 				'description'    => __( 'Choose between a redirect window or a overlay window', 'woocommerce-gateway-reepay-checkout' ),
@@ -344,6 +350,57 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				},
 			)
 		);
+	}
+
+	/**
+	 * Generate WebHook Status HTML.
+	 *
+	 * @param string $key Field key.
+	 * @param array  $data Field data.
+     *
+	 * @return string
+	 */
+	public function generate_webhook_status_html( $key, $data ) {
+		$field_key = $this->get_field_key( $key );
+		$defaults  = array(
+			'title'             => '',
+			'type'              => 'webhook_status',
+			'desc_tip'          => false,
+			'description'       => '',
+		);
+
+		$data = wp_parse_args( $data, $defaults );
+
+		ob_start();
+		?>
+		<tr valign="top">
+			<th scope="row" class="titledesc">
+				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?> <?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?></label>
+			</th>
+			<td class="forminp">
+				<fieldset>
+					<legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span></legend>
+
+					<?php if ( 'yes' === $this->get_option( $key ) ): ?>
+						<span style="color: green;">
+                            <?php esc_html_e( 'Configured.', 'woocommerce-gateway-reepay-checkout' ); ?>
+                        </span>
+					<?php else: ?>
+						<span style="color: red;">
+                            <?php esc_html_e( 'Configuration is required.', 'woocommerce-gateway-reepay-checkout' ); ?>
+                        </span>
+                        <p>
+	                        <?php esc_html_e( 'Please check api credentials and save the settings. Webhook will be installed automatically.', 'woocommerce-gateway-reepay-checkout' ); ?>
+                        </p>
+		            <?php endif; ?>
+
+					<input type="hidden" name="<?php echo esc_attr( $field_key ); ?>" id="<?php echo esc_attr( $field_key ); ?>" value="<?php echo esc_attr( $this->get_option( $key ) ); // WPCS: XSS ok. ?>" />
+				</fieldset>
+			</td>
+		</tr>
+		<?php
+
+		return ob_get_clean();
 	}
 
 	/**

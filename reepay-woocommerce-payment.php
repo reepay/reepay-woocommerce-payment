@@ -29,7 +29,7 @@ class WC_ReepayCheckout {
         'reepay_viabill'
     );
 
-	public static $db_version = '1.2.3';
+	public static $db_version = '1.2.9';
 
 	/**
 	 * @var WC_Background_Reepay_Queue
@@ -151,9 +151,7 @@ class WC_ReepayCheckout {
 
 		// Show Upgrade notification
 		if ( version_compare( get_option( 'woocommerce_reepay_version', self::$db_version ), self::$db_version, '<' ) ) {
-			if ( function_exists( 'wcs_get_users_subscriptions' ) ) {
-				add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
-			}
+			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
 		}
 	}
 
