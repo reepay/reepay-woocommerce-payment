@@ -161,6 +161,17 @@ class WC_ReepayCheckout {
 	public function woocommerce_init() {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-background-reepay-queue.php' );
 		self::$background_process = new WC_Background_Reepay_Queue();
+
+		// Generate guest ID is save it in the session
+		if ( ! is_user_logged_in() ) {
+			if ( PHP_SESSION_ACTIVE !== session_status() ) {
+				session_start();
+			}
+
+			if ( ! isset( $_SESSION['reepay_guest'] ) ) {
+				$_SESSION['reepay_guest'] = 'guest-' . wp_generate_password(12, false);
+			}
+		}
 	}
 
 	/**

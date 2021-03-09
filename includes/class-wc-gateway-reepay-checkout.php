@@ -957,7 +957,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
 		try {
 			// Create Payment Token
-			//$customer_handle = $this->get_customer_handle( get_current_user_id() );
 			$source = $this->get_reepay_cards( $customer_handle, $reepay_token );
 			$expiryDate = explode( '-', $source['exp_date'] );
 

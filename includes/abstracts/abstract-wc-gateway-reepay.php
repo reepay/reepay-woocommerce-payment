@@ -289,8 +289,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 
 		// Switch of Payment Method
 		if ( self::wcs_is_payment_change() ) {
-			$user            = get_userdata( get_current_user_id() );
-			$customer_handle = $this->get_customer_handle( $user->ID );
+			$customer_handle = $this->get_customer_handle_order( $order_id );
 
 			if ( absint( $token_id ) > 0 ) {
 				$token = new WC_Payment_Token_Reepay( $token_id );
@@ -417,7 +416,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 		update_post_meta( $order->get_id(), '_reepay_maybe_save_card', $maybe_save_card );
 
 		// Get Customer reference
-		$customer_handle = $this->get_customer_handle( $order->get_user_id() );
+		$customer_handle = $this->get_customer_handle_order( $order->get_id() );
 
 		// If here's Subscription or zero payment
 		if ( abs( $order->get_total() ) < 0.01 ) {
