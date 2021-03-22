@@ -192,6 +192,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'label'   => __( 'Enable Test Mode', 'woocommerce-gateway-reepay-checkout' ),
 				'default' => $this->test_mode
 			),
+			'is_webhook_configured' => array(
+				'title'   => __( 'Webhook status', 'woocommerce-gateway-reepay-checkout' ),
+				'type'    => 'webhook_status',
+				'label'   => __( 'Webhook status', 'woocommerce-gateway-reepay-checkout' ),
+				'default' => $this->test_mode
+			),
 			'payment_type' => array(
 				'title'       => __( 'Payment Window Display', 'woocommerce-gateway-reepay-checkout' ),
 				'description'    => __( 'Choose between a redirect window or a overlay window', 'woocommerce-gateway-reepay-checkout' ),
@@ -344,6 +350,57 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				},
 			)
 		);
+	}
+
+	/**
+	 * Generate WebHook Status HTML.
+	 *
+	 * @param string $key Field key.
+	 * @param array  $data Field data.
+     *
+	 * @return string
+	 */
+	public function generate_webhook_status_html( $key, $data ) {
+		$field_key = $this->get_field_key( $key );
+		$defaults  = array(
+			'title'             => '',
+			'type'              => 'webhook_status',
+			'desc_tip'          => false,
+			'description'       => '',
+		);
+
+		$data = wp_parse_args( $data, $defaults );
+
+		ob_start();
+		?>
+		<tr valign="top">
+			<th scope="row" class="titledesc">
+				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?> <?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?></label>
+			</th>
+			<td class="forminp">
+				<fieldset>
+					<legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span></legend>
+
+					<?php if ( 'yes' === $this->get_option( $key ) ): ?>
+						<span style="color: green;">
+                            <?php esc_html_e( 'Configured.', 'woocommerce-gateway-reepay-checkout' ); ?>
+                        </span>
+					<?php else: ?>
+						<span style="color: red;">
+                            <?php esc_html_e( 'Configuration is required.', 'woocommerce-gateway-reepay-checkout' ); ?>
+                        </span>
+                        <p>
+	                        <?php esc_html_e( 'Please check api credentials and save the settings. Webhook will be installed automatically.', 'woocommerce-gateway-reepay-checkout' ); ?>
+                        </p>
+		            <?php endif; ?>
+
+					<input type="hidden" name="<?php echo esc_attr( $field_key ); ?>" id="<?php echo esc_attr( $field_key ); ?>" value="<?php echo esc_attr( $this->get_option( $key ) ); // WPCS: XSS ok. ?>" />
+				</fieldset>
+			</td>
+		</tr>
+		<?php
+
+		return ob_get_clean();
 	}
 
 	/**
@@ -534,10 +591,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		// Add Subscription card id
 		$this->add_subscription_card_id( $order_id );
 	}
-
-
-
-
 
 	/**
 	 * Update the card meta for a subscription
@@ -900,7 +953,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
 		try {
 			// Create Payment Token
-			//$customer_handle = $this->get_customer_handle( get_current_user_id() );
 			$source = $this->get_reepay_cards( $customer_handle, $reepay_token );
 			$expiryDate = explode( '-', $source['exp_date'] );
 
@@ -972,7 +1024,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			}
 
 			// @todo Transaction ID should applied via WebHook
-			if ( ! empty( $_GET['invoice'] ) && $order->get_id() === $this->get_orderid_by_handle( wc_clean( $_GET['invoice'] ) ) ) {
+			if ( ! empty( $_GET['invoice'] ) ) {
+			    $handle = wc_clean( $_GET['invoice'] );
+			    if ( $handle !== $this->get_order_handle( $order ) ) {
+				    throw new Exception('Invoice ID doesn\'t match the order.');
+			    }
+
 				$result = $this->get_invoice_by_handle( wc_clean( $_GET['invoice'] ) );
 				switch ($result['state']) {
 					case 'authorized':

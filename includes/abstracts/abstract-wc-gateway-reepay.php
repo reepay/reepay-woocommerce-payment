@@ -289,8 +289,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 
 		// Switch of Payment Method
 		if ( self::wcs_is_payment_change() ) {
-			$user            = get_userdata( get_current_user_id() );
-			$customer_handle = $this->get_customer_handle( $user->ID );
+			$customer_handle = $this->get_customer_handle_order( $order_id );
 
 			if ( absint( $token_id ) > 0 ) {
 				$token = new WC_Payment_Token_Reepay( $token_id );
@@ -417,7 +416,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 		update_post_meta( $order->get_id(), '_reepay_maybe_save_card', $maybe_save_card );
 
 		// Get Customer reference
-		$customer_handle = $this->get_customer_handle( $order->get_user_id() );
+		$customer_handle = $this->get_customer_handle_order( $order->get_id() );
 
 		// If here's Subscription or zero payment
 		if ( abs( $order->get_total() ) < 0.01 ) {
@@ -609,7 +608,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 
 		// Update the order status if webhook wasn't configured
 		if ( 'no' === $this->is_webhook_configured ) {
-			if ( ! empty( $_GET['invoice'] ) && $order_id === $this->get_orderid_by_handle( wc_clean( $_GET['invoice'] ) ) ) {
+			if ( ! empty( $_GET['invoice'] ) ) {
 				$this->process_order_confirmation( wc_clean( $_GET['invoice'] ) );
 			}
 		}
@@ -660,23 +659,23 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	 * @return void
 	 */
 	public function process_order_confirmation( $invoice_id ) {
-		$order_id = $this->get_orderid_by_handle( $invoice_id );
-		$order    = wc_get_order( $order_id );
-
 		// Update order status
 		$this->log( sprintf( 'accept_url: Processing status update %s', $invoice_id ) );
 		try {
-			$result = $this->get_invoice_by_handle( wc_clean( $_GET['invoice'] ) );
+			$result = $this->get_invoice_by_handle( $invoice_id );
 		} catch ( Exception $e ) {
 			return;
 		}
+
+		// Get order
+		$order = $this->get_order_by_handle( $invoice_id );
 
 		$this->log( sprintf( 'accept_url: invoice state: %s. Invoice ID: %s ', $result['state'], $invoice_id ) );
 		switch ( $result['state'] ) {
 			case 'authorized':
 				// Check if the order has been marked as authorized before
 				if ( $order->get_status() === REEPAY_STATUS_AUTHORIZED ) {
-					$this->log( sprintf( 'accept_url: Order %s has been authorized before', $order_id ) );
+					$this->log( sprintf( 'accept_url: Order #%s has been authorized before', $order->get_id() ) );
 					return;
 				}
 
@@ -697,12 +696,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 				// Unlock the order
 				self::unlock_order( $order->get_id() );
 
-				$this->log( sprintf( 'accept_url: Order %s has been marked as authorized', $order_id ) );
+				$this->log( sprintf( 'accept_url: Order #%s has been marked as authorized', $order->get_id() ) );
 				break;
 			case 'settled':
 				// Check if the order has been marked as settled before
 				if ( $order->get_status() === REEPAY_STATUS_SETTLED ) {
-					$this->log( sprintf( 'accept_url: Order %s has been settled before', $order_id ) );
+					$this->log( sprintf( 'accept_url: Order #%s has been settled before', $order->get_id() ) );
 					return;
 				}
 
@@ -720,19 +719,19 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 				// Unlock the order
 				self::unlock_order( $order->get_id() );
 
-				$this->log( sprintf( 'accept_url: Order %s has been marked as settled', $order_id ) );
+				$this->log( sprintf( 'accept_url: Order #%s has been marked as settled', $order->get_id() ) );
 
 				break;
 			case 'cancelled':
 				$order->update_status( 'cancelled', __( 'Cancelled.', 'woocommerce-gateway-reepay-checkout' ) );
 
-				$this->log( sprintf( 'accept_url: Order %s has been marked as cancelled', $order_id ) );
+				$this->log( sprintf( 'accept_url: Order #%s has been marked as cancelled', $order->get_id() ) );
 
 				break;
 			case 'failed':
 				$order->update_status( 'failed', __( 'Failed.', 'woocommerce-gateway-reepay-checkout' ) );
 
-				$this->log( sprintf( 'accept_url: Order %s has been marked as failed', $order_id ) );
+				$this->log( sprintf( 'accept_url: Order #%s has been marked as failed', $order->get_id() ) );
 
 				break;
 			default:

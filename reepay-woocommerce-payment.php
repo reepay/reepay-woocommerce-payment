@@ -29,7 +29,7 @@ class WC_ReepayCheckout {
         'reepay_viabill'
     );
 
-	public static $db_version = '1.2.3';
+	public static $db_version = '1.2.9';
 
 	/**
 	 * @var WC_Background_Reepay_Queue
@@ -122,7 +122,6 @@ class WC_ReepayCheckout {
 	}
 
 	public function includes() {
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-order.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-order-statuses.php' );
 	}
 
@@ -151,9 +150,7 @@ class WC_ReepayCheckout {
 
 		// Show Upgrade notification
 		if ( version_compare( get_option( 'woocommerce_reepay_version', self::$db_version ), self::$db_version, '<' ) ) {
-			if ( function_exists( 'wcs_get_users_subscriptions' ) ) {
-				add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
-			}
+			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
 		}
 	}
 
@@ -163,6 +160,17 @@ class WC_ReepayCheckout {
 	public function woocommerce_init() {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-background-reepay-queue.php' );
 		self::$background_process = new WC_Background_Reepay_Queue();
+
+		// Generate guest ID is save it in the session
+		if ( ! is_user_logged_in() ) {
+			if ( PHP_SESSION_ACTIVE !== session_status() ) {
+				session_start();
+			}
+
+			if ( ! isset( $_SESSION['reepay_guest'] ) ) {
+				$_SESSION['reepay_guest'] = 'guest-' . wp_generate_password(12, false);
+			}
+		}
 	}
 
 	/**
