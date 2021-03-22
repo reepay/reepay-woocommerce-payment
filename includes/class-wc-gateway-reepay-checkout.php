@@ -592,10 +592,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		$this->add_subscription_card_id( $order_id );
 	}
 
-
-
-
-
 	/**
 	 * Update the card meta for a subscription
 	 * to complete a payment to make up for an automatic renewal payment which previously failed.
@@ -1028,7 +1024,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			}
 
 			// @todo Transaction ID should applied via WebHook
-			if ( ! empty( $_GET['invoice'] ) && $order->get_id() === $this->get_orderid_by_handle( wc_clean( $_GET['invoice'] ) ) ) {
+			if ( ! empty( $_GET['invoice'] ) ) {
+			    $handle = wc_clean( $_GET['invoice'] );
+			    if ( $handle !== $this->get_order_handle( $order ) ) {
+				    throw new Exception('Invoice ID doesn\'t match the order.');
+			    }
+
 				$result = $this->get_invoice_by_handle( wc_clean( $_GET['invoice'] ) );
 				switch ($result['state']) {
 					case 'authorized':

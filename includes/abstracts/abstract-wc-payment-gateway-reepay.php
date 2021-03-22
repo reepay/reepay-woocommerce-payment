@@ -1009,52 +1009,6 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	}
 
 	/**
-	 * Get Reepay Order Handle.
-	 *
-	 * @param WC_Order $order
-	 *
-	 * @return string
-	 */
-	public function get_order_handle( $order ) {
-		return apply_filters( 'reepay_order_handle', null, $order->get_id(), $order );
-	}
-
-	/**
-	 * Get Order Id by Reepay Order Handle.
-	 *
-	 * @param $handle
-	 *
-	 * @return bool|string|null
-	 */
-	public function get_orderid_by_handle( $handle ) {
-		return apply_filters( 'reepay_get_order', null, $handle );
-	}
-
-	/**
-	 * Get Order By Reepay Order Handle.
-	 * @param $handle
-	 *
-	 * @return false|WC_Order
-	 * @throws Exception
-	 */
-	public function get_order_by_handle( $handle ) {
-		// Get Order by handle
-		$order_id = $this->get_orderid_by_handle( $handle );
-		if ( ! $order_id ) {
-			throw new Exception( sprintf( 'Invoice #%s isn\'t exists in store.', $handle ) );
-		}
-
-		// Get Order
-		clean_post_cache( $order_id );
-		$order = wc_get_order( $order_id );
-		if ( ! $order ) {
-			throw new Exception( sprintf( 'Order #%s isn\'t exists in store.', $order_id ) );
-		}
-
-		return $order;
-	}
-
-	/**
 	 * Get Language
 	 * @return string
 	 */
@@ -1514,6 +1468,55 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		}
 
 		return untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/images/' . $image;
+	}
+
+	/**
+	 * Get Order By Reepay Order Handle.
+	 *
+	 * @param string $handle
+	 *
+	 * @return false|WC_Order
+	 * @throws Exception
+	 */
+	public function get_order_by_handle( $handle ) {
+		global $wpdb;
+
+		$query = "
+			SELECT post_id FROM {$wpdb->prefix}postmeta 
+			LEFT JOIN {$wpdb->prefix}posts ON ({$wpdb->prefix}posts.ID = {$wpdb->prefix}postmeta.post_id)
+			WHERE meta_key = %s AND meta_value = %s;";
+		$sql = $wpdb->prepare( $query, '_reepay_order', $handle );
+		$order_id = $wpdb->get_var( $sql );
+		if ( ! $order_id ) {
+			throw new Exception( sprintf( 'Invoice #%s isn\'t exists in store.', $handle ) );
+		}
+
+		// Get Order
+		clean_post_cache( $order_id );
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			throw new Exception( sprintf( 'Order #%s isn\'t exists in store.', $order_id ) );
+		}
+
+		return $order;
+	}
+
+	/**
+	 * Get Reepay Order Handle.
+	 *
+	 * @param WC_Order $order
+	 *
+	 * @return string
+	 */
+	public function get_order_handle( $order ) {
+		$handle = $order->get_meta( '_reepay_order' );
+		if ( empty( $handle ) ) {
+			$handle = 'order-' . $order->get_order_number();
+			$order->update_meta_data( '_reepay_order', $handle );
+			$order->save_meta_data();
+		}
+
+		return $handle;
 	}
 
 }
