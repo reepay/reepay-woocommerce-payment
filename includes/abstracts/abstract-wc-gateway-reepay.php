@@ -525,10 +525,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 				'postal_code' => $order->get_shipping_postcode(),
 				'state_or_province' => $order->get_shipping_state()
 			];
-
-			if (!strlen($params['order']['shipping_address'])) {
-				$params['order']['shipping_address'] = $params['order']['billing_address'];
-			}
 		}
 
 		$result = $this->request('POST', 'https://checkout-api.reepay.com/v1/session/charge', $params);
