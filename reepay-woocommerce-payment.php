@@ -196,7 +196,7 @@ class WC_ReepayCheckout {
 	/**
 	 * Add notices
 	 */
-	public function may_add_notices() {
+	public static function may_add_notices() {
 		// Check if WooCommerce is missing
 		if ( ! class_exists( 'WooCommerce', false ) || ! defined( 'WC_ABSPATH' ) ) {
 			add_action( 'admin_notices', __CLASS__ . '::missing_woocommerce_notice' );
