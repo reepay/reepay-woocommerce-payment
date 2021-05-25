@@ -1,4 +1,5 @@
 jQuery(document).ready(function ($) {
+
 	$(document).on('click', '#reepay_capture', function (e) {
 		e.preventDefault();
 		var nonce = $(this).data('nonce');
@@ -32,7 +33,6 @@ jQuery(document).ready(function ($) {
 
 	$(document).on('click', '#reepay_cancel', function (e) {
 		e.preventDefault();
-
 		var nonce = $(this).data('nonce');
 		var order_id = $(this).data('order-id');
 		var self = $(this);
@@ -52,11 +52,12 @@ jQuery(document).ready(function ($) {
 			success   : function (response) {
 				self.html(self.data('text'));
 				self.prop('disabled', false);
+				/*
 				if (!response.success) {
 					alert(response.data);
 					return false;
 				}
-
+				*/
 				window.location.href = location.href;
 			}
 		});
@@ -136,6 +137,7 @@ jQuery(document).ready(function ($) {
 	});
 	
 	$(document).on('click', '#reepay_refund_partly', function (e) {
+		console.log('refund_partually');
 		e.preventDefault();
 		var nonce = $(this).data('nonce');
 		var order_id = $(this).data('order-id');

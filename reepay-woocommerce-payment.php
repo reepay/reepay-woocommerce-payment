@@ -4,7 +4,7 @@
  * Description: Provides a Payment Gateway through Reepay for WooCommerce.
  * Author: reepay
  * Author URI: http://reepay.com
- * Version: 1.2.8
+ * Version: 1.3.2
  * Text Domain: woocommerce-gateway-reepay-checkout
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -110,7 +110,31 @@ class WC_ReepayCheckout {
 			add_action( 'customize_save_after', array( $this, 'maybe_process_queue' ) );
 			add_action( 'after_switch_theme', array( $this, 'maybe_process_queue' ) );
 		}
-	}
+
+        add_action('parse_request', array($this, 'handle_cancel_url'));
+    }
+
+    function handle_cancel_url() {
+  	    if(preg_match('/checkout\/reepay_cancel/', $_SERVER["REQUEST_URI"]) ) {
+            $order = wc_get_order( $_GET['id'] );
+            $payment_method = $order->get_payment_method();
+            $gateways = WC()->payment_gateways()->get_available_payment_gateways();
+
+            /** @var WC_Gateway_Reepay_Checkout $gateway */
+            $gateway = 	$gateways[ $payment_method ];
+            $result = $gateway->get_invoice_data( $order );
+
+            if('reepay_checkout' == $payment_method && 'failed' == $result['state']) {
+                if(isset($result['transactions'][0]['card_transaction']['acquirer_message'])) {
+                    $error_message = $result['transactions'][0]['card_transaction']['acquirer_message'];
+                    $order->add_order_note('Payment failed. Error from acquire: ' . $error_message);
+                    wc_add_notice( __('Payment error: ', 'error') . $error_message, 'error' );
+                }
+                wp_redirect(wc_get_cart_url());
+                exit();
+            }
+  	    }
+    }
 
 	/**
 	 * Install
@@ -160,17 +184,6 @@ class WC_ReepayCheckout {
 	public function woocommerce_init() {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-background-reepay-queue.php' );
 		self::$background_process = new WC_Background_Reepay_Queue();
-
-		// Generate guest ID is save it in the session
-		if ( ! is_user_logged_in() ) {
-			if ( PHP_SESSION_ACTIVE !== session_status() ) {
-				session_start();
-			}
-
-			if ( ! isset( $_SESSION['reepay_guest'] ) ) {
-				$_SESSION['reepay_guest'] = 'guest-' . wp_generate_password(12, false);
-			}
-		}
 	}
 
 	/**
@@ -196,7 +209,7 @@ class WC_ReepayCheckout {
 	/**
 	 * Add notices
 	 */
-	public function may_add_notices() {
+	public static function may_add_notices() {
 		// Check if WooCommerce is missing
 		if ( ! class_exists( 'WooCommerce', false ) || ! defined( 'WC_ABSPATH' ) ) {
 			add_action( 'admin_notices', __CLASS__ . '::missing_woocommerce_notice' );
@@ -536,11 +549,9 @@ class WC_ReepayCheckout {
 	 * Action for Cancel
 	 */
 	public function ajax_reepay_refund() {
-		if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'reepay' ) ) {
+	if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'reepay' ) ) {
 			exit( 'No naughty business' );
 		}
-		
-		
 		$amount = (int) $_REQUEST['amount'];
 		$order_id = (int) $_REQUEST['order_id'];
 		$order = wc_get_order( $order_id );
@@ -564,7 +575,7 @@ class WC_ReepayCheckout {
 	 * Action for Cancel
 	 */
 	public function ajax_reepay_capture_partly() {
-		
+
 		if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'reepay' ) ) {
 			exit( 'No naughty business' );
 		}
@@ -585,6 +596,7 @@ class WC_ReepayCheckout {
 			$gateway = 	$gateways[ $payment_method ];
 			$gateway->capture_payment( $order, (float)((float)$amount / 100) );
 			wp_send_json_success( __( 'Capture partly success.', 'woocommerce-gateway-reepay-checkout' ) );
+
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
 			wp_send_json_error( $message );

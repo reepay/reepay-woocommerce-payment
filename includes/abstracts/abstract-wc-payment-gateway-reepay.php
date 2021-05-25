@@ -211,7 +211,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @return void
 	 */
 	public function refund_payment( $order, $amount = false, $reason = '' ) {
-		if ( is_int( $order ) ) {
+	   if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
 		
@@ -454,7 +454,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		}
 
 		switch ($code) {
-			case 0:
+		    case 0:
 				$error = curl_error($curl);
 				$errno = curl_errno($curl);
 				throw new Exception(sprintf('Error: %s. Code: %s.', $error, $errno));
@@ -894,6 +894,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @return string
 	 */
 	public function get_customer_handle( $user_id ) {
+
 		if ( ! $user_id ) {
 			// Workaround: Allow to pay exist orders by guests
 			if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) {
@@ -907,8 +908,6 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 					}
 				}
             }
-
-			return $_SESSION['reepay_guest'];
 		}
 
 		$handle = get_user_meta( $user_id, 'reepay_customer_id', TRUE );
@@ -930,30 +929,19 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	public function get_customer_handle_order( $order_id ) {
 		$order = wc_get_order( $order_id );
 
-		// Get handle saved in an order
-		$handle = $order->get_meta( '_reepay_customer' );
-		if ( empty( $handle ) ) {
-			if ( $order->get_customer_id() > 0 ) {
-				$handle = $this->get_customer_handle( $order->get_customer_id() );
+        $handle = $this->get_customer_handle_online( $order );
 
-				$order->add_meta_data( '_reepay_customer', $handle );
-				$order->save_meta_data();
+        if(empty($handle)) {
+            if( $order->get_customer_id() > 0 ) {
+                $handle = 'customer-' . $order->get_customer_id();
+            }
+        }
 
-				return $handle;
-			}
+        $order->add_meta_data( '_reepay_customer', $handle );
+        $order->save_meta_data();
 
-			$handle = $this->get_customer_handle_online( $order );
-			if ( ! $handle ) {
-				return $_SESSION['reepay_guest'];
-			}
 
-			$order->add_meta_data( '_reepay_customer', $handle );
-			$order->save_meta_data();
-
-			return $handle;
-		}
-
-		return $handle;
+        return $handle;
 	}
 
 	/**
@@ -968,12 +956,14 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		$handle = $this->get_order_handle( $order );
 
 		$result = get_transient( 'reepay_invoice_' . $handle );
+
 		if ( ! $result ) {
 			try {
 				$result = $this->get_invoice_by_handle( wc_clean( $handle ) );
 				set_transient( 'reepay_invoice_' . $handle, $result, 5 * MINUTE_IN_SECONDS );
 			} catch (Exception $e) {
-				return false;
+
+				return null;
 			}
 		}
 
@@ -981,7 +971,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			return $result['customer'];
 		}
 
-		return false;
+		return null;
 	}
 
 	/**
@@ -1258,9 +1248,9 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 
 		if ( $amount > 0 ) {
 			try {
-				$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle . '/settle', array (
+				$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle  . '/settle', array (
 					'amount' => round(100 * $amount)
-				) );
+				));
 
 				$this->log( sprintf( '%s::%s Settle Charge: %s', __CLASS__, __METHOD__, var_export( $result, true) ) );
 
@@ -1275,9 +1265,19 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 
 				$this->log( sprintf( '%s::%s API Error: %s', __CLASS__, __METHOD__, var_export( $e->getMessage(), true ) ) );
 
+				// need to be shown on admin notices
+                $error = sprintf( __( 'Failed to settle "%s". Error: %s.', 'woocommerce-gateway-reepay-checkout' ),
+                    wc_price( $amount ),
+                    $this->extract_api_error($e->getMessage())
+                );
+
+
+                set_transient( 'reepay_api_action_error', $error, MINUTE_IN_SECONDS / 2);
+
+
 				$order->add_order_note( sprintf( __( 'Failed to settle "%s". Error: %s.', 'woocommerce-gateway-reepay-checkout' ),
 					wc_price( $amount ),
-					$e->getMessage()
+                    $this->extract_api_error($e->getMessage())
 				) );
 
 				return;
@@ -1291,16 +1291,21 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			$order->set_transaction_id( $result['transaction'] );
 			$order->save();
 
-			update_post_meta( $order->get_id(), '_reepay_capture_transaction', $result['transaction'] );
+			update_post_meta( $order->get_id(), '_reepay_capture_transaction', $result['transaction']);
+
+
+			$success = sprintf(
+                __( 'Payment has been settled. Amount: %s. Transaction: %s', 'woocommerce-gateway-reepay-checkout' ),
+                wc_price( $amount ),
+                $result['transaction']
+            );
 
 			// Add order note
 			$order->add_order_note(
-				sprintf(
-					__( 'Payment has been settled. Amount: %s. Transaction: %s', 'woocommerce-gateway-reepay-checkout' ),
-					wc_price( $amount ),
-					$result['transaction']
-				)
+                $success
 			);
+
+            set_transient( 'reepay_api_action_success', $success, MINUTE_IN_SECONDS / 2);
 
 			// Check the amount and change the order status to settled if needs
 			try {
@@ -1329,21 +1334,31 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		}
 
 		try {
-			$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle . '/cancel' );
+			$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle  . '/cancel' );
 		} catch ( Exception $e ) {
-			throw new Exception( sprintf( __( 'Failed to cancel the payment. Error: %s.', 'woocommerce-gateway-reepay-checkout' ),
-				$e->getMessage()
-			) );
+
+		    $error = sprintf( __( 'Failed to cancel the payment. Error: %s.', 'woocommerce-gateway-reepay-checkout' ),
+                $this->extract_api_error($e->getMessage())
+            );
+
+            $order->add_order_note( $error);
+
+            set_transient( 'reepay_api_action_error', $error, MINUTE_IN_SECONDS / 2);
+
+            exit();
 		}
 
 		update_post_meta( $order->get_id(), '_reepay_cancel_transaction', $result['transaction'] );
 		update_post_meta( $order->get_id(), '_transaction_id', $result['transaction'] );
 
 		if ( ! $order->has_status('cancelled') ) {
-			$order->update_status( 'cancelled', __( 'Payment has been cancelled.', 'woocommerce-gateway-reepay-checkout' ) );
-		} else {
-			$order->add_order_note( __( 'Payment has been cancelled.', 'woocommerce-gateway-reepay-checkout' ) );
+			$success = __( 'Payment has been cancelled.', 'woocommerce-gateway-reepay-checkout' );
+		    $order->update_status( 'cancelled', __( 'Payment has been cancelled.', 'woocommerce-gateway-reepay-checkout' ) );
+
+            $order->add_order_note( $success );
+            set_transient( 'reepay_api_action_success', $success, MINUTE_IN_SECONDS / 2);
 		}
+
 	}
 
 	/**
@@ -1369,14 +1384,31 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		try {
 			$params = [
 				'invoice' => $handle,
-				'amount' => round( 100 * $amount ),
+				'amount' => round( 100 * $amount),
 			];
 			$result = $this->request( 'POST', 'https://api.reepay.com/v1/refund', $params );
 		} catch ( Exception $e ) {
-			throw new Exception( sprintf( __( 'Failed to refund the payment. Error: %s.', 'woocommerce-gateway-reepay-checkout' ),
-				$e->getMessage()
-			) );
-		}
+
+  		    $error = sprintf( __( 'Failed to refund "%s". Error: %s.', 'woocommerce-gateway-reepay-checkout' ),
+                wc_price( $amount ),
+                $this->extract_api_error($e->getMessage()));
+
+
+            set_transient( 'reepay_api_action_error', $error, MINUTE_IN_SECONDS / 2);
+
+
+            $this->log( sprintf( '%s::%s API Error: %s', __CLASS__, __METHOD__, var_export( $e->getMessage(), true ) ) );
+
+
+            $order->add_order_note( $error );
+
+
+            if('woocommerce_refund_line_items' == trim($_POST['action'])) {
+                throw new Exception($this->extract_api_error($e->getMessage()));
+            }
+
+            return;
+        }
 
 		// Save Credit Note ID
 		$credit_note_ids = get_post_meta( $order->get_id(), '_reepay_credit_note_ids', TRUE );
@@ -1384,16 +1416,20 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			$credit_note_ids = array();
 		}
 
-		$credit_note_ids = array_merge( $credit_note_ids, $result['credit_note_id'] );
+		array_push($credit_note_ids, $result['credit_note_id']);
+
 		update_post_meta( $order->get_id(), '_reepay_credit_note_ids', $credit_note_ids );
 
-		$order->add_order_note(
-			sprintf( __( 'Refunded: %s. Credit Note Id #%s. Reason: %s', 'woocommerce-gateway-reepay-checkout' ),
-				wc_price( $amount ),
-				$result['credit_note_id'],
-				$reason
-			)
-		);
+        $success = sprintf( __( 'Refunded: %s. Credit Note Id #%s. Reason: %s', 'woocommerce-gateway-reepay-checkout' ),
+            wc_price( $amount ),
+            $result['credit_note_id'],
+            $reason
+        );
+
+		$order->add_order_note( $success );
+
+        set_transient( 'reepay_api_action_success', $success, MINUTE_IN_SECONDS / 2);
+
 	}
 
 	/**
@@ -1519,4 +1555,17 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		return $handle;
 	}
 
+    /**
+     * Extracting error from returning json string from api in case of api error
+     *
+     * @param $error_message
+     * @return mixed|null
+     */
+	private function extract_api_error($error_message) {
+        preg_match('/{.*}/',$error_message, $matches);
+        if(isset($matches[0])) {
+            $json_error_description = json_decode($matches[0], true);
+            return isset( $json_error_description['error'] ) ? $json_error_description['error'] : null;
+        }
+    }
 }

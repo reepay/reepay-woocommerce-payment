@@ -2,23 +2,26 @@
 Contributors: reepaydenmark,aaitse
 Tags: payment,reepay, subscription, visa, mastercard, dankort, mobilepay, woocommerce
 Requires at least: 4.0
-Tested up to: 5.4.2
+Tested up to: 5.7.2
 Requires PHP: 7.0
-Stable tag: trunk
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
 Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and more directly on your store with the Reepay Payment Gateway for WooCommerce.
-The Reepay plugin extends WooCommerce allowing you to take payments on your store via Reepay's API.
+The Reepay plugin extends WooCommerce allowing you to take payments on your store via Reepay\'s API.
 
 == Description ==
 Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and more directly on your store with the Reepay Payment Gateway for WooCommerce.
-The Reepay plugin extends WooCommerce allowing you to take payments on your store via Reepay's API.
+The Reepay plugin extends WooCommerce allowing you to take payments on your store via Reepay\'s API.
 
 == Installation ==
 See installation guide right here: https://intercom.help/reepay/reepay-plugins/woocommerce-plugin
 
 == Changelog ==
+v 1.3.2 - Compatibility with php 8.0; avoid using sessions for customers handling; added admin notifications
+v 1.3.1 - Webhook configuration updates
+v 1.3.0 - Make Apply Pay be available for Safari only
+v 1.2.9 - Webhoop script + Apple Pay fix
 v 1.2.8 - Bugfix for double email send
 v 1.2.7 - Implemented background webhook processing
 v 1.2.6 - Bugfix - two emails.
@@ -29,7 +32,7 @@ v 1.2.1 - Smaller bugfixes
 v 1.2.0 - Lot of chanegs including direct actions on an order in woorcommerce.
 v 1.1.27 - Added advanced instant-settle + payment-widget in back-office
 v 1.1.17 - Small minor bugfixes
-v 1.1.16 - Set "Save CC" enabled by default
+v 1.1.16 - Set \"Save CC\" enabled by default
 v 1.1.15 - Fixed: Unprocessable Entity error
 v 1.1.14 - Bugfixes and Improvements
 v 1.1.13 - Bugfixes

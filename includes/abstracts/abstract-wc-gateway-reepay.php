@@ -124,6 +124,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	 * Init
 	 */
 	public function __construct() {
+
 		// Load the form fields.
 		$this->init_form_fields();
 
@@ -150,7 +151,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			$this->settle = array();
 		}
 
-		add_action( 'admin_notices', array( $this, 'admin_notice_warning' ) );
+		add_action( 'admin_notices', array( $this, 'admin_notice_warning'));
+
+        add_action('admin_notices', array($this, 'notice_reepay_api_action'));
 
 		// JS Scrips
 		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
@@ -163,6 +166,30 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 
 		// Payment confirmation
 		add_action( 'the_post', array( &$this, 'payment_confirm' ) );
+	}
+
+    /**
+     * add notifictions in admin for reepay api actions
+     */
+    function notice_reepay_api_action() {
+        if ($this->enabled === 'yes') {
+            $error = get_transient('reepay_api_action_error');
+            $success = get_transient( 'reepay_api_action_success');
+
+            if(!empty( $error )) {
+                echo "<div class='error notice is-dismissible'>
+                    <p> {$error}</p>
+                  </div>";
+            }
+
+            if(!empty( $success )) {
+                echo "<div class='notice notice-success is-dismissible'>
+                    <p> {$success}</p>
+                  </div>";
+            }
+        }
+        set_transient('reepay_api_action_error', '', 1);
+        set_transient( 'reepay_api_action_success', '', 1);
 	}
 
 	/**
@@ -278,7 +305,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	 * @return array|false
 	 */
 	public function process_payment( $order_id ) {
-		$order           = wc_get_order( $order_id );
+	    $order           = wc_get_order( $order_id );
 		$token_id        = isset( $_POST['wc-' . $this->id . '-payment-token'] ) ? wc_clean( $_POST['wc-' . $this->id . '-payment-token'] ) : 'new';
 		$maybe_save_card = isset( $_POST['wc-' . $this->id . '-new-payment-method'] ) && (bool) $_POST['wc-' . $this->id . '-new-payment-method'];
 
@@ -289,6 +316,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 
 		// Switch of Payment Method
 		if ( self::wcs_is_payment_change() ) {
+
 			$customer_handle = $this->get_customer_handle_order( $order_id );
 
 			if ( absint( $token_id ) > 0 ) {
@@ -526,15 +554,17 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 				'state_or_province' => $order->get_shipping_state()
 			];
 
-			if (!strlen($params['order']['shipping_address'])) {
-				$params['order']['shipping_address'] = $params['order']['billing_address'];
-			}
+//			if (!strlen($params['order']['shipping_address'])) {
+//				$params['order']['shipping_address'] = $params['order']['billing_address'];
+//			}
 		}
 
 		$result = $this->request('POST', 'https://checkout-api.reepay.com/v1/session/charge', $params);
+
 		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
 
 		if ( is_checkout_pay_page() ) {
+
 			if ( $this->payment_type === self::METHOD_OVERLAY ) {
 				return array(
 					'result'             => 'success',
@@ -545,12 +575,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 					),
 				);
 			} else {
+
 				return array(
 					'result'             => 'success',
 					'redirect'           => $result['url'],
 				);
 			}
-
 		}
 
 		return array(
@@ -559,7 +589,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			'is_reepay_checkout' => true,
 			'reepay'             => $result,
 			'accept_url'         => $this->get_return_url( $order ),
-			'cancel_url'         => $order->get_cancel_order_url()
+			'cancel_url'         => home_url() . '/index.php/checkout/reepay_cancel?id='. $order->get_id()
 		);
 	}
 
@@ -659,6 +689,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	 * @return void
 	 */
 	public function process_order_confirmation( $invoice_id ) {
+
+
 		// Update order status
 		$this->log( sprintf( 'accept_url: Processing status update %s', $invoice_id ) );
 		try {
@@ -671,6 +703,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 		$order = $this->get_order_by_handle( $invoice_id );
 
 		$this->log( sprintf( 'accept_url: invoice state: %s. Invoice ID: %s ', $result['state'], $invoice_id ) );
+
+
 		switch ( $result['state'] ) {
 			case 'authorized':
 				// Check if the order has been marked as authorized before
