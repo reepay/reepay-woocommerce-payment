@@ -40,6 +40,7 @@ class WC_ReepayCheckout {
 	 * Constructor
 	 */
 	public function __construct() {
+
 		// Activation
 		register_activation_hook( __FILE__, __CLASS__ . '::install' );
 

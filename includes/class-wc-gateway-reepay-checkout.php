@@ -989,6 +989,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 */
 	public function reepay_finalize()
 	{
+
 		$id = wc_clean( $_GET['id'] );
 		$customer_handle = wc_clean( $_GET['customer'] );
 		$reepay_token = wc_clean( $_GET['payment_method'] );
@@ -1037,7 +1038,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 							$order,
 							sprintf(
 								__( 'Payment has been authorized. Amount: %s.', 'woocommerce-gateway-reepay-checkout' ),
-								wc_price( $result['amount'] / 100 )
+								wc_price( $this->make_initial_amount($result['amount'], $order->get_currency()))
 							)
 						);
 
@@ -1049,7 +1050,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 							$order,
 							sprintf(
 								__( 'Payment has been settled. Amount: %s.', 'woocommerce-gateway-reepay-checkout' ),
-								wc_price( $result['amount'] / 100 )
+								wc_price( $this->make_initial_amount($result['amount'], $order->get_currency()))
 							)
 						);
 						break;

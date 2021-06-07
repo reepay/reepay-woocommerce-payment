@@ -290,6 +290,7 @@ class WC_Reepay_Order_Statuses {
 	 * @param $order_id
 	 */
 	public function payment_complete( $order_id ) {
+
 		$order = wc_get_order( $order_id );
 
 		if ( in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS, true ) ) {

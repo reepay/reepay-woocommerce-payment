@@ -490,13 +490,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 		// Initialize Payment
 		$params = [
 			'locale' => $this->get_language(),
-			//'settle' => $settleInstant,
 			'recurring' => $maybe_save_card || self::order_contains_subscription( $order ) || self::wcs_is_payment_change(),
 			'order' => [
 				'handle' => $this->get_order_handle( $order ),
 				'generate_handle' => false,
-				'amount' => $this->skip_order_lines === 'yes' ? round(100 * $order->get_total()) : null,
-				'order_lines' => $this->skip_order_lines === 'no' ? $this->get_order_items( $order ) : null,
+                'amount' => $this->skip_order_lines === 'yes' ? $this->prepare_amount($order->get_total(), $order->get_currency()) : null,
+                'order_lines' => $this->skip_order_lines === 'no' ? $this->get_order_items( $order ) : null,
 				'currency' => $order->get_currency(),
 				'customer' => [
 					'test' => $this->test_mode === 'yes',
@@ -681,15 +680,15 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 		}
 	}
 
-	/**
-	 * Process the order confirmation using accept_url.
-	 *
-	 * @param string $invoice_id
-	 *
-	 * @return void
-	 */
+    /**
+     * Process the order confirmation using accept_url.
+     *
+     * @param string $invoice_id
+     *
+     * @return void
+     * @throws Exception
+     */
 	public function process_order_confirmation( $invoice_id ) {
-
 
 		// Update order status
 		$this->log( sprintf( 'accept_url: Processing status update %s', $invoice_id ) );
@@ -703,7 +702,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 		$order = $this->get_order_by_handle( $invoice_id );
 
 		$this->log( sprintf( 'accept_url: invoice state: %s. Invoice ID: %s ', $result['state'], $invoice_id ) );
-
 
 		switch ( $result['state'] ) {
 			case 'authorized':
@@ -720,7 +718,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 					$order,
 					sprintf(
 						__( 'Payment has been authorized. Amount: %s.', 'woocommerce-gateway-reepay-checkout' ),
-						wc_price( $result['amount'] / 100 )
+						wc_price($this->make_initial_amount($result['amount'], $result['currency']))
 					)
 				);
 
@@ -746,7 +744,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 					$order,
 					sprintf(
 						__( 'Payment has been settled. Amount: %s.', 'woocommerce-gateway-reepay-checkout' ),
-						wc_price( $result['amount'] / 100 )
+						wc_price( $this->make_initial_amount($result['amount'], $result['currency']))
 					)
 				);
 
@@ -835,7 +833,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 					$order,
 					sprintf(
 						__( 'Payment has been authorized. Amount: %s. Transaction: %s', 'woocommerce-gateway-reepay-checkout' ),
-						wc_price( $invoice_data['amount'] / 100 ),
+
+                        wc_price( $this->make_initial_amount($invoice_data['amount'], $order->get_currency())),
+
 						$data['transaction']
 					),
 					$data['transaction']
@@ -896,7 +896,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 					$order,
 					sprintf(
 						__( 'Payment has been settled. Amount: %s. Transaction: %s', 'woocommerce-gateway-reepay-checkout' ),
-						wc_price( $invoice_data['amount'] / 100 ),
+						wc_price( $this->make_initial_amount($invoice_data['amount'], $order->get_currency())),
 						$data['transaction']
 					),
 					$data['transaction']
@@ -966,13 +966,13 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 					}
 
 					$credit_note_id = $credit_note['id'];
-					$amount = $credit_note['amount'] / 100;
+					$amount = $this->make_initial_amount($credit_note['amount'], $order->get_currency());
 					$reason = sprintf( __( 'Credit Note Id #%s.', 'woocommerce-gateway-reepay-checkout' ), $credit_note_id );
 
 					// Create Refund
 					$refund = wc_create_refund( array(
 						'amount'   => $amount,
-						'reason'   => $reason,
+						'reason'   => '', // don't add Credit note to refund line
 						'order_id' => $order->get_id()
 					) );
 

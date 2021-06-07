@@ -15,6 +15,15 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	const SETTLE_RECURRING = 'recurring';
 	const SETTLE_FEE = 'fee';
 
+    /**
+     * array for currencies that have different minor units that 100
+     * key is currency value is minor units
+     * for currencies that doesn't have minor units, value must be 1
+     *
+     * @var string[]
+     */
+	private $currency_minor_units = ['ISK' => 1];
+
 	/**
 	 * Get parent settings
 	 *
@@ -568,7 +577,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			$items[] = array(
 				'ordertext' => $order_item->get_name(),
 				'quantity'  => $order_item->get_quantity(),
-				'amount'    => round(100 * $unitPrice),
+				'amount'    => $this->prepare_amount($unitPrice, $order->get_currency()),
 				'vat'       => round($taxPercent / 100, 2),
 				'amount_incl_vat' => $pricesIncludeTax
 			);
@@ -584,7 +593,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			$items[] = array(
 				'ordertext' => $order->get_shipping_method(),
 				'quantity'  => 1,
-				'amount'    => round(100 * ( $pricesIncludeTax ? $shippingWithTax : $shipping ) ),
+				'amount'    => $this->prepare_amount($pricesIncludeTax ? $shippingWithTax : $shipping, $order->get_currency()),
 				'vat'       => round($taxPercent / 100, 2),
 				'amount_incl_vat' => $pricesIncludeTax
 			);
@@ -601,7 +610,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			$items[] = array(
 				'ordertext' => $order_fee->get_name(),
 				'quantity'  => 1,
-				'amount'    => round(100 * ( $pricesIncludeTax ? $feeWithTax : $fee ) ),
+				'amount'    => $this->prepare_amount( $pricesIncludeTax ? $feeWithTax : $fee, $order->get_currency()),
 				'vat'       => round($taxPercent / 100, 2),
 				'amount_incl_vat' => $pricesIncludeTax
 			);
@@ -617,7 +626,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			$items[] = array(
 				'ordertext' => __( 'Discount', 'woocommerce-gateway-reepay-checkout' ),
 				'quantity'  => 1,
-				'amount'    => round(-100 * ( $pricesIncludeTax ? $discountWithTax : $discount ) ),
+				'amount'    => round(-1 * $this->prepare_amount($pricesIncludeTax ? $discountWithTax : $discount, $order->get_currency())),
 				'vat'       => round($taxPercent / 100, 2),
 				'amount_incl_vat' => $pricesIncludeTax
 			);
@@ -635,7 +644,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 					$items[] = array(
 						'ordertext' => sprintf( __( 'Gift card (%s)', 'woocommerce-gateway-reepay-checkout' ), $code ),
 						'quantity'  => 1,
-						'amount'    => round(-100 * $requested_balance ),
+						'amount'    =>  $this->prepare_amount(-1 * $requested_balance, $order->get_currency()),
 						'vat'       => 0,
 						'amount_incl_vat' => $pricesIncludeTax
 					);
@@ -1042,7 +1051,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 					$order,
 					sprintf(
 						__( 'Payment has been authorized. Amount: %s. Transaction: %s', 'woocommerce-gateway-reepay-checkout' ),
-						wc_price( $result['amount'] / 100 ),
+						wc_price( $this->make_initial_amount( $result['amount'], $order->get_currency())),
 						$result['transaction']
 					),
 					$result['transaction']
@@ -1059,7 +1068,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 					$order,
 					sprintf(
 						__( 'Payment has been settled. Amount: %s. Transaction: %s', 'woocommerce-gateway-reepay-checkout' ),
-						wc_price( $result['amount'] / 100 ),
+						wc_price($this->make_initial_amount($result['amount'], $order->get_currency())),
 						$result['transaction']
 					),
 					$result['transaction']
@@ -1145,7 +1154,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		try {
 			$params = [
 				'handle' => $this->get_order_handle( $order ),
-				'amount' => round(100 * $amount),
+				'amount' => $this->prepare_amount($amount, $order->get_currency()) ,
 				'currency' => $order->get_currency(),
 				'source' => $token,
 				// 'settle' => $instantSettle,
@@ -1249,7 +1258,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		if ( $amount > 0 ) {
 			try {
 				$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle  . '/settle', array (
-					'amount' => round(100 * $amount)
+					'amount' => $this->prepare_amount($amount, $order->get_currency())
 				));
 
 				$this->log( sprintf( '%s::%s Settle Charge: %s', __CLASS__, __METHOD__, var_export( $result, true) ) );
@@ -1384,7 +1393,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		try {
 			$params = [
 				'invoice' => $handle,
-				'amount' => round( 100 * $amount),
+				'amount' => $this->prepare_amount($amount, $order->get_currency()),
 			];
 			$result = $this->request( 'POST', 'https://api.reepay.com/v1/refund', $params );
 		} catch ( Exception $e ) {
@@ -1567,5 +1576,39 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
             $json_error_description = json_decode($matches[0], true);
             return isset( $json_error_description['error'] ) ? $json_error_description['error'] : null;
         }
+    }
+
+    /**
+     * @param $amount
+     * @param null $currency
+     * @return int
+     */
+    protected function prepare_amount($amount, $currency = null) {
+        $multiplier = $this->get_currency_multiplier($currency);
+        $amount = $amount * $multiplier;
+        return round($amount);
+    }
+
+    /**
+     * convert amount from gateway to initial amount
+     *
+     * @param $amount
+     * @param $currency
+     * @return int
+     */
+    public function make_initial_amount($amount, $currency)
+    {
+        $denominator = $this->get_currency_multiplier($currency);
+        return  $amount / $denominator;
+    }
+
+    /**
+     * get count of minor units fof currency
+     * @param string $currency
+     * @return int
+     */
+    private function get_currency_multiplier($currency) {
+        return array_key_exists($currency, $this->currency_minor_units) ?
+            $this->currency_minor_units[$currency] : 100;
     }
 }
