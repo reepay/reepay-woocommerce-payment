@@ -106,16 +106,10 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 	 */
 	public function is_available() {
 		if ( parent::is_available() ) {
-			if ( strpos( $_SERVER['HTTP_USER_AGENT'], 'Safari' ) &&
-			    ! strpos( $_SERVER['HTTP_USER_AGENT'], 'Chrome' )
-			) {
-				return true;
-			}
+           return true;
 		}
-
-		return false;
 	}
 }
 
 // Register Gateway
-WC_ReepayCheckout::register_gateway( 'WC_Gateway_Reepay_Apple_Pay' );
+WC_ReepayCheckout::register_gateway( 'WC_Gateway_Reepay_Apple_Pay');

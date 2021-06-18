@@ -236,6 +236,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 					'ffk' => 'Forbrugsforeningen',
 					'paypal' => 'PayPal',
 					'applepay' => 'Apple Pay',
+                    'googlepay' => 'Google Pay',
+                    'vipps' => 'Vipps'
 				),
 				'default'     => $this->payment_methods
             ),
@@ -304,7 +306,9 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 					'jcb' => __( 'JCB', 'woocommerce-gateway-reepay-checkout' ),
 					'diners' => __( 'Diners Club', 'woocommerce-gateway-reepay-checkout' ),
 					'unionpay' => __( 'Unionpay', 'woocommerce-gateway-reepay-checkout' ),
-					'discover' => __( 'Discover', 'woocommerce-gateway-reepay-checkout' ),
+					'discover' => __( 'Discover',   'woocommerce-gateway-reepay-checkout' ),
+                    'googlepay' => __('Google pay', 'woocommerce-gateway-reepay-checkout' ),
+                    'vipps' =>     __('Vipps',      'woocommerce-gateway-reepay-checkout')
 				),
 				'select_buttons' => TRUE,
 			),

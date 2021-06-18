@@ -1503,7 +1503,13 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			case 'applepay':
 				$image = 'applepay.png';
 				break;
-			default:
+            case 'googlepay':
+                $image = 'googlepay.png';
+                break;
+            case 'vipps':
+                $image = 'vipps.png';
+                break;
+      		default:
 				//$image = 'reepay.png';
 				// Use an image of payment method
 				$logos = $this->logos;

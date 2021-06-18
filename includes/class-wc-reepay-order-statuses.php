@@ -161,7 +161,7 @@ class WC_Reepay_Order_Statuses {
 
 		try {
 			$order_id           = absint( WC()->session->get( 'order_awaiting_payment' ) );
-			$cart_hash          = md5( wp_json_encode( wc_clean( WC()->cart->get_cart_for_session() ) ) . WC()->cart->total );
+			$cart_hash          = md5( wp_json_encode(WC()->cart->get_cart_for_session()) . WC()->cart->total );
 			$available_gateways = WC()->payment_gateways->get_available_payment_gateways();
 			$order              = $order_id ? wc_get_order( $order_id ) : null;
 
