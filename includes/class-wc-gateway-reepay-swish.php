@@ -19,9 +19,8 @@ class WC_Gateway_Reepay_Swish extends WC_Gateway_Reepay {
 	 * @var array|null
 	 */
 	public $payment_methods = array(
-		//'swish'
-        'visa'
-	);
+		'swish'
+   );
 
 	public function __construct() {
 		$this->id           = 'reepay_swish';
