@@ -18,6 +18,7 @@ The Reepay plugin extends WooCommerce allowing you to take payments on your stor
 See installation guide right here: https://intercom.help/reepay/reepay-plugins/woocommerce-plugin
 
 == Changelog ==
+v 1.4.0 - Added Mobilepay Subscriptions
 v 1.3.4 - Added Google Pay and Vipps; bugfixes
 v 1.3.3 - Added support for Icelandic krona
 v 1.3.2 - Compatibility with php 8.0; avoid using sessions for customers handling; added admin notifications

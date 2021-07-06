@@ -122,15 +122,17 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC
 	 * @return array                           Filtered item.
 	 */
 	public static function wc_get_account_saved_payment_methods_list_item( $item, $payment_token ) {
-		if ( 'reepay' !== strtolower( $payment_token->get_type() ) ) {
-			return $item;
-		}
+
+	    if('reepay_checkout' !==  $payment_token->get_gateway_id()) {
+	        return $item;
+        }
 
 		$card_type               = $payment_token->get_card_type();
 		$item['method']['id']    = $payment_token->get_id();
 		$item['method']['last4'] = $payment_token->get_last4();
 		$item['method']['brand'] = ( ! empty( $card_type ) ? ucfirst( $card_type ) : esc_html__( 'Credit card', 'woocommerce' ) );
-		$item['expires']         = $payment_token->get_expiry_month() . '/' . substr( $payment_token->get_expiry_year(), -2 );
+
+		$item['expires'] = $payment_token->get_expiry_month() . '/' . substr( $payment_token->get_expiry_year(), -2 );
 
 		return $item;
 	}
@@ -141,8 +143,12 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC
 	 * @return void
 	 */
 	public static function wc_account_payment_methods_column_method( $method ) {
-		if ( in_array( $method['method']['gateway'], WC_ReepayCheckout::PAYMENT_METHODS ) ) {
-			$token = new WC_Payment_Token_Reepay( $method['method']['id'] );
+	    if('reepay_checkout' !== $method['method']['gateway']) {
+             return;
+        }
+
+	    $token = new WC_Payment_Token_Reepay( $method['method']['id'] );
+        if ( in_array( $method['method']['gateway'], WC_ReepayCheckout::PAYMENT_METHODS ) ) {
 			echo $token->get_display_name();
 			return;
 		}
@@ -159,6 +165,7 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC
 			    echo esc_html( wc_get_credit_card_type_label( 'visa' ) );
 		    }
 		}
+
 	}
 
 	/**

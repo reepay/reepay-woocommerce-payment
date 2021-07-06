@@ -386,7 +386,8 @@ class WC_Reepay_Order_Statuses {
 	 */
 	public static function set_settled_status( $order, $note = null, $transaction_id = null ) {
 		// Check if the payment has been settled fully
-		$payment_method = $order->get_payment_method();
+
+        $payment_method = $order->get_payment_method();
 		if ( ! in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
 			return;
 		}
@@ -397,7 +398,7 @@ class WC_Reepay_Order_Statuses {
 		}
 
 		// Get Payment Gateway
-		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+		$gateways = WC()->payment_gateways()->payment_gateways();
 
 		/** @var WC_Gateway_Reepay_Checkout $gateway */
 		$gateway = $gateways[ $payment_method ];

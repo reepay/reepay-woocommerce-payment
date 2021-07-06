@@ -22,6 +22,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * Init
 	 */
 	public function __construct() {
+
 		$this->id           = 'reepay_checkout';
 		$this->has_fields   = TRUE;
 		$this->method_title = __( 'Reepay Checkout', 'woocommerce-gateway-reepay-checkout' );
@@ -51,7 +52,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		// Load the settings.
 		$this->init_settings();
 
-		// Define user set variables
+        // Define user set variables
 		$this->enabled                  = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
 		$this->title                    = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
 		$this->description              = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
@@ -508,6 +509,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * @return void
 	 */
 	public function payment_fields() {
+
 		wc_get_template(
 			'checkout/payment-fields.php',
 			array(
@@ -667,6 +669,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 */
 	public function add_subscription_payment_meta( $payment_meta, $subscription ) {
 		$reepay_token = get_post_meta( $subscription->get_id(), '_reepay_token', true );
+
 
 		// If token wasn't stored in Subscription
 		if ( empty( $reepay_token ) ) {

@@ -249,7 +249,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	public static function assign_payment_token( $order, $token ) {
 		if ( is_numeric( $token ) ) {
 			$token = new WC_Payment_Token_Reepay( $token );
-		} elseif ( ! $token instanceof WC_Payment_Token_Reepay ) {
+		} elseif ( ! $token instanceof WC_Payment_Token_Reepay && ! $token instanceof WC_Payment_Token_Reepay_MS ) {
 			throw new Exception( 'Invalid token parameter' );
 		}
 
@@ -280,8 +280,9 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 */
 	protected function reepay_save_token( $order, $reepay_token )
 	{
-		// Check if token is exists in WooCommerce
+	    // Check if token is exists in WooCommerce
 		$token = self::get_payment_token( $reepay_token );
+
 		if ( ! $token ) {
 			// Create Payment Token
 			$token = $this->add_payment_token( $order, $reepay_token );
@@ -304,24 +305,34 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 */
 	public function add_payment_token( $order, $reepay_token ) {
 		// Create Payment Token
-		$customer_handle = $this->get_customer_handle_order( $order->get_id() );
+
+        $customer_handle = $this->get_customer_handle_order( $order->get_id() );
 		$source = $this->get_reepay_cards( $customer_handle, $reepay_token );
+
 		if ( ! $source ) {
 			throw new Exception('Unable to retrieve customer payment methods');
 		}
 
-		$expiryDate = explode( '-', $source['exp_date'] );
+        if('ms_' == substr($source['id'],0,3)) {
+            $token = new WC_Payment_Token_Reepay_MS();
+            $token->set_user_id($order->get_customer_id());
+            $token->set_token($reepay_token);
+            $token->set_gateway_id($this->id);
+        } else {
+            $expiryDate = explode( '-', $source['exp_date'] );
 
-		// Initialize Token
-		$token = new WC_Payment_Token_Reepay();
-		$token->set_gateway_id( $this->id );
-		$token->set_token( $reepay_token );
-		$token->set_last4( substr( $source['masked_card'], -4 ) );
-		$token->set_expiry_year( 2000 + $expiryDate[1] );
-		$token->set_expiry_month( $expiryDate[0] );
-		$token->set_card_type( $source['card_type'] );
-		$token->set_user_id( $order->get_customer_id() );
-		$token->set_masked_card( $source['masked_card'] );
+            // Initialize Token
+            $token = new WC_Payment_Token_Reepay();
+            $token->set_gateway_id( $this->id );
+            $token->set_token( $reepay_token );
+            $token->set_last4( substr( $source['masked_card'], -4 ) );
+            $token->set_expiry_year( 2000 + $expiryDate[1] );
+            $token->set_expiry_month( $expiryDate[0] );
+            $token->set_card_type( $source['card_type'] );
+            $token->set_user_id( $order->get_customer_id() );
+            $token->set_masked_card( $source['masked_card'] );
+
+        }
 
 		// Save Credit Card
 		if ( ! $token->save() ) {
@@ -333,7 +344,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			__CLASS__,
 			__METHOD__,
 			$token->get_id(),
-			$source['masked_card']
+			isset($source['masked_card']) ? $source['masked_card'] : ''
 		) );
 
 		return $token;
@@ -662,7 +673,8 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @return stdClass
 	 */
 	public function calculate_instant_settle( $order ) {
-		$onlineVirtual = false;
+
+	    $onlineVirtual = false;
 		$recurring = false;
 		$physical = false;
 		$total = 0;
@@ -724,7 +736,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		}
 
 		// Add Shipping Total
-		if ( in_array(self::SETTLE_PHYSICAL, $this->settle ) ) {
+		if ( in_array(self::SETTLE_PHYSICAL, $this->settle )) {
 			if ( (float) $order->get_shipping_total() > 0 ) {
 				$shipping = (float) $order->get_shipping_total();
 				$tax = (float) $order->get_shipping_tax();
@@ -835,7 +847,15 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			}
 		}
 
-		return false;
+		$mps_subsctiptions = $result['mps_subscriptions'];
+        foreach ($mps_subsctiptions as $subscription) {
+            if ( $subscription['id'] === $reepay_token && $subscription['state'] === 'active' ) {
+                return $subscription;
+            }
+        }
+
+
+        return false;
 	}
 
 	/**
@@ -1510,6 +1530,10 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
                 $image = 'vipps.png';
                 break;
       		default:
+            case 'ms_subscripiton':
+                $image = 'mobilepay.png';
+                break;
+
 				//$image = 'reepay.png';
 				// Use an image of payment method
 				$logos = $this->logos;

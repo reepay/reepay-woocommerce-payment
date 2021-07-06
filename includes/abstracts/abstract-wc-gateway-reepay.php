@@ -314,7 +314,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			$maybe_save_card = false;
 		}
 
-		// Switch of Payment Method
+    	// Switch of Payment Method
 		if ( self::wcs_is_payment_change() ) {
 
 			$customer_handle = $this->get_customer_handle_order( $order_id );
@@ -597,7 +597,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	 * @return void
 	 */
 	public function payment_confirm() {
-		if ( ! ( is_wc_endpoint_url( 'order-received' ) || is_account_page() ) ) {
+	  //  xdebug_break();
+	    if ( ! ( is_wc_endpoint_url( 'order-received' ) || is_account_page() ) ) {
 			return;
 		}
 
@@ -627,7 +628,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 		$maybe_save_card = get_post_meta( $order->get_id(), '_reepay_maybe_save_card', true );
 
 		if ( ! empty( $_GET['payment_method'] ) && ( $maybe_save_card || self::order_contains_subscription( $order ) ) ) {
-			$this->reepay_save_token( $order, wc_clean( $_GET['payment_method'] ) );
+		    $this->reepay_save_token( $order, wc_clean( $_GET['payment_method'] ) );
 		}
 
 		// Complete payment if zero amount

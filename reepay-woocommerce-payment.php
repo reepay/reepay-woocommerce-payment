@@ -4,7 +4,7 @@
  * Description: Provides a Payment Gateway through Reepay for WooCommerce.
  * Author: reepay
  * Author URI: http://reepay.com
- * Version: 1.3.4
+ * Version: 1.4.0
  * Text Domain: woocommerce-gateway-reepay-checkout
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -28,7 +28,8 @@ class WC_ReepayCheckout {
         'reepay_swish',
         'reepay_viabill',
         'reepay_googlepay',
-        'reepay_vipps'
+        'reepay_vipps',
+        'reepay_mobilepay_subscriptions'
     );
 
 	public static $db_version = '1.2.9';
@@ -194,6 +195,7 @@ class WC_ReepayCheckout {
 	 */
 	public function woocommerce_loaded() {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-payment-token-reepay.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-payment-ms-token-reepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/interfaces/class-wc-payment-gateway-reepay-interface.php' );
 		include_once( dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-payment-gateway-reepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-gateway-reepay.php' );
@@ -208,6 +210,7 @@ class WC_ReepayCheckout {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-apple-pay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-googlepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-vipps.php' );
+		include_once(dirname(__FILE__) . '/includes/class-wc-gateway-reepay-ms.php');
 	}
 
 	/**
