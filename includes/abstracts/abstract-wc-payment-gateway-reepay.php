@@ -663,8 +663,27 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			}
 		}
 
+
 		return $items;
 	}
+
+    /**
+     * calculate amount from order rows that
+     * can be compared with amount from order
+     *
+     * @param $order
+     * @return float|int
+     */
+ 	public function get_calculated_amount( $order ) {
+	    $order_items = $this->get_order_items( $order );
+	    $order_total = 0;
+
+	    foreach( $order_items as $item ) {
+	        $order_total += $item['amount'] * $item['quantity'];
+        }
+
+	    return $order_total;
+    }
 
 	/**
 	 * Calculate the amount to be settled instantly based by the order items.

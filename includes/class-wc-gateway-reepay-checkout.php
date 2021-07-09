@@ -996,7 +996,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 */
 	public function reepay_finalize()
 	{
-
 		$id = wc_clean( $_GET['id'] );
 		$customer_handle = wc_clean( $_GET['customer'] );
 		$reepay_token = wc_clean( $_GET['payment_method'] );

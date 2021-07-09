@@ -532,6 +532,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			'cancel_url' => $order->get_cancel_order_url(),
 		];
 
+		// skip order lines if calculated amount not equal to total order amount
+		if($this->get_calculated_amount( $order ) != $this->prepare_amount($order->get_total(), $order->get_currency())) {
+  		    $params['order']['amount'] = $this->prepare_amount( $order->get_total(), $order->get_currency() );
+            $params['order']['order_lines'] = null;
+	    }
+
 		if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
 			$params['payment_methods'] = $this->payment_methods;
 		}
@@ -597,7 +603,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	 * @return void
 	 */
 	public function payment_confirm() {
-	  //  xdebug_break();
 	    if ( ! ( is_wc_endpoint_url( 'order-received' ) || is_account_page() ) ) {
 			return;
 		}
