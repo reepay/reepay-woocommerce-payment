@@ -62,6 +62,10 @@ class WC_Gateway_Reepay_Vipps extends WC_Gateway_Reepay
         $this->skip_order_lines        = $settings['skip_order_lines'];
         $this->enable_order_autocancel = $settings['enable_order_autocancel'];
 
+        if (!is_array($this->settle)) {
+            $this->settle = array();
+        }
+
         // Actions
         add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
             $this,
