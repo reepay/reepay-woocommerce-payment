@@ -549,8 +549,10 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 				'address' => $order->get_shipping_address_1(),
 				'address2' => $order->get_shipping_address_2(),
 				'city' => $order->get_shipping_city(),
-				'country' => $order->get_shipping_country(),
-				'phone' => $order->get_billing_phone(),
+	            'country' => !empty($order->get_shipping_country()) ?
+                    $order->get_shipping_country() :
+                    $order->get_billing_country(),
+    			'phone' => $order->get_billing_phone(),
 				'company' => $order->get_shipping_company(),
 				'vat' => '',
 				'first_name' => $order->get_shipping_first_name(),
