@@ -108,7 +108,12 @@ class WC_ReepayCheckout {
 		// add meta boxes
 		add_action( 'add_meta_boxes', [ $this, 'add_meta_boxes' ] );
 
-		// Process queue
+        add_action('wp_ajax_reepay_set_complete_settle_transient', array(
+            $this,
+            'ajax_reepay_set_complete_settle_transient'
+        ));
+
+        // Process queue
 		if ( ! is_multisite() ) {
 			add_action( 'customize_save_after', array( $this, 'maybe_process_queue' ) );
 			add_action( 'after_switch_theme', array( $this, 'maybe_process_queue' ) );
@@ -501,7 +506,8 @@ class WC_ReepayCheckout {
                 array( 'jquery'),
                 '5.0.3'
             );
-			wp_register_script(
+$suffix = '';
+            wp_register_script(
                 'reepay-admin-js',
                 plugin_dir_url( __FILE__ ) . 'assets/js/admin' . $suffix . '.js',
                 array(
@@ -780,12 +786,20 @@ class WC_ReepayCheckout {
 	public function meta_box_subscription() {
 	    $this->meta_box_payment();
 	}
-	
-	/*
-	 * Formats a minor unit value into float with two decimals
-	 * @priceMinor is the amount to format
-	 * @return the nicely formatted value
-	 */
+
+    public function ajax_reepay_set_complete_settle_transient() {
+        $order_id = $_POST['order_id'];
+        set_transient('reepay_order_complete_should_settle_' . $order_id, 'yes', 60);
+        error_log('order_id' . $order_id  );
+        wp_send_json_success('success');
+        wp_die();
+    }
+
+    /*
+     * Formats a minor unit value into float with two decimals
+     * @priceMinor is the amount to format
+     * @return the nicely formatted value
+     */
 	public function format_price_decimals( $priceMinor ) {
 		return number_format( $priceMinor / 100, 2, wc_get_price_decimal_separator(), '' );
 	}

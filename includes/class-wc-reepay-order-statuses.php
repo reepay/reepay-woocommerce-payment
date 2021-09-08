@@ -496,21 +496,23 @@ class WC_Reepay_Order_Statuses {
 				break;
 			case REEPAY_STATUS_SETTLED:
 				// Capture payment
-				if ( $gateway->can_capture( $order ) ) {
-					
-					$order_data = $gateway->get_invoice_data( $order );
-					$amount = $order_data["authorized_amount"] - $order_data["settled_amount"];
-					$amount = (float)((float)$amount / 100);
-					try {
-						$gateway->capture_payment( $order, $amount );
-					} catch ( Exception $e ) {
-						$message = $e->getMessage();
-						WC_Admin_Meta_Boxes::add_error( $message );
+                if (get_transient('reepay_order_complete_should_settle_' . $order->get_id())) {
+                    if ($gateway->can_capture($order)) {
 
-						// Rollback
-						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'woocommerce-gateway-reepay-checkout' ), $message ) );
-					}
-				}
+                        $order_data = $gateway->get_invoice_data($order);
+                        $amount = $order_data["authorized_amount"] - $order_data["settled_amount"];
+                        $amount = (float)((float)$amount / 100);
+                        try {
+                            $gateway->capture_payment($order, $amount);
+                        } catch (Exception $e) {
+                            $message = $e->getMessage();
+                            WC_Admin_Meta_Boxes::add_error($message);
+
+                            // Rollback
+                            $order->update_status($from, sprintf(__('Order status rollback. %s', 'woocommerce-gateway-reepay-checkout'), $message));
+                        }
+                    }
+                }
 				break;
 			default:
 				// no break

@@ -10,8 +10,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 ?>
 
-
-
 <ul class="order_action">
 	<li class="reepay-admin-section-li-header">
         <?php echo __( 'State', 'woocommerce-gateway-reepay-checkout' ); ?>: <?php echo $order_data['state']; ?>
@@ -46,6 +44,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <?php echo wc_price( $gateway->make_initial_amount($order_data['authorized_amount'], $order_data['currency'])); ?>
        </span>
     </li>
+    <input id="reepay_order_id" type="hidden" name="text" value="test" data-order-id="<?php echo $order_id; ?>">
 	<li class="reepay-admin-section-li">
         <span class="reepay-balance__label">
             <?php echo __( 'Total settled', 'woocommerce-gateway-reepay-checkout' ); ?>:
