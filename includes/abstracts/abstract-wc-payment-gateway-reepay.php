@@ -35,6 +35,14 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		if ( ! is_array( $settings ) ) {
 			$settings = array();
 		}
+		
+		if ( isset( $settings['private_key'] ) ) {
+			$settings['private_key'] = apply_filters( 'woocommerce_reepay_private_key', $settings['private_key'] );
+		}
+
+		if ( isset( $settings['private_key_test'] ) ) {
+			$settings['private_key_test'] = apply_filters( 'woocommerce_reepay_private_key_test', $settings['private_key_test'] );
+		}
 
 		return array_merge( array(
 			'enabled'                 => 'no',
