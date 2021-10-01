@@ -56,8 +56,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		$this->enabled                  = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
 		$this->title                    = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
 		$this->description              = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
-		$this->private_key              = isset( $this->settings['private_key'] ) ? $this->settings['private_key'] : $this->private_key;
-		$this->private_key_test         = isset( $this->settings['private_key_test'] ) ? $this->settings['private_key_test'] : $this->private_key_test;
+		$this->private_key              = apply_filters( 'woocommerce_reepay_private_key', isset( $this->settings['private_key'] ) ? $this->settings['private_key'] : $this->private_key );
+		$this->private_key_test         = apply_filters( 'woocommerce_reepay_private_key_test', isset( $this->settings['private_key_test'] ) ? $this->settings['private_key_test'] : $this->private_key_test );
 		$this->test_mode                = isset( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $this->test_mode;
 		$this->settle                   = isset( $this->settings['settle'] ) ? $this->settings['settle'] : $this->settle;
 		$this->language                 = isset( $this->settings['language'] ) ? $this->settings['language'] : $this->language;
