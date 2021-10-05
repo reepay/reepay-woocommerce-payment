@@ -4,7 +4,7 @@
  * Description: Provides a Payment Gateway through Reepay for WooCommerce.
  * Author: reepay
  * Author URI: http://reepay.com
- * Version: 1.4.4
+ * Version: 1.4.5
  * Text Domain: woocommerce-gateway-reepay-checkout
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -216,6 +216,7 @@ class WC_ReepayCheckout {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-googlepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-vipps.php' );
 		include_once(dirname(__FILE__) . '/includes/class-wc-gateway-reepay-ms.php');
+        include_once(dirname(__FILE__) .'/includes/class-wc-gateway-reepay-klarna-slice-it.php');
 	}
 
 	/**
@@ -506,7 +507,6 @@ class WC_ReepayCheckout {
                 array( 'jquery'),
                 '5.0.3'
             );
-$suffix = '';
             wp_register_script(
                 'reepay-admin-js',
                 plugin_dir_url( __FILE__ ) . 'assets/js/admin' . $suffix . '.js',

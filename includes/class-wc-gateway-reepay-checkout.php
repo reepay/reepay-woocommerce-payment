@@ -226,6 +226,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 					'viabill' => 'ViaBill',
 					'klarna_pay_later' => 'Klarna Pay Later',
 					'klarna_pay_now' => 'Klarna Pay Now',
+                    'klarna_slice_it' =>'Klarna Slice It',
 					'resurs' => 'Resurs Bank',
 					'swish' => 'Swish',
 					'diners' => 'Diners Club',
