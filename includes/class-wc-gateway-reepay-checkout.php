@@ -868,6 +868,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			$shouldBe = 'order-' . $renewal_order->get_id();
 			if ( $currently !== $shouldBe ) {
 				update_post_meta( $renewal_order->get_id(), '_reepay_order', $shouldBe );
+				$renewal_order->update_meta_data('_reepay_order', $shouldBe);
+
 			}
 
 			// Charge payment
