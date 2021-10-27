@@ -496,7 +496,9 @@ class WC_Reepay_Order_Statuses {
 				break;
 			case REEPAY_STATUS_SETTLED:
 				// Capture payment
-                if (get_transient('reepay_order_complete_should_settle_' . $order->get_id())) {
+                $value = get_transient('reepay_order_complete_should_settle_' . $order->get_id());
+
+                if (1 == $value || false === $value) {
                     if ($gateway->can_capture($order)) {
 
                         $order_data = $gateway->get_invoice_data($order);

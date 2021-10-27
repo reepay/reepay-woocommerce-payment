@@ -190,6 +190,7 @@ jQuery(document).ready(function ($) {
 					data: {
 						action: 'reepay_set_complete_settle_transient',
 						order_id: order_id,
+						settle_order: 1
 					},
 					beforeSend: function () {
 
@@ -204,7 +205,25 @@ jQuery(document).ready(function ($) {
 				});
 
 			} else {
-				$('#post').submit();
+				$.ajax({
+					url: Reepay_Admin.ajax_url,
+					type: 'POST',
+					data: {
+						action: 'reepay_set_complete_settle_transient',
+						order_id: order_id,
+						settle_order: 0
+					},
+					beforeSend: function () {
+
+					},
+					success: function (response) {
+						$('#post').submit();
+					},
+					error: function (response) {
+						alert("error response: " + JSON.stringify(response));
+						$('#post').submit();
+					}
+				});
 			}
 
 		}else {

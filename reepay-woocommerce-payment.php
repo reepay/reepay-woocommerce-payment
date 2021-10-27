@@ -4,7 +4,7 @@
  * Description: Provides a Payment Gateway through Reepay for WooCommerce.
  * Author: reepay
  * Author URI: http://reepay.com
- * Version: 1.4.6
+ * Version: 1.4.7
  * Text Domain: woocommerce-gateway-reepay-checkout
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -789,8 +789,8 @@ class WC_ReepayCheckout {
 
     public function ajax_reepay_set_complete_settle_transient() {
         $order_id = $_POST['order_id'];
-        set_transient('reepay_order_complete_should_settle_' . $order_id, 'yes', 60);
-        error_log('order_id' . $order_id  );
+        $settle_order = $_POST['settle_order'];
+        set_transient('reepay_order_complete_should_settle_' . $order_id, $settle_order, 60);
         wp_send_json_success('success');
         wp_die();
     }
