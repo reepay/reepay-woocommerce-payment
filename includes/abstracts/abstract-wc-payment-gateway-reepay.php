@@ -91,7 +91,6 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		
 		$authorizedAmount = $result['authorized_amount'];
 		$settledAmount = $result['settled_amount'];
-		//$refundedAmount = $result['refunded_amount'];
 
 		return (
 			( $result['state'] === 'authorized' ) || 
@@ -1261,25 +1260,29 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 
 			$this->process_charge_result( $order, $result );
 		} catch (Exception $e) {
-			if ( mb_strpos( $e->getMessage(), 'Invoice already settled', 0, 'UTF-8') !== false ) {
-				$order->payment_complete();
-				$order->add_order_note( __( 'Transaction is already settled.', 'woocommerce-gateway-reepay-checkout' ) );
+            $error = $this->extract_api_error( $e->getMessage() );
 
-				return true;
-			}
+            // handle already exists lets create another with unique handle
+            if('yes' == $this->handle_failover && (400 == $error['http_status'] && in_array($error['code'], [105, 79, 29, 99, 72]))) {
+                $handle = $this->get_order_handle($order, true);
+                $params['handle'] = $handle;
+                $result = $this->request('POST', 'https://api.reepay.com/v1/charge', $params);
 
-			$order->update_status( 'failed' );
-			$order->add_order_note(
-				sprintf( __( 'Failed to charge "%s". Error: %s. Token ID: %s', 'woocommerce-gateway-reepay-checkout' ),
-					wc_price( $amount ),
-					$e->getMessage(),
-					$token
-				)
-			);
+                $this->log( sprintf( '%s::%s Charge: %s', __CLASS__, __METHOD__, var_export( $result, true) ) );
+                $this->process_charge_result( $order, $result );
 
-			return $e->getMessage();
-		}
-
+            } else {
+                $order->update_status( 'failed' );
+                $order->add_order_note(
+                    sprintf( __( 'Failed to charge "%s". Error: %s. Token ID: %s', 'woocommerce-gateway-reepay-checkout' ),
+                        wc_price( $amount ),
+                        $e->getMessage(),
+                        $token
+                    )
+                );
+                return $e->getMessage();
+            }
+        }
 		return true;
 	}
 
@@ -1321,19 +1324,20 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 
 				$this->log( sprintf( '%s::%s API Error: %s', __CLASS__, __METHOD__, var_export( $e->getMessage(), true ) ) );
 
+                $api_error = $this->extract_api_error($e->getMessage());
 				// need to be shown on admin notices
                 $error = sprintf( __( 'Failed to settle "%s". Error: %s.', 'woocommerce-gateway-reepay-checkout' ),
                     wc_price( $amount ),
-                    $this->extract_api_error($e->getMessage())
+                    $api_error['error']
                 );
 
 
                 set_transient( 'reepay_api_action_error', $error, MINUTE_IN_SECONDS / 2);
 
-
+                $api_error = $this->extract_api_error($e->getMessage());
 				$order->add_order_note( sprintf( __( 'Failed to settle "%s". Error: %s.', 'woocommerce-gateway-reepay-checkout' ),
 					wc_price( $amount ),
-                    $this->extract_api_error($e->getMessage())
+                    $api_error['error']
 				) );
 
 				return;
@@ -1393,8 +1397,9 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle  . '/cancel' );
 		} catch ( Exception $e ) {
 
+            $api_error = $this->extract_api_error($e->getMessage());
 		    $error = sprintf( __( 'Failed to cancel the payment. Error: %s.', 'woocommerce-gateway-reepay-checkout' ),
-                $this->extract_api_error($e->getMessage())
+                $api_error['error']
             );
 
             $order->add_order_note( $error);
@@ -1444,23 +1449,19 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			];
 			$result = $this->request( 'POST', 'https://api.reepay.com/v1/refund', $params );
 		} catch ( Exception $e ) {
-
+            $api_error = $this->extract_api_error($e->getMessage());
   		    $error = sprintf( __( 'Failed to refund "%s". Error: %s.', 'woocommerce-gateway-reepay-checkout' ),
                 wc_price( $amount ),
-                $this->extract_api_error($e->getMessage()));
-
+                $api_error['error']);
 
             set_transient( 'reepay_api_action_error', $error, MINUTE_IN_SECONDS / 2);
 
-
             $this->log( sprintf( '%s::%s API Error: %s', __CLASS__, __METHOD__, var_export( $e->getMessage(), true ) ) );
-
 
             $order->add_order_note( $error );
 
-
             if('woocommerce_refund_line_items' == trim($_POST['action'])) {
-                throw new Exception($this->extract_api_error($e->getMessage()));
+                throw new Exception($api_error['error']);
             }
 
             return;
@@ -1588,7 +1589,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			LEFT JOIN {$wpdb->prefix}posts ON ({$wpdb->prefix}posts.ID = {$wpdb->prefix}postmeta.post_id)
 			WHERE meta_key = %s AND meta_value = %s;";
 		$sql = $wpdb->prepare( $query, '_reepay_order', $handle );
-		$order_id = $wpdb->get_var( $sql );
+    	$order_id = $wpdb->get_var( $sql );
 		if ( ! $order_id ) {
 			throw new Exception( sprintf( 'Invoice #%s isn\'t exists in store.', $handle ) );
 		}
@@ -1603,20 +1604,35 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		return $order;
 	}
 
-	/**
-	 * Get Reepay Order Handle.
-	 *
-	 * @param WC_Order $order
-	 *
-	 * @return string
-	 */
-	public function get_order_handle( $order ) {
+    /**
+     * Get Reepay Order Handle.
+     *
+     * @param WC_Order $order
+     * @param bool $unique
+     * @return string
+     */
+	public function get_order_handle( $order, $unique = false) {
 		$handle = $order->get_meta( '_reepay_order' );
-		if ( empty( $handle ) ) {
-			$handle = 'order-' . $order->get_order_number();
-			$order->update_meta_data( '_reepay_order', $handle );
-			$order->save_meta_data();
-		}
+        if( $unique ) $handle = null;
+
+    	if ( empty( $handle ) ) {
+            if($unique) {
+                $handle = 'order-' . $order->get_order_number() . '-' . time();
+            }else {
+                $handle = 'order-' . $order->get_order_number();
+            }
+
+             // $order->delete_meta_data('_reepay_order');
+             //$order->save_meta_data();
+             // $order->update_meta_data( '_reepay_order', $handle );
+             // $order->save_meta_data();
+
+            // make sure we have only one _reepay_order meta tag
+            delete_metadata( 'post', $order->get_id(), '_reepay_order', '', true);
+            $order->add_meta_data('_reepay_order', $handle);
+            $order->save_meta_data();
+
+        }
 
 		return $handle;
 	}
@@ -1627,12 +1643,13 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
      * @param $error_message
      * @return mixed|null
      */
-	private function extract_api_error($error_message) {
+	protected function extract_api_error($error_message) {
         preg_match('/{.*}/',$error_message, $matches);
         if(isset($matches[0])) {
             $json_error_description = json_decode($matches[0], true);
-            return isset( $json_error_description['error'] ) ? $json_error_description['error'] : null;
+            return $json_error_description;
         }
+
     }
 
     /**
@@ -1640,7 +1657,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
      * @param null $currency
      * @return int
      */
-    protected function prepare_amount($amount, $currency = null) {
+    public function prepare_amount($amount, $currency = null) {
         $multiplier = $this->get_currency_multiplier($currency);
         $amount = $amount * $multiplier;
         return round($amount);
@@ -1656,7 +1673,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
     public function make_initial_amount($amount, $currency)
     {
         $denominator = $this->get_currency_multiplier($currency);
-        return  $amount / $denominator;
+        return $amount / $denominator;
     }
 
     /**

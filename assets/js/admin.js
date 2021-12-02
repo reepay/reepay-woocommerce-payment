@@ -174,15 +174,15 @@ jQuery(document).ready(function ($) {
 	});
 
 	$(document).on('click', '#woocommerce-order-actions .button', function (e) {
-
 		e.preventDefault();
-		var amount = $("#reepay-capture_partly_amount-field").val();
+
 		var order_id = $("#reepay_order_id").data('order-id');
-		var button = $('#woocommerce-order-actions .button').attr("disabled", true);
+		var amount = $('#reepay_order_total').data('order-total');
+		var formatted_amount = $("#reepay_order_total").val();
 
 		if (amount > 0 && $("#order_status option:selected").val()  == 'wc-completed') {
 
-			if (window.confirm('Would you like to capture amount ' + amount + ' ?')) {
+			if (window.confirm('Would you like to capture amount ' + formatted_amount + ' ?')) {
 
 				$.ajax({
 					url: Reepay_Admin.ajax_url,

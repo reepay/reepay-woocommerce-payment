@@ -10,6 +10,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 ?>
 
+<?php
+    $amount_to_capture = 0;
+    $order_total = $gateway->prepare_amount($order->get_total(), $order_data['currency']);
+    if( $order_total  <=  $order_data['authorized_amount'] ) {
+        $amount_to_capture = $order_total;
+    } else {
+        $amount_to_capture = $order_data['authorized_amount'];
+    }
+?>
+
 <ul class="order_action">
 	<li class="reepay-admin-section-li-header">
         <?php echo __( 'State', 'woocommerce-gateway-reepay-checkout' ); ?>: <?php echo $order_data['state']; ?>
@@ -44,8 +54,11 @@ if ( ! defined( 'ABSPATH' ) ) {
             <?php echo wc_price( $gateway->make_initial_amount($order_data['authorized_amount'], $order_data['currency'])); ?>
        </span>
     </li>
-    <input id="reepay_order_id" type="hidden" name="text" value="test" data-order-id="<?php echo $order_id; ?>">
-	<li class="reepay-admin-section-li">
+
+    <input id="reepay_order_id" type="hidden" data-order-id="<?php echo $order_id; ?>">
+    <input id="reepay_order_total" type="hidden" value ="<?php echo $gateway->make_initial_amount($amount_to_capture, $order_data['currency']) . ' ' . $order_data['currency']; ?>" data-order-total="<?php echo $gateway->make_initial_amount($amount_to_capture, $order_data['currency']); ?>">
+
+    <li class="reepay-admin-section-li">
         <span class="reepay-balance__label">
             <?php echo __( 'Total settled', 'woocommerce-gateway-reepay-checkout' ); ?>:
         </span>
@@ -94,7 +107,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <?php echo __( 'Capture amount', 'woocommerce-gateway-reepay-checkout' ); ?>:
             </span>
             <span class="reepay-partly_capture_amount">
-                <input id="reepay-capture_partly_amount-field" class="reepay-capture_partly_amount-field" type="text" autocomplete="off" size="6" value="<?php echo (  $gateway->make_initial_amount($order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency']) ); ?>" />
+                <input id="reepay-capture_partly_amount-field" class="reepay-capture_partly_amount-field" type="text" autocomplete="off" size="6" value="<?php echo ($gateway->make_initial_amount($order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency']) ); ?>" />
             </span>
         </li>
 		<li class="reepay-full-width">

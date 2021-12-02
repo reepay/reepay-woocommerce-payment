@@ -278,7 +278,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'title'   => __( 'Allow Credit Card saving', 'woocommerce-gateway-reepay-checkout' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable Save CC feature', 'woocommerce-gateway-reepay-checkout' ),
-				'default' => $this->save_cc
+				'default' => 'no'
 			),
 			'debug'          => array(
 				'title'   => __( 'Debug', 'woocommerce-gateway-reepay-checkout' ),
@@ -286,7 +286,16 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'label'   => __( 'Enable logging', 'woocommerce-gateway-reepay-checkout' ),
 				'default' => $this->debug
 			),
-			'logos'             => array(
+
+            'handle_failover'  => array(
+                'title'   => __( 'Order handle failover', 'woocommerce-gateway-reepay-checkout' ),
+                'type'    => 'checkbox',
+                'label'   => __( 'Order handle failover', 'woocommerce-gateway-reepay-checkout' ),
+                'description' => __('In case if invoice with current handle was settled before, plugin will generate unique handle', 'woocommerce-gateway-reepay-checkout'),
+                'default' => 'yes'
+            ),
+
+            'logos'             => array(
 				'title'          => __( 'Payment Logos', 'woocommerce-gateway-reepay-checkout' ),
 				'description'    => __( 'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Reepay Dashboard', 'woocommerce-gateway-reepay-checkout' ),
 				'type'           => 'multiselect',

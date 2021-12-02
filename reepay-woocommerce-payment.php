@@ -591,7 +591,7 @@ class WC_ReepayCheckout {
 			} 
 			
 			//
-			// Mark the order as cancelled - no more communciation to reepay is done!
+			// Mark the order as cancelled - no more communication to reepay is done!
 			// 
 			$order->update_meta_data( '_reepay_order_cancelled', 1 );
 			$order->save_meta_data();
@@ -761,7 +761,7 @@ class WC_ReepayCheckout {
                 /** @var WC_Gateway_Reepay_Checkout $gateway */
 				$gateway = isset($gateways[$payment_method]) ? $gateways[$payment_method] : null;
 
-				if( is_object( $gateway ) ) {
+                if( is_object( $gateway ) ) {
                    try {
                         wc_get_template(
                             'admin/metabox-order.php',

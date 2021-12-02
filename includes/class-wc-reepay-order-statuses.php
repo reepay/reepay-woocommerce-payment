@@ -461,6 +461,7 @@ class WC_Reepay_Order_Statuses {
 	public static function order_status_changed( $order_id, $from, $to, $order ) {
 		
 		$payment_method = $order->get_payment_method();
+
 		if ( ! in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
 			return;
 		}
@@ -500,12 +501,21 @@ class WC_Reepay_Order_Statuses {
 
                 if (1 == $value || false === $value) {
                     if ($gateway->can_capture($order)) {
+                       $amount = $order->get_total();
+                       $order_data = $gateway->get_invoice_data($order);
+                       if( $amount  <=  ($order_data['authorized_amount'] / 100)) {
+                            $amount_to_capture = $amount;
+                        } else {
+                            $amount_to_capture = $order_data['authorized_amount'] / 100;
+                        }
 
+                        /*
                         $order_data = $gateway->get_invoice_data($order);
                         $amount = $order_data["authorized_amount"] - $order_data["settled_amount"];
                         $amount = (float)((float)$amount / 100);
+                        */
                         try {
-                            $gateway->capture_payment($order, $amount);
+                            $gateway->capture_payment($order, $amount_to_capture);
                         } catch (Exception $e) {
                             $message = $e->getMessage();
                             WC_Admin_Meta_Boxes::add_error($message);

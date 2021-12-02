@@ -120,6 +120,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	 */
 	public $payment_methods = null;
 
+    public $handle_failover = 'yes';
+
 	/**
 	 * Init
 	 */
@@ -146,6 +148,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 		$this->payment_type             = isset( $this->settings['payment_type'] ) ? $this->settings['payment_type'] : $this->payment_type;
 		$this->skip_order_lines         = isset( $this->settings['skip_order_lines'] ) ? $this->settings['skip_order_lines'] : $this->skip_order_lines;
 		$this->enable_order_autocancel  = isset( $this->settings['enable_order_autocancel'] ) ? $this->settings['enable_order_autocancel'] : $this->enable_order_autocancel;
+        $this->handle_failover          = isset( $this->settings['handle_failover'] ) ? $this->settings['handle_failover'] : $this->handle_failover;
 
 		if (!is_array($this->settle)) {
 			$this->settle = array();
@@ -566,9 +569,24 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 //			}
 		}
 
-		$result = $this->request('POST', 'https://checkout-api.reepay.com/v1/session/charge', $params);
+        try {
+            $result = $this->request('POST', 'https://checkout-api.reepay.com/v1/session/charge', $params);
+        } catch(Exception $ex) {
+            if('yes' == $this->handle_failover) {
+                $error = $this->extract_api_error($ex->getMessage());
 
-		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
+                // invoice with handle $params['order']['handle'] already exists and authorized/settled
+                // try to create another invoice with unique handle in format order-id-time()
+                if (400 == $error['http_status'] && in_array($error['code'], [105, 79, 29, 99, 72])) {
+                    $handle = $this->get_order_handle($order, true);
+                    $params['order']['handle'] = $handle;
+
+                    $result = $this->request('POST', 'https://checkout-api.reepay.com/v1/session/charge', $params);
+                }
+            }
+        }
+
+  		$this->log( sprintf( '%s::%s Result %s', __CLASS__, __METHOD__, var_export( $result, true ) ) );
 
 		if ( is_checkout_pay_page() ) {
 
@@ -706,12 +724,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			return;
 		}
 
-		// Get order
+  		// Get order
 		$order = $this->get_order_by_handle( $invoice_id );
 
 		$this->log( sprintf( 'accept_url: invoice state: %s. Invoice ID: %s ', $result['state'], $invoice_id ) );
 
-		switch ( $result['state'] ) {
+  		switch ( $result['state'] ) {
 			case 'authorized':
 				// Check if the order has been marked as authorized before
 				if ( $order->get_status() === REEPAY_STATUS_AUTHORIZED ) {
