@@ -1612,29 +1612,24 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
      * @return string
      */
 	public function get_order_handle( $order, $unique = false) {
-		$handle = $order->get_meta( '_reepay_order' );
-        if( $unique ) $handle = null;
+        $handle = get_post_meta( $order->get_id(), '_reepay_order', true);
 
-    	if ( empty( $handle ) ) {
+        if( $unique ) {
+            $handle = null;
+            delete_post_meta($order->get_id(), '_reepay_order', $handle);
+        }
+
+        if ( empty( $handle ) ) {
             if($unique) {
                 $handle = 'order-' . $order->get_order_number() . '-' . time();
             }else {
                 $handle = 'order-' . $order->get_order_number();
             }
-
-             // $order->delete_meta_data('_reepay_order');
-             //$order->save_meta_data();
-             // $order->update_meta_data( '_reepay_order', $handle );
-             // $order->save_meta_data();
-
-            // make sure we have only one _reepay_order meta tag
-            delete_metadata( 'post', $order->get_id(), '_reepay_order', '', true);
-            $order->add_meta_data('_reepay_order', $handle);
+            $order->update_meta_data( '_reepay_order', $handle );
             $order->save_meta_data();
-
         }
 
-		return $handle;
+        return $handle;
 	}
 
     /**
