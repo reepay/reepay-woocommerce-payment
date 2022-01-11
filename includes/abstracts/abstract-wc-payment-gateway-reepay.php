@@ -1155,7 +1155,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			throw new Exception('Unable to get invoice data.');
 		}
 
-		$order_data = $this->get_invoice_by_handle( $this->get_order_handle( $order ) );
+    	$order_data = $this->get_invoice_by_handle( $this->get_order_handle( $order ) );
 
 		return array_merge( array(
 			'authorized_amount' => 0,
@@ -1205,6 +1205,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 				'source' => $token,
 				// 'settle' => $instantSettle,
 				'recurring' => $this->order_contains_subscription( $order ),
+                /*
 				'customer' => [
 					'test' => $this->test_mode === 'yes',
 					'handle' => $this->get_customer_handle_order( $order->get_id() ),
@@ -1235,9 +1236,9 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 					'last_name' => $order->get_billing_last_name(),
 					'postal_code' => $order->get_billing_postcode(),
 					'state_or_province' => $order->get_billing_state()
-				],
+				],*/
 			];
-
+            /*
 			if ($order->needs_shipping_address()) {
 				$params['shipping_address'] = [
 					'attention' => '',
@@ -1254,8 +1255,10 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 					'postal_code' => $order->get_shipping_postcode(),
 					'state_or_province' => $order->get_shipping_state()
 				];
-			}
-			$result = $this->request('POST', 'https://api.reepay.com/v1/charge', $params);
+
+			}*/
+
+  			$result = $this->request('POST', 'https://api.reepay.com/v1/charge', $params);
 			$this->log( sprintf( '%s::%s Charge: %s', __CLASS__, __METHOD__, var_export( $result, true) ) );
 
 			$this->process_charge_result( $order, $result );
@@ -1625,7 +1628,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
             }else {
                 $handle = 'order-' . $order->get_order_number();
             }
-            $order->update_meta_data( '_reepay_order', $handle );
+            add_post_meta($order->get_id(), '_reepay_order', $handle);
             $order->save_meta_data();
         }
 
