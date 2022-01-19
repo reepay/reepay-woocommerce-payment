@@ -989,6 +989,8 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
         if(empty($handle)) {
             if( $order->get_customer_id() > 0 ) {
                 $handle = 'customer-' . $order->get_customer_id();
+            }else {
+                $handle = 'cust-' . time();
             }
         }
 

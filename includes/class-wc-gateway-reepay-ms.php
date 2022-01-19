@@ -252,7 +252,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay
 
         if(is_checkout() && !is_null(WC()->cart) ) {
             foreach (WC()->cart->get_cart() as $cart_item) {
-                if ('subscription' == $cart_item['data']->get_type()) {
+                if ('subscription' == $cart_item['data']->get_type() || 'subscription_variation' == $cart_item['data']->get_type()) {
                     return true;
                 }
             }

@@ -496,14 +496,13 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			'recurring' => $maybe_save_card || self::order_contains_subscription( $order ) || self::wcs_is_payment_change(),
 			'order' => [
 				'handle' => $this->get_order_handle( $order ),
-				'generate_handle' => false,
-                'amount' => $this->skip_order_lines === 'yes' ? $this->prepare_amount($order->get_total(), $order->get_currency()) : null,
+			    'amount' => $this->skip_order_lines === 'yes' ? $this->prepare_amount($order->get_total(), $order->get_currency()) : null,
                 'order_lines' => $this->skip_order_lines === 'no' ? $this->get_order_items( $order ) : null,
 				'currency' => $order->get_currency(),
 				'customer' => [
 					'test' => $this->test_mode === 'yes',
 					'handle' => $customer_handle,
-					'email' => $order->get_billing_email(),
+                    'email' => $order->get_billing_email(),
 					'address' => $order->get_billing_address_1(),
 					'address2' => $order->get_billing_address_2(),
 					'city' => $order->get_billing_city(),
@@ -574,7 +573,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
         } catch(Exception $ex) {
             if('yes' == $this->handle_failover) {
                 $error = $this->extract_api_error($ex->getMessage());
-
                 // invoice with handle $params['order']['handle'] already exists and authorized/settled
                 // try to create another invoice with unique handle in format order-id-time()
                 if (400 == $error['http_status'] && in_array($error['code'], [105, 79, 29, 99, 72])) {
