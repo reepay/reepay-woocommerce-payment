@@ -8,7 +8,7 @@
  * Text Domain: woocommerce-gateway-reepay-checkout
  * Domain Path: /languages
  * WC requires at least: 3.0.0
- * WC tested up to: 4.3.0
+ * WC tested up to: 6.3.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
