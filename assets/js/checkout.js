@@ -27,6 +27,8 @@ jQuery( function( $ ) {
 
                 wc_reepay.buildModalCheckout( result.reepay.id, result.accept_url, result.cancel_url );
             } catch ( e ) {
+                console.warn( e );
+
                 return false;
             }
         }

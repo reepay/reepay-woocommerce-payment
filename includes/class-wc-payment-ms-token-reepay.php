@@ -12,14 +12,13 @@ class WC_Payment_Token_Reepay_MS extends WC_Payment_Token
     {
         ob_start();
         ?>
-        <img src="<?php echo esc_url( plugins_url( '/assets/images/'. 'mobilepay' . '.png', dirname( __FILE__ ) . '' ) ); ?>" width="46" height="24" />
+        <img src="<?php echo esc_url( plugins_url( '/assets/images/'. 'mobilepay' . '.png', dirname( __FILE__ ) ) ); ?>" width="46" height="24" />
 
-        <?php if(is_checkout()) {
-                echo '&nbsp;' . $this->get_token();
-            }else {
-                echo 'Reepay - Mobilepay Subscriptions [' . $this->get_token() . ']';
-            }
-        ?>
+	    <?php if (is_checkout()): ?>
+	        <?php echo '&nbsp;' . $this->get_token(); ?>
+        <?php else: ?>
+            Reepay - Mobilepay Subscriptions [<?php echo $this->get_token(); ?>]
+        <?php endif; ?>
 
         <?php
         $display = ob_get_contents();
@@ -35,24 +34,24 @@ class WC_Payment_Token_Reepay_MS extends WC_Payment_Token
      * @return array                           Filtered item.
      */
     public static function wc_get_account_saved_payment_methods_list_item($item, $payment_token) {
-        if('reepay_mobilepay_subscriptions' !== $payment_token->get_gateway_id()) {
+        if ( 'reepay_mobilepay_subscriptions' !== $payment_token->get_gateway_id() ) {
             return $item;
         }
 
         $item['method']['id'] = $payment_token->get_id();
         $item['expires'] = 'N/A';
+
         return $item;
     }
 
     public static function wc_account_payment_methods_column_method( $method ) {
-        if('reepay_mobilepay_subscriptions' !== $method['method']['gateway']) {
+        if ( 'reepay_mobilepay_subscriptions' !== $method['method']['gateway'] ) {
             return;
         }
 
-        $token = new WC_Payment_Token_Reepay_MS($method['method']['id'] );
+        $token = new WC_Payment_Token_Reepay_MS( $method['method']['id'] );
         if ( in_array( $method['method']['gateway'], WC_ReepayCheckout::PAYMENT_METHODS ) ) {
             echo $token->get_display_name();
-            return;
         }
     }
 }
