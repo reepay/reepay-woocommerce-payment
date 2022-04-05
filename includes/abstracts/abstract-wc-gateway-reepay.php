@@ -265,6 +265,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			'recurring' => true,
 			'nonce' => wp_create_nonce( 'reepay' ),
 			'ajax_url' => admin_url( 'admin-ajax.php' ),
+			'cancel_text' => __( 'Payment was canceled, please try again', 'woocommerce-gateway-reepay-checkout' ),
+			'error_text' => __( 'Error with payment, please try again', 'woocommerce-gateway-reepay-checkout' ),
 
 		);
 		wp_localize_script( 'wc-gateway-reepay-checkout', 'WC_Gateway_Reepay_Checkout', $translation_array );
@@ -612,7 +614,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			'is_reepay_checkout' => true,
 			'reepay'             => $result,
 			'accept_url'         => $this->get_return_url( $order ),
-			'cancel_url'         => home_url() . '/index.php/checkout/reepay_cancel?id='. $order->get_id()
 		);
 	}
 
@@ -624,7 +625,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	    if ( ! ( is_wc_endpoint_url( 'order-received' ) || is_account_page() ) ) {
 			return;
 		}
-
+        //return;
 		if ( empty( $_GET['id'] ) ) {
 			return;
 		}
