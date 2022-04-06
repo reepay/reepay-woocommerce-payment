@@ -507,7 +507,12 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 
                 throw new Exception(sprintf('API Error (request): %s. HTTP Code: %s', $body, $http_code));
             default:
-                throw new Exception(sprintf('Invalid HTTP Code: %s', $http_code));
+                if ( $this->debug === 'yes' ) {
+                    throw new Exception($body);
+                }else{
+                    throw new Exception(sprintf('Invalid HTTP Code: %s', $http_code));
+                }
+
         }
     }
 
