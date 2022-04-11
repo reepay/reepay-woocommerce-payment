@@ -627,18 +627,22 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 		}
         //return;
 		if ( empty( $_GET['id'] ) ) {
+            wc_add_notice('Not isset Id', 'error');
 			return;
 		}
 
 		if ( empty( $_GET['key'] ) ) {
+            wc_add_notice('Not isset key', 'error');
 			return;
 		}
 
 		if ( ! $order_id = wc_get_order_id_by_order_key( $_GET['key'] ) ) {
+            wc_add_notice('Cannot found the order', 'error');
 			return;
 		}
 
 		if ( ! $order = wc_get_order( $order_id ) ) {
+            wc_add_notice('Cannot found the order', 'error');
 			return;
 		}
 
