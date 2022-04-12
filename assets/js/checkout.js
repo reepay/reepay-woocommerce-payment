@@ -25,7 +25,7 @@ jQuery( function( $ ) {
                     return false;
                 }
 
-                wc_reepay.buildModalCheckout( result.reepay.id, result.accept_url, result.cancel_url );
+                wc_reepay.buildModalCheckout( result.reepay.id, result.accept_url );
             } catch ( e ) {
                 return false;
             }
@@ -38,11 +38,10 @@ jQuery( function( $ ) {
                 params = new URLSearchParams( url );
 
             let rid = params.get( 'rid' ),
-                accept_url = params.get( 'accept_url' ),
-                cancel_url = params.get( 'cancel_url' );
+                accept_url = params.get( 'accept_url' );
 
             window.setTimeout( function () {
-                wc_reepay.buildModalCheckout( rid, accept_url, cancel_url );
+                wc_reepay.buildModalCheckout( rid, accept_url );
                 history.pushState( '', document.title, window.location.pathname );
             }, 1000 );
         }
@@ -55,9 +54,8 @@ wc_reepay = {
      *
      * @param reepay_id
      * @param accept_url
-     * @param cancel_url
      */
-    buildModalCheckout: function ( reepay_id, accept_url, cancel_url ) {
+    buildModalCheckout: function ( reepay_id, accept_url ) {
         if ( WC_Gateway_Reepay_Checkout.payment_type === 'OVERLAY' ) {
             // Show modal
             window.rp.show( reepay_id );
@@ -79,20 +77,42 @@ wc_reepay = {
 
         window.rp.addEventHandler( Reepay.Event.Cancel, function( data ) {
             console.log( 'Cancel', data );
-            window.location.href = cancel_url;
+            wc_reepay.throw_error( WC_Gateway_Reepay_Checkout.cancel_text )
         } );
 
         window.rp.addEventHandler( Reepay.Event.Close, function( data ) {
+            var form = $('form.checkout');
+            form.removeClass( 'processing' ).unblock();
             console.log( 'Close', data );
         } );
 
         window.rp.addEventHandler( Reepay.Event.Error, function( data ) {
             console.log( 'Error', data );
-            window.location.href = cancel_url;
+            wc_reepay.throw_error( WC_Gateway_Reepay_Checkout.error_text )
         } );
     },
 
-    /**
+    throw_error: function ( errorThrown ) {
+        jQuery( function( $ ) {
+            var form = $('form.checkout');
+            form.removeClass( 'processing' ).unblock();
+            $('.woocommerce-NoticeGroup').remove();
+            var message = '<div class="woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout"><ul class="woocommerce-error" role="alert"><li>' + errorThrown + '</li></ul></div>';
+            form.before(message);
+            var scrollElement = $('.woocommerce-NoticeGroup-updateOrderReview, .woocommerce-NoticeGroup-checkout');
+            if (!scrollElement.length) {
+                scrollElement = $('.form.checkout');
+            }
+            if (scrollElement.length) {
+                $('html, body').animate({
+                    scrollTop: (scrollElement.offset().top - 100)
+                }, 1000);
+            }
+        });
+    },
+
+
+/**
      * Add parameter for Url
      *
      * @param url
