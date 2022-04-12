@@ -686,12 +686,26 @@ class WC_ReepayCheckout {
 			/** @var WC_Gateway_Reepay_Checkout $gateway */
 			$gateway = 	$gateways[ $payment_method ];
 			$gateway->refund_payment( $order, (float)((float)$amount / 100) );
+            $this->woocommerce_refund_add($order, $_REQUEST['amount']);
 			wp_send_json_success( __( 'Refund partly success.', 'woocommerce-gateway-reepay-checkout' ) );
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
 			wp_send_json_error( $message );
 		}
 	}
+
+    public function woocommerce_refund_add($order, $amount){
+        $_POST['order_id'] = $order->get_id();
+        $_POST['refund_amount'] = $amount;
+        $_POST['refunded_amount'] = $order->get_total_refunded();
+        $_POST['line_item_qtys'] = array();
+        $_POST['line_item_totals'] = array();
+        $_POST['line_item_tax_totals'] = array();
+        $_POST['api_refund'] = 'true';
+        $_POST['restock_refunded_items'] = 'true';
+        $_REQUEST['security'] = wp_create_nonce( 'order-item' );
+        WC_AJAX::refund_line_items();
+    }
 
 	/**
 	 * Provide Admin Menu items
