@@ -56,6 +56,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     </li>
 
     <input id="reepay_order_id" type="hidden" data-order-id="<?php echo $order_id; ?>">
+    <input id="reepay_order_total_settled" type="hidden" value="<?=$gateway->make_initial_amount($order_data['settled_amount'], $order_data['currency']) ?>">
     <input id="reepay_order_total" type="hidden" value ="<?php echo $gateway->make_initial_amount($amount_to_capture, $order_data['currency']) . ' ' . $order_data['currency']; ?>" data-order-total="<?php echo $gateway->make_initial_amount($amount_to_capture, $order_data['currency']); ?>">
 
     <li class="reepay-admin-section-li">
