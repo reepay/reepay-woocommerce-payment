@@ -5,6 +5,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 } // Exit if accessed directly
 
 class WC_Reepay_Instant_Settle {
+	use WC_Reepay_Log;
+
+	/**
+	 * @var string
+	 */
+	private $logging_source = 'reepay-instant-checkout';
+
 	/**
 	 * Settle Type options
 	 */
@@ -204,32 +211,6 @@ class WC_Reepay_Instant_Settle {
 		$result->settings          = $settle;
 
 		return $result;
-	}
-
-	/**
-	 * Logging method.
-	 *
-	 * @param string $message Log message.
-	 * @param string $level Optional. Default 'info'.
-	 *     emergency|alert|critical|error|warning|notice|info|debug
-	 *
-	 * @return void
-	 * @see WC_Log_Levels
-	 *
-	 */
-	private function log( $message, $level = 'info' ) {
-		// Get Logger instance
-		$logger = wc_get_logger();
-
-		// Write message to log
-		if ( ! is_string( $message ) ) {
-			$message = var_export( $message, true );
-		}
-
-		$logger->log( $level, $message, array(
-			'source'  => 'reepay_instant_checkout',
-			'_legacy' => true
-		) );
 	}
 }
 

@@ -211,7 +211,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	public function capture_payment( $order, $amount ) {
 		// Check if the order is cancelled - if so - then return as nothing has happened
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
-			return;
+			throw new Exception( 'Order is already canceled' );
 		}
 
 		$result = $this->api->capture_payment( $order, $amount );
@@ -231,7 +231,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	public function cancel_payment( $order ) {
 		// Check if hte order is cancelled - if so - then return as nothing has happened
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
-			return;
+			throw new Exception( 'Order is already canceled' );
 		}
 
 		$result = $this->api->cancel( $order );
@@ -257,7 +257,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		// Check if the order is cancelled - if so - then return as nothing has happened
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled', true ) ) {
-			return;
+			throw new Exception( 'Order is already canceled' );
 		}
 
 		if ( ! $this->can_refund( $order, $amount ) ) {

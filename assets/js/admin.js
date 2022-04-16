@@ -123,7 +123,6 @@ jQuery(document).ready(function ($) {
 				self.html(self.data('text'));
 				self.prop('disabled', false);
 				if (!response.success) {
-					alert(response);
 					alert(response.data);
 					return false;
 				}
@@ -161,7 +160,6 @@ jQuery(document).ready(function ($) {
 				self.html(self.data('text'));
 				self.prop('disabled', false);
 				if (!response.success) {
-					alert(response);
 					alert(response.data);
 					return false;
 				}

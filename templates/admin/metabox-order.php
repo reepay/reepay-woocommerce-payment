@@ -11,13 +11,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 
 <?php
-    $amount_to_capture = 0;
-    $order_total = rp_prepare_amount( $order->get_total(), $order_data['currency'] );
-    if( $order_total  <=  $order_data['authorized_amount'] ) {
-        $amount_to_capture = $order_total;
-    } else {
-        $amount_to_capture = $order_data['authorized_amount'];
-    }
+	$amount_to_capture = 0;
+	$order_total = rp_prepare_amount( $order->get_total(), $order_data['currency'] );
+	if( $order_total  <=  $order_data['authorized_amount'] ) {
+		$amount_to_capture = $order_total;
+	} else {
+		$amount_to_capture = $order_data['authorized_amount'];
+	}
 ?>
 
 <ul class="order_action">
@@ -82,7 +82,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         </span>
     </li>
 	<li style='font-size: xx-small'>&nbsp;</li>
-	<?php if ($order_data['settled_amount'] == 0 && ! in_array( $order_data['state'], array( 'cancelled', 'created') ) && !$order_is_cancelled): ?>
+	<?php if ( $order_data['settled_amount'] == 0 && ! in_array( $order_data['state'], array( 'cancelled', 'created') ) && !$order_is_cancelled ): ?>
 		<li class="reepay-full-width">
             <a class="button button-primary" data-action="reepay_capture" id="reepay_capture" data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>" data-order-id="<?php echo $order_id; ?>" data-confirm="<?php echo __( 'You are about to CAPTURE this payment', 'reepay-checkout-gateway' ); ?>">
                 <?php echo sprintf( __( 'Capture Full Amount (%s)', 'reepay-checkout-gateway' ), wc_price( rp_make_initial_amount( $order_data['authorized_amount'], $order_data['currency'] ) ) ); ?>
