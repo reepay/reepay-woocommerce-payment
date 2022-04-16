@@ -5,6 +5,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 } // Exit if accessed directly
 
 class WC_Reepay_Api {
+	use WC_Reepay_Log;
+
+	/**
+	 * @var string
+	 */
+	private $logging_source;
+
 	/**
 	 * @var WC_Gateway_Reepay
 	 */
@@ -21,7 +28,8 @@ class WC_Reepay_Api {
 	 * @param WC_Payment_Gateway_Reepay_Interface $gateway
 	 */
 	public function __construct( WC_Payment_Gateway_Reepay_Interface $gateway ) {
-		$this->gateway = $gateway;
+		$this->gateway        = $gateway;
+		$this->logging_source = $gateway->id;
 	}
 
 	/**
@@ -149,6 +157,14 @@ class WC_Reepay_Api {
 		$order_data = $this->get_invoice_by_handle( rp_get_order_handle( $order ) );
 		if ( is_wp_error( $order_data ) ) {
 			/** @var WP_Error $order_data */
+			$this->log(
+				sprintf(
+					'Error (get_invoice_data): %s. Order ID: %s',
+					$order_data->get_error_message(),
+					$order->get_id()
+				)
+			);
+
 			return $order_data;
 		}
 
@@ -180,15 +196,24 @@ class WC_Reepay_Api {
 		$result = $this->get_invoice_data( $order );
 		if ( is_wp_error( $result ) ) {
 			/** @var WP_Error $result */
+
+			$this->log(
+				sprintf(
+					'Payment can\'t be captured. Error: %s. Order ID: %s',
+					$result->get_error_message(),
+					$order->get_id()
+				)
+			);
+
 			return false;
 		}
 
-		$authorizedAmount = $result['authorized_amount'];
-		$settledAmount    = $result['settled_amount'];
+		$authorized_amount = $result['authorized_amount'];
+		$settled_amount    = $result['settled_amount'];
 
 		return (
 			( $result['state'] === 'authorized' ) ||
-			( $result['state'] === 'settled' && $authorizedAmount >= $settledAmount + $amount )
+			( $result['state'] === 'settled' && $authorized_amount >= $settled_amount + $amount )
 		);
 	}
 
@@ -207,6 +232,15 @@ class WC_Reepay_Api {
 		$result = $this->get_invoice_data( $order );
 		if ( is_wp_error( $result ) ) {
 			/** @var WP_Error $result */
+
+			$this->log(
+				sprintf(
+					'Payment can\'t be cancelled. Error: %s. Order ID: %s',
+					$result->get_error_message(),
+					$order->get_id()
+				)
+			);
+
 			return false;
 		}
 
@@ -239,6 +273,15 @@ class WC_Reepay_Api {
 		$result = $this->get_invoice_data( $order );
 		if ( is_wp_error( $result ) ) {
 			/** @var WP_Error $result */
+
+			$this->log(
+				sprintf(
+					'Payment can\'t be refunded. Error: %s. Order ID: %s',
+					$result->get_error_message(),
+					$order->get_id()
+				)
+			);
+
 			return false;
 		}
 
@@ -263,6 +306,8 @@ class WC_Reepay_Api {
 		}
 
 		if ( ! $this->can_capture( $order, $amount ) ) {
+			$this->log( sprintf( 'Payment can\'t be captured. Order ID: %s', $order->get_id() ) );
+
 			return new WP_Error( 0, 'Payment can\'t be captured.' );
 		}
 
@@ -288,6 +333,8 @@ class WC_Reepay_Api {
 		}
 
 		if ( ! $this->can_cancel( $order ) ) {
+			$this->log( sprintf( 'Payment can\'t be cancelled. Order ID: %s', $order->get_id() ) );
+
 			throw new Exception( 'Payment can\'t be cancelled.' );
 		}
 
@@ -318,37 +365,46 @@ class WC_Reepay_Api {
 			'source'    => $token,
 			'recurring' => order_contains_subscription( $order ),
 		);
-		$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge', $params );
-		if ( ! is_wp_error( $result ) ) {
+
+		try {
+			$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge', $params );
+			if ( is_wp_error( $result ) ) {
+				if ( 'yes' == $this->gateway->handle_failover &&
+				     ( in_array( $result->get_error_code(), array( 105, 79, 29, 99, 72 ) ) )
+				) {
+					// Workaround: handle already exists lets create another with unique handle
+					$params['handle'] = rp_get_order_handle( $order, true );
+					$result           = $this->request( 'POST', 'https://api.reepay.com/v1/charge', $params );
+					if ( is_wp_error( $result ) ) {
+						throw new Exception( $result->get_error_message(), $result->get_error_code() );
+					}
+
+					$this->process_charge_result( $order, $result );
+
+					return $result;
+				}
+
+				throw new Exception( $result->get_error_message(), $result->get_error_code() );
+			}
+
 			$this->process_charge_result( $order, $result );
 
 			return $result;
+		} catch ( Exception $e ) {
+			$this->log( $e->getMessage(), WC_Log_Levels::ERROR );
+
+			/** @var WP_Error $result */
+			$order->update_status( 'failed' );
+			$order->add_order_note(
+				sprintf( __( 'Failed to charge "%s". Error: %s. Token ID: %s', 'woocommerce-gateway-reepay-checkout' ),
+					wc_price( $amount, array( 'currency' => $currency ) ),
+					$e->getMessage(),
+					$token
+				)
+			);
+
+			return new WP_Error( $e->getCode(), $e->getMessage() );
 		}
-
-		if ( 'yes' == $this->gateway->handle_failover &&
-		     ( in_array( $result->get_error_code(), [ 105, 79, 29, 99, 72 ] ) )
-		) {
-			// Workaround: handle already exists lets create another with unique handle
-			$params['handle'] = rp_get_order_handle( $order, true );
-			$result           = $this->request( 'POST', 'https://api.reepay.com/v1/charge', $params );
-			if ( ! is_wp_error( $result ) ) {
-				$this->process_charge_result( $order, $result );
-
-				return $result;
-			}
-		}
-
-		/** @var WP_Error $result */
-		$order->update_status( 'failed' );
-		$order->add_order_note(
-			sprintf( __( 'Failed to charge "%s". Error: %s. Token ID: %s', 'woocommerce-gateway-reepay-checkout' ),
-				wc_price( $amount, array( 'currency' => $currency ) ),
-				$result->get_error_message(),
-				$token
-			)
-		);
-
-		return $result;
 	}
 
 	/**
@@ -742,31 +798,4 @@ class WC_Reepay_Api {
 
 		return null;
 	}
-
-	/**
-	 * Logging method.
-	 *
-	 * @param string $message Log message.
-	 * @param string $level Optional. Default 'info'.
-	 *     emergency|alert|critical|error|warning|notice|info|debug
-	 *
-	 * @return void
-	 * @see WC_Log_Levels
-	 *
-	 */
-	private function log( $message, $level = 'info' ) {
-		// Get Logger instance
-		$logger = wc_get_logger();
-
-		// Write message to log
-		if ( ! is_string( $message ) ) {
-			$message = var_export( $message, true );
-		}
-
-		$logger->log( $level, $message, array(
-			'source'  => $this->gateway->id,
-			'_legacy' => true
-		) );
-	}
-
 }
