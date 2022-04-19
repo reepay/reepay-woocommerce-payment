@@ -938,7 +938,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			'logos'                   => $this->logos,
 			'logo_height'             => $this->logo_height,
 			'skip_order_lines'        => $this->skip_order_lines,
-			'enable_order_autocancel' => $this->enable_order_autocancel
+			'enable_order_autocancel' => $this->enable_order_autocancel,
+            'is_webhook_configured'   => isset($settings['is_webhook_configured']) ?
+                $settings['is_webhook_configured'] : $this->is_webhook_configured
 		), $settings );
 	}
 

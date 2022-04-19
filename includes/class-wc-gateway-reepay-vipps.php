@@ -61,6 +61,7 @@ class WC_Gateway_Reepay_Vipps extends WC_Gateway_Reepay
         $this->payment_type            = $settings['payment_type'];
         $this->skip_order_lines        = $settings['skip_order_lines'];
         $this->enable_order_autocancel = $settings['enable_order_autocancel'];
+	    $this->is_webhook_configured   = $settings['is_webhook_configured'];
 
         if (!is_array($this->settle)) {
             $this->settle = array();
