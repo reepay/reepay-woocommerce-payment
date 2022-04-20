@@ -1301,10 +1301,10 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	 * @param WC_Order $order
 	 * @param float|int|null $amount
 	 *
-	 * @return void
+	 * @return boolean
 	 * @throws Exception
 	 */
-	public function reepay_settle( $order, $amount = null ) {
+	public function reepay_settle( $order, $amount = null, $item_data = false ) {
 		$handle = $this->get_order_handle( $order );
 		if ( empty( $handle ) ) {
 			throw new Exception( 'Unable to get order handle' );
@@ -1315,10 +1315,15 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		}
 
 		if ( $amount > 0 ) {
+
+            if($item_data){
+                $request_data['order_lines'] = $item_data;
+            }else{
+                $request_data['amount'] = $this->prepare_amount($amount, $order->get_currency());
+            }
+
 			try {
-				$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle  . '/settle', array (
-					'amount' => $this->prepare_amount($amount, $order->get_currency())
-				));
+				$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle  . '/settle', $request_data);
 
 				$this->log( sprintf( '%s::%s Settle Charge: %s', __CLASS__, __METHOD__, var_export( $result, true) ) );
 
@@ -1328,7 +1333,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			} catch (Exception $e) {
 				// Workaround: Check if the invoice has been settled before to prevent "Invoice already settled"
 				if ( mb_strpos( $e->getMessage(), 'Invoice already settled', 0, 'UTF-8') !== false ) {
-					return;
+					return false;
 				}
 
 				$this->log( sprintf( '%s::%s API Error: %s', __CLASS__, __METHOD__, var_export( $e->getMessage(), true ) ) );
@@ -1349,7 +1354,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
                     $api_error['error']
 				) );
 
-				return;
+                return false;
 			}
 
 			// @todo Check $result['processing']
@@ -1377,15 +1382,19 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
             set_transient( 'reepay_api_action_success', $success, MINUTE_IN_SECONDS / 2);
 
 			// Check the amount and change the order status to settled if needs
-			try {
-				$result = $this->get_invoice_data( $order );
+            if(!$item_data){
+                try {
+                    $result = $this->get_invoice_data( $order );
 
-				if ( $result['authorized_amount'] === $result['settled_amount'] ) {
-					WC_Reepay_Order_Statuses::set_settled_status( $order );
-				}
-			} catch (Exception $e) {
-				// Silence is golden
-			}
+                    if ( $result['authorized_amount'] === $result['settled_amount'] ) {
+                        WC_Reepay_Order_Statuses::set_settled_status( $order );
+                    }
+                } catch (Exception $e) {
+                    return false;
+                }
+            }
+
+            return true;
 		}
 	}
 
