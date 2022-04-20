@@ -12,8 +12,15 @@ class WC_Reepay_Order_Capture {
     }
 
     public function capture_full_order( $order_id,  $this_status_transition_from,  $this_status_transition_to,  $instance){
+        $order = wc_get_order( $order_id );
+        $payment_method = $order->get_payment_method();
+
+        if(strpos($payment_method, 'reepay') === false){
+            return;
+        }
+
         if($this_status_transition_to == 'completed'){
-            $order = wc_get_order( $order_id );
+
             foreach ( $order->get_items() as  $item_key => $item ) {
                 $this->settle_item($item, $order);
             }
@@ -46,6 +53,14 @@ class WC_Reepay_Order_Capture {
     }
 
     public function add_item_capture_button($item_id, $item, $product){
+        $order_id = wc_get_order_id_by_order_item_id( $item_id );
+        $order = wc_get_order( $order_id );
+        $payment_method = $order->get_payment_method();
+
+        if(strpos($payment_method, 'reepay') === false){
+            return;
+        }
+
         $settled = $item->get_meta('settled');
         if(empty($settled)){
             echo '<button type="submit" class="button save_order button-primary" name="line_item_capture" value="'.$item_id.'">Capture</button>';
