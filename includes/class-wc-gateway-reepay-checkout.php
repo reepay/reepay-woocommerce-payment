@@ -255,7 +255,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 					self::SETTLE_FEE => __( 'Instant Settle fees', 'woocommerce-gateway-reepay-checkout' ),
 				),
 				'select_buttons' => TRUE,
-				'default'     => $this->settle
+				'default'     => ''
 			),
 			'language'     => array(
 				'title'       => __( 'Language In Payment Window', 'woocommerce-gateway-reepay-checkout' ),
