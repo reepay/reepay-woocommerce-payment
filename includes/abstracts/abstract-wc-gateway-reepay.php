@@ -632,22 +632,22 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 		}
         //return;
 		if ( empty( $_GET['id'] ) ) {
-            wc_add_notice('Not isset Id', 'error');
+            wc_add_notice( __( 'Not isset Id', 'woocommerce-gateway-reepay-checkout' ), 'error');
 			return;
 		}
 
 		if ( empty( $_GET['key'] ) ) {
-            wc_add_notice('Not isset key', 'error');
+            wc_add_notice( __( 'Not isset key', 'woocommerce-gateway-reepay-checkout' ), 'error');
 			return;
 		}
 
 		if ( ! $order_id = wc_get_order_id_by_order_key( $_GET['key'] ) ) {
-            wc_add_notice('Cannot found the order', 'error');
+            wc_add_notice( __( 'Cannot found the order', 'woocommerce-gateway-reepay-checkout' ), 'error');
 			return;
 		}
 
 		if ( ! $order = wc_get_order( $order_id ) ) {
-            wc_add_notice('Cannot found the order', 'error');
+            wc_add_notice( __( 'Cannot found the order', 'woocommerce-gateway-reepay-checkout' ), 'error');
 			return;
 		}
 
@@ -688,7 +688,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			$this->log( sprintf( 'WebHook: Post data: %s', var_export( $raw_body, true ) ) );
 			$data = @json_decode( $raw_body, true );
 			if ( ! $data ) {
-				throw new Exception( 'Missing parameters' );
+				throw new Exception( __( 'Missing parameters', 'woocommerce-gateway-reepay-checkout' ) );
 			}
 
 			// Get Secret
@@ -702,7 +702,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 			// Verify secret
 			$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
 			if ( $check !== $data['signature'] ) {
-				throw new Exception( 'Signature verification failed' );
+				throw new Exception( __( 'Signature verification failed', 'woocommerce-gateway-reepay-checkout' ) );
 			}
 
 			$this->process_webhook( $data );
@@ -817,7 +817,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 		switch ( $data['event_type'] ) {
 			case 'invoice_authorized':
 				if ( ! isset( $data['invoice'] ) ) {
-					throw new Exception( 'Missing Invoice parameter' );
+					throw new Exception( __( 'Missing Invoice parameter', 'woocommerce-gateway-reepay-checkout' ) );
 				}
 
 				// Get Order by handle
@@ -945,7 +945,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 				break;
 			case 'invoice_cancelled':
 				if ( ! isset( $data['invoice'] ) ) {
-					throw new Exception( 'Missing Invoice parameter' );
+					throw new Exception( __( 'Missing Invoice parameter', 'woocommerce-gateway-reepay-checkout' ) );
 				}
 
 				// Get Order by handle
@@ -973,7 +973,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 				break;
 			case 'invoice_refund':
 				if ( ! isset( $data['invoice'] ) ) {
-					throw new Exception( 'Missing Invoice parameter' );
+					throw new Exception( __( 'Missing Invoice parameter', 'woocommerce-gateway-reepay-checkout' ) );
 				}
 
 				// Get Order by handle
@@ -1028,7 +1028,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 				break;
 			case 'invoice_created':
 				if ( ! isset( $data['invoice'] ) ) {
-					throw new Exception( 'Missing Invoice parameter' );
+					throw new Exception( __( 'Missing Invoice parameter', 'woocommerce-gateway-reepay-checkout' ) );
 				}
 
 				$this->log( sprintf( 'WebHook: Invoice created: %s', var_export( $data['invoice'], true ) ) );

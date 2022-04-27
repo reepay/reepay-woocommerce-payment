@@ -210,7 +210,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		}
 
 		if ( ! $this->can_cancel( $order ) ) {
-			throw new Exception( 'Payment can\'t be cancelled.' );
+			throw new Exception( __( 'Payment can\'t be cancelled.' , 'woocommerce-gateway-reepay-checkout' ) );
 		}
 
 		$this->reepay_cancel( $order );
@@ -257,7 +257,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		if ( is_numeric( $token ) ) {
 			$token = new WC_Payment_Token_Reepay( $token );
 		} elseif ( ! $token instanceof WC_Payment_Token_Reepay && ! $token instanceof WC_Payment_Token_Reepay_MS ) {
-			throw new Exception( 'Invalid token parameter' );
+			throw new Exception( __( 'Invalid token parameter' , 'woocommerce-gateway-reepay-checkout' ) );
 		}
 
 		if ( $token->get_id() ) {
@@ -317,7 +317,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		$source = $this->get_reepay_cards( $customer_handle, $reepay_token );
 
 		if ( ! $source ) {
-			throw new Exception('Unable to retrieve customer payment methods');
+			throw new Exception( __( 'Unable to retrieve customer payment methods' , 'woocommerce-gateway-reepay-checkout' ) );
 		}
 
         if('ms_' == substr($source['id'],0,3)) {
@@ -482,10 +482,10 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
             case 0:
                 if ( is_wp_error($response) ){
                     wc_add_notice($response->get_error_message(), 'error');
-                    throw new Exception(sprintf('Error: %s. Code: %s.', $response->get_error_message(), $code));
+                    throw new Exception(sprintf(__('Error: %s. Code: %s.', 'woocommerce-gateway-reepay-checkout' ), $response->get_error_message(), $code));
                 }
             case 1:
-                throw new Exception(sprintf('Invalid HTTP Code: %s', $http_code));
+                throw new Exception(sprintf(__('Invalid HTTP Code: %s', 'woocommerce-gateway-reepay-checkout' ), $http_code));
             case 2:
             case 3:
                 return json_decode($body, true);
@@ -494,7 +494,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
                 if ( mb_strpos( $body, 'Request rate limit exceeded', 0, 'UTF-8' ) !== false ) {
                     global $request_retry;
                     if ($request_retry) {
-                        throw new Exception( 'Reepay: Request rate limit exceeded' );
+                        throw new Exception( __('Reepay: Request rate limit exceeded', 'woocommerce-gateway-reepay-checkout' ) );
                     }
 
                     sleep(10);
@@ -505,12 +505,12 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
                     return  $result;
                 }
 
-                throw new Exception(sprintf('API Error (request): %s. HTTP Code: %s', $body, $http_code));
+                throw new Exception(sprintf(__('API Error (request): %s. HTTP Code: %s', 'woocommerce-gateway-reepay-checkout' ), $body, $http_code));
             default:
                 if ( $this->debug === 'yes' ) {
                     throw new Exception($body);
                 }else{
-                    throw new Exception(sprintf('Invalid HTTP Code: %s', $http_code));
+                    throw new Exception(sprintf(__('Invalid HTTP Code: %s', 'woocommerce-gateway-reepay-checkout' ), $http_code));
                 }
 
         }
@@ -863,7 +863,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	public function get_reepay_cards($customer_handle, $reepay_token = null) {
 		$result = $this->request( 'GET', 'https://api.reepay.com/v1/customer/' . $customer_handle . '/payment_method' );
 		if ( ! isset( $result['cards'] ) ) {
-			throw new Exception('Unable to retrieve customer payment methods');
+			throw new Exception(__('Unable to retrieve customer payment methods', 'woocommerce-gateway-reepay-checkout' ));
 		}
 
 		if ( ! $reepay_token ) {
@@ -1158,7 +1158,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		}
 
 		if ( $order->get_payment_method() !== $this->id ) {
-			throw new Exception('Unable to get invoice data.');
+			throw new Exception(__('Unable to get invoice data.', 'woocommerce-gateway-reepay-checkout' ));
 		}
 
     	$order_data = $this->get_invoice_by_handle( $this->get_order_handle( $order ) );
@@ -1307,7 +1307,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	public function reepay_settle( $order, $amount = null, $item_data = false ) {
 		$handle = $this->get_order_handle( $order );
 		if ( empty( $handle ) ) {
-			throw new Exception( 'Unable to get order handle' );
+			throw new Exception( __('Unable to get order handle', 'woocommerce-gateway-reepay-checkout' ) );
 		}
 
 		if ( ! $amount ) {
@@ -1328,7 +1328,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 				$this->log( sprintf( '%s::%s Settle Charge: %s', __CLASS__, __METHOD__, var_export( $result, true) ) );
 
 				if ( 'failed' === $result['state'] ) {
-					throw new Exception( 'Settle has been failed.' );
+					throw new Exception( __('Settle has been failed.', 'woocommerce-gateway-reepay-checkout' ) );
 				}
 			} catch (Exception $e) {
 				// Workaround: Check if the invoice has been settled before to prevent "Invoice already settled"
@@ -1408,7 +1408,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	public function reepay_cancel( $order ) {
 		$handle = $this->get_order_handle( $order );
 		if ( empty( $handle ) ) {
-			throw new Exception( 'Unable to get order handle' );
+			throw new Exception( __('Unable to get order handle', 'woocommerce-gateway-reepay-checkout' ) );
 		}
 
 		try {
@@ -1453,7 +1453,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 	public function reepay_refund( $order, $amount = null, $reason = null ) {
 		$handle = $this->get_order_handle( $order );
 		if ( empty( $handle ) ) {
-			throw new Exception( 'Unable to get order handle' );
+			throw new Exception( __('Unable to get order handle', 'woocommerce-gateway-reepay-checkout' ) );
 		}
 
 		if ( ! $amount ) {
@@ -1609,14 +1609,14 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 		$sql = $wpdb->prepare( $query, '_reepay_order', $handle );
     	$order_id = $wpdb->get_var( $sql );
 		if ( ! $order_id ) {
-			throw new Exception( sprintf( 'Invoice #%s isn\'t exists in store.', $handle ) );
+			throw new Exception( sprintf( __('Invoice #%s isn\'t exists in store.', 'woocommerce-gateway-reepay-checkout' ), $handle ) );
 		}
 
 		// Get Order
 		clean_post_cache( $order_id );
 		$order = wc_get_order( $order_id );
 		if ( ! $order ) {
-			throw new Exception( sprintf( 'Order #%s isn\'t exists in store.', $order_id ) );
+			throw new Exception( sprintf( __('Order #%s isn\'t exists in store.', 'woocommerce-gateway-reepay-checkout' ), $order_id ) );
 		}
 
 		return $order;

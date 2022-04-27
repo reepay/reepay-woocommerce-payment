@@ -63,7 +63,9 @@ class WC_Reepay_Order_Capture {
 
         $settled = $item->get_meta('settled');
         if(empty($settled)){
-            echo '<button type="submit" class="button save_order button-primary" name="line_item_capture" value="'.$item_id.'">Capture</button>';
+            echo '<button type="submit" class="button save_order button-primary" name="line_item_capture" value="'.$item_id.'">
+                '.__( 'Capture', 'woocommerce-gateway-reepay-checkout' ).'
+            </button>';
         }
     }
 

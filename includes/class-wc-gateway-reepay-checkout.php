@@ -504,7 +504,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			} catch ( Exception $e ) {
 				$this->update_option( 'is_webhook_configured', 'no' );
 				$this->log( sprintf( 'WebHook creation/update has been failed: %s', var_export( $result, true ) ) );
-				WC_Admin_Settings::add_error( __( 'Reepay: WebHook creation/update has been failed' ) );
+				WC_Admin_Settings::add_error( __( 'Reepay: WebHook creation/update has been failed', 'woocommerce-gateway-reepay-checkout' ) );
 			}
 		} catch ( Exception $e ) {
 			$this->update_option( 'is_webhook_configured', 'no' );
@@ -715,25 +715,25 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	public function validate_subscription_payment_meta( $payment_method_id, $payment_meta, $subscription ) {
 		if ( $payment_method_id === $this->id ) {
 			if ( empty( $payment_meta['post_meta']['_reepay_token']['value'] ) ) {
-				throw new Exception( 'A "Reepay Token" value is required.' );
+				throw new Exception( __('A "Reepay Token" value is required.', 'woocommerce-gateway-reepay-checkout') );
 			}
 
 			$tokens = explode( ',', $payment_meta['post_meta']['_reepay_token']['value'] );
 			if ( count( $tokens ) > 1 ) {
-				throw new Exception( 'Only one "Reepay Token" is allowed.' );
+				throw new Exception( __('Only one "Reepay Token" is allowed.', 'woocommerce-gateway-reepay-checkout') );
 			}
 
 			$token = self::get_payment_token( $tokens[0] );
 			if ( ! $token ) {
-				throw new Exception( 'This "Reepay Token" value not found.' );
+				throw new Exception( __('This "Reepay Token" value not found.', 'woocommerce-gateway-reepay-checkout') );
 			}
 
 			if ( $token->get_gateway_id() !== $this->id ) {
-				throw new Exception( 'This "Reepay Token" value should related to Reepay.' );
+				throw new Exception( __('This "Reepay Token" value should related to Reepay.', 'woocommerce-gateway-reepay-checkout') );
 			}
 
 			if ( $token->get_user_id() !== $subscription->get_user_id() ) {
-				throw new Exception( 'Access denied for this "Reepay Token" value.' );
+				throw new Exception( __('Access denied for this "Reepay Token" value.', 'woocommerce-gateway-reepay-checkout') );
 			}
 		}
 	}
@@ -864,12 +864,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			}
 
 			if ( ! $token ) {
-				throw new Exception( 'Payment token isn\'t exists' );
+				throw new Exception( __('Payment token isn\'t exists', 'woocommerce-gateway-reepay-checkout') );
 			}
 
 			// Validate
 			if ( empty( $token->get_token() ) ) {
-				throw new Exception( 'Payment token is empty' );
+				throw new Exception( __('Payment token is empty', 'woocommerce-gateway-reepay-checkout') );
 			}
 
 			// Fix the reepay order value to prevent "Invoice already settled"
