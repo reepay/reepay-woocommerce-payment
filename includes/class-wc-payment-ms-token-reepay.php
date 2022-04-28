@@ -17,7 +17,7 @@ class WC_Payment_Token_Reepay_MS extends WC_Payment_Token
         <?php if(is_checkout()) {
                 echo '&nbsp;' . $this->get_token();
             }else {
-                echo sprintf( __( 'Reepay - Mobilepay Subscriptions [%s]', 'woocommerce-gateway-reepay-checkout' ), $this->get_token() );
+                echo sprintf( __( 'Reepay - Mobilepay Subscriptions [%s]', 'reepay-checkout-gateway' ), $this->get_token() );
             }
         ?>
 

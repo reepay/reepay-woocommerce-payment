@@ -22,19 +22,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 <ul class="order_action">
 	<li class="reepay-admin-section-li-header">
-        <?php echo __( 'State', 'woocommerce-gateway-reepay-checkout' ); ?>: <?php echo $order_data['state']; ?>
+        <?php echo __( 'State', 'reepay-checkout-gateway' ); ?>: <?php echo $order_data['state']; ?>
     </li>
 
 	<?php $order_is_cancelled = ( $order->get_meta( '_reepay_order_cancelled', true ) === '1' ); ?>
 	<?php if ($order_is_cancelled && 'cancelled' != $order_data['state']): ?>
 		<li class="reepay-admin-section-li-small">
-            <?php echo __( 'Order is cancelled', 'woocommerce-gateway-reepay-checkout' ); ?>
+            <?php echo __( 'Order is cancelled', 'reepay-checkout-gateway' ); ?>
         </li>
 	<?php endif; ?>
 
 	<li class="reepay-admin-section-li">
         <span class="reepay-balance__label">
-            <?php echo __( 'Remaining balance', 'woocommerce-gateway-reepay-checkout' ); ?>:
+            <?php echo __( 'Remaining balance', 'reepay-checkout-gateway' ); ?>:
         </span>
         <span class="reepay-balance__amount">
             <span class='reepay-balance__currency'>
@@ -45,7 +45,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     </li>
 	<li class="reepay-admin-section-li">
         <span class="reepay-balance__label">
-            <?php echo __( 'Total authorized', 'woocommerce-gateway-reepay-checkout' ); ?>:
+            <?php echo __( 'Total authorized', 'reepay-checkout-gateway' ); ?>:
         </span>
         <span class="reepay-balance__amount">
             <span class='reepay-balance__currency'>
@@ -61,7 +61,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
     <li class="reepay-admin-section-li">
         <span class="reepay-balance__label">
-            <?php echo __( 'Total settled', 'woocommerce-gateway-reepay-checkout' ); ?>:
+            <?php echo __( 'Total settled', 'reepay-checkout-gateway' ); ?>:
         </span>
         <span class="reepay-balance__amount">
             <span class='reepay-balance__currency'>
@@ -72,7 +72,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     </li>
 	<li class="reepay-admin-section-li">
         <span class="reepay-balance__label">
-            <?php echo __( 'Total refunded', 'woocommerce-gateway-reepay-checkout' ); ?>:
+            <?php echo __( 'Total refunded', 'reepay-checkout-gateway' ); ?>:
         </span>
         <span class="reepay-balance__amount">
             <span class='reepay-balance__currency'>
@@ -84,16 +84,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<li style='font-size: xx-small'>&nbsp;</li>
 	<?php if ($order_data['settled_amount'] == 0 && ! in_array( $order_data['state'], array( 'cancelled', 'created') ) && !$order_is_cancelled): ?>
 		<li class="reepay-full-width">
-            <a class="button button-primary" data-action="reepay_capture" id="reepay_capture" data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>" data-order-id="<?php echo $order_id; ?>" data-confirm="<?php echo __( 'You are about to CAPTURE this payment', 'woocommerce-gateway-reepay-checkout' ); ?>">
-                <?php echo sprintf( __( 'Capture Full Amount (%s)', 'woocommerce-gateway-reepay-checkout' ), wc_price(  $gateway->make_initial_amount($order_data['authorized_amount'], $order_data['currency']))); ?>
+            <a class="button button-primary" data-action="reepay_capture" id="reepay_capture" data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>" data-order-id="<?php echo $order_id; ?>" data-confirm="<?php echo __( 'You are about to CAPTURE this payment', 'reepay-checkout-gateway' ); ?>">
+                <?php echo sprintf( __( 'Capture Full Amount (%s)', 'reepay-checkout-gateway' ), wc_price(  $gateway->make_initial_amount($order_data['authorized_amount'], $order_data['currency']))); ?>
             </a>
         </li>
 	<?php endif; ?>
 
 	<?php if ($order_data['settled_amount'] == 0 && ! in_array( $order_data['state'], array( 'cancelled', 'created') ) && !$order_is_cancelled): ?>
 		<li class="reepay-full-width">
-            <a class="button" data-action="reepay_cancel" id="reepay_cancel" data-confirm="<?php echo __( 'You are about to CANCEL this payment', 'woocommerce-gateway-reepay-checkout' ); ?>" data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>" data-order-id="<?php echo $order_id; ?>">
-                <?php echo __( 'Cancel remaining balance', 'woocommerce-gateway-reepay-checkout' ); ?>
+            <a class="button" data-action="reepay_cancel" id="reepay_cancel" data-confirm="<?php echo __( 'You are about to CANCEL this payment', 'reepay-checkout-gateway' ); ?>" data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>" data-order-id="<?php echo $order_id; ?>">
+                <?php echo __( 'Cancel remaining balance', 'reepay-checkout-gateway' ); ?>
             </a>
         </li>
 		<li style='font-size: xx-small'>&nbsp;</li>
@@ -101,11 +101,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	<?php if ($order_data['authorized_amount'] > $order_data['settled_amount'] && ! in_array( $order_data['state'], array( 'cancelled', 'created') ) && !$order_is_cancelled): ?>
 		<li class="reepay-admin-section-li-header">
-            <?php echo __( 'Partly capture', 'woocommerce-gateway-reepay-checkout' ); ?>
+            <?php echo __( 'Partly capture', 'reepay-checkout-gateway' ); ?>
         </li>
 		<li class="reepay-balance last">
             <span class="reepay-balance__label" style="margin-right: 0;">
-                <?php echo __( 'Capture amount', 'woocommerce-gateway-reepay-checkout' ); ?>:
+                <?php echo __( 'Capture amount', 'reepay-checkout-gateway' ); ?>:
             </span>
             <span class="reepay-partly_capture_amount">
                 <input id="reepay-capture_partly_amount-field" class="reepay-capture_partly_amount-field" type="text" autocomplete="off" size="6" value="<?php echo ($gateway->make_initial_amount($order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency']) ); ?>" />
@@ -113,7 +113,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         </li>
 		<li class="reepay-full-width">
             <a class="button" id="reepay_capture_partly" data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>" data-order-id="<?php echo $order_id; ?>">
-                <?php echo __( 'Capture Specified Amount', 'woocommerce-gateway-reepay-checkout' ); ?>
+                <?php echo __( 'Capture Specified Amount', 'reepay-checkout-gateway' ); ?>
             </a>
         </li>
 		<li style='font-size: xx-small'>&nbsp;</li>
@@ -121,11 +121,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	<?php if ( $order_data['settled_amount'] > $order_data['refunded_amount'] && ! in_array( $order_data['state'], array( 'cancelled', 'created') ) && !$order_is_cancelled ): ?>
 		<li class="reepay-admin-section-li-header">
-            <?php echo __( 'Partly refund', 'woocommerce-gateway-reepay-checkout' ); ?>
+            <?php echo __( 'Partly refund', 'reepay-checkout-gateway' ); ?>
         </li>
 		<li class="reepay-balance last">
             <span class="reepay-balance__label" style='margin-right: 0;'>
-                <?php echo __( 'Refund amount', 'woocommerce-gateway-reepay-checkout' ); ?>:
+                <?php echo __( 'Refund amount', 'reepay-checkout-gateway' ); ?>:
             </span>
             <span class="reepay-partly_refund_amount">
                 <input id="reepay-refund_partly_amount-field" class="reepay-refund_partly_amount-field" type="text" size="6" autocomplete="off" value="<?php echo $gateway->make_initial_amount($order_data['settled_amount'] - $order_data['refunded_amount'], $order_data['currency']); ?>" />
@@ -133,20 +133,20 @@ if ( ! defined( 'ABSPATH' ) ) {
         </li>
 		<li class="reepay-full-width">
             <a class="button" id="reepay_refund_partly" data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>" data-order-id="<?php echo $order_id; ?>">
-                <?php echo __( 'Refund Specified Amount', 'woocommerce-gateway-reepay-checkout' ); ?>
+                <?php echo __( 'Refund Specified Amount', 'reepay-checkout-gateway' ); ?>
             </a>
         </li>
 		<li style='font-size: xx-small'>&nbsp;</li>
 	<?php endif; ?>
 
 	<li class="reepay-admin-section-li-header-small">
-        <?php echo __( 'Order ID', 'woocommerce-gateway-reepay-checkout' ) ?>
+        <?php echo __( 'Order ID', 'reepay-checkout-gateway' ) ?>
     </li>
 	<li class="reepay-admin-section-li-small">
         <?php echo $order_data["handle"]; ?>
     </li>
 	<li class="reepay-admin-section-li-header-small">
-        <?php echo __( 'Transaction ID', 'woocommerce-gateway-reepay-checkout' ) ?>
+        <?php echo __( 'Transaction ID', 'reepay-checkout-gateway' ) ?>
     </li>
 	<li class="reepay-admin-section-li-small">
         <?php echo $order_data["id"]; ?>
@@ -154,7 +154,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	<?php if ( isset( $order_data['transactions'][0] ) && isset( $order_data['transactions'][0]['card_transaction'] )) : ?>
         <li class="reepay-admin-section-li-header-small">
-			<?php echo __( 'Card number', 'woocommerce-gateway-reepay-checkout' ); ?>
+			<?php echo __( 'Card number', 'reepay-checkout-gateway' ); ?>
         </li>
         <li class="reepay-admin-section-li-small">
 			<?php echo WC_ReepayCheckout::formatCreditCard( $order_data['transactions'][0]['card_transaction']['masked_card'] ); ?>

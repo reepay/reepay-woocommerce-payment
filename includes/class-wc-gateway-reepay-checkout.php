@@ -25,7 +25,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
 		$this->id           = 'reepay_checkout';
 		$this->has_fields   = TRUE;
-		$this->method_title = __( 'Reepay Checkout', 'woocommerce-gateway-reepay-checkout' );
+		$this->method_title = __( 'Reepay Checkout', 'reepay-checkout-gateway' );
 		//$this->icon         = apply_filters( 'woocommerce_reepay_checkout_icon', plugins_url( '/assets/images/reepay.png', dirname( __FILE__ ) ) );
 		$this->supports     = array(
 			'products',
@@ -158,50 +158,50 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'enabled'        => array(
-				'title'   => __( 'Enable/Disable', 'woocommerce-gateway-reepay-checkout' ),
+				'title'   => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable plugin', 'woocommerce-gateway-reepay-checkout' ),
+				'label'   => __( 'Enable plugin', 'reepay-checkout-gateway' ),
 				'default' => 'no'
 			),
 			'title'          => array(
-				'title'       => __( 'Title', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
-				'description' => __( 'This controls the title which the user sees during checkout', 'woocommerce-gateway-reepay-checkout' ),
-				'default'     => __( 'Reepay Checkout', 'woocommerce-gateway-reepay-checkout' )
+				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay Checkout', 'reepay-checkout-gateway' )
 			),
 			'description'    => array(
-				'title'       => __( 'Description', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
-				'description' => __( 'This controls the description which the user sees during checkout', 'woocommerce-gateway-reepay-checkout' ),
-				'default'     => __( 'Reepay Checkout', 'woocommerce-gateway-reepay-checkout' ),
+				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay Checkout', 'reepay-checkout-gateway' ),
 			),
 			'private_key' => array(
-				'title'       => __( 'Live Private Key', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Live Private Key', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
-				'description' => __( 'Insert your private key from your live account', 'woocommerce-gateway-reepay-checkout' ),
+				'description' => __( 'Insert your private key from your live account', 'reepay-checkout-gateway' ),
 				'default'     => $this->private_key
 			),
 			'private_key_test' => array(
-				'title'       => __( 'Test Private Key', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Test Private Key', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
-				'description' => __( 'Insert your private key from your Reepay test account', 'woocommerce-gateway-reepay-checkout' ),
+				'description' => __( 'Insert your private key from your Reepay test account', 'reepay-checkout-gateway' ),
 				'default'     => $this->private_key_test
 			),
 			'test_mode'       => array(
-				'title'   => __( 'Test Mode', 'woocommerce-gateway-reepay-checkout' ),
+				'title'   => __( 'Test Mode', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable Test Mode', 'woocommerce-gateway-reepay-checkout' ),
+				'label'   => __( 'Enable Test Mode', 'reepay-checkout-gateway' ),
 				'default' => $this->test_mode
 			),
 			'is_webhook_configured' => array(
-				'title'   => __( 'Webhook status', 'woocommerce-gateway-reepay-checkout' ),
+				'title'   => __( 'Webhook status', 'reepay-checkout-gateway' ),
 				'type'    => 'webhook_status',
-				'label'   => __( 'Webhook status', 'woocommerce-gateway-reepay-checkout' ),
+				'label'   => __( 'Webhook status', 'reepay-checkout-gateway' ),
 				'default' => $this->test_mode
 			),
 			'payment_type' => array(
-				'title'       => __( 'Payment Window Display', 'woocommerce-gateway-reepay-checkout' ),
-				'description'    => __( 'Choose between a redirect window or a overlay window', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Payment Window Display', 'reepay-checkout-gateway' ),
+				'description'    => __( 'Choose between a redirect window or a overlay window', 'reepay-checkout-gateway' ),
 				'type'        => 'select',
 				'options'     => array(
 					self::METHOD_WINDOW  => 'Window',
@@ -210,8 +210,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'default'     => $this->payment_type
 			),
 			'payment_methods' => array(
-				'title'       => __( 'Payment Methods', 'woocommerce-gateway-reepay-checkout' ),
-				'description'    => __( 'Payment Methods', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Payment Methods', 'reepay-checkout-gateway' ),
+				'description'    => __( 'Payment Methods', 'reepay-checkout-gateway' ),
 				'type'           => 'multiselect',
 				'css'            => 'height: 250px',
 				'options'     => array(
@@ -244,94 +244,94 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'default'     => $this->payment_methods
             ),
 			'settle'             => array(
-				'title'          => __( 'Instant Settle', 'woocommerce-gateway-reepay-checkout' ),
-				'description'    => __( 'Instant Settle will charge your customers right away', 'woocommerce-gateway-reepay-checkout' ),
+				'title'          => __( 'Instant Settle', 'reepay-checkout-gateway' ),
+				'description'    => __( 'Instant Settle will charge your customers right away', 'reepay-checkout-gateway' ),
 				'type'           => 'multiselect',
 				'css'            => 'height: 150px',
 				'options'        => array(
-					self::SETTLE_VIRTUAL   => __( 'Instant Settle online / virtualproducts', 'woocommerce-gateway-reepay-checkout' ),
-					self::SETTLE_PHYSICAL  => __( 'Instant Settle physical  products', 'woocommerce-gateway-reepay-checkout' ),
-					self::SETTLE_RECURRING => __( 'Instant Settle recurring (subscription) products', 'woocommerce-gateway-reepay-checkout' ),
-					self::SETTLE_FEE => __( 'Instant Settle fees', 'woocommerce-gateway-reepay-checkout' ),
+					self::SETTLE_VIRTUAL   => __( 'Instant Settle online / virtualproducts', 'reepay-checkout-gateway' ),
+					self::SETTLE_PHYSICAL  => __( 'Instant Settle physical  products', 'reepay-checkout-gateway' ),
+					self::SETTLE_RECURRING => __( 'Instant Settle recurring (subscription) products', 'reepay-checkout-gateway' ),
+					self::SETTLE_FEE => __( 'Instant Settle fees', 'reepay-checkout-gateway' ),
 				),
 				'select_buttons' => TRUE,
 				'default'     => ''
 			),
 			'language'     => array(
-				'title'       => __( 'Language In Payment Window', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Language In Payment Window', 'reepay-checkout-gateway' ),
 				'type'        => 'select',
 				'options'     => array(
-					''       => __( 'Detect Automatically', 'woocommerce-gateway-reepay-checkout' ),
-					'en_US'  => __( 'English', 'woocommerce-gateway-reepay-checkout' ),
-					'da_DK'  => __( 'Danish', 'woocommerce-gateway-reepay-checkout' ),
-					'sv_SE'  => __( 'Swedish', 'woocommerce-gateway-reepay-checkout' ),
-					'no_NO'  => __( 'Norwegian', 'woocommerce-gateway-reepay-checkout' ),
-					'de_DE'  => __( 'German', 'woocommerce-gateway-reepay-checkout' ),
-					'es_ES'  => __( 'Spanish', 'woocommerce-gateway-reepay-checkout' ),
-					'fr_FR'  => __( 'French', 'woocommerce-gateway-reepay-checkout' ),
-					'it_IT'  => __( 'Italian', 'woocommerce-gateway-reepay-checkout' ),
-					'nl_NL'  => __( 'Netherlands', 'woocommerce-gateway-reepay-checkout' ),
+					''       => __( 'Detect Automatically', 'reepay-checkout-gateway' ),
+					'en_US'  => __( 'English', 'reepay-checkout-gateway' ),
+					'da_DK'  => __( 'Danish', 'reepay-checkout-gateway' ),
+					'sv_SE'  => __( 'Swedish', 'reepay-checkout-gateway' ),
+					'no_NO'  => __( 'Norwegian', 'reepay-checkout-gateway' ),
+					'de_DE'  => __( 'German', 'reepay-checkout-gateway' ),
+					'es_ES'  => __( 'Spanish', 'reepay-checkout-gateway' ),
+					'fr_FR'  => __( 'French', 'reepay-checkout-gateway' ),
+					'it_IT'  => __( 'Italian', 'reepay-checkout-gateway' ),
+					'nl_NL'  => __( 'Netherlands', 'reepay-checkout-gateway' ),
 				),
 				'default'     => $this->language
 			),
 			'save_cc'        => array(
-				'title'   => __( 'Allow Credit Card saving', 'woocommerce-gateway-reepay-checkout' ),
+				'title'   => __( 'Allow Credit Card saving', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable Save CC feature', 'woocommerce-gateway-reepay-checkout' ),
+				'label'   => __( 'Enable Save CC feature', 'reepay-checkout-gateway' ),
 				'default' => 'no'
 			),
 			'debug'          => array(
-				'title'   => __( 'Debug', 'woocommerce-gateway-reepay-checkout' ),
+				'title'   => __( 'Debug', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable logging', 'woocommerce-gateway-reepay-checkout' ),
+				'label'   => __( 'Enable logging', 'reepay-checkout-gateway' ),
 				'default' => $this->debug
 			),
 
             'handle_failover'  => array(
-                'title'   => __( 'Order handle failover', 'woocommerce-gateway-reepay-checkout' ),
+                'title'   => __( 'Order handle failover', 'reepay-checkout-gateway' ),
                 'type'    => 'checkbox',
-                'label'   => __( 'Order handle failover', 'woocommerce-gateway-reepay-checkout' ),
-                'description' => __('In case if invoice with current handle was settled before, plugin will generate unique handle', 'woocommerce-gateway-reepay-checkout'),
+                'label'   => __( 'Order handle failover', 'reepay-checkout-gateway' ),
+                'description' => __('In case if invoice with current handle was settled before, plugin will generate unique handle', 'reepay-checkout-gateway'),
                 'default' => 'yes'
             ),
 
             'logos'             => array(
-				'title'          => __( 'Payment Logos', 'woocommerce-gateway-reepay-checkout' ),
-				'description'    => __( 'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Reepay Dashboard', 'woocommerce-gateway-reepay-checkout' ),
+				'title'          => __( 'Payment Logos', 'reepay-checkout-gateway' ),
+				'description'    => __( 'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Reepay Dashboard', 'reepay-checkout-gateway' ),
 				'type'           => 'multiselect',
 				'css'            => 'height: 250px',
 				'options'        => array(
-					'dankort' => __( 'Dankort', 'woocommerce-gateway-reepay-checkout' ),
-					'visa'       => __( 'Visa', 'woocommerce-gateway-reepay-checkout' ),
-					'mastercard' => __( 'MasterCard', 'woocommerce-gateway-reepay-checkout' ),
-					'visa-electron' => __( 'Visa Electron', 'woocommerce-gateway-reepay-checkout' ),
-					'maestro' => __( 'Maestro', 'woocommerce-gateway-reepay-checkout' ),
-					'paypal' => __( 'Paypal', 'woocommerce-gateway-reepay-checkout' ),
-					'mobilepay' => __( 'MobilePay Online', 'woocommerce-gateway-reepay-checkout' ),
-					'applepay' => __( 'ApplePay', 'woocommerce-gateway-reepay-checkout' ),
-					'klarna' => __( 'Klarna', 'woocommerce-gateway-reepay-checkout' ),
-					'viabill' => __( 'Viabill', 'woocommerce-gateway-reepay-checkout' ),
-					'resurs' => __( 'Resurs Bank', 'woocommerce-gateway-reepay-checkout' ),
-					'forbrugsforeningen' => __( 'Forbrugsforeningen', 'woocommerce-gateway-reepay-checkout' ),
-					'amex' => __( 'AMEX', 'woocommerce-gateway-reepay-checkout' ),
-					'jcb' => __( 'JCB', 'woocommerce-gateway-reepay-checkout' ),
-					'diners' => __( 'Diners Club', 'woocommerce-gateway-reepay-checkout' ),
-					'unionpay' => __( 'Unionpay', 'woocommerce-gateway-reepay-checkout' ),
-					'discover' => __( 'Discover',   'woocommerce-gateway-reepay-checkout' ),
-                    'googlepay' => __('Google pay', 'woocommerce-gateway-reepay-checkout' ),
-                    'vipps' =>     __('Vipps',      'woocommerce-gateway-reepay-checkout')
+					'dankort' => __( 'Dankort', 'reepay-checkout-gateway' ),
+					'visa'       => __( 'Visa', 'reepay-checkout-gateway' ),
+					'mastercard' => __( 'MasterCard', 'reepay-checkout-gateway' ),
+					'visa-electron' => __( 'Visa Electron', 'reepay-checkout-gateway' ),
+					'maestro' => __( 'Maestro', 'reepay-checkout-gateway' ),
+					'paypal' => __( 'Paypal', 'reepay-checkout-gateway' ),
+					'mobilepay' => __( 'MobilePay Online', 'reepay-checkout-gateway' ),
+					'applepay' => __( 'ApplePay', 'reepay-checkout-gateway' ),
+					'klarna' => __( 'Klarna', 'reepay-checkout-gateway' ),
+					'viabill' => __( 'Viabill', 'reepay-checkout-gateway' ),
+					'resurs' => __( 'Resurs Bank', 'reepay-checkout-gateway' ),
+					'forbrugsforeningen' => __( 'Forbrugsforeningen', 'reepay-checkout-gateway' ),
+					'amex' => __( 'AMEX', 'reepay-checkout-gateway' ),
+					'jcb' => __( 'JCB', 'reepay-checkout-gateway' ),
+					'diners' => __( 'Diners Club', 'reepay-checkout-gateway' ),
+					'unionpay' => __( 'Unionpay', 'reepay-checkout-gateway' ),
+					'discover' => __( 'Discover',   'reepay-checkout-gateway' ),
+                    'googlepay' => __('Google pay', 'reepay-checkout-gateway' ),
+                    'vipps' =>     __('Vipps',      'reepay-checkout-gateway')
 				),
 				'select_buttons' => TRUE,
 			),
 			'logo_height'          => array(
-				'title'       => __( 'Logo Height', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Logo Height', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
-				'description' => __( 'Set the Logo height in pixels', 'woocommerce-gateway-reepay-checkout' ),
+				'description' => __( 'Set the Logo height in pixels', 'reepay-checkout-gateway' ),
 				'default'     => ''
 			),
 			'skip_order_lines' => array(
-				'title'       => __( 'Skip order lines', 'woocommerce-gateway-reepay-checkout' ),
-				'description'    => __( 'Select if order lines should not be send to Reepay', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Skip order lines', 'reepay-checkout-gateway' ),
+				'description'    => __( 'Select if order lines should not be send to Reepay', 'reepay-checkout-gateway' ),
 				'type'        => 'select',
 				'options'     => array(
 					'no'   => 'Include order lines',
@@ -340,8 +340,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'default'     => $this->skip_order_lines
 			),
 			'enable_order_autocancel' => array(
-				'title'       => __( 'The automatic order auto-cancel', 'woocommerce-gateway-reepay-checkout' ),
-				'description'    => __( 'The automatic order auto-cancel', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'The automatic order auto-cancel', 'reepay-checkout-gateway' ),
+				'description'    => __( 'The automatic order auto-cancel', 'reepay-checkout-gateway' ),
 				'type'        => 'select',
 				'options'     => array(
 					'yes' => 'Enable auto-cancel',
@@ -350,14 +350,14 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'default'     => $this->enable_order_autocancel
 			),
 			'failed_webhooks_email' => array(
-				'title'       => __( 'Email address for notification about failed webhooks', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Email address for notification about failed webhooks', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
-				'description' => __( 'Email address for notification about failed webhooks', 'woocommerce-gateway-reepay-checkout' ),
+				'description' => __( 'Email address for notification about failed webhooks', 'reepay-checkout-gateway' ),
 				'default'     => '',
 				'sanitize_callback' => function( $value ) {
 					if ( ! empty( $value ) ) {
 						if ( ! is_email( $value ) ) {
-							throw new Exception( __( 'Email address is invalid.', 'woocommerce-gateway-reepay-checkout' ) );
+							throw new Exception( __( 'Email address is invalid.', 'reepay-checkout-gateway' ) );
 						}
 					}
 
@@ -398,14 +398,14 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
 					<?php if ( 'yes' === $this->get_option( $key ) ): ?>
 						<span style="color: green;">
-                            <?php esc_html_e( 'Configured.', 'woocommerce-gateway-reepay-checkout' ); ?>
+                            <?php esc_html_e( 'Configured.', 'reepay-checkout-gateway' ); ?>
                         </span>
 					<?php else: ?>
 						<span style="color: red;">
-                            <?php esc_html_e( 'Configuration is required.', 'woocommerce-gateway-reepay-checkout' ); ?>
+                            <?php esc_html_e( 'Configuration is required.', 'reepay-checkout-gateway' ); ?>
                         </span>
                         <p>
-	                        <?php esc_html_e( 'Please check api credentials and save the settings. Webhook will be installed automatically.', 'woocommerce-gateway-reepay-checkout' ); ?>
+	                        <?php esc_html_e( 'Please check api credentials and save the settings. Webhook will be installed automatically.', 'reepay-checkout-gateway' ); ?>
                         </p>
 		            <?php endif; ?>
 
@@ -500,15 +500,15 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				$this->log( sprintf( 'WebHook has been successfully created/updated: %s', var_export( $result, true ) ) );
 				$this->update_option( 'is_webhook_configured', 'yes' );
 
-				WC_Admin_Settings::add_message( __( 'Reepay: WebHook has been successfully created/updated', 'woocommerce-gateway-reepay-checkout' ) );
+				WC_Admin_Settings::add_message( __( 'Reepay: WebHook has been successfully created/updated', 'reepay-checkout-gateway' ) );
 			} catch ( Exception $e ) {
 				$this->update_option( 'is_webhook_configured', 'no' );
 				$this->log( sprintf( 'WebHook creation/update has been failed: %s', var_export( $result, true ) ) );
-				WC_Admin_Settings::add_error( __( 'Reepay: WebHook creation/update has been failed', 'woocommerce-gateway-reepay-checkout' ) );
+				WC_Admin_Settings::add_error( __( 'Reepay: WebHook creation/update has been failed', 'reepay-checkout-gateway' ) );
 			}
 		} catch ( Exception $e ) {
 			$this->update_option( 'is_webhook_configured', 'no' );
-			WC_Admin_Settings::add_error( __( 'Unable to retrieve the webhook settings. Wrong api credentials?', 'woocommerce-gateway-reepay-checkout' ) );
+			WC_Admin_Settings::add_error( __( 'Unable to retrieve the webhook settings. Wrong api credentials?', 'reepay-checkout-gateway' ) );
 		}
 
 		return $result;
@@ -555,7 +555,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
 			$params = [
 				'locale'> $this->get_language(),
-				'button_text' => __( 'Add card', 'woocommerce-gateway-reepay-checkout' ),
+				'button_text' => __( 'Add card', 'reepay-checkout-gateway' ),
 				'create_customer' => [
 					'test' => $this->test_mode === 'yes',
 					'handle' => $customer_handle,
@@ -578,7 +578,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			// Use customer who exists
 			$params = [
 				'locale'> $this->get_language(),
-				'button_text' => __( 'Add card', 'woocommerce-gateway-reepay-checkout' ),
+				'button_text' => __( 'Add card', 'reepay-checkout-gateway' ),
 				'customer' => $customer_handle,
 				'accept_url' => add_query_arg( 'action', 'reepay_card_store', admin_url( 'admin-ajax.php' ) ),
 				'cancel_url' => wc_get_account_endpoint_url( 'payment-methods' )
@@ -715,25 +715,25 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	public function validate_subscription_payment_meta( $payment_method_id, $payment_meta, $subscription ) {
 		if ( $payment_method_id === $this->id ) {
 			if ( empty( $payment_meta['post_meta']['_reepay_token']['value'] ) ) {
-				throw new Exception( __('A "Reepay Token" value is required.', 'woocommerce-gateway-reepay-checkout') );
+				throw new Exception( __('A "Reepay Token" value is required.', 'reepay-checkout-gateway') );
 			}
 
 			$tokens = explode( ',', $payment_meta['post_meta']['_reepay_token']['value'] );
 			if ( count( $tokens ) > 1 ) {
-				throw new Exception( __('Only one "Reepay Token" is allowed.', 'woocommerce-gateway-reepay-checkout') );
+				throw new Exception( __('Only one "Reepay Token" is allowed.', 'reepay-checkout-gateway') );
 			}
 
 			$token = self::get_payment_token( $tokens[0] );
 			if ( ! $token ) {
-				throw new Exception( __('This "Reepay Token" value not found.', 'woocommerce-gateway-reepay-checkout') );
+				throw new Exception( __('This "Reepay Token" value not found.', 'reepay-checkout-gateway') );
 			}
 
 			if ( $token->get_gateway_id() !== $this->id ) {
-				throw new Exception( __('This "Reepay Token" value should related to Reepay.', 'woocommerce-gateway-reepay-checkout') );
+				throw new Exception( __('This "Reepay Token" value should related to Reepay.', 'reepay-checkout-gateway') );
 			}
 
 			if ( $token->get_user_id() !== $subscription->get_user_id() ) {
-				throw new Exception( __('Access denied for this "Reepay Token" value.', 'woocommerce-gateway-reepay-checkout') );
+				throw new Exception( __('Access denied for this "Reepay Token" value.', 'reepay-checkout-gateway') );
 			}
 		}
 	}
@@ -864,12 +864,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			}
 
 			if ( ! $token ) {
-				throw new Exception( __('Payment token isn\'t exists', 'woocommerce-gateway-reepay-checkout') );
+				throw new Exception( __('Payment token isn\'t exists', 'reepay-checkout-gateway') );
 			}
 
 			// Validate
 			if ( empty( $token->get_token() ) ) {
-				throw new Exception( __('Payment token is empty', 'woocommerce-gateway-reepay-checkout') );
+				throw new Exception( __('Payment token is empty', 'reepay-checkout-gateway') );
 			}
 
 			// Fix the reepay order value to prevent "Invoice already settled"
@@ -891,7 +891,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		} catch (Exception $e) {
 			$renewal_order->update_status( 'failed' );
 			$renewal_order->add_order_note(
-				sprintf( __( 'Error: "%s". %s.', 'woocommerce-gateway-reepay-checkout' ),
+				sprintf( __( 'Error: "%s". %s.', 'reepay-checkout-gateway' ),
 					wc_price( $amount_to_charge ),
 					$e->getMessage()
 				)
@@ -919,7 +919,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				continue;
 			}
 
-			return sprintf( __( 'Via %s card ending in %s/%s', 'woocommerce-gateway-reepay-checkout' ),
+			return sprintf( __( 'Via %s card ending in %s/%s', 'reepay-checkout-gateway' ),
 				$token->get_masked_card(),
 				$token->get_expiry_month(),
 				$token->get_expiry_year()
@@ -988,10 +988,10 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			// Save Credit Card
 			$token->save();
 			if ( ! $token->get_id() ) {
-				throw new Exception( __( 'There was a problem adding the card.', 'woocommerce-gateway-reepay-checkout' ) );
+				throw new Exception( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ) );
 			}
 
-			wc_add_notice( __( 'Payment method successfully added.', 'woocommerce-gateway-reepay-checkout' ) );
+			wc_add_notice( __( 'Payment method successfully added.', 'reepay-checkout-gateway' ) );
 			wp_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
 			exit();
 		} catch (Exception $e) {
@@ -1035,7 +1035,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			$token = $this->reepay_save_token( $order, $reepay_token );
 
 			// Add note
-			$order->add_order_note( sprintf( __( 'Payment method changed to "%s"', 'woocommerce-gateway-reepay-checkout' ), $token->get_display_name() ) );
+			$order->add_order_note( sprintf( __( 'Payment method changed to "%s"', 'reepay-checkout-gateway' ), $token->get_display_name() ) );
 
 			// Complete payment if zero amount
 			if ( abs( $order->get_total() ) < 0.01 ) {
@@ -1055,7 +1055,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 						WC_Reepay_Order_Statuses::set_authorized_status(
 							$order,
 							sprintf(
-								__( 'Payment has been authorized. Amount: %s.', 'woocommerce-gateway-reepay-checkout' ),
+								__( 'Payment has been authorized. Amount: %s.', 'reepay-checkout-gateway' ),
 								wc_price( $this->make_initial_amount($result['amount'], $order->get_currency()))
 							)
 						);
@@ -1067,7 +1067,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 						WC_Reepay_Order_Statuses::set_settled_status(
 							$order,
 							sprintf(
-								__( 'Payment has been settled. Amount: %s.', 'woocommerce-gateway-reepay-checkout' ),
+								__( 'Payment has been settled. Amount: %s.', 'reepay-checkout-gateway' ),
 								wc_price( $this->make_initial_amount($result['amount'], $order->get_currency()))
 							)
 						);

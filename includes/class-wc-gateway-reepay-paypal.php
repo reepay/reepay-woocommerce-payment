@@ -25,7 +25,7 @@ class WC_Gateway_Reepay_Paypal extends WC_Gateway_Reepay {
 	public function __construct() {
 		$this->id           = 'reepay_paypal';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Reepay - PayPal', 'woocommerce-gateway-reepay-checkout' );
+		$this->method_title = __( 'Reepay - PayPal', 'reepay-checkout-gateway' );
 		//$this->icon         = apply_filters( 'woocommerce_reepay_paypal_icon', plugins_url( '/assets/images/paypal.png', dirname( __FILE__ ) ) );
 		$this->supports     = array(
 			'products',
@@ -83,22 +83,22 @@ class WC_Gateway_Reepay_Paypal extends WC_Gateway_Reepay {
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'enabled'        => array(
-				'title'   => __( 'Enable/Disable', 'woocommerce-gateway-reepay-checkout' ),
+				'title'   => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable plugin', 'woocommerce-gateway-reepay-checkout' ),
+				'label'   => __( 'Enable plugin', 'reepay-checkout-gateway' ),
 				'default' => 'no'
 			),
 			'title'          => array(
-				'title'       => __( 'Title', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
-				'description' => __( 'This controls the title which the user sees during checkout', 'woocommerce-gateway-reepay-checkout' ),
-				'default'     => __( 'Reepay - PayPal', 'woocommerce-gateway-reepay-checkout' )
+				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - PayPal', 'reepay-checkout-gateway' )
 			),
 			'description'    => array(
-				'title'       => __( 'Description', 'woocommerce-gateway-reepay-checkout' ),
+				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
-				'description' => __( 'This controls the description which the user sees during checkout', 'woocommerce-gateway-reepay-checkout' ),
-				'default'     => __( 'Reepay - PayPal', 'woocommerce-gateway-reepay-checkout' ),
+				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - PayPal', 'reepay-checkout-gateway' ),
 			),
 		);
 	}

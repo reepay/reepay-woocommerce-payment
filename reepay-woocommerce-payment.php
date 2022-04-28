@@ -5,7 +5,7 @@
  * Author: reepay
  * Author URI: http://reepay.com
  * Version: 1.4.11
- * Text Domain: woocommerce-gateway-reepay-checkout
+ * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
  * WC tested up to: 4.3.0
@@ -166,7 +166,7 @@ class WC_ReepayCheckout {
 	 */
 	public function plugin_action_links( $links ) {
 		$plugin_links = array(
-			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=reepay_checkout' ) . '">' . __( 'Settings', 'woocommerce-gateway-reepay-checkout' ) . '</a>'
+			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=reepay_checkout' ) . '">' . __( 'Settings', 'reepay-checkout-gateway' ) . '</a>'
 		);
 
 		return array_merge( $plugin_links, $links );
@@ -178,7 +178,7 @@ class WC_ReepayCheckout {
 	 */
 	public function init() {
 		// Localization
-		load_plugin_textdomain( 'woocommerce-gateway-reepay-checkout', FALSE, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		load_plugin_textdomain( 'reepay-checkout-gateway', FALSE, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
 		// Show Upgrade notification
 		if ( version_compare( get_option( 'woocommerce_reepay_version', self::$db_version ), self::$db_version, '<' ) ) {
@@ -240,7 +240,7 @@ class WC_ReepayCheckout {
                 <strong>
                     <?php echo esc_html__(
                             'WooCommerce is inactive or missing.',
-                            'woocommerce-gateway-reepay-checkout'
+                            'reepay-checkout-gateway'
                     );
                     ?>
                 </strong>
@@ -249,13 +249,13 @@ class WC_ReepayCheckout {
 				<?php
 				echo esc_html__(
 				        'WooCommerce plugin is inactive or missing. Please install and active it.',
-                        'woocommerce-gateway-reepay-checkout'
+                        'reepay-checkout-gateway'
                 );
 				echo '<br />';
 				echo sprintf(
 				/* translators: 1: plugin name */                        esc_html__(
 					'%1$s will be deactivated.',
-					'woocommerce-gateway-reepay-checkout'
+					'reepay-checkout-gateway'
 				),
 					'WooCommerce Reepay Checkout Gateway'
 				);
@@ -409,7 +409,7 @@ class WC_ReepayCheckout {
 			if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
 				add_meta_box(
 					'reepay_payment_actions',
-					__( 'Reepay Payments Actions', 'woocommerce-gateway-reepay-checkout' ),
+					__( 'Reepay Payments Actions', 'reepay-checkout-gateway' ),
 					__CLASS__ . '::order_meta_box_payment_actions',
 					'shop_order',
 					'side',
@@ -426,11 +426,11 @@ class WC_ReepayCheckout {
 			if ( $order = wc_get_order( $post->ID ) ) {
 				$payment_method = $order->get_payment_method();
 				if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
-					add_meta_box( 'reepay-payment-actions', __( 'Reepay Payment', 'woocommerce-gateway-reepay-checkout' ), [
+					add_meta_box( 'reepay-payment-actions', __( 'Reepay Payment', 'reepay-checkout-gateway' ), [
 						&$this,
 						'meta_box_payment',
 					], 'shop_order', 'side', 'high' );
-					//add_meta_box( 'reepay-payment-actions', __( 'Reepay Subscription', 'woocommerce-gateway-reepay-checkout' ), [
+					//add_meta_box( 'reepay-payment-actions', __( 'Reepay Subscription', 'reepay-checkout-gateway' ), [
 					//	&$this,
 					//	'meta_box_subscription',
 					//], 'shop_subscription', 'side', 'high' );
@@ -521,7 +521,7 @@ class WC_ReepayCheckout {
 			// Localize the script
 			$translation_array = array(
 				'ajax_url'  => admin_url( 'admin-ajax.php' ),
-				'text_wait' => __( 'Please wait...', 'woocommerce-gateway-reepay-checkout' ),
+				'text_wait' => __( 'Please wait...', 'reepay-checkout-gateway' ),
 			);
 			wp_localize_script( 'reepay-admin-js', 'Reepay_Admin', $translation_array );
 
@@ -549,7 +549,7 @@ class WC_ReepayCheckout {
 			/** @var WC_Gateway_Reepay_Checkout $gateway */
 			$gateway = 	$gateways[ $payment_method ];
 			$gateway->capture_payment( $order );
-			wp_send_json_success( __( 'Capture success.', 'woocommerce-gateway-reepay-checkout' ) );
+			wp_send_json_success( __( 'Capture success.', 'reepay-checkout-gateway' ) );
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
 			wp_send_json_error( $message );
@@ -572,7 +572,7 @@ class WC_ReepayCheckout {
 		// ensure no more actions are made
 		//
 		if ( $order->get_meta( '_reepay_order_cancelled', true ) === "1" ) {
-			wp_send_json_success( __( 'Order already cancelled.', 'woocommerce-gateway-reepay-checkout' ) );
+			wp_send_json_success( __( 'Order already cancelled.', 'reepay-checkout-gateway' ) );
 			return;
 		}
 
@@ -598,7 +598,7 @@ class WC_ReepayCheckout {
 			$order->save_meta_data();
 			
 			// Return success
-			wp_send_json_success( __( 'Cancel success.', 'woocommerce-gateway-reepay-checkout' ) );
+			wp_send_json_success( __( 'Cancel success.', 'reepay-checkout-gateway' ) );
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
 			wp_send_json_error( $message );
@@ -624,7 +624,7 @@ class WC_ReepayCheckout {
 			/** @var WC_Gateway_Reepay_Checkout $gateway */
 			$gateway = 	$gateways[ $payment_method ];
 			$gateway->refund_payment( $order, $amount );
-			wp_send_json_success( __( 'Refund success.', 'woocommerce-gateway-reepay-checkout' ) );
+			wp_send_json_success( __( 'Refund success.', 'reepay-checkout-gateway' ) );
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
 			wp_send_json_error( $message );
@@ -655,7 +655,7 @@ class WC_ReepayCheckout {
 			/** @var WC_Gateway_Reepay_Checkout $gateway */
 			$gateway = 	$gateways[ $payment_method ];
 			$gateway->capture_payment( $order, (float)((float)$amount / 100) );
-			wp_send_json_success( __( 'Capture partly success.', 'woocommerce-gateway-reepay-checkout' ) );
+			wp_send_json_success( __( 'Capture partly success.', 'reepay-checkout-gateway' ) );
 
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
@@ -688,7 +688,7 @@ class WC_ReepayCheckout {
 			$gateway = 	$gateways[ $payment_method ];
 			$gateway->refund_payment( $order, (float)((float)$amount / 100) );
             $this->woocommerce_refund_add($order, $_REQUEST['amount']);
-			wp_send_json_success( __( 'Refund partly success.', 'woocommerce-gateway-reepay-checkout' ) );
+			wp_send_json_success( __( 'Refund partly success.', 'reepay-checkout-gateway' ) );
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
 			wp_send_json_error( $message );
@@ -733,7 +733,7 @@ class WC_ReepayCheckout {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-update.php' );
 		WC_Reepay_Update::update();
 
-		echo esc_html__( 'Upgrade finished.', 'woocommerce-gateway-reepay-checkout' );
+		echo esc_html__( 'Upgrade finished.', 'reepay-checkout-gateway' );
 	}
 
 	/**
@@ -745,8 +745,8 @@ class WC_ReepayCheckout {
 			<div id="message" class="error">
 				<p>
 					<?php
-					echo esc_html__( 'Warning! WooCommerce Reepay Checkout plugin requires to update the database structure.', 'woocommerce-gateway-reepay-checkout' );
-					echo ' ' . sprintf( esc_html__( 'Please click %s here %s to start upgrade.', 'woocommerce-gateway-reepay-checkout' ), '<a href="' . esc_url( admin_url( 'admin.php?page=wc-reepay-upgrade' ) ) . '">', '</a>' );
+					echo esc_html__( 'Warning! WooCommerce Reepay Checkout plugin requires to update the database structure.', 'reepay-checkout-gateway' );
+					echo ' ' . sprintf( esc_html__( 'Please click %s here %s to start upgrade.', 'reepay-checkout-gateway' ), '<a href="' . esc_url( admin_url( 'admin.php?page=wc-reepay-upgrade' ) ) . '">', '</a>' );
 					?>
 				</p>
 			</div>
