@@ -99,45 +99,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<li style='font-size: xx-small'>&nbsp;</li>
 	<?php endif; ?>
 
-	<?php if ($order_data['authorized_amount'] > $order_data['settled_amount'] && ! in_array( $order_data['state'], array( 'cancelled', 'created') ) && !$order_is_cancelled): ?>
-		<li class="reepay-admin-section-li-header">
-            <?php echo __( 'Partly capture', 'reepay-checkout-gateway' ); ?>
-        </li>
-		<li class="reepay-balance last">
-            <span class="reepay-balance__label" style="margin-right: 0;">
-                <?php echo __( 'Capture amount', 'reepay-checkout-gateway' ); ?>:
-            </span>
-            <span class="reepay-partly_capture_amount">
-                <input id="reepay-capture_partly_amount-field" class="reepay-capture_partly_amount-field" type="text" autocomplete="off" size="6" value="<?php echo ($gateway->make_initial_amount($order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency']) ); ?>" />
-            </span>
-        </li>
-		<li class="reepay-full-width">
-            <a class="button" id="reepay_capture_partly" data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>" data-order-id="<?php echo $order_id; ?>">
-                <?php echo __( 'Capture Specified Amount', 'reepay-checkout-gateway' ); ?>
-            </a>
-        </li>
-		<li style='font-size: xx-small'>&nbsp;</li>
-	<?php endif; ?>
-
-	<?php if ( $order_data['settled_amount'] > $order_data['refunded_amount'] && ! in_array( $order_data['state'], array( 'cancelled', 'created') ) && !$order_is_cancelled ): ?>
-		<li class="reepay-admin-section-li-header">
-            <?php echo __( 'Partly refund', 'reepay-checkout-gateway' ); ?>
-        </li>
-		<li class="reepay-balance last">
-            <span class="reepay-balance__label" style='margin-right: 0;'>
-                <?php echo __( 'Refund amount', 'reepay-checkout-gateway' ); ?>:
-            </span>
-            <span class="reepay-partly_refund_amount">
-                <input id="reepay-refund_partly_amount-field" class="reepay-refund_partly_amount-field" type="text" size="6" autocomplete="off" value="<?php echo $gateway->make_initial_amount($order_data['settled_amount'] - $order_data['refunded_amount'], $order_data['currency']); ?>" />
-            </span>
-        </li>
-		<li class="reepay-full-width">
-            <a class="button" id="reepay_refund_partly" data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>" data-order-id="<?php echo $order_id; ?>">
-                <?php echo __( 'Refund Specified Amount', 'reepay-checkout-gateway' ); ?>
-            </a>
-        </li>
-		<li style='font-size: xx-small'>&nbsp;</li>
-	<?php endif; ?>
 
 	<li class="reepay-admin-section-li-header-small">
         <?php echo __( 'Order ID', 'reepay-checkout-gateway' ) ?>
