@@ -105,7 +105,7 @@ class WC_Reepay_Order_Statuses {
 		);
 
 		$form_fields['status_created'] = array(
-			'title'       => __( 'Status: Reepay Created', 'woocommerce-gateway-reepay-checkout' ),
+			'title'       => __( 'Status: Reepay Created', 'reepay-checkout-gateway' ),
 			'type'        => 'select',
 			'options'     => $pending_statuses,
 			'default'     => 'wc-pending'
@@ -124,7 +124,7 @@ class WC_Reepay_Order_Statuses {
 		);
 
 		$form_fields['status_authorized'] = array(
-			'title'       => __( 'Status: Reepay Authorized', 'woocommerce-gateway-reepay-checkout' ),
+			'title'       => __( 'Status: Reepay Authorized', 'reepay-checkout-gateway' ),
 			'type'        => 'select',
 			'options'     => $authorized_statuses,
 			'default'     => 'wc-on-hold'
@@ -139,7 +139,7 @@ class WC_Reepay_Order_Statuses {
 		);
 
 		$form_fields['status_settled'] = array(
-			'title'       => __( 'Status: Reepay Settled', 'woocommerce-gateway-reepay-checkout' ),
+			'title'       => __( 'Status: Reepay Settled', 'reepay-checkout-gateway' ),
 			'type'        => 'select',
 			'options'     => $settled_statuses,
 			'default'     => 'wc-processing'
@@ -491,7 +491,7 @@ class WC_Reepay_Order_Statuses {
 						WC_Admin_Meta_Boxes::add_error( $message );
 
 						// Rollback
-						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'woocommerce-gateway-reepay-checkout' ), $message ) );
+						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'reepay-checkout-gateway' ), $message ) );
 					}
 				}
 				break;
@@ -521,7 +521,7 @@ class WC_Reepay_Order_Statuses {
                             WC_Admin_Meta_Boxes::add_error($message);
 
                             // Rollback
-                            $order->update_status($from, sprintf(__('Order status rollback. %s', 'woocommerce-gateway-reepay-checkout'), $message));
+                            $order->update_status($from, sprintf(__('Order status rollback. %s', 'reepay-checkout-gateway'), $message));
                         }
                     }
                 }

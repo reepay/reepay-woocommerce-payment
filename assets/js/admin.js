@@ -178,9 +178,10 @@ jQuery(document).ready(function ($) {
 
 		var order_id = $("#reepay_order_id").data('order-id');
 		var amount = $('#reepay_order_total').data('order-total');
+		var settled = $('#reepay_order_total_settled').val();
 		var formatted_amount = $("#reepay_order_total").val();
 
-		if (amount > 0 && $("#order_status option:selected").val()  == 'wc-completed') {
+		if (amount > 0 && settled < amount && $("#order_status option:selected").val()  == 'wc-completed') {
 
 			if (window.confirm('Would you like to capture amount ' + formatted_amount + ' ?')) {
 

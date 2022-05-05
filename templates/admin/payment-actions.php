@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<button id="reepay_capture"
 				data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>"
 				data-order-id="<?php echo esc_html( $order->get_id() ); ?>">
-			<?php _e( 'Capture Payment', 'woocommerce-gateway-reepay-checkout' ) ?>
+			<?php _e( 'Capture Payment', 'reepay-checkout-gateway' ) ?>
 		</button>
 	<?php endif; ?>
 
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<button id="reepay_cancel"
 				data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>"
 				data-order-id="<?php echo esc_html( $order->get_id() ); ?>">
-			<?php _e( 'Cancel Payment', 'woocommerce-gateway-reepay-checkout' ) ?>
+			<?php _e( 'Cancel Payment', 'reepay-checkout-gateway' ) ?>
 		</button>
 	<?php endif; ?>
 </div>

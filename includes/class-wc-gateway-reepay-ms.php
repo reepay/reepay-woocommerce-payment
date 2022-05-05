@@ -26,7 +26,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay
     public function __construct() {
         $this->id           = 'reepay_mobilepay_subscriptions';
         $this->has_fields   = true;
-        $this->method_title = __( 'Reepay - Mobilepay Subscriptions', 'woocommerce-gateway-reepay-checkout' );
+        $this->method_title = __( 'Reepay - Mobilepay Subscriptions', 'reepay-checkout-gateway' );
 
         $this->supports     = array(
             'tokenization',
@@ -127,22 +127,22 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay
     public function init_form_fields() {
         $this->form_fields = array(
             'enabled'        => array(
-                'title'   => __( 'Enable/Disable', 'woocommerce-gateway-reepay-checkout' ),
+                'title'   => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
                 'type'    => 'checkbox',
-                'label'   => __( 'Enable plugin', 'woocommerce-gateway-reepay-checkout' ),
+                'label'   => __( 'Enable plugin', 'reepay-checkout-gateway' ),
                 'default' => 'no'
             ),
             'title'          => array(
-                'title'       => __( 'Title', 'woocommerce-gateway-reepay-checkout' ),
+                'title'       => __( 'Title', 'reepay-checkout-gateway' ),
                 'type'        => 'text',
-                'description' => __( 'This controls the title which the user sees during checkout', 'woocommerce-gateway-reepay-checkout' ),
-                'default'     => __( 'Reepay - Mobilepay Subscriptions', 'woocommerce-gateway-reepay-checkout' )
+                'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
+                'default'     => __( 'Reepay - Mobilepay Subscriptions', 'reepay-checkout-gateway' )
             ),
             'description'    => array(
-                'title'       => __( 'Description', 'woocommerce-gateway-reepay-checkout' ),
+                'title'       => __( 'Description', 'reepay-checkout-gateway' ),
                 'type'        => 'text',
-                'description' => __( 'This controls the description which the user sees during checkout', 'woocommerce-gateway-reepay-checkout' ),
-                'default'     => __( 'Reepay - Mobilepay Subscriptions', 'woocommerce-gateway-reepay-checkout' ),
+                'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
+                'default'     => __( 'Reepay - Mobilepay Subscriptions', 'reepay-checkout-gateway' ),
             ),
         );
     }
@@ -227,7 +227,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay
         } catch (Exception $e) {
             $renewal_order->update_status( 'failed' );
             $renewal_order->add_order_note(
-                sprintf( __( 'Error: "%s". %s.', 'woocommerce-gateway-reepay-checkout' ),
+                sprintf( __( 'Error: "%s". %s.', 'reepay-checkout-gateway' ),
                     wc_price( $amount_to_charge ),
                     $e->getMessage()
                 )
@@ -272,7 +272,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay
 
             $params = [
                 'locale'> $this->get_language(),
-                'button_text' => __( 'Add card', 'woocommerce-gateway-reepay-checkout' ),
+                'button_text' => __( 'Add card', 'reepay-checkout-gateway' ),
                 'create_customer' => [
                     'test' => $this->test_mode === 'yes',
                     'handle' => $customer_handle,
@@ -295,7 +295,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay
             // Use customer who exists
             $params = [
                 'locale'> $this->get_language(),
-                'button_text' => __( 'Add card', 'woocommerce-gateway-reepay-checkout' ),
+                'button_text' => __( 'Add card', 'reepay-checkout-gateway' ),
                 'customer' => $customer_handle,
                 'accept_url' => add_query_arg( 'action', 'reepay_ms_token_store', admin_url( 'admin-ajax.php' ) ),
                 'cancel_url' => wc_get_account_endpoint_url( 'payment-methods' )
@@ -335,10 +335,10 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay
             // Save Credit Card
             $token->save();
             if ( ! $token->get_id() ) {
-                throw new Exception( __( 'There was a problem adding the card.', 'woocommerce-gateway-reepay-checkout' ) );
+                throw new Exception( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ) );
             }
 
-            wc_add_notice( __( 'Payment method successfully added.', 'woocommerce-gateway-reepay-checkout' ) );
+            wc_add_notice( __( 'Payment method successfully added.', 'reepay-checkout-gateway' ) );
             wp_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
             exit();
         } catch (Exception $e) {
