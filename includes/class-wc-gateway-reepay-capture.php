@@ -60,9 +60,14 @@ class WC_Reepay_Order_Capture {
         if(strpos($payment_method, 'reepay') === false){
             return;
         }
+        $gateways = WC()->payment_gateways()->get_available_payment_gateways();
+        $gateway = 	$gateways[ $payment_method ];
+        $invoice_data = $gateway->get_invoice_data($order);
 
         $settled = $item->get_meta('settled');
-        if(empty($settled)){
+        $data = $item->get_data();
+
+        if(empty($settled) && floatval($data['total']) > 0 && $invoice_data['authorized_amount'] > $invoice_data['settled_amount']){
             echo '<button type="submit" class="button save_order button-primary" name="line_item_capture" value="'.$item_id.'">
                 '.__( 'Capture', 'reepay-checkout-gateway' ).'
             </button>';
