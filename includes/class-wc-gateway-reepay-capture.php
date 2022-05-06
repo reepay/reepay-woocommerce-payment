@@ -66,7 +66,7 @@ class WC_Reepay_Order_Capture {
         $data = $item->get_data();
 
         if(empty($settled) && floatval($data['total']) > 0 && $invoice_data['authorized_amount'] > $invoice_data['settled_amount']){
-            echo '<button type="submit" class="button save_order button-primary" name="line_item_capture" value="'.$item_id.'">
+            echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="'.$item_id.'">
                 '.__( 'Capture', 'reepay-checkout-gateway' ).'
             </button>';
         }
