@@ -186,7 +186,8 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
 			throw new Exception( 'Payment can\'t be captured.' );
 		}
 
-		$this->reepay_settle( $order, $amount );
+        $order_lines = $this->get_order_items( $order );
+    	$this->reepay_settle( $order, $amount, $order_lines);
 	}
 
 	/**
@@ -1323,7 +1324,8 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
             }
 
 			try {
-				$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle  . '/settle', $request_data);
+
+        		$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle  . '/settle', $request_data);
 
 				$this->log( sprintf( '%s::%s Settle Charge: %s', __CLASS__, __METHOD__, var_export( $result, true) ) );
 
