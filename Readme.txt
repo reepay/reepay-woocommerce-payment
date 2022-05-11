@@ -18,6 +18,8 @@ The Reepay plugin extends WooCommerce allowing you to take payments on your stor
 See installation guide right here: https://intercom.help/reepay/reepay-plugins/woocommerce-plugin
 
 == Changelog ==
+v 1.4.13 - Bugfixes; improvements
+v 1.4.12 - Notice fix, remove not used class, change curl to wp_remote_request
 v 1.4.11 - Bugfix, improvements
 v 1.4.10 - Bugfix
 v 1.4.9 - Bugfix
