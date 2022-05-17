@@ -88,7 +88,7 @@ class WC_Background_Reepay_Queue extends WC_Background_Process {
 			// Process webhook
 			$this->log( sprintf( 'Processing webhook: %s', var_export( $data, true ) ) );
 
-			$gateway->process_webhook( $data );
+			( new WC_Reepay_Webhook( $data ) )->process();
 		} catch ( Exception $e ) {
 			$this->log( sprintf( '[ERROR]: %s', $e->getMessage() ) );
 		}

@@ -19,18 +19,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WC_ReepayCheckout {
 	const PAYMENT_METHODS = array(
 		'reepay_checkout',
-        'reepay_applepay',
-        'reepay_klarna_pay_later',
-        'reepay_klarna_pay_now',
-        'reepay_mobilepay',
-        'reepay_paypal',
-        'reepay_resurs',
-        'reepay_swish',
-        'reepay_viabill',
-        'reepay_googlepay',
-        'reepay_vipps',
-        'reepay_mobilepay_subscriptions'
-    );
+		'reepay_applepay',
+		'reepay_klarna_pay_later',
+		'reepay_klarna_pay_now',
+		'reepay_mobilepay',
+		'reepay_paypal',
+		'reepay_resurs',
+		'reepay_swish',
+		'reepay_viabill',
+		'reepay_googlepay',
+		'reepay_vipps',
+		'reepay_mobilepay_subscriptions'
+	);
 
 	public static $db_version = '1.2.9';
 
@@ -61,88 +61,20 @@ class WC_ReepayCheckout {
 			'add_valid_order_statuses'
 		), 10, 2 );
 
-
-		// Add meta boxes
-		//add_action( 'add_meta_boxes', __CLASS__ . '::add_meta_boxes' );
-
-		// Add action buttons
-		//add_action( 'woocommerce_order_item_add_action_buttons', __CLASS__ . '::add_action_buttons', 10, 1 );
-
-		// Add scripts and styles for admin
-		add_action( 'admin_enqueue_scripts', __CLASS__ . '::admin_enqueue_scripts' );
-
 		// Add Footer HTML
 		add_action( 'wp_footer', __CLASS__ . '::add_footer' );
-
-		// Add Admin Backend Actions
-		add_action( 'wp_ajax_reepay_capture', array(
-			$this,
-			'ajax_reepay_capture'
-		) );
-
-		add_action( 'wp_ajax_reepay_cancel', array(
-			$this,
-			'ajax_reepay_cancel'
-		) );
-		
-		add_action( 'wp_ajax_reepay_refund', array(
-			$this,
-			'ajax_reepay_refund'
-		) );
-		
-		add_action( 'wp_ajax_reepay_capture_partly', array(
-			$this,
-			'ajax_reepay_capture_partly'
-		) );
-		
-		add_action( 'wp_ajax_reepay_refund_partly', array(
-			$this,
-			'ajax_reepay_refund_partly'
-		) );
 
 		$this->includes();
 
 		// Add admin menu
 		add_action( 'admin_menu', array( &$this, 'admin_menu' ), 99 );
-		
-		// add meta boxes
-		add_action( 'add_meta_boxes', [ $this, 'add_meta_boxes' ] );
 
-        add_action('wp_ajax_reepay_set_complete_settle_transient', array(
-            $this,
-            'ajax_reepay_set_complete_settle_transient'
-        ));
-
-        // Process queue
+		// Process queue
 		if ( ! is_multisite() ) {
 			add_action( 'customize_save_after', array( $this, 'maybe_process_queue' ) );
 			add_action( 'after_switch_theme', array( $this, 'maybe_process_queue' ) );
 		}
-
-        add_action('parse_request', array($this, 'handle_cancel_url'));
-    }
-
-    function handle_cancel_url() {
-  	    if(preg_match('/checkout\/reepay_cancel/', $_SERVER["REQUEST_URI"]) ) {
-            $order = wc_get_order( $_GET['id'] );
-            $payment_method = $order->get_payment_method();
-            $gateways = WC()->payment_gateways()->get_available_payment_gateways();
-
-            /** @var WC_Gateway_Reepay_Checkout $gateway */
-            $gateway = 	$gateways[ $payment_method ];
-            $result = $gateway->get_invoice_data( $order );
-
-            if('reepay_checkout' == $payment_method && 'failed' == $result['state']) {
-                if(isset($result['transactions'][0]['card_transaction']['acquirer_message'])) {
-                    $error_message = $result['transactions'][0]['card_transaction']['acquirer_message'];
-                    $order->add_order_note('Payment failed. Error from acquire: ' . $error_message);
-                    wc_add_notice( __('Payment error: ', 'error') . $error_message, 'error' );
-                }
-                wp_redirect(wc_get_cart_url());
-                exit();
-            }
-  	    }
-    }
+	}
 
 	/**
 	 * Install
@@ -154,6 +86,7 @@ class WC_ReepayCheckout {
 	}
 
 	public function includes() {
+		include_once( dirname( __FILE__ ) . '/includes/functions.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-order-statuses.php' );
 	}
 
@@ -202,8 +135,14 @@ class WC_ReepayCheckout {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-payment-token-reepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-payment-ms-token-reepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/interfaces/class-wc-payment-gateway-reepay-interface.php' );
-		include_once( dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-payment-gateway-reepay.php' );
+		include_once( dirname( __FILE__ ) . '/includes/trait-wc-reepay-token.php' );
 		include_once( dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-gateway-reepay.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-api.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-instant-settle.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-webhook.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-thankyou.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-subscriptions.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-admin.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-checkout.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-mobilepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-viabill.php' );
@@ -215,9 +154,9 @@ class WC_ReepayCheckout {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-apple-pay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-googlepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-vipps.php' );
-		include_once(dirname(__FILE__) . '/includes/class-wc-gateway-reepay-ms.php');
-        include_once(dirname(__FILE__) .'/includes/class-wc-gateway-reepay-klarna-slice-it.php');
-        include_once(dirname(__FILE__) .'/includes/class-wc-gateway-reepay-capture.php');
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-ms.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-slice-it.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-capture.php' );
 	}
 
 	/**
@@ -235,22 +174,22 @@ class WC_ReepayCheckout {
 	 */
 	public static function missing_woocommerce_notice() {
 		?>
-        <div id="message" class="error">
-            <p class="main">
-                <strong>
-                    <?php echo esc_html__(
-                            'WooCommerce is inactive or missing.',
-                            'reepay-checkout-gateway'
-                    );
-                    ?>
-                </strong>
-            </p>
-            <p>
+		<div id="message" class="error">
+			<p class="main">
+				<strong>
+					<?php echo esc_html__(
+							'WooCommerce is inactive or missing.',
+							'reepay-checkout-gateway'
+					);
+					?>
+				</strong>
+			</p>
+			<p>
 				<?php
 				echo esc_html__(
-				        'WooCommerce plugin is inactive or missing. Please install and active it.',
-                        'reepay-checkout-gateway'
-                );
+						'WooCommerce plugin is inactive or missing. Please install and active it.',
+						'reepay-checkout-gateway'
+				);
 				echo '<br />';
 				echo sprintf(
 				/* translators: 1: plugin name */                        esc_html__(
@@ -261,8 +200,8 @@ class WC_ReepayCheckout {
 				);
 
 				?>
-            </p>
-        </div>
+			</p>
+		</div>
 		<?php
 
 		// Deactivate the plugin
@@ -274,9 +213,9 @@ class WC_ReepayCheckout {
 	 */
 	public function add_scripts() {
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-        if( is_checkout() ) {
-            wp_enqueue_style('wc-gateway-reepay-checkout', plugins_url('/assets/css/style' . $suffix . '.css', __FILE__), array());
-        }
+		if ( is_checkout() ) {
+			wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/assets/css/style' . $suffix . '.css', __FILE__ ), array() );
+		}
 	}
 
 	/**
@@ -286,62 +225,62 @@ class WC_ReepayCheckout {
 		$settings = get_option( 'woocommerce_reepay_checkout_settings' );
 		if ( is_array( $settings ) && ! empty( $settings['logo_height'] ) ):
 			$logo_height = $settings['logo_height'];
-            if ( is_numeric( $logo_height ) ) {
-	            $logo_height .= 'px';
-            }
+			if ( is_numeric( $logo_height ) ) {
+				$logo_height .= 'px';
+			}
 		?>
 		<style type="text/css">
-            #payment .wc_payment_method > label:first-of-type img
-            {
+			#payment .wc_payment_method > label:first-of-type img
+			{
 				height: <?php echo esc_html( $logo_height ); ?>;
 				max-height: <?php echo esc_html( $logo_height ); ?>;
-                list-style: none;
-            }
-            #payment .reepay-logos li {
-                list-style: none;
-            }
+				list-style: none;
+			}
+			#payment .reepay-logos li {
+				list-style: none;
+			}
 		</style>
-        <?php
-        endif;
+		<?php
+		endif;
 
-        if( is_checkout() ):
-        ?>
-        <style type="text/css">
-            #payment li.payment_method_reepay_applepay {
-                display: none;
-            }
+		if( is_checkout() ):
+		?>
+		<style type="text/css">
+			#payment li.payment_method_reepay_applepay {
+				display: none;
+			}
 
-            #payment li.payment_method_reepay_googlepay {
-                display: none;
-            }
+			#payment li.payment_method_reepay_googlepay {
+				display: none;
+			}
 
-        </style>
+		</style>
 
-        <script type="text/javascript">
-            console.log('checkout page is loaded');
-            jQuery('body').on('updated_checkout', function(){
-                var className = 'wc_payment_method payment_method_reepay_applepay';
-                if (true == Reepay.isApplePayAvailable()) {
-                    for (let element of document.
-                    getElementsByClassName(className)){
-                        element.style.display = 'block';
-                    }
-                }
+		<script type="text/javascript">
+			console.log('checkout page is loaded');
+			jQuery('body').on('updated_checkout', function(){
+				var className = 'wc_payment_method payment_method_reepay_applepay';
+				if (true == Reepay.isApplePayAvailable()) {
+					for (let element of document.
+					getElementsByClassName(className)){
+						element.style.display = 'block';
+					}
+				}
 
-                var className = 'wc_payment_method payment_method_reepay_googlepay';
-                Reepay.isGooglePayAvailable().then(isAvailable => {
-                    if(true == isAvailable) {
-                        for (let element of document.
-                        getElementsByClassName(className)){
-                            element.style.display = 'block';
-                        }
-                    }
-                });
-            });
-        </script>
+				var className = 'wc_payment_method payment_method_reepay_googlepay';
+				Reepay.isGooglePayAvailable().then(isAvailable => {
+					if(true == isAvailable) {
+						for (let element of document.
+						getElementsByClassName(className)){
+							element.style.display = 'block';
+						}
+					}
+				});
+			});
+		</script>
 
-        <?php
-        endif;
+		<?php
+		endif;
 	}
 
 	/**
@@ -399,325 +338,17 @@ class WC_ReepayCheckout {
 	}
 
 	/**
-	 * Add meta boxes in admin
-	 * @return void
-	 */
-	public function add_meta_boxes() {
-		/*global $post_id;
-		if ( $order = wc_get_order( $post_id ) ) {
-			$payment_method = $order->get_payment_method();
-			if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
-				add_meta_box(
-					'reepay_payment_actions',
-					__( 'Reepay Payments Actions', 'reepay-checkout-gateway' ),
-					__CLASS__ . '::order_meta_box_payment_actions',
-					'shop_order',
-					'side',
-					'default'
-				);
-			}
-		}*/
-		
-		global $post;
-		$screen     = get_current_screen();
-		$post_types = [ 'shop_order', 'shop_subscription' ];
-	
-		if ( in_array( $screen->id, $post_types, true ) && in_array( $post->post_type, $post_types, true ) ) {
-			if ( $order = wc_get_order( $post->ID ) ) {
-				$payment_method = $order->get_payment_method();
-				if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
-					add_meta_box( 'reepay-payment-actions', __( 'Reepay Payment', 'reepay-checkout-gateway' ), [
-						&$this,
-						'meta_box_payment',
-					], 'shop_order', 'side', 'high' );
-					//add_meta_box( 'reepay-payment-actions', __( 'Reepay Subscription', 'reepay-checkout-gateway' ), [
-					//	&$this,
-					//	'meta_box_subscription',
-					//], 'shop_subscription', 'side', 'high' );
-				}
-			}
-		}
-	}
-
-	/**
-	 * MetaBox for Payment Actions
-	 * @return void
-	 */
-	public static function order_meta_box_payment_actions() {
-		global $post_id;
-		$order = wc_get_order( $post_id );
-
-		// Get Payment Gateway
-		$payment_method = $order->get_payment_method();
-		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
-
-		/** @var WC_Gateway_Reepay_Checkout $gateway */
-		$gateway = 	$gateways[ $payment_method ];
-
-		wc_get_template(
-			'admin/payment-actions.php',
-			array(
-				'gateway'    => $gateway,
-				'order'      => $order,
-				'order_id'   => $post_id,
-			),
-			'',
-			dirname( __FILE__ ) . '/templates/'
-		);
-	}
-
-	/**
-	 * @param WC_Order $order
-	 */
-	public static function add_action_buttons( $order ) {
-		$payment_method = $order->get_payment_method();
-		if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
-			// Get Payment Gateway
-			$payment_method = $order->get_payment_method();
-			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
-
-			/** @var WC_Gateway_Reepay_Checkout $gateway */
-			$gateway = 	$gateways[ $payment_method ];
-
-			wc_get_template(
-				'admin/action-buttons.php',
-				array(
-					'gateway'    => $gateway,
-					'order'      => $order
-				),
-				'',
-				dirname( __FILE__ ) . '/templates/'
-			);
-		}
-	}
-
-	/**
-	 * Enqueue Scripts in admin
-	 *
-	 * @param $hook
-	 *
-	 * @return void
-	 */
-	public static function admin_enqueue_scripts( $hook ) {
-		if ( $hook === 'post.php' ) {
-			// Scripts
-			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-			wp_register_script(
-                'reepay-js-input-mask',
-                plugin_dir_url( __FILE__ ) . 'assets/js/jquery.inputmask' . $suffix . '.js',
-                array( 'jquery'),
-                '5.0.3'
-            );
-            wp_register_script(
-                'reepay-admin-js',
-                plugin_dir_url( __FILE__ ) . 'assets/js/admin' . $suffix . '.js',
-                array(
-                    'jquery',
-	                'reepay-js-input-mask'
-                )
-            );
-			wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/assets/css/style' . $suffix . '.css', __FILE__ ), array(), FALSE, 'all' );
-
-			// Localize the script
-			$translation_array = array(
-				'ajax_url'  => admin_url( 'admin-ajax.php' ),
-				'text_wait' => __( 'Please wait...', 'reepay-checkout-gateway' ),
-			);
-			wp_localize_script( 'reepay-admin-js', 'Reepay_Admin', $translation_array );
-
-			// Enqueued script with localized data
-			wp_enqueue_script( 'reepay-admin-js' );
-		}
-	}
-
-	/**
-	 * Action for Capture
-	 */
-	public function ajax_reepay_capture() {
-		if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'reepay' ) ) {
-			exit( 'No naughty business' );
-		}
-
-		$order_id = (int) $_REQUEST['order_id'];
-		$order = wc_get_order( $order_id );
-
-		try {
-			// Get Payment Gateway
-			$payment_method = $order->get_payment_method();
-			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
-
-			/** @var WC_Gateway_Reepay_Checkout $gateway */
-			$gateway = 	$gateways[ $payment_method ];
-			$gateway->capture_payment( $order );
-			wp_send_json_success( __( 'Capture success.', 'reepay-checkout-gateway' ) );
-		} catch ( Exception $e ) {
-			$message = $e->getMessage();
-			wp_send_json_error( $message );
-		}
-	}
-
-	/**
-	 * Action for Cancel
-	 */
-	public function ajax_reepay_cancel() {
-		if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'reepay' ) ) {
-			exit( 'No naughty business' );
-		}
-
-		$order_id = (int) $_REQUEST['order_id'];
-		$order = wc_get_order( $order_id );
-		
-		//
-		// Check if the order is already cancelled
-		// ensure no more actions are made
-		//
-		if ( $order->get_meta( '_reepay_order_cancelled', true ) === "1" ) {
-			wp_send_json_success( __( 'Order already cancelled.', 'reepay-checkout-gateway' ) );
-			return;
-		}
-
-		try {
-			// Get Payment Gateway
-			$payment_method = $order->get_payment_method();
-			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
-
-			/** @var WC_Gateway_Reepay_Checkout $gateway */
-			$gateway = 	$gateways[ $payment_method ];
-			
-			// Check if the payment can be cancelled
-			// $order->update_meta_data( '_' . $key, $value );
-			// order->get_meta( '_reepay_token', true )
-			if ($gateway->can_cancel( $order )) {
-				$gateway->cancel_payment( $order );
-			} 
-			
-			//
-			// Mark the order as cancelled - no more communication to reepay is done!
-			// 
-			$order->update_meta_data( '_reepay_order_cancelled', 1 );
-			$order->save_meta_data();
-			
-			// Return success
-			wp_send_json_success( __( 'Cancel success.', 'reepay-checkout-gateway' ) );
-		} catch ( Exception $e ) {
-			$message = $e->getMessage();
-			wp_send_json_error( $message );
-		}
-	}
-	
-	/**
-	 * Action for Cancel
-	 */
-	public function ajax_reepay_refund() {
-	if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'reepay' ) ) {
-			exit( 'No naughty business' );
-		}
-		$amount = (int) $_REQUEST['amount'];
-		$order_id = (int) $_REQUEST['order_id'];
-		$order = wc_get_order( $order_id );
-
-		try {
-			// Get Payment Gateway
-			$payment_method = $order->get_payment_method();
-			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
-
-			/** @var WC_Gateway_Reepay_Checkout $gateway */
-			$gateway = 	$gateways[ $payment_method ];
-			$gateway->refund_payment( $order, $amount );
-			wp_send_json_success( __( 'Refund success.', 'reepay-checkout-gateway' ) );
-		} catch ( Exception $e ) {
-			$message = $e->getMessage();
-			wp_send_json_error( $message );
-		}
-	}
-	
-	/**
-	 * Action for Cancel
-	 */
-	public function ajax_reepay_capture_partly() {
-
-		if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'reepay' ) ) {
-			exit( 'No naughty business' );
-		}
-		
-		$amount = $_REQUEST['amount'];
-		$order_id = (int) $_REQUEST['order_id'];
-		$order = wc_get_order( $order_id );
-		
-		$amount = str_replace(",", "", $amount);
-		$amount = str_replace(".", "", $amount);
-		
-		try {
-			// Get Payment Gateway
-			$payment_method = $order->get_payment_method();
-			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
-
-			/** @var WC_Gateway_Reepay_Checkout $gateway */
-			$gateway = 	$gateways[ $payment_method ];
-			$gateway->capture_payment( $order, (float)((float)$amount / 100) );
-			wp_send_json_success( __( 'Capture partly success.', 'reepay-checkout-gateway' ) );
-
-		} catch ( Exception $e ) {
-			$message = $e->getMessage();
-			wp_send_json_error( $message );
-		}
-	}
-	
-	/**
-	 * Action for Cancel
-	 */
-	public function ajax_reepay_refund_partly() {
-		
-		if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'reepay' ) ) {
-			exit( 'No naughty business' );
-		}
-		
-		$amount = $_REQUEST['amount'];
-		$order_id = (int) $_REQUEST['order_id'];
-		$order = wc_get_order( $order_id );
-		
-		$amount = str_replace(",", "", $amount);
-		$amount = str_replace(".", "", $amount);
-		
-		try {
-			// Get Payment Gateway
-			$payment_method = $order->get_payment_method();
-			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
-
-			/** @var WC_Gateway_Reepay_Checkout $gateway */
-			$gateway = 	$gateways[ $payment_method ];
-			$gateway->refund_payment( $order, (float)((float)$amount / 100) );
-            $this->woocommerce_refund_add($order, $_REQUEST['amount']);
-			wp_send_json_success( __( 'Refund partly success.', 'reepay-checkout-gateway' ) );
-		} catch ( Exception $e ) {
-			$message = $e->getMessage();
-			wp_send_json_error( $message );
-		}
-	}
-
-    public function woocommerce_refund_add($order, $amount){
-        $_POST['order_id'] = $order->get_id();
-        $_POST['refund_amount'] = $amount;
-        $_POST['refunded_amount'] = $order->get_total_refunded();
-        $_POST['line_item_qtys'] = array();
-        $_POST['line_item_totals'] = array();
-        $_POST['line_item_tax_totals'] = array();
-        $_POST['api_refund'] = 'true';
-        $_POST['restock_refunded_items'] = 'true';
-        $_REQUEST['security'] = wp_create_nonce( 'order-item' );
-        WC_AJAX::refund_line_items();
-    }
-
-	/**
 	 * Provide Admin Menu items
 	 */
 	public function admin_menu() {
 		// Add Upgrade Page
 		global $_registered_pages;
+
 		$hookname = get_plugin_page_hookname( 'wc-reepay-upgrade', '' );
 		if ( ! empty( $hookname ) ) {
 			add_action( $hookname, __CLASS__ . '::upgrade_page' );
 		}
+
 		$_registered_pages[ $hookname ] = true;
 	}
 
@@ -753,101 +384,6 @@ class WC_ReepayCheckout {
 			<?php
 		}
 	}
-
-	/**
-	 * Inserts the content of the API actions into the meta box
-	 */
-	public function meta_box_payment() {
-	        global $post;
-		
-		if ( $order = wc_get_order( $post->ID ) ) {
-			
-			$payment_method = $order->get_payment_method();
-			if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
-				
-				do_action( 'woocommerce_reepay_meta_box_payment_before_content', $order );
-
-				global $post_id;
-				$order = wc_get_order( $post_id );
-
-				// Get Payment Gateway
-		        $gateways = WC()->payment_gateways()->payment_gateways();
-
-                /** @var WC_Gateway_Reepay_Checkout $gateway */
-				$gateway = isset($gateways[$payment_method]) ? $gateways[$payment_method] : null;
-
-                if( is_object( $gateway ) ) {
-                   try {
-                        wc_get_template(
-                            'admin/metabox-order.php',
-                            array(
-                                'gateway' => $gateway,
-                                'order' => $order,
-                                'order_id' => $order->get_id(),
-                                'order_data' => $gateway->get_invoice_data($order)
-                            ),
-                            '',
-                            dirname(__FILE__) . '/templates/'
-                        );
-                    } catch (Exception $e) {
-                        // Silence is golden
-                    }
-                }
-
-			}
-		}
-	}
-
-	public function meta_box_subscription() {
-	    $this->meta_box_payment();
-	}
-
-    public function ajax_reepay_set_complete_settle_transient() {
-        $order_id = $_POST['order_id'];
-        $settle_order = $_POST['settle_order'];
-        set_transient('reepay_order_complete_should_settle_' . $order_id, $settle_order, 60);
-        wp_send_json_success('success');
-        wp_die();
-    }
-
-    /*
-     * Formats a minor unit value into float with two decimals
-     * @priceMinor is the amount to format
-     * @return the nicely formatted value
-     */
-	public function format_price_decimals( $priceMinor ) {
-		return number_format( $priceMinor / 100, 2, wc_get_price_decimal_separator(), '' );
-	}
-	
-	/**
-     * Formats a credit card nicely
-     *
-	 * @param string $cc is the card number to format nicely
-	 *
-	 * @return false|string the nicely formatted value
-	 */
-	public static function formatCreditCard( $cc ) {
-		$cc = str_replace(array('-', ' '), '', $cc);
-		$cc_length = strlen($cc);
-		$newCreditCard = substr($cc, -4);
-
-		for ( $i = $cc_length - 5; $i >= 0; $i-- ) {
-			if ( (($i + 1) - $cc_length) % 4 == 0 ) {
-				$newCreditCard = ' ' . $newCreditCard;
-			}
-			$newCreditCard = $cc[$i] . $newCreditCard;
-		}
-
-		for ( $i = 7; $i < $cc_length - 4; $i++ ) {
-			if ( $newCreditCard[$i] == ' ' ) {
-				continue;
-			}
-			$newCreditCard[$i] = 'X';
-		}
-
-		return $newCreditCard;
-	}
-
 }
 
 new WC_ReepayCheckout();
