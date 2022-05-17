@@ -627,7 +627,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	 * @return void
 	 */
 	public function payment_confirm() {
-	    if ( ! ( is_wc_endpoint_url( 'order-received' ) || is_account_page() ) ) {
+	    if ( ! ( is_wc_endpoint_url( 'order-received' ) ) ) {
 			return;
 		}
         //return;
