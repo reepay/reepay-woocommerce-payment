@@ -201,6 +201,7 @@ jQuery(document).ready(function ($) {
 						$('#post').submit();
 					}
 				});
+
 			} else {
 				$.ajax({
 					url: Reepay_Admin.ajax_url,

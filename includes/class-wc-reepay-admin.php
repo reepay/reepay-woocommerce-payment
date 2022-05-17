@@ -248,7 +248,7 @@ class WC_Reepay_Admin {
 
 		try {
 			$gateway = rp_get_payment_method( $order );
-			$gateway->capture_payment( $order, $order->get_amount() );
+			$gateway->capture_payment( $order, $order->get_total() );
 			wp_send_json_success( __( 'Capture success.', 'reepay-checkout-gateway' ) );
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();

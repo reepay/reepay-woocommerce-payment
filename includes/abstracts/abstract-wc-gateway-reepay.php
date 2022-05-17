@@ -158,6 +158,89 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		add_action( 'the_post', array( $this, 'payment_confirm' ) );
 
 		// Cancel actions
+		add_action( 'wp_ajax_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
+		add_action( 'wp_ajax_nopriv_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
+	}
+
+	/**
+	 * Check is Capture possible
+	 *
+	 * @param WC_Order|int $order
+	 * @param bool         $amount
+	 *
+	 * @return bool
+	 * @api
+	 */
+	public function can_capture( $order, $amount = false ) {
+		return $this->api->can_capture( $order, $amount );
+	}
+
+	/**
+	 * Check is Cancel possible
+	 *
+	 * @param WC_Order|int $order
+	 *
+	 * @return bool
+	 * @api
+	 */
+	public function can_cancel( $order ) {
+		return $this->api->can_cancel( $order );
+	}
+
+	/**
+	 * @param \WC_Order $order
+	 * @param bool      $amount
+	 *
+	 * @return bool
+	 * @api
+	 */
+	public function can_refund( $order, $amount = false ) {
+		return $this->api->can_refund( $order, $amount );
+	}
+
+	/**
+	 * Capture.
+	 *
+	 * @param WC_Order|int $order
+	 * @param float|false $amount
+	 *
+	 * @throws Exception
+	 * @return void
+	 * @api
+	 */
+	public function capture_payment( $order, $amount ) {
+		// Check if the order is cancelled - if so - then return as nothing has happened
+		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
+			throw new Exception( 'Order is already canceled' );
+		}
+
+		$result = $this->api->capture_payment( $order, $amount );
+		if ( is_wp_error( $result ) ) {
+			throw new Exception( $result->get_error_message() );
+		}
+	}
+
+	/**
+	 * Cancel.
+	 *
+	 * @param WC_Order|int $order
+	 *
+	 * @throws Exception
+	 * @return void
+	 */
+	public function cancel_payment( $order ) {
+		// Check if hte order is cancelled - if so - then return as nothing has happened
+		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
+			throw new Exception( 'Order is already canceled' );
+		}
+
+		$result = $this->api->cancel( $order );
+		if ( is_wp_error( $result ) ) {
+			throw new Exception( $result->get_error_message() );
+		}
+		add_action( 'the_post', array( $this, 'payment_confirm' ) );
+
+		// Cancel actions
 		add_action( 'wp_ajax_reepay_cancel', array( $this, 'reepay_cancel' ) );
 		add_action( 'wp_ajax_nopriv_reepay_cancel', array( $this, 'reepay_cancel' ) );
 	}
@@ -403,6 +486,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		return true;
 	}
 
+
 	/**
 	 * Process Payment
 	 *
@@ -571,8 +655,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		// If here's Subscription or zero payment
 		if ( abs( $order->get_total() ) < 0.01 ) {
 			$params = [
-				'locale' => $this->get_language(),
-				'button_text' => __( 'Pay', 'reepay-checkout-gateway' ),
+				'locale'> $this->get_language(),
+				'button_text' => __( 'Pay', 'woocommerce-gateway-reepay-checkout' ),
 				'create_customer' => [
 					'test' => $this->test_mode === 'yes',
 					'handle' => $customer_handle,
@@ -958,8 +1042,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	 *     emergency|alert|critical|error|warning|notice|info|debug
 	 *
 	 * @see WC_Log_Levels
+	 * Get parent settings
 	 *
-	 * @return void
+	 * @return array
 	 */
 	public function log( $message, $level = 'info' ) {
 		// Is Enabled
