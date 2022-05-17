@@ -123,7 +123,6 @@ jQuery(document).ready(function ($) {
 				self.html(self.data('text'));
 				self.prop('disabled', false);
 				if (!response.success) {
-					alert(response);
 					alert(response.data);
 					return false;
 				}
@@ -161,7 +160,6 @@ jQuery(document).ready(function ($) {
 				self.html(self.data('text'));
 				self.prop('disabled', false);
 				if (!response.success) {
-					alert(response);
 					alert(response.data);
 					return false;
 				}
@@ -182,14 +180,13 @@ jQuery(document).ready(function ($) {
 		var formatted_amount = $("#reepay_order_total").val();
 
 		if (amount > 0 && settled < amount && $("#order_status option:selected").val()  == 'wc-completed') {
-
 			if (window.confirm('Would you like to capture amount ' + formatted_amount + ' ?')) {
-
 				$.ajax({
 					url: Reepay_Admin.ajax_url,
 					type: 'POST',
 					data: {
 						action: 'reepay_set_complete_settle_transient',
+						nonce: Reepay_Admin.nonce,
 						order_id: order_id,
 						settle_order: 1
 					},
@@ -211,6 +208,7 @@ jQuery(document).ready(function ($) {
 					type: 'POST',
 					data: {
 						action: 'reepay_set_complete_settle_transient',
+						nonce: Reepay_Admin.nonce,
 						order_id: order_id,
 						settle_order: 0
 					},
@@ -230,7 +228,7 @@ jQuery(document).ready(function ($) {
 		}else {
 			$('#post').submit();
 		}
-	}),
+	});
 
 	$( '#reepay-capture_partly_amount-field, #reepay-refund_partly_amount-field' ).inputmask({ alias: "currency", groupSeparator: '' });
 });

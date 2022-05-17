@@ -96,7 +96,7 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC
 	 */
 	public function is_default() {
 		// Mark Method as Checked on "Payment Change" page
-		if ( WC_Gateway_Reepay_Checkout::wcs_is_payment_change() &&
+		if ( wcs_is_payment_change() &&
 			 isset( $_GET['change_payment_method'] ) &&
 			 abs( $_GET['change_payment_method'] ) > 0 )
 		{
@@ -123,9 +123,9 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC
 	 */
 	public static function wc_get_account_saved_payment_methods_list_item( $item, $payment_token ) {
 
-	    if('reepay_checkout' !==  $payment_token->get_gateway_id()) {
-	        return $item;
-        }
+		if('reepay_checkout' !==  $payment_token->get_gateway_id()) {
+			return $item;
+		}
 
 		$card_type               = $payment_token->get_card_type();
 		$item['method']['id']    = $payment_token->get_id();
@@ -143,12 +143,12 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC
 	 * @return void
 	 */
 	public static function wc_account_payment_methods_column_method( $method ) {
-	    if('reepay_checkout' !== $method['method']['gateway']) {
-             return;
-        }
+		if('reepay_checkout' !== $method['method']['gateway']) {
+			 return;
+		}
 
-	    $token = new WC_Payment_Token_Reepay( $method['method']['id'] );
-        if ( in_array( $method['method']['gateway'], WC_ReepayCheckout::PAYMENT_METHODS ) ) {
+		$token = new WC_Payment_Token_Reepay( $method['method']['id'] );
+		if ( in_array( $method['method']['gateway'], WC_ReepayCheckout::PAYMENT_METHODS ) ) {
 			echo $token->get_display_name();
 			return;
 		}
@@ -159,11 +159,11 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC
 			/* translators: 1: credit card type 2: last 4 digits */
 			echo sprintf( __( '%1$s ending in %2$s', 'woocommerce' ), esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) ), esc_html( $method['method']['last4'] ) );
 		} else {
-		    if ( isset( $method['method']['brand'] ) ) {
-			    echo esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) );
-		    } else {
-			    echo esc_html( wc_get_credit_card_type_label( 'visa' ) );
-		    }
+			if ( isset( $method['method']['brand'] ) ) {
+				echo esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) );
+			} else {
+				echo esc_html( wc_get_credit_card_type_label( 'visa' ) );
+			}
 		}
 
 	}
