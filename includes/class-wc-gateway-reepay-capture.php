@@ -66,7 +66,7 @@ class WC_Reepay_Order_Capture {
         $data = $item->get_data();
 
         if(empty($settled) && floatval($data['total']) > 0 && $invoice_data['authorized_amount'] > $invoice_data['settled_amount']){
-            echo '<button type="submit" class="button save_order button-primary" name="line_item_capture" value="'.$item_id.'">
+            echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="'.$item_id.'">
                 '.__( 'Capture', 'reepay-checkout-gateway' ).'
             </button>';
         }
@@ -85,9 +85,8 @@ class WC_Reepay_Order_Capture {
     }
 
     public function get_item_data($item, $order){
-        $cost = esc_attr( $order->get_item_subtotal( $item, false, true ) );
         $data = $item->get_data();
-
+        $cost = intval($data['total']) / intval($data['quantity']);
         $item_data = array(
             'ordertext' => $data['name'],
             'amount' => !empty($cost) ? floatval($cost) * 100 : floatval($data['total']) * 100,
