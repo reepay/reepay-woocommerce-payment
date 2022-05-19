@@ -1019,6 +1019,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 					throw new Exception( $result->get_error_message() );
 				}
 
+				do_action('reepay_payment_finalize', $result);
+
 				switch ($result['state']) {
 					case 'authorized':
 						WC_Reepay_Order_Statuses::set_authorized_status(
