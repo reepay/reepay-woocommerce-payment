@@ -86,7 +86,13 @@ class WC_Reepay_Order_Capture {
 
     public function get_item_data($item, $order){
         $data = $item->get_data();
-        $cost = intval($data['total']) / intval($data['quantity']);
+
+        if(!empty($data['quantity']) && intval($data['quantity']) > 0){
+            $cost = intval($data['total']) / intval($data['quantity']);
+        }else{
+            $cost = intval($data['total']);
+        }
+
         $item_data = array(
             'ordertext' => $data['name'],
             'amount' => !empty($cost) ? floatval($cost) * 100 : floatval($data['total']) * 100,
