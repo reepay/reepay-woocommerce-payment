@@ -491,7 +491,7 @@ class WC_Reepay_Api {
 		} else {
 			$message = sprintf(
 				__( 'Payment has been settled. Amount: %s. Transaction: %s', 'reepay-checkout-gateway' ),
-				wc_price( $amount ),
+                $amount.' '.get_woocommerce_currency(),
 				$result['transaction']
 			);
 

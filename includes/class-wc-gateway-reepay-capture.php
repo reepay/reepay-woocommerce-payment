@@ -60,7 +60,12 @@ class WC_Reepay_Order_Capture {
         }
 
         $gateway = rp_get_payment_method( $order );
+
         $invoice_data = $gateway->api->get_invoice_data($order);
+        if ( is_wp_error( $invoice_data ) ) {
+            echo __( 'Invoice not found', 'reepay-checkout-gateway' );
+            return;
+        }
 
         $settled = $item->get_meta('settled');
         $data = $item->get_data();
@@ -86,7 +91,13 @@ class WC_Reepay_Order_Capture {
 
     public function get_item_data($item, $order){
         $data = $item->get_data();
-        $cost = intval($data['total']) / intval($data['quantity']);
+
+        if(!empty($data['quantity']) && intval($data['quantity']) > 0){
+            $cost = intval($data['total']) / intval($data['quantity']);
+        }else{
+            $cost = intval($data['total']);
+        }
+
         $item_data = array(
             'ordertext' => $data['name'],
             'amount' => !empty($cost) ? floatval($cost) * 100 : floatval($data['total']) * 100,
