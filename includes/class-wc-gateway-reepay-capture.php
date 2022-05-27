@@ -60,15 +60,20 @@ class WC_Reepay_Order_Capture {
         if(strpos($payment_method, 'reepay') === false){
             return;
         }
-        $gateways = WC()->payment_gateways()->get_available_payment_gateways();
-        $gateway = 	$gateways[ $payment_method ];
-        $invoice_data = $gateway->get_invoice_data($order);
+
+        $gateway = rp_get_payment_method( $order );
+
+        $invoice_data = $gateway->api->get_invoice_data($order);
+        if ( is_wp_error( $invoice_data ) ) {
+            echo __( 'Invoice not found', 'reepay-checkout-gateway' );
+            return;
+        }
 
         $settled = $item->get_meta('settled');
         $data = $item->get_data();
 
         if(empty($settled) && floatval($data['total']) > 0 && $invoice_data['authorized_amount'] > $invoice_data['settled_amount']){
-            echo '<button type="submit" class="button save_order button-primary" name="line_item_capture" value="'.$item_id.'">
+            echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="'.$item_id.'">
                 '.__( 'Capture', 'reepay-checkout-gateway' ).'
             </button>';
         }
