@@ -317,7 +317,7 @@ class WC_Reepay_Order_Statuses {
 	 */
 	public function reepay_authorized_order_status( $status, $order ) {
 		if ( in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS, true ) ) {
-			if ( order_contains_subscription( $order ) ) {
+			if ( WC_Payment_Gateway_Reepay::order_contains_subscription( $order ) ) {
 				$status = 'on-hold';
 			} else {
 				$status = REEPAY_STATUS_AUTHORIZED;
@@ -344,31 +344,6 @@ class WC_Reepay_Order_Statuses {
 	}
 
 	/**
-	 * Set Pending Status.
-	 *
-	 * @param WC_Order $order
-	 * @param string|null $note
-	 * @param string|null $transaction_id
-	 *
-	 * @return void
-	 */
-	public static function set_pending_status( WC_Order $order, $note, $transaction_id ) {
-		if ( '1' === $order->get_meta( '_reepay_state_pending' ) ) {
-			return;
-		}
-
-		self::update_order_status(
-			$order,
-			'pending',
-			$note,
-			$transaction_id
-		);
-
-		$order->update_meta_data( '_reepay_state_pending', 1 );
-		$order->save_meta_data();
-	}
-
-	/**
 	 * Set Authorized Status.
 	 *
 	 * @param WC_Order $order
@@ -377,8 +352,10 @@ class WC_Reepay_Order_Statuses {
 	 *
 	 * @return void
 	 */
-	public static function set_authorized_status( WC_Order $order, $note, $transaction_id ) {
-		if ( '1' === $order->get_meta( '_reepay_state_authorized' ) ) {
+	public static function set_authorized_status( $order, $note = null, $transaction_id = null )
+	{
+		clean_post_cache( $order->get_id() );
+		if ( '1' === get_post_meta( $order->get_id(), '_reepay_state_authorized', true ) ) {
 			return;
 		}
 
@@ -395,8 +372,7 @@ class WC_Reepay_Order_Statuses {
 			$transaction_id
 		);
 
-		$order->update_meta_data( '_reepay_state_authorized', 1 );
-		$order->save_meta_data();
+		update_post_meta( $order->get_id(), '_reepay_state_authorized', '1' );
 	}
 
 	/**
@@ -408,15 +384,16 @@ class WC_Reepay_Order_Statuses {
 	 *
 	 * @return void
 	 */
-	public static function set_settled_status( WC_Order $order, $note, $transaction_id ) {
+	public static function set_settled_status( $order, $note = null, $transaction_id = null ) {
 		// Check if the payment has been settled fully
 
-		$payment_method = $order->get_payment_method();
+        $payment_method = $order->get_payment_method();
 		if ( ! in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
 			return;
 		}
 
-		if ( '1' === $order->get_meta( '_reepay_state_settled' ) ) {
+		clean_post_cache( $order->get_id() );
+		if ( '1' === get_post_meta( $order->get_id(), '_reepay_state_settled', true ) ) {
 			return;
 		}
 
@@ -426,7 +403,7 @@ class WC_Reepay_Order_Statuses {
 		/** @var WC_Gateway_Reepay_Checkout $gateway */
 		$gateway = $gateways[ $payment_method ];
 
-		$invoice = $gateway->api->get_invoice_data( $order );
+		$invoice = $gateway->get_invoice_data( $order );
 		if ( $invoice['settled_amount'] < $invoice['authorized_amount'] ) {
 			// Use the authorized status if order has been settled partially
 			self::set_authorized_status( $order, $note, $transaction_id );
@@ -440,8 +417,7 @@ class WC_Reepay_Order_Statuses {
 				$order->add_order_note( $note );
 			}
 
-			$order->update_meta_data( '_reepay_state_settled', 1 );
-			$order->save_meta_data();
+			update_post_meta( $order->get_id(), '_reepay_state_settled', '1' );
 		}
 	}
 
@@ -461,7 +437,6 @@ class WC_Reepay_Order_Statuses {
 
 		// Disable status change hook
 		remove_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10 );
-		remove_action( 'woocommerce_order_status_changed', 'WC_Reepay_Admin::order_status_changed', 10 );
 
 		if ( ! empty( $transaction_id ) ) {
 			$order->set_transaction_id( $transaction_id );
@@ -473,7 +448,6 @@ class WC_Reepay_Order_Statuses {
 
 		// Enable status change hook
 		add_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10, 4 );
-		add_action( 'woocommerce_order_status_changed', 'WC_Reepay_Admin::order_status_changed', 10, 4 );
 	}
 
 	/**
@@ -485,7 +459,76 @@ class WC_Reepay_Order_Statuses {
 	 * @param WC_Order $order
 	 */
 	public static function order_status_changed( $order_id, $from, $to, $order ) {
-		// @see WC_Reepay_Admin::order_status_changed()
+		
+		$payment_method = $order->get_payment_method();
+
+		if ( ! in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
+			return;
+		}
+
+		if ( WC_Payment_Gateway_Reepay::order_contains_subscription( $order ) ) {
+			return;
+		}
+
+		// Get Payment Gateway
+		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+
+		/** @var WC_Gateway_Reepay_Checkout $gateway */
+		$gateway = 	$gateways[ $payment_method ];
+
+		if ( ! $gateway ) {
+			return;
+		}
+
+		switch ( $to ) {
+			case 'cancelled':
+				// Cancel payment
+				if ( $gateway->can_cancel( $order ) ) {
+					try {
+						$gateway->cancel_payment( $order );
+					} catch ( Exception $e ) {
+						$message = $e->getMessage();
+						WC_Admin_Meta_Boxes::add_error( $message );
+
+						// Rollback
+						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'reepay-checkout-gateway' ), $message ) );
+					}
+				}
+				break;
+			case REEPAY_STATUS_SETTLED:
+				// Capture payment
+                $value = get_transient('reepay_order_complete_should_settle_' . $order->get_id());
+
+                if (1 == $value || false === $value) {
+                    if ($gateway->can_capture($order)) {
+                       $amount = $order->get_total();
+                       $order_data = $gateway->get_invoice_data($order);
+                       if( $amount  <=  ($order_data['authorized_amount'] / 100)) {
+                            $amount_to_capture = $amount;
+                        } else {
+                            $amount_to_capture = $order_data['authorized_amount'] / 100;
+                        }
+
+                        /*
+                        $order_data = $gateway->get_invoice_data($order);
+                        $amount = $order_data["authorized_amount"] - $order_data["settled_amount"];
+                        $amount = (float)((float)$amount / 100);
+                        */
+                        try {
+                            $gateway->capture_payment($order, $amount_to_capture);
+                        } catch (Exception $e) {
+                            $message = $e->getMessage();
+                            WC_Admin_Meta_Boxes::add_error($message);
+
+                            // Rollback
+                            $order->update_status($from, sprintf(__('Order status rollback. %s', 'reepay-checkout-gateway'), $message));
+                        }
+                    }
+                }
+				break;
+			default:
+				// no break
+		}
 	}
 
 	/**
