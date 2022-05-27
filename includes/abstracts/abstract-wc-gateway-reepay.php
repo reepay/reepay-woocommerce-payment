@@ -632,17 +632,15 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway_Reepay {
 	 * @return void
 	 */
 	public function payment_confirm() {
-	    if ( ! ( is_wc_endpoint_url( 'order-received' ) || is_account_page() ) ) {
+	    if ( ! ( is_wc_endpoint_url( 'order-received' ) ) ) {
 			return;
 		}
         //return;
 		if ( empty( $_GET['id'] ) ) {
-            wc_add_notice( __( 'Not isset Id', 'reepay-checkout-gateway' ), 'error');
 			return;
 		}
 
 		if ( empty( $_GET['key'] ) ) {
-            wc_add_notice( __( 'Not isset key', 'reepay-checkout-gateway' ), 'error');
 			return;
 		}
 
