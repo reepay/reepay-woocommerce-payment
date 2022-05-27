@@ -34,19 +34,21 @@ class WC_Reepay_Order_Capture {
     public function settle_item($item, $order){
         $settled = $item->get_meta('settled');
         if(empty($settled)) {
-            $gateway = rp_get_payment_method( $order );
+            $payment_method = $order->get_payment_method();
+            $gateways = WC()->payment_gateways()->get_available_payment_gateways();
+            $gateway = 	$gateways[ $payment_method ];
 
             $line_item_data = [$this->get_item_data($item, $order)];
             $total = $item->get_data()['total'];
 
-            $result = $gateway->api->settle( $order, $total, $line_item_data );
-            if ( is_wp_error( $result )) {
-                $gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-                return;
+            try {
+                if($gateway->reepay_settle( $order, $total, $line_item_data )){
+                    $item->update_meta_data('settled',  $total);
+                    $item->save(); // Save item
+                }
+            } catch ( Exception $e ) {
+                $gateway->log( sprintf( '%s::%s Error: %s', __CLASS__, __METHOD__, $e->getMessage() ) );
             }
-
-            $item->update_meta_data('settled',  $total);
-            $item->save(); // Save item
         }
     }
 
@@ -58,20 +60,15 @@ class WC_Reepay_Order_Capture {
         if(strpos($payment_method, 'reepay') === false){
             return;
         }
-
-        $gateway = rp_get_payment_method( $order );
-
-        $invoice_data = $gateway->api->get_invoice_data($order);
-        if ( is_wp_error( $invoice_data ) ) {
-            echo __( 'Invoice not found', 'reepay-checkout-gateway' );
-            return;
-        }
+        $gateways = WC()->payment_gateways()->get_available_payment_gateways();
+        $gateway = 	$gateways[ $payment_method ];
+        $invoice_data = $gateway->get_invoice_data($order);
 
         $settled = $item->get_meta('settled');
         $data = $item->get_data();
 
         if(empty($settled) && floatval($data['total']) > 0 && $invoice_data['authorized_amount'] > $invoice_data['settled_amount']){
-            echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="'.$item_id.'">
+            echo '<button type="submit" class="button save_order button-primary" name="line_item_capture" value="'.$item_id.'">
                 '.__( 'Capture', 'reepay-checkout-gateway' ).'
             </button>';
         }
@@ -90,13 +87,8 @@ class WC_Reepay_Order_Capture {
     }
 
     public function get_item_data($item, $order){
+        $cost = esc_attr( $order->get_item_subtotal( $item, false, true ) );
         $data = $item->get_data();
-
-        if(!empty($data['quantity']) && intval($data['quantity']) > 0){
-            $cost = intval($data['total']) / intval($data['quantity']);
-        }else{
-            $cost = intval($data['total']);
-        }
 
         $item_data = array(
             'ordertext' => $data['name'],
