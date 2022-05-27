@@ -10,10 +10,13 @@ if ( ! class_exists( 'WC_Background_Process', false ) ) {
  * Class WC_Background_Reepay_Queue
  */
 class WC_Background_Reepay_Queue extends WC_Background_Process {
+	use WC_Reepay_Log;
+
 	/**
-	 * @var WC_Logger
+	 * @var string
 	 */
-	private $logger;
+	private $logging_source = 'wc_reepay_queue';
+
 
 	/**
 	 * Initiate new background process.
@@ -42,15 +45,6 @@ class WC_Background_Reepay_Queue extends WC_Background_Process {
 				$this->cron_hook_identifier
 			);
 		}
-	}
-
-	/**
-	 * Log message.
-	 *
-	 * @param $message
-	 */
-	private function log( $message ) {
-		$this->logger->info( $message, array( 'source' => 'wc_reepay_queue' ) );
 	}
 
 	/**
@@ -88,7 +82,7 @@ class WC_Background_Reepay_Queue extends WC_Background_Process {
 			// Process webhook
 			$this->log( sprintf( 'Processing webhook: %s', var_export( $data, true ) ) );
 
-			$gateway->process_webhook( $data );
+			( new WC_Reepay_Webhook( $data ) )->process();
 		} catch ( Exception $e ) {
 			$this->log( sprintf( '[ERROR]: %s', $e->getMessage() ) );
 		}
