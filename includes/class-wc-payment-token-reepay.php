@@ -96,7 +96,7 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC
 	 */
 	public function is_default() {
 		// Mark Method as Checked on "Payment Change" page
-		if ( wcs_is_payment_change() &&
+		if ( WC_Gateway_Reepay_Checkout::wcs_is_payment_change() &&
 			 isset( $_GET['change_payment_method'] ) &&
 			 abs( $_GET['change_payment_method'] ) > 0 )
 		{
