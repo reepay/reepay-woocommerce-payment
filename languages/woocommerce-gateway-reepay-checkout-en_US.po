@@ -287,25 +287,25 @@ msgstr ""
 msgid "Pay with %s on Reepay"
 msgstr ""
 
-#: ../woocommerce-gateway-reepay-checkout.php:68
+#: ../reepay-checkout-gateway.php:68
 msgid "Settings"
 msgstr ""
 
-#: ../woocommerce-gateway-reepay-checkout.php:184
-#: ../woocommerce-gateway-reepay-checkout.php:199
+#: ../reepay-checkout-gateway.php:184
+#: ../reepay-checkout-gateway.php:199
 #, php-format
 msgid "Order status rollback. %s"
 msgstr ""
 
-#: ../woocommerce-gateway-reepay-checkout.php:219
+#: ../reepay-checkout-gateway.php:219
 msgid "Reepay Payments Actions"
 msgstr ""
 
-#: ../woocommerce-gateway-reepay-checkout.php:271
+#: ../reepay-checkout-gateway.php:271
 msgid "Please wait..."
 msgstr ""
 
-#: ../woocommerce-gateway-reepay-checkout.php:299
-#: ../woocommerce-gateway-reepay-checkout.php:325
+#: ../reepay-checkout-gateway.php:299
+#: ../reepay-checkout-gateway.php:325
 msgid "Capture success."
 msgstr ""

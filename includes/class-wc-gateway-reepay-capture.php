@@ -34,21 +34,19 @@ class WC_Reepay_Order_Capture {
     public function settle_item($item, $order){
         $settled = $item->get_meta('settled');
         if(empty($settled)) {
-            $payment_method = $order->get_payment_method();
-            $gateways = WC()->payment_gateways()->get_available_payment_gateways();
-            $gateway = 	$gateways[ $payment_method ];
+            $gateway = rp_get_payment_method( $order );
 
             $line_item_data = [$this->get_item_data($item, $order)];
             $total = $item->get_data()['total'];
-
-            try {
-                if($gateway->reepay_settle( $order, $total, $line_item_data )){
-                    $item->update_meta_data('settled',  $total);
-                    $item->save(); // Save item
-                }
-            } catch ( Exception $e ) {
-                $gateway->log( sprintf( '%s::%s Error: %s', __CLASS__, __METHOD__, $e->getMessage() ) );
+            unset($_POST['post_status']);
+            $result = $gateway->api->settle( $order, $total, $line_item_data );
+            if ( is_wp_error( $result )) {
+                $gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
+                return;
             }
+
+            $item->update_meta_data('settled',  $total);
+            $item->save(); // Save item
         }
     }
 
@@ -61,10 +59,9 @@ class WC_Reepay_Order_Capture {
             return;
         }
 
-        $gateways = WC()->payment_gateways()->get_available_payment_gateways();
-        $gateway = 	$gateways[ $payment_method ];
-        $invoice_data = $gateway->get_invoice_data($order);
+        $gateway = rp_get_payment_method( $order );
 
+        $invoice_data = $gateway->api->get_invoice_data($order);
         if ( is_wp_error( $invoice_data ) ) {
             echo __( 'Invoice not found', 'reepay-checkout-gateway' );
             return;
