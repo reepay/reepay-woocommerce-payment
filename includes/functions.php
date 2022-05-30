@@ -182,17 +182,26 @@ if ( ! function_exists( 'rp_get_order_by_handle' ) ) {
 	 * @return false|WC_Order
 	 */
 	function rp_get_order_by_handle( $handle ) {
-		$orders = wc_get_orders(
-			array(
-				'_reepay_order' => $handle
-			)
-		);
+        global $wpdb;
 
-		if ( count( $orders ) > 0 ) {
-			return array_shift( $orders );
-		}
+        $query = "
+			SELECT post_id FROM {$wpdb->prefix}postmeta 
+			LEFT JOIN {$wpdb->prefix}posts ON ({$wpdb->prefix}posts.ID = {$wpdb->prefix}postmeta.post_id)
+			WHERE meta_key = %s AND meta_value = %s;";
+        $sql = $wpdb->prepare( $query, '_reepay_order', $handle );
+        $order_id = $wpdb->get_var( $sql );
+        if ( ! $order_id ) {
+            throw new Exception( sprintf( __('Invoice #%s isn\'t exists in store.', 'reepay-checkout-gateway' ), $handle ) );
+        }
 
-		return false;
+        // Get Order
+        clean_post_cache( $order_id );
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) {
+            return false;
+        }
+
+        return $order;
 	}
 }
 

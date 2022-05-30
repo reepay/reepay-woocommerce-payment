@@ -294,7 +294,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 			if ( ! empty( $success ) ):
 				?>
-				<div class="error notice is-dismissible">
+				<div class="notice-success notice is-dismissible">
 					<p><?php echo esc_html( $success ); ?></p>
 				</div>
 			<?php
@@ -764,17 +764,23 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			}
 		}
 
-		return array(
-			'result'             => 'success',
-			'redirect'           => '#!reepay-checkout',
-			'is_reepay_checkout' => true,
-			'reepay'             => $result,
-			'accept_url'         => $this->get_return_url( $order ),
-			'cancel_url'         => add_query_arg(
-				array( 'action' => 'reepay_cancel', 'order_id' => $order->get_id() ),
-				admin_url( 'admin-ajax.php' )
-			)
-		);
+        if(is_wp_error( $result )){
+            throw new Exception( $result->get_error_message(), $result->get_error_code() );
+        }else{
+            return array(
+                'result'             => 'success',
+                'redirect'           => '#!reepay-checkout',
+                'is_reepay_checkout' => true,
+                'reepay'             => $result,
+                'accept_url'         => $this->get_return_url( $order ),
+                'cancel_url'         => add_query_arg(
+                    array( 'action' => 'reepay_cancel', 'order_id' => $order->get_id() ),
+                    admin_url( 'admin-ajax.php' )
+                )
+            );
+        }
+
+
 	}
 
 	/**

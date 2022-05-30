@@ -38,7 +38,7 @@ class WC_Reepay_Order_Capture {
 
             $line_item_data = [$this->get_item_data($item, $order)];
             $total = $item->get_data()['total'];
-
+            unset($_POST['post_status']);
             $result = $gateway->api->settle( $order, $total, $line_item_data );
             if ( is_wp_error( $result )) {
                 $gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
