@@ -92,13 +92,8 @@ class WC_Reepay_Order_Capture {
     }
 
     public function get_item_data($item, $order){
+        $cost = esc_attr( $order->get_item_subtotal( $item, false, true ) );
         $data = $item->get_data();
-
-        if(!empty($data['quantity']) && intval($data['quantity']) > 0){
-            $cost = intval($data['total']) / intval($data['quantity']);
-        }else{
-            $cost = intval($data['total']);
-        }
 
         $item_data = array(
             'ordertext' => $data['name'],

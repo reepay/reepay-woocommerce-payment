@@ -1343,7 +1343,7 @@ abstract class WC_Payment_Gateway_Reepay extends WC_Payment_Gateway
                 $api_error = $this->extract_api_error($e->getMessage());
 				// need to be shown on admin notices
                 $error = sprintf( __( 'Failed to settle "%s". Error: %s.', 'reepay-checkout-gateway' ),
-                    $amount.' '.get_woocommerce_currency(),
+                    wc_price( $amount ),
                     $api_error['error']
                 );
 
