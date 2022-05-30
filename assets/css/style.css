@@ -115,5 +115,6 @@
     #payment .wc_payment_methods li label .reepay-logos .reepay-logo img {
       margin: .25rem; }
 
-.capture-item-button {
-  margin-top: 7px !important; }
+.capture-item-button{
+  margin-top: 7px !important;
+}
