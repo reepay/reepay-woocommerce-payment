@@ -357,6 +357,10 @@ class WC_Reepay_Api {
 			'recurring' => order_contains_subscription( $order ),
 		);
 
+        if($order->get_payment_method() == 'reepay_mobilepay_subscriptions'){
+            $params['parameters']['mps_ttl'] = "PT24H";
+        }
+
 		try {
 			$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge', $params );
 			if ( is_wp_error( $result ) ) {

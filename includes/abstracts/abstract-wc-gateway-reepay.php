@@ -711,6 +711,10 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 //			}
 		}
 
+        if($order->get_payment_method() == 'reepay_mobilepay_subscriptions'){
+            $params['parameters']['mps_ttl'] = "PT24H";
+        }
+
 		$result = $this->api->request(
 			'POST',
 			'https://checkout-api.reepay.com/v1/session/charge',
