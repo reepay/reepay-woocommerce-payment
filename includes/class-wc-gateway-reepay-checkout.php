@@ -391,7 +391,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	public function process_admin_options() {
 		$result = parent::process_admin_options();
 
-		// Reload settings
+        $current_key = isset($this->settings['private_key']) ? $this->settings['private_key'] : '';
+        if($current_key != $_POST['woocommerce_reepay_checkout_private_key']){
+            WC_Reepay_Gateway_Statistics::private_key_activated();
+        }
+
 		$this->init_settings();
 		$this->private_key      = isset( $this->settings['private_key'] ) ? $this->settings['private_key'] : $this->private_key;
 		$this->private_key_test = isset( $this->settings['private_key_test'] ) ? $this->settings['private_key_test'] : $this->private_key_test;

@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
+define('REEPAY_CHECKOUT_PLUGIN_FILE', __FILE__);
 
 class WC_ReepayCheckout {
 	const PAYMENT_METHODS = array(
@@ -133,6 +134,7 @@ class WC_ReepayCheckout {
 	 */
 	public function woocommerce_loaded() {
         include_once( dirname( __FILE__ ) . '/includes/trait-wc-reepay-log.php' );
+        include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-statistics.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-payment-token-reepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-payment-ms-token-reepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/interfaces/class-wc-payment-gateway-reepay-interface.php' );

@@ -426,15 +426,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$maybe_save_card = false;
 		}
 		$WC_Countries = new WC_Countries();
+        $country = '';
         if(method_exists($WC_Countries, 'country_exists')){
             $country = $WC_Countries->country_exists( $order->get_billing_country() ) ? $order->get_billing_country() : '';
             if ( $order->needs_shipping_address() ) {
-                $country =$WC_Countries->country_exists( $order->get_shipping_country() ) ? $order->get_shipping_country() : '';
-            }
-        }else{
-            $country = $order->get_billing_country();
-            if ( $order->needs_shipping_address() ) {
-                $country = $order->get_shipping_country();
+                $country = $WC_Countries->country_exists( $order->get_shipping_country() ) ? $order->get_shipping_country() : '';
             }
         }
 
@@ -493,7 +489,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 						'address' => $order->get_billing_address_1(),
 						'address2' => $order->get_billing_address_2(),
 						'city' => $order->get_billing_city(),
-						'country' => $country,
 						'phone' => $order->get_billing_phone(),
 						'company' => $order->get_billing_company(),
 						'vat' => '',
@@ -510,6 +505,10 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 					),
 					'cancel_url' => $order->get_cancel_order_url()
 				];
+
+                if(!empty($country)){
+                    $params['create_customer']['country'] = $country;
+                }
 
 				if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
 					$params['payment_methods'] = $this->payment_methods;
@@ -598,7 +597,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 					'address' => $order->get_billing_address_1(),
 					'address2' => $order->get_billing_address_2(),
 					'city' => $order->get_billing_city(),
-					'country' => $country,
 					'phone' => $order->get_billing_phone(),
 					'company' => $order->get_billing_company(),
 					'vat' => '',
@@ -609,6 +607,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				'accept_url' => $this->get_return_url( $order ),
 				'cancel_url' => $order->get_cancel_order_url()
 			];
+            if(!empty($country)){
+                $params['create_customer']['country'] = $country;
+            }
 
 			if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
 				$params['payment_methods'] = $this->payment_methods;
@@ -650,7 +651,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 					'address' => $order->get_billing_address_1(),
 					'address2' => $order->get_billing_address_2(),
 					'city' => $order->get_billing_city(),
-					'country' => $country,
 					'phone' => $order->get_billing_phone(),
 					'company' => $order->get_billing_company(),
 					'vat' => '',
@@ -664,7 +664,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 					'address' => $order->get_billing_address_1(),
 					'address2' => $order->get_billing_address_2(),
 					'city' => $order->get_billing_city(),
-					'country' => $country,
 					'phone' => $order->get_billing_phone(),
 					'company' => $order->get_billing_company(),
 					'vat' => '',
@@ -677,6 +676,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			'accept_url' => $this->get_return_url( $order ),
 			'cancel_url' => $order->get_cancel_order_url(),
 		];
+
+        if(!empty($country)){
+            $params['customer']['country'] = $country;
+            $params['billing_address']['country'] = $country;
+        }
 
 		// skip order lines if calculated amount not equal to total order amount
 		if ( $this->get_calculated_amount( $order ) != rp_prepare_amount( $order->get_total(), $order->get_currency() ) ) {
@@ -696,7 +700,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				'address' => $order->get_shipping_address_1(),
 				'address2' => $order->get_shipping_address_2(),
 				'city' => $order->get_shipping_city(),
-				'country' => $country,
 				'phone' => $order->get_billing_phone(),
 				'company' => $order->get_shipping_company(),
 				'vat' => '',
@@ -705,6 +708,10 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				'postal_code' => $order->get_shipping_postcode(),
 				'state_or_province' => $order->get_shipping_state()
 			];
+
+            if(!empty($country)){
+                $params['order']['shipping_address']['country'] = $country;
+            }
 
 //			if (!strlen($params['order']['shipping_address'])) {
 //				$params['order']['shipping_address'] = $params['order']['billing_address'];
