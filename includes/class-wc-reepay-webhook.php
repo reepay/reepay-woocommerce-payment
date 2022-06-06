@@ -31,6 +31,8 @@ class WC_Reepay_Webhook {
 	public function process() {
 		$data = $this->data;
 
+		do_action('reepay_webhook', $data);
+
 		// Check invoice state
 		switch ( $data['event_type'] ) {
 			case 'invoice_authorized':
@@ -48,9 +50,9 @@ class WC_Reepay_Webhook {
 
 				// Check transaction is applied
 				//if ( $order->get_transaction_id() === $data['transaction'] ) {
-					//$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
+				//$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
 
-					//return;
+				//return;
 				//}
 
 				// Wait to be unlocked
@@ -105,6 +107,9 @@ class WC_Reepay_Webhook {
 				// Unlock the order
 				self::unlock_order( $order->get_id() );
 
+				$data['order_id'] = $order->get_id();
+				do_action('reepay_webhook_invoice_authorized', $data);
+
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			case 'invoice_settled':
@@ -128,9 +133,9 @@ class WC_Reepay_Webhook {
 
 				// Check transaction is applied
 				//if ( $order->get_transaction_id() === $data['transaction'] ) {
-					//$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
+				//$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
 
-					//return;
+				//return;
 				//}
 
 				// Check if the order has been marked as settled before
@@ -174,6 +179,9 @@ class WC_Reepay_Webhook {
 				// Unlock the order
 				self::unlock_order( $order->get_id() );
 
+				$data['order_id'] = $order->get_id();
+				do_action('reepay_webhook_invoice_settled', $data);
+
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			case 'invoice_cancelled':
@@ -191,9 +199,9 @@ class WC_Reepay_Webhook {
 
 				// Check transaction is applied
 				//if ( $order->get_transaction_id() === $data['transaction'] ) {
-					//$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
+				//$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
 
-					//return;
+				//return;
 				//}
 
 				// Add transaction ID
@@ -221,6 +229,10 @@ class WC_Reepay_Webhook {
 
 				$order->update_meta_data( '_reepay_cancel_transaction', $data['transaction'] );
 				$order->save_meta_data();
+
+				$data['order_id'] = $order->get_id();
+				do_action('reepay_webhook_invoice_cancelled', $data);
+
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			case 'invoice_refund':
@@ -286,6 +298,9 @@ class WC_Reepay_Webhook {
 					}
 				}
 
+				$data['order_id'] = $order->get_id();
+				do_action('reepay_webhook_invoice_refund', $data);
+
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			case 'invoice_created':
@@ -302,6 +317,9 @@ class WC_Reepay_Webhook {
 
 					return;
 				}
+
+				$data['order_id'] = $order->get_id();
+				do_action('reepay_webhook_invoice_created', $data);
 
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
@@ -321,6 +339,9 @@ class WC_Reepay_Webhook {
 						$this->log( sprintf( 'WebHook: Customer doesn\'t exists: %s', var_export( $customer, true ) ) );
 					}
 				}
+
+				$data['user_id'] = $user_id;
+				do_action('reepay_webhook_customer_created', $data);
 
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
