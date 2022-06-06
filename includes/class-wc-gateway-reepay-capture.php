@@ -34,21 +34,19 @@ class WC_Reepay_Order_Capture {
     public function settle_item($item, $order){
         $settled = $item->get_meta('settled');
         if(empty($settled)) {
-            $payment_method = $order->get_payment_method();
-            $gateways = WC()->payment_gateways()->get_available_payment_gateways();
-            $gateway = 	$gateways[ $payment_method ];
+            $gateway = rp_get_payment_method( $order );
 
             $line_item_data = [$this->get_item_data($item, $order)];
             $total = $item->get_data()['total'];
-
-            try {
-                if($gateway->reepay_settle( $order, $total, $line_item_data )){
-                    $item->update_meta_data('settled',  $total);
-                    $item->save(); // Save item
-                }
-            } catch ( Exception $e ) {
-                $gateway->log( sprintf( '%s::%s Error: %s', __CLASS__, __METHOD__, $e->getMessage() ) );
+            unset($_POST['post_status']);
+            $result = $gateway->api->settle( $order, $total, $line_item_data );
+            if ( is_wp_error( $result )) {
+                $gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
+                return;
             }
+
+            $item->update_meta_data('settled',  $total);
+            $item->save(); // Save item
         }
     }
 
@@ -61,10 +59,9 @@ class WC_Reepay_Order_Capture {
             return;
         }
 
-        $gateways = WC()->payment_gateways()->get_available_payment_gateways();
-        $gateway = 	$gateways[ $payment_method ];
-        $invoice_data = $gateway->get_invoice_data($order);
+        $gateway = rp_get_payment_method( $order );
 
+        $invoice_data = $gateway->api->get_invoice_data($order);
         if ( is_wp_error( $invoice_data ) ) {
             echo __( 'Invoice not found', 'reepay-checkout-gateway' );
             return;
@@ -92,21 +89,22 @@ class WC_Reepay_Order_Capture {
         }
     }
 
-    public function get_item_data($item, $order){
-        $data = $item->get_data();
+    public function get_item_data($order_item, $order){
+        $prices_incl_tax = wc_prices_include_tax();
 
-        if(!empty($data['quantity']) && intval($data['quantity']) > 0){
-            $cost = intval($data['total']) / intval($data['quantity']);
-        }else{
-            $cost = intval($data['total']);
-        }
+        /** @var WC_Order_Item_Product $order_item */
+        $price        = $order->get_line_subtotal( $order_item, false, false );
+        $priceWithTax = $order->get_line_subtotal( $order_item, true, false );
+        $tax          = $priceWithTax - $price;
+        $taxPercent   = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
+        $unitPrice    = round( ( $prices_incl_tax ? $priceWithTax : $price ) / $order_item->get_quantity(), 2 );
 
         $item_data = array(
-            'ordertext' => $data['name'],
-            'amount' => !empty($cost) ? floatval($cost) * 100 : floatval($data['total']) * 100,
-            'vat' => floatval($data['total_tax']),
-            'quantity' => !empty($data['quantity']) ? intval($data['quantity']) : 1,
-            'amount_incl_vat' => 'true'
+            'ordertext'       => $order_item->get_name(),
+            'quantity'        => $order_item->get_quantity(),
+            'amount'          => rp_prepare_amount( $unitPrice, $order->get_currency() ),
+            'vat'             => round($taxPercent / 100, 2),
+            'amount_incl_vat' => $prices_incl_tax
         );
 
         return $item_data;
