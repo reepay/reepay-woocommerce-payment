@@ -354,7 +354,7 @@ class WC_Reepay_Webhook {
 				global $wp_filter;
 
 				$base_hook_name    = "reepay_webhook_raw_event";
-				$current_hook_name = "reepay_webhook_raw_event_{$data['event_type']}";
+				$current_hook_name = "{$base_hook_name}_{$data['event_type']}";
 
 				if ( isset( $wp_filter[ $base_hook_name ] ) || isset( $wp_filter[ $current_hook_name ] ) ) {
 					do_action( $base_hook_name, $data );
