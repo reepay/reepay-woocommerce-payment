@@ -351,8 +351,18 @@ class WC_Reepay_Webhook {
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			default:
-				$this->log( sprintf( 'WebHook: Unknown event type: %s', $data['event_type'] ) );
-				throw new Exception( sprintf( 'Unknown event type: %s', $data['event_type'] ) );
+				global $wp_filter;
+
+				$base_hook_name    = "reepay_webhook_raw_event";
+				$current_hook_name = "reepay_webhook_raw_event_{$data['event_type']}";
+
+				if ( isset( $wp_filter[ $base_hook_name ] ) || isset( $wp_filter[ $current_hook_name ] ) ) {
+					do_action( $base_hook_name, $data );
+					do_action( $current_hook_name, $data );
+				} else {
+					$this->log( sprintf( 'WebHook: Unknown event type: %s', $data['event_type'] ) );
+					throw new Exception( sprintf( 'Unknown event type: %s', $data['event_type'] ) );
+				}
 		}
 	}
 
