@@ -678,8 +678,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		];
 
         if(!empty($country)){
-            $params['customer']['country'] = $country;
-            $params['billing_address']['country'] = $country;
+            $params['order']['customer']['country'] = $country;
+            $params['order']['billing_address']['country'] = $country;
         }
 
 		// skip order lines if calculated amount not equal to total order amount
