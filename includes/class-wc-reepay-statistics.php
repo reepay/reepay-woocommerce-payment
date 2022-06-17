@@ -5,59 +5,90 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class WC_Reepay_Gateway_Statistics{
+    use WC_Reepay_Log;
+
+    /**
+     * @var WC_Reepay_Gateway_Statistics
+     */
+    private static $instance;
+
+    /**
+     * @var string
+     */
+    private $logging_source;
 
     /**
      * Constructor
      */
-    public function __construct() {
+    private function __construct() {
+        $this->logging_source = 'reepay-statistics';
         register_deactivation_hook( REEPAY_CHECKOUT_PLUGIN_FILE, [static::class, 'plugin_deactivated'] );
         register_uninstall_hook( REEPAY_CHECKOUT_PLUGIN_FILE, [static::class, 'plugin_deleted'] );
-        register_activation_hook( REEPAY_CHECKOUT_PLUGIN_FILE, 'private_key_activated' );
+        register_activation_hook( REEPAY_CHECKOUT_PLUGIN_FILE, [static::class, 'private_key_activated'] );
         add_action( 'upgrader_process_complete', [static::class, 'upgrade_completed'], 10, 2 );
     }
 
-    public static function send_event($event) {
-        $gateway = new WC_Gateway_Reepay_Checkout();
-        if(!empty($gateway->private_key)){
+    /**
+     * @return WC_Reepay_Gateway_Statistics
+     */
+    public static function get_instance() {
+        if ( self::$instance === null ) {
+            self::$instance = new self();
+        }
+
+        return self::$instance;
+    }
+
+
+    public function send_event($event) {
+        $this->log( sprintf( 'Event init: %s', $event ) );
+        $settings = get_option( 'woocommerce_reepay_checkout_settings' );
+        if(!empty($settings["private_key"])){
             $params = [
-                'plugin' => 'WOOCOMMERCE-REEPAY-CHECKOUT',
+                'plugin' => 'WOOCOMMERCE',
                 'version' => get_option( 'woocommerce_reepay_version' ),
-                'privatekey' => $gateway->private_key,
+                'privatekey' => $settings["private_key"],
                 'url' => home_url(),
                 'event' => $event,
             ];
 
+            $this->log( sprintf( 'Request: %s', json_encode( $params, JSON_PRETTY_PRINT ) ) );
+
             $url = 'https://hook.reepay.integromat.celonis.com/1dndgwx6cwsvl3shsee29yyqf4d648xf';
 
-            return wp_remote_post($url, [
+            $response = wp_remote_post($url, [
                 'headers' => [
                     'Content-Type' => 'application/json',
                 ],
                 'body' => json_encode($params, JSON_PRETTY_PRINT),
             ]);
+
+            $this->log( sprintf( 'Response: %s', wp_remote_retrieve_body( $response ) ) );
+
+            return $response;
         }
         return false;
     }
 
     public static function plugin_deactivated() {
-        static::send_event('deactivated');
+        self::get_instance()->send_event('deactivated');
     }
 
     public static function plugin_deleted() {
-        static::send_event('deleted');
+        self::get_instance()->send_event('deleted');
     }
 
     public static function private_key_activated() {
-        static::send_event('activated');
+        self::get_instance()->send_event('activated');
     }
 
     public static function upgrade_completed($upgrader_object, $options) {
         foreach( $options['plugins'] as $plugin ) {
             if( strpos($plugin, REEPAY_CHECKOUT_PLUGIN_FILE) ) {
-                static::send_event('updated');
+                self::get_instance()->send_event('updated');
             }
         }
     }
 }
 
-new WC_Reepay_Gateway_Statistics();
+WC_Reepay_Gateway_Statistics::get_instance();
