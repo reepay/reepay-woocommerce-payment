@@ -36,8 +36,9 @@ class WC_Reepay_Order_Capture {
         if(empty($settled)) {
             $gateway = rp_get_payment_method( $order );
 
-            $line_item_data = [$this->get_item_data($item, $order)];
-            $total = $item->get_data()['total'];
+            $item_data = $this->get_item_data($item, $order);
+            $line_item_data = [$item_data];
+            $total = $item_data['amount'];
             unset($_POST['post_status']);
             $result = $gateway->api->settle( $order, $total, $line_item_data );
             if ( is_wp_error( $result )) {
@@ -94,7 +95,24 @@ class WC_Reepay_Order_Capture {
 
         /** @var WC_Order_Item_Product $order_item */
         $price        = $order->get_line_subtotal( $order_item, false, false );
-        $priceWithTax = $order->get_line_subtotal( $order_item, true, false );
+
+
+        $tax_data = wc_tax_enabled() ? $order_item->get_taxes() : false;
+        $taxes = $order->get_taxes();
+
+        $res_tax = 0;
+        if(!empty($taxes)){
+            foreach ($taxes as $tax){
+                $tax_item_id = $tax->get_rate_id();
+                $tax_item_total = isset( $tax_data['total'][ $tax_item_id ] ) ? $tax_data['total'][ $tax_item_id ] : '';
+                if(!empty($tax_item_total)){
+                    $res_tax += floatval($tax_item_total);
+                }
+            }
+        }
+
+        $priceWithTax = floatval($price) + $res_tax;
+
         $tax          = $priceWithTax - $price;
         $taxPercent   = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
         $unitPrice    = round( ( $prices_incl_tax ? $priceWithTax : $price ) / $order_item->get_quantity(), 2 );

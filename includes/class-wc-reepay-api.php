@@ -444,10 +444,18 @@ class WC_Reepay_Api {
 			}
 
 			// need to be shown on admin notices
-			$error = sprintf( __( 'Failed to settle "%s". Error: %s.', 'reepay-checkout-gateway' ),
-				wc_price( $amount ),
-				$result->get_error_message()
-			);
+            if ( $item_data ) {
+                $error = sprintf( __( 'Failed to settle %s. Error: %s.', 'reepay-checkout-gateway' ),
+                    floatval($item_data[0]['amount']) / 100,
+                    $result->get_error_message()
+                );
+            }else{
+                $error = sprintf( __( 'Failed to settle %s. Error: %s.', 'reepay-checkout-gateway' ),
+                    $amount,
+                    $result->get_error_message()
+                );
+            }
+
 
 			set_transient( 'reepay_api_action_error', $error, MINUTE_IN_SECONDS / 2 );
 
