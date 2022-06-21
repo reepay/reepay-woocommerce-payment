@@ -105,7 +105,7 @@ class WC_Reepay_Api {
 
 				$data = json_decode( $body, true );
 				if ( JSON_ERROR_NONE === json_last_error() && isset( $data['code'] ) ) {
-					return new WP_Error( $data['code'], sprintf( __( 'API Error: %s.', 'reepay-checkout-gateway' ), $data['error'] ) );
+					return new WP_Error( $data['code'], sprintf( __( 'API Error: %s - %s.', 'reepay-checkout-gateway' ), $data['error'], $data['message'] ) );
 				}
 
 				return new WP_Error( $http_code,
@@ -444,10 +444,18 @@ class WC_Reepay_Api {
 			}
 
 			// need to be shown on admin notices
-			$error = sprintf( __( 'Failed to settle "%s". Error: %s.', 'reepay-checkout-gateway' ),
-				wc_price( $amount ),
-				$result->get_error_message()
-			);
+            if ( $item_data ) {
+                $error = sprintf( __( 'Failed to settle %s. Error: %s.', 'reepay-checkout-gateway' ),
+                    floatval($item_data[0]['amount']) / 100,
+                    $result->get_error_message()
+                );
+            }else{
+                $error = sprintf( __( 'Failed to settle %s. Error: %s.', 'reepay-checkout-gateway' ),
+                    $amount,
+                    $result->get_error_message()
+                );
+            }
+
 
 			set_transient( 'reepay_api_action_error', $error, MINUTE_IN_SECONDS / 2 );
 

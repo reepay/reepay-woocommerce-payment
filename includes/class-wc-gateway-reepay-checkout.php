@@ -1023,6 +1023,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 					throw new Exception( $result->get_error_message() );
 				}
 
+				$result = $this->api->get_invoice_by_handle( wc_clean( $_GET['invoice'] ) );
+				if ( is_wp_error( $result ) ) {
+					/** @var WP_Error $result */
+					throw new Exception( $result->get_error_message() );
+				}
+
 				switch ($result['state']) {
 					case 'authorized':
 						WC_Reepay_Order_Statuses::set_authorized_status(

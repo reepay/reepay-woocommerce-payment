@@ -170,7 +170,7 @@ trait WC_Reepay_Token {
 	 *
 	 * @param string $token
 	 *
-	 * @return WC_Payment_Token_Reepay|false
+	 * @return null|bool|WC_Payment_Token
 	 */
 	public static function get_payment_token( $token ) {
 		global $wpdb;
