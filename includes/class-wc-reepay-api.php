@@ -611,7 +611,7 @@ class WC_Reepay_Api {
 		$order->save_meta_data();
 
 		$message = sprintf( __( 'Refunded: %s. Credit Note Id #%s. Reason: %s', 'reepay-checkout-gateway' ),
-			wc_price( $amount ),
+			$amount,
 			$result['credit_note_id'],
 			$reason
 		);
