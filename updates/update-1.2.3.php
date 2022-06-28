@@ -58,6 +58,7 @@ try {
 		$reepay_token = get_post_meta( $subscription->get_id(), '_reepay_token', true );
 		if ( empty( $reepay_token ) ) {
 			update_post_meta( $subscription->get_id(), '_reepay_token', $token->get_token() );
+			update_post_meta( $subscription->get_id(), 'reepay_token', $token->get_token() );
 			$processed[ $subscription->get_id() ] = $subscription;
 			$log->add( $handler, sprintf( '[SUCCESS] Subscription #%s. Token was filled.', $subscription->get_id() ) );
 		}
