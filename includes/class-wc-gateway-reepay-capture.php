@@ -46,7 +46,7 @@ class WC_Reepay_Order_Capture {
                 return;
             }
 
-            $item->update_meta_data('settled',  $total);
+            $item->update_meta_data('settled',  $total / 100);
             $item->save(); // Save item
         }
     }
@@ -93,8 +93,12 @@ class WC_Reepay_Order_Capture {
     public function get_item_data($order_item, $order){
         $prices_incl_tax = wc_prices_include_tax();
 
-        /** @var WC_Order_Item_Product $order_item */
-        $price        = $order->get_line_subtotal( $order_item, false, false );
+
+        if(is_object($order_item) && get_class($order_item) == 'WC_Order_Item_Product'){
+            $price = $order->get_line_subtotal( $order_item, false, false );
+        }else{
+            $price = $order->get_line_total( $order_item, false, false );
+        }
 
 
         $tax_data = wc_tax_enabled() ? $order_item->get_taxes() : false;
