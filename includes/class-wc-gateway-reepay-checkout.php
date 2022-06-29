@@ -503,6 +503,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		$user            = get_userdata( get_current_user_id() );
 		$customer_handle = get_user_meta( $user->ID, 'reepay_customer_id', true );
 
+        $accept_url = add_query_arg( 'action', 'reepay_card_store', admin_url( 'admin-ajax.php' ) );
+        $accept_url = apply_filters('woocommerce_reepay_payment_accept_url', $accept_url);
+        $cancel_url = wc_get_account_endpoint_url( 'payment-methods' );
+        $cancel_url = apply_filters('woocommerce_reepay_payment_cancel_url', $cancel_url);
+
 		if ( empty ( $customer_handle ) ) {
 			// Create reepay customer
 			$customer_handle = rp_get_customer_handle( $user->ID );
@@ -526,8 +531,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 					'last_name' => $user->last_name,
 					'postal_code' => ''
 				],
-				'accept_url' => add_query_arg( 'action', 'reepay_card_store', admin_url( 'admin-ajax.php' ) ),
-				'cancel_url' => wc_get_account_endpoint_url( 'payment-methods' )
+				'accept_url' => $accept_url,
+				'cancel_url' => $cancel_url
 			];
 		} else {
 			// Use customer who exists
@@ -535,8 +540,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'locale' => $this->get_language(),
 				'button_text' => __( 'Add card', 'reepay-checkout-gateway' ),
 				'customer' => $customer_handle,
-				'accept_url' => add_query_arg( 'action', 'reepay_card_store', admin_url( 'admin-ajax.php' ) ),
-				'cancel_url' => wc_get_account_endpoint_url( 'payment-methods' )
+				'accept_url' => $accept_url,
+				'cancel_url' => $cancel_url
 			];
 		}
 
@@ -958,6 +963,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			if ( ! $token->get_id() ) {
 				throw new Exception( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ) );
 			}
+
+            do_action('woocommerce_reepay_payment_method_added', $token);
 
 			wc_add_notice( __( 'Payment method successfully added.', 'reepay-checkout-gateway' ) );
 			wp_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
