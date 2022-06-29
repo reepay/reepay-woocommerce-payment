@@ -180,7 +180,7 @@ jQuery(document).ready(function ($) {
 		var formatted_amount = $("#reepay_order_total").val();
 
 		if (amount > 0 && settled < amount && $("#order_status option:selected").val()  == 'wc-completed') {
-			if (window.confirm('Would you like to capture amount ' + formatted_amount + ' ?')) {
+			if (window.confirm('You are about to change the order status. Do you want to capture the remaining amount of ' + formatted_amount + ' at the same time? Click OK to continue with settle. Click Cancel to continue without settle.')) {
 				$.ajax({
 					url: Reepay_Admin.ajax_url,
 					type: 'POST',

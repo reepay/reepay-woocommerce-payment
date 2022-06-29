@@ -4,7 +4,7 @@
  * Description: Provides a Payment Gateway through Reepay for WooCommerce.
  * Author: reepay
  * Author URI: http://reepay.com
- * Version: 1.4.15
+ * Version: 1.4.21
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -16,6 +16,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 } // Exit if accessed directly
 
 define('REEPAY_CHECKOUT_PLUGIN_FILE', __FILE__);
+
+include_once( dirname( __FILE__ ) . '/includes/trait-wc-reepay-log.php' );
+include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-statistics.php' );
 
 class WC_ReepayCheckout {
 	const PAYMENT_METHODS = array(
@@ -133,8 +136,6 @@ class WC_ReepayCheckout {
 	 * @return void
 	 */
 	public function woocommerce_loaded() {
-        include_once( dirname( __FILE__ ) . '/includes/trait-wc-reepay-log.php' );
-        include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-statistics.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-payment-token-reepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-payment-ms-token-reepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/interfaces/class-wc-payment-gateway-reepay-interface.php' );

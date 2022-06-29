@@ -33,7 +33,7 @@ trait WC_Reepay_Token {
 			$order->add_payment_token( $token );
 
 			$order->update_meta_data( '_reepay_token_id', $token->get_id() );
-			$order->update_meta_data( '_reepay_token', $token->get_token() );
+			$order->update_meta_data( 'reepay_token', $token->get_token() );
 			$order->save_meta_data();
 		}
 	}
