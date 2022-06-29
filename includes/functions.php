@@ -72,19 +72,17 @@ if ( ! function_exists( 'wcs_cart_have_subscription' ) ) {
 	 * @return bool
 	 */
 	function wcs_cart_have_subscription() {
-		if ( ! class_exists( 'WC_Subscriptions_Product' ) ) {
-			return false;
-		}
-
-		// Check is Recurring Payment
-		$cart = WC()->cart->get_cart();
-		foreach ( $cart as $key => $item ) {
-			if ( is_object( $item['data'] ) && WC_Subscriptions_Product::is_subscription( $item['data'] ) ) {
-				return true;
+		if ( class_exists( 'WC_Subscriptions_Product' ) ) {
+			// Check is Recurring Payment
+			$cart = WC()->cart->get_cart();
+			foreach ( $cart as $key => $item ) {
+				if ( is_object( $item['data'] ) && WC_Subscriptions_Product::is_subscription( $item['data'] ) ) {
+					return true;
+				}
 			}
 		}
 
-		return false;
+		return apply_filters( 'wcs_cart_have_subscription', false );
 	}
 }
 
