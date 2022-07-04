@@ -104,7 +104,7 @@ class WC_Reepay_Api {
 				}
 
 				$data = json_decode( $body, true );
-				if ( JSON_ERROR_NONE === json_last_error() && isset( $data['code'] ) ) {
+				if ( JSON_ERROR_NONE === json_last_error() && isset( $data['code'] ) && !empty($data['message']) ) {
 					return new WP_Error( $data['code'], sprintf( __( 'API Error: %s - %s.', 'reepay-checkout-gateway' ), $data['error'], $data['message'] ) );
 				}
 
