@@ -82,13 +82,6 @@ if ( ! defined( 'ABSPATH' ) ) {
         </span>
     </li>
 	<li style='font-size: xx-small'>&nbsp;</li>
-	<?php if ( $order_data['settled_amount'] == 0 && ! in_array( $order_data['state'], array( 'cancelled', 'created') ) && !$order_is_cancelled ): ?>
-		<li class="reepay-full-width">
-            <a class="button button-primary" data-action="reepay_capture" id="reepay_capture" data-nonce="<?php echo wp_create_nonce( 'reepay' ); ?>" data-order-id="<?php echo $order_id; ?>" data-confirm="<?php echo __( 'You are about to CAPTURE this payment', 'reepay-checkout-gateway' ); ?>">
-                <?php echo sprintf( __( 'Capture Full Amount (%s)', 'reepay-checkout-gateway' ), rp_make_initial_amount( $order_data['authorized_amount'], $order_data['currency'] ) .' '.get_woocommerce_currency_symbol() ); ?>
-            </a>
-        </li>
-	<?php endif; ?>
 
 	<?php if ( $order_data['settled_amount'] == 0 && ! in_array( $order_data['state'], array( 'cancelled', 'created') ) && ! $order_is_cancelled ): ?>
 		<li class="reepay-full-width">
