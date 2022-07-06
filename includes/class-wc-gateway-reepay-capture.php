@@ -41,14 +41,18 @@ class WC_Reepay_Order_Capture {
             $line_item_data = [$item_data];
             $total = $item_data['amount'];
             unset($_POST['post_status']);
-            $result = $gateway->api->settle( $order, $total, $line_item_data );
-            if ( is_wp_error( $result )) {
-                $gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-                return;
-            }
+            if($total > 0 && $this->check_allow_capture($order)){
+                $result = $gateway->api->settle( $order, $total, $line_item_data );
+                if ( is_wp_error( $result )) {
+                    $gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
+                    return;
+                }
 
-            $item->update_meta_data('settled',  $total / 100);
-            $item->save(); // Save item
+                if($result){
+                    $item->update_meta_data('settled',  $total / 100);
+                    $item->save(); // Save item
+                }
+            }
         }
     }
 
@@ -72,7 +76,7 @@ class WC_Reepay_Order_Capture {
             return true;
         }
 
-        return true;
+        return false;
     }
 
     public function get_no_settled_amount($order){
