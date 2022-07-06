@@ -409,7 +409,7 @@ class WC_Reepay_Api {
 	 * @param float|int|null $amount
      * @param false|array $item_data
 	 *
-	 * @return array|WP_Error|Boolean
+	 * @return array|WP_Error
 	 * @throws Exception
 	 */
 	public function settle( WC_Order $order, $amount = null, $item_data = false ) {
@@ -426,15 +426,17 @@ class WC_Reepay_Api {
 
         if ( $item_data ) {
             $request_data['order_lines'] = $item_data;
-            if(floatval($item_data['amount']) <= 0){
-                return false;
+            if(floatval($item_data[0]['amount']) <= 0){
+                return new WP_Error( 100, 'Amount must be lager than zero' );
             }
         } else {
             $request_data['amount'] = rp_prepare_amount( $amount, $order->get_currency() );
             if($request_data['amount'] <= 0){
-                return false;
+                return new WP_Error( 100, 'Amount must be lager than zero' );
             }
         }
+
+
 
 		$result = $this->request(
 			'POST',

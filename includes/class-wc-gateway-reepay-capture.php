@@ -45,7 +45,8 @@ class WC_Reepay_Order_Capture {
                 $result = $gateway->api->settle( $order, $total, $line_item_data );
                 if ( is_wp_error( $result )) {
                     $gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-                    return;
+                    set_transient( 'reepay_api_action_error', __( $result->get_error_message(), 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+                    return false;
                 }
 
                 if($result){
@@ -171,7 +172,6 @@ class WC_Reepay_Order_Capture {
         $prices_incl_tax = wc_prices_include_tax();
 
         $price = $this->get_item_price($order_item, $order);
-        var_dump($price);
         $tax = $price['with_tax'] - $price['original'];
         $taxPercent = ($tax > 0) ? round(100 / ($price['original'] / $tax)) : 0;
         $unitPrice = round(($prices_incl_tax ? $price['with_tax'] : $price['original']) / $order_item->get_quantity(), 2);
