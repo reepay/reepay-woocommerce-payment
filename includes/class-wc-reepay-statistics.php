@@ -83,9 +83,11 @@ class WC_Reepay_Gateway_Statistics{
     }
 
     public static function upgrade_completed($upgrader_object, $options) {
-        foreach( $options['plugins'] as $plugin ) {
-            if( strpos($plugin, REEPAY_CHECKOUT_PLUGIN_FILE) ) {
-                self::get_instance()->send_event('updated');
+        if ( !empty($options['plugins']) && is_array($options['plugins']) ) {
+            foreach( $options['plugins'] as $plugin ) {
+                if( strpos($plugin, REEPAY_CHECKOUT_PLUGIN_FILE) ) {
+                    self::get_instance()->send_event('updated');
+                }
             }
         }
     }
