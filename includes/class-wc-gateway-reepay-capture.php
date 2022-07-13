@@ -41,14 +41,19 @@ class WC_Reepay_Order_Capture {
             $line_item_data = [$item_data];
             $total = $item_data['amount'];
             unset($_POST['post_status']);
-            $result = $gateway->api->settle( $order, $total, $line_item_data );
-            if ( is_wp_error( $result )) {
-                $gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-                return;
-            }
+            if($total > 0 && $this->check_allow_capture($order)){
+                $result = $gateway->api->settle( $order, $total, $line_item_data );
+                if ( is_wp_error( $result )) {
+                    $gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
+                    set_transient( 'reepay_api_action_error', __( $result->get_error_message(), 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+                    return false;
+                }
 
-            $item->update_meta_data('settled',  $total / 100);
-            $item->save(); // Save item
+                if($result){
+                    $item->update_meta_data('settled',  $total / 100);
+                    $item->save(); // Save item
+                }
+            }
         }
     }
 
@@ -72,7 +77,7 @@ class WC_Reepay_Order_Capture {
             return true;
         }
 
-        return true;
+        return false;
     }
 
     public function get_no_settled_amount($order){
@@ -167,7 +172,6 @@ class WC_Reepay_Order_Capture {
         $prices_incl_tax = wc_prices_include_tax();
 
         $price = $this->get_item_price($order_item, $order);
-        var_dump($price);
         $tax = $price['with_tax'] - $price['original'];
         $taxPercent = ($tax > 0) ? round(100 / ($price['original'] / $tax)) : 0;
         $unitPrice = round(($prices_incl_tax ? $price['with_tax'] : $price['original']) / $order_item->get_quantity(), 2);
