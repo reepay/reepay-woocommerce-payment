@@ -414,7 +414,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			$alert_emails = $result[ 'alert_emails' ];
 
 			// The webhook settings of the payment plugin
-			$webhook_url = WC()->api_request_url( get_class( $this ) );
+			$webhook_url = WC()->api_request_url( get_class() );
 			$alert_email = '';
 			if ( ! empty( $this->settings[ 'failed_webhooks_email' ] ) &&
 				 is_email( $this->settings[ 'failed_webhooks_email' ] )
