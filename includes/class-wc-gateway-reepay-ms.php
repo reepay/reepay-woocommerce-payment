@@ -90,12 +90,6 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay_Checko
 			$this,
 			'process_admin_options'
 		) );
-
-		// Payment listener/API hook
-		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array(
-			$this,
-			'return_handler'
-		) );
 	}
 
 	/**

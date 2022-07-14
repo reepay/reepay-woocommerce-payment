@@ -148,12 +148,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		// JS Scrips
 		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
 
-		// Payment listener/API hook
-		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array(
-			$this,
-			'return_handler'
-		) );
-
 		// Payment confirmation
 		add_action( 'the_post', array( $this, 'payment_confirm' ) );
 
