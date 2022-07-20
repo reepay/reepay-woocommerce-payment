@@ -424,11 +424,7 @@ class WC_Reepay_Admin {
 								throw new Exception( $order_data->get_error_message() );
 							}
 
-							if ( $amount <= ( $order_data['authorized_amount'] / 100 ) ) {
-								$amount_to_capture = $amount;
-							} else {
-								$amount_to_capture = $order_data['authorized_amount'] / 100;
-							}
+							$amount_to_capture = rp_make_initial_amount($order_data['authorized_amount'] - $order_data['settled_amount'], $order->get_currency());
 
 							$gateway->capture_payment( $order, $amount_to_capture );
 						} catch (Exception $e) {

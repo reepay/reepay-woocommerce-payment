@@ -300,9 +300,22 @@ class WC_Reepay_Api {
 		}
 
         $gateway = rp_get_payment_method( $order );
-        $order_lines = $gateway->get_order_items( $order );
 
-		return $this->settle( $order, $amount, $order_lines );
+        $order_lines = $gateway->get_order_items( $order );
+		$settled_lines = WC_Reepay_Instant_Settle::get_settled_items( $order );
+
+		foreach ($settled_lines as $settled_line_key => $settled_line) {
+			foreach ( $order_lines as $order_line_key => $order_line ) {
+				if( $settled_line['ordertext'] == $order_line['ordertext'] ) {
+					$amount -= rp_make_initial_amount($order_lines[$order_line_key]['amount'], $order->get_currency());
+
+					unset($order_lines[$order_line_key]);
+					break;
+				}
+			}
+		}
+
+		return $this->settle( $order, $amount, array_values($order_lines) );
 	}
 
 	/**
@@ -420,23 +433,22 @@ class WC_Reepay_Api {
 			return new WP_Error( 0, 'Unable to get order handle' );
 		}
 
-		if ( ! $amount ) {
-			$amount = WC_Reepay_Instant_Settle::calculate_instant_settle( $order );
+		if ( ! $amount || ! $item_data ) {
+			$settle_data = WC_Reepay_Instant_Settle::calculate_instant_settle( $order );
+
+			if ( ! $amount ) {
+				$amount = $settle_data->settle_amount;
+			}
+
+			if ( ! $item_data ) {
+				$item_data = $settle_data->items;
+			}
 		}
 
-        if ( $item_data ) {
-            $request_data['order_lines'] = $item_data;
-            if(floatval($item_data[0]['amount']) <= 0){
-                return new WP_Error( 100, 'Amount must be lager than zero' );
-            }
-        } else {
-            $request_data['amount'] = rp_prepare_amount( $amount, $order->get_currency() );
-            if($request_data['amount'] <= 0){
-                return new WP_Error( 100, 'Amount must be lager than zero' );
-            }
-        }
-
-
+		$request_data['order_lines'] = $item_data;
+		if(floatval(current($item_data)['amount']) <= 0){
+			return new WP_Error( 100, 'Amount must be lager than zero' );
+		}
 
 		$result = $this->request(
 			'POST',
@@ -464,14 +476,7 @@ class WC_Reepay_Api {
                 );
             }
 
-
 			set_transient( 'reepay_api_action_error', $error, MINUTE_IN_SECONDS / 2 );
-
-			//$order->add_order_note(
-				//sprintf( __( 'Failed to settle "%s". Error: %s.', 'reepay-checkout-gateway' ),
-				//wc_price( $amount ),
-				//$result->get_error_message()
-			//) );
 
 			return $result;
 		}
