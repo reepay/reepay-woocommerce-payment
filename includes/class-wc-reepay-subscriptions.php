@@ -110,6 +110,11 @@ class WC_Reepay_Subscriptions {
 		foreach ( $subscriptions as $subscription ) {
 			/** @var WC_Subscription $subscription */
 			$gateway = rp_get_payment_method( $subscription );
+
+			if ( ! $gateway ) {
+				continue;
+			}
+
 			$token = $gateway::get_payment_token_order( $subscription );
 			if ( ! $token ) {
 				// Copy tokens from parent order
