@@ -106,7 +106,6 @@ class WC_Reepay_Order_Capture {
     }
 
     public function capture_full_order_button($order){
-
         if($this->check_allow_capture($order)){
             $amount = $this->get_no_settled_amount($order);
             if($amount > 0){
@@ -129,10 +128,17 @@ class WC_Reepay_Order_Capture {
             $order_item = WC_Order_Factory::get_order_item( $item_id );
             $price = $this->get_item_price($order_item, $order);
             $unitPrice = number_format(round($price['with_tax'], 2), 2, '.', '');
+            $instant_items = WC_Reepay_Instant_Settle::get_instant_items( $order );
 
-            echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="'.$item_id.'">
-                '.__( 'Capture '. $order->get_currency() . $unitPrice, 'reepay-checkout-gateway' ).'
-            </button>';
+            if(empty($instant_items)){
+                echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="'.$item_id.'">
+                    '.__( 'Capture '. $order->get_currency() . $unitPrice, 'reepay-checkout-gateway' ).'
+                </button>';
+            }elseif (!in_array($item_id, $instant_items)){
+                echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="'.$item_id.'">
+                    '.__( 'Capture '. $order->get_currency() . $unitPrice, 'reepay-checkout-gateway' ).'
+                </button>';
+            }
         }
     }
 
