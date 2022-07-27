@@ -83,13 +83,51 @@ class WC_Reepay_Instant_Settle {
 		}
 	}
 
-	/**
-	 * Calculate the amount to be settled instantly based by the order items.
-	 *
-	 * @param WC_Order $order - is the WooCommerce order object
-	 *
-	 * @return stdClass
-	 */
+
+    public static function get_instant_items($order)
+    {
+
+        /** @var array $settle */
+        $settle = rp_get_payment_method($order)->settle;
+        $items_data = [];
+
+        // Now walk through the order-lines and check per order if it is virtual, downloadable, recurring or physical
+        foreach ($order->get_items() as $item) {
+            /** @var WC_Order_Item_Product $order_item */
+            /** @var WC_Product $product */
+            $product = $item->get_product();
+
+            if (in_array(self::SETTLE_PHYSICAL, $settle, true) &&
+                (!wcs_is_subscription_product($product) &&
+                    $product->needs_shipping() &&
+                    !$product->is_downloadable())
+            ) {
+                $items_data[] = $item->get_id();
+                continue;
+            } elseif (in_array(self::SETTLE_VIRTUAL, $settle, true) &&
+                (!wcs_is_subscription_product($product) &&
+                    ($product->is_virtual() || $product->is_downloadable()))
+            ) {
+                $items_data[] = $item->get_id();
+                continue;
+            } elseif (in_array(self::SETTLE_RECURRING, $settle, true) &&
+                wcs_is_subscription_product($product)
+            ) {
+                $items_data[] = $item->get_id();
+                continue;
+            }
+        }
+
+        return $items_data;
+    }
+
+    /**
+     * Calculate the amount to be settled instantly based by the order items.
+     *
+     * @param WC_Order $order - is the WooCommerce order object
+     *
+     * @return stdClass
+     */
 	public static function calculate_instant_settle( $order ) {
 		/** @var WC_Reepay_Order_Capture $WC_Reepay_Order_Capture*/
 		global $WC_Reepay_Order_Capture;

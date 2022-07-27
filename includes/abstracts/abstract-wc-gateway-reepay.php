@@ -634,12 +634,22 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			);
 		}
 
+		$order_handle = rp_get_order_handle( $order );
+
+		//If the order exists, stop the process
+		if ( ! is_wp_error( $this->api->get_invoice_by_handle( $order_handle ) ) ) {
+			return array(
+				'result'  => 'failure',
+				'message' => __( 'Invoice already exists', 'reepay-checkout-gateway' )
+			);
+		}
+
 		// Initialize Payment
 		$params = [
 			'locale' => $this->get_language(),
 			'recurring' => $maybe_save_card || order_contains_subscription( $order ) || wcs_is_payment_change(),
 			'order' => [
-				'handle' => rp_get_order_handle( $order ),
+				'handle' => $order_handle,
 				'amount' => $this->skip_order_lines === 'yes' ? rp_prepare_amount( $order->get_total(), $order->get_currency() ) : null,
 				'order_lines' => $this->skip_order_lines === 'no' ? $this->get_order_items( $order ) : null,
 				'currency' => $order->get_currency(),
