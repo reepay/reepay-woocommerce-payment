@@ -736,6 +736,15 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			'https://checkout-api.reepay.com/v1/session/charge',
 			$params
 		);
+
+        if(!empty($customer_handle) && $order->get_customer_id() == 0){
+            $this->api->request(
+                'PUT',
+                'https://api.reepay.com/v1/customer/'.$customer_handle,
+                $params['order']['customer']
+            );
+        }
+
 		if ( is_wp_error( $result ) ) {
 			/** @var WP_Error $result */
 			if ( 'yes' === $this->handle_failover ) {
