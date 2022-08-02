@@ -637,12 +637,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		$order_handle = rp_get_order_handle( $order );
 
 		//If the order exists, stop the process
-		if ( ! is_wp_error( $this->api->get_invoice_by_handle( $order_handle ) ) ) {
+		/*if ( ! is_wp_error( $this->api->get_invoice_by_handle( $order_handle ) ) ) {
 			return array(
 				'result'  => 'failure',
 				'message' => __( 'Invoice already exists', 'reepay-checkout-gateway' )
 			);
-		}
+		}*/
 
 		// Initialize Payment
 		$params = [
