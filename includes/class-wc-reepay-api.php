@@ -108,8 +108,14 @@ class WC_Reepay_Api {
 					return new WP_Error( $data['code'], sprintf( __( 'API Error: %s - %s.', 'reepay-checkout-gateway' ), $data['error'], $data['message'] ) );
 				}
 
-				return new WP_Error( $http_code,
-					sprintf( __( 'API Error (request): %s. HTTP Code: %s', 'reepay-checkout-gateway' ), $body, $http_code ) );
+                if(!empty($data['code']) && !empty($data['error'])){
+                    return new WP_Error( $http_code,
+                        sprintf( __( 'API Error (request): %s. Error Code: %s', 'reepay-checkout-gateway' ), $data['error'], $data['code'] ) );
+                }else{
+                    return new WP_Error( $http_code,
+                        sprintf( __( 'API Error (request): %s. HTTP Code: %s', 'reepay-checkout-gateway' ), $body, $http_code ) );
+                }
+
 			default:
 				return new WP_Error( $http_code, __( 'Unknown error.', 'reepay-checkout-gateway' ) );
 		}
@@ -772,6 +778,13 @@ class WC_Reepay_Api {
 		$order = wc_get_order( $order_id );
 
 		$handle = $this->get_customer_handle_online( $order );
+        if(!empty($handle)){
+            return $handle;
+        }
+
+        if($order->get_customer_id() == 0){
+            $handle = $order->get_meta( '_reepay_customer' );
+        }
 
 		if ( empty( $handle ) ) {
 			if ( $order->get_customer_id() > 0 ) {
