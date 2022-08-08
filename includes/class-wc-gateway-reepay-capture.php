@@ -22,11 +22,15 @@ class WC_Reepay_Order_Capture {
 
         if($this_status_transition_to == 'completed'){
 
-            foreach ( $order->get_items() as  $item_key => $item ) {
+            foreach ( $order->get_items() as $item ) {
                 $this->settle_item($item, $order);
             }
 
-            foreach( $order->get_items( 'shipping' ) as $item_id => $item ){
+            foreach( $order->get_items( 'shipping' ) as $item ){
+                $this->settle_item($item, $order);
+            }
+
+            foreach( $order->get_items( 'fee' ) as $item ){
                 $this->settle_item($item, $order);
             }
         }
