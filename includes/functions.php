@@ -86,6 +86,35 @@ if ( ! function_exists( 'wcs_cart_have_subscription' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wcs_cart_only_subscriptions' ) ) {
+	/**
+	 * Check is Cart have only Subscription Products.
+	 *
+	 * @return bool
+	 */
+	function wcs_cart_only_subscriptions() {
+        $have_product = false;
+		if ( class_exists( 'WC_Subscriptions_Product' ) ) {
+			// Check is Recurring Payment
+			$cart = WC()->cart->get_cart();
+            if(wcs_cart_have_subscription()){
+                foreach ( $cart as $key => $item ) {
+                    if (!WC_Subscriptions_Product::is_subscription( $item['data'] ) ) {
+                        $have_product = true;
+                        break;
+                    }
+                }
+            }else{
+                $have_product = true;
+            }
+		}else{
+            $have_product = true;
+        }
+
+		return apply_filters( 'wcs_cart_only_subscriptions', !$have_product );
+	}
+}
+
 if ( ! function_exists( 'rp_prepare_amount' ) ) {
 	/**
 	 * Prepare amount.

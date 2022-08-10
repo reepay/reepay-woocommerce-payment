@@ -585,7 +585,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		$customer_handle = $this->api->get_customer_handle_order( $order->get_id() );
 
 		// If here's Subscription or zero payment
-		if ( abs( $order->get_total() ) < 0.01 ) {
+		if ( abs( $order->get_total() ) < 0.01 || wcs_cart_only_subscriptions()) {
 			$params = [
 				'locale'> $this->get_language(),
 				'button_text' => __( 'Pay', 'woocommerce-gateway-reepay-checkout' ),
@@ -636,13 +636,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		$order_handle = rp_get_order_handle( $order );
 
-		//If the order exists, stop the process
-		/*if ( ! is_wp_error( $this->api->get_invoice_by_handle( $order_handle ) ) ) {
-			return array(
-				'result'  => 'failure',
-				'message' => __( 'Invoice already exists', 'reepay-checkout-gateway' )
-			);
-		}*/
 
 		// Initialize Payment
 		$params = [
