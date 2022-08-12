@@ -88,6 +88,8 @@ class WC_Reepay_Subscriptions
 
         if (wcs_cart_only_subscriptions()) {
             unset($gateways['reepay_mobilepay']);
+        } elseif (wcs_cart_have_subscription()) {
+            unset($gateways['reepay_mobilepay_subscriptions']);
         }
 
         return $gateways;
