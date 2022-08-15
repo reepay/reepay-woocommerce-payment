@@ -694,16 +694,20 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
             'cancel_url' => $order->get_cancel_order_url(),
         ];
 
+        if ($params['recurring']) {
+            $params['button_text'] = __('PAY AND SAVE CARD', 'reepay-checkout-gateway');
+        }
+
         if (!empty($country)) {
             $params['order']['customer']['country'] = $country;
             $params['order']['billing_address']['country'] = $country;
         }
 
         // skip order lines if calculated amount not equal to total order amount
-        if ($this->get_calculated_amount($order) != rp_prepare_amount($order->get_total(), $order->get_currency())) {
+        /*if ($this->get_calculated_amount($order) != rp_prepare_amount($order->get_total(), $order->get_currency())) {
             $params['order']['amount'] = rp_prepare_amount($order->get_total(), $order->get_currency());
             $params['order']['order_lines'] = null;
-        }
+        }*/
 
         if ($this->payment_methods && count($this->payment_methods) > 0) {
             $params['payment_methods'] = $this->payment_methods;
@@ -1089,6 +1093,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
         $items = [];
         foreach ($order->get_items() as $order_item) {
             /** @var WC_Order_Item_Product $order_item */
+
+            if (wcs_is_subscription_product($order_item->get_product()) || wcr_is_subscription_product($order_item->get_product())) {
+                continue;
+            }
+
             $price = $order->get_line_subtotal($order_item, false, false);
             $priceWithTax = $order->get_line_subtotal($order_item, true, false);
             $tax = $priceWithTax - $price;
