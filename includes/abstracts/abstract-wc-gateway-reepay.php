@@ -694,8 +694,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
             'cancel_url' => $order->get_cancel_order_url(),
         ];
 
+        // Get setting from parent method
+        $settings = get_option('woocommerce_reepay_checkout_settings');
+
         if ($params['recurring']) {
-            $params['button_text'] = __('PAY AND SAVE CARD', 'reepay-checkout-gateway');
+            $params['button_text'] = $settings['payment_button_text'];
         }
 
         if (!empty($country)) {
