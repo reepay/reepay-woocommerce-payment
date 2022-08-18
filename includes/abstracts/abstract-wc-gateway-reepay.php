@@ -548,6 +548,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
             }
         }
 
+        
         // Try to charge with saved token
         if (absint($token_id) > 0) {
             $token = new WC_Payment_Token_Reepay($token_id);
@@ -568,6 +569,18 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
                 // Don't charge payment if zero amount
                 $order->payment_complete();
             } else {
+
+                // Replace token
+                try {
+                    self::assign_payment_token($order, $token);
+                } catch (Exception $e) {
+                    $order->add_order_note($e->getMessage());
+
+                    return array(
+                        'result' => 'failure',
+                        'message' => $e->getMessage()
+                    );
+                }
                 // Charge payment
                 $result = $this->api->charge($order, $token->get_token(), $order->get_total(), $order->get_currency());
                 if (is_wp_error($result)) {
