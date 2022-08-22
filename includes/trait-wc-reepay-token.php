@@ -112,6 +112,7 @@ trait WC_Reepay_Token
         }
 
         update_post_meta($order->get_id(), '_reepay_source', $source);
+        self::assign_payment_token($order, $token);
         $this->log(sprintf('%s Payment token #%s created for %s',
             __METHOD__,
             $token->get_id(),
