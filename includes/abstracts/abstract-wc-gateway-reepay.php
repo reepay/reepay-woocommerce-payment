@@ -548,7 +548,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
             }
         }
 
-        
+
         // Try to charge with saved token
         if (absint($token_id) > 0) {
             $token = new WC_Payment_Token_Reepay($token_id);
@@ -647,6 +647,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
                 'https://checkout-api.reepay.com/v1/session/recurring',
                 $params
             );
+
+            if (!empty($result['id'])) {
+                update_post_meta($order_id, 'reepay_session_id', $result['id']);
+            }
+
             if (is_wp_error($result)) {
                 /** @var WP_Error $result */
                 throw new Exception($result->get_error_message(), $result->get_error_code());
