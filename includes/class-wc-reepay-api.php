@@ -112,7 +112,7 @@ class WC_Reepay_Api
                 }
 
                 if (!empty($data['code']) && !empty($data['error'])) {
-                    return new WP_Error($http_code,
+                    return new WP_Error($data['code'],
                         sprintf(__('API Error (request): %s. Error Code: %s', 'reepay-checkout-gateway'), $data['error'], $data['code']));
                 } else {
                     return new WP_Error($http_code,
@@ -393,10 +393,13 @@ class WC_Reepay_Api
 
         try {
             $result = $this->request('POST', 'https://api.reepay.com/v1/charge', $params);
+
             if (is_wp_error($result)) {
+
                 if ('yes' == $this->gateway->handle_failover &&
                     (in_array($result->get_error_code(), array(105, 79, 29, 99, 72)))
                 ) {
+
                     // Workaround: handle already exists lets create another with unique handle
                     $params['handle'] = rp_get_order_handle($order, true);
                     $result = $this->request('POST', 'https://api.reepay.com/v1/charge', $params);

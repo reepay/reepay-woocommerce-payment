@@ -802,6 +802,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
                     $handle = rp_get_order_handle($order, true);
                     $params['order']['handle'] = $handle;
 
+                    update_post_meta($order->get_id(), '_reepay_order', $handle);
+
                     $result = $this->api->request(
                         'POST',
                         'https://checkout-api.reepay.com/v1/session/charge',

@@ -40,7 +40,7 @@ if ($order_total <= $order_data['authorized_amount']) {
             <span class='reepay-balance__currency'>
                 &nbsp;
             </span>
-            <?php echo $order_data['authorized_amount'] ? rp_make_initial_amount($order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency']) : $order_data['authorized_amount'] . ' ' . get_woocommerce_currency_symbol(); ?>
+            <?php echo $order_data['authorized_amount'] ? rp_make_initial_amount($order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency']) . ' ' . get_woocommerce_currency_symbol() : $order_data['authorized_amount'] . ' ' . get_woocommerce_currency_symbol(); ?>
         </span>
     </li>
     <li class="reepay-admin-section-li">
