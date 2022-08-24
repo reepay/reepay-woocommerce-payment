@@ -120,6 +120,8 @@ class WC_Reepay_Webhook
                     throw new Exception('Missing Invoice parameter');
                 }
 
+                $this->log(sprintf('WebHook: Invoice settled: %s', var_export($data['invoice'], true)));
+
                 // Get Order by handle
                 $order = rp_get_order_by_handle($data['invoice']);
                 if (!$order) {
@@ -355,7 +357,7 @@ class WC_Reepay_Webhook
                 break;
             default:
                 global $wp_filter;
-
+                $this->log(sprintf('WebHook: %s', $data['event_type']));
                 $base_hook_name = "reepay_webhook_raw_event";
                 $current_hook_name = "{$base_hook_name}_{$data['event_type']}";
 
