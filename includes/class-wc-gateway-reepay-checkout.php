@@ -133,12 +133,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay
                 'description' => __('Insert your private key from your Reepay test account', 'reepay-checkout-gateway'),
                 'default' => $this->private_key_test
             ),
-            'payment_button_text' => array(
-                'title' => __('Payment button text', 'reepay-checkout-gateway'),
-                'type' => 'text',
-                'description' => __('Text on button which will be displayed on payment page', 'reepay-checkout-gateway'),
-                'default' => __('PAY AND SAVE CARD', 'reepay-checkout-gateway')
-            ),
             'test_mode' => array(
                 'title' => __('Test Mode', 'reepay-checkout-gateway'),
                 'type' => 'checkbox',
@@ -317,6 +311,16 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay
                 },
             )
         );
+
+        if (class_exists('WooCommerce_Reepay_Subscriptions')) {
+            $this->form_fields['payment_button_text'] = array(
+                'title' => __('Payment button text', 'reepay-checkout-gateway'),
+                'type' => 'text',
+                'description' => __('Text on button which will be displayed on payment page if subscription products is being purchased', 'reepay-checkout-gateway'),
+                'default' => __('PAY AND SAVE CARD', 'reepay-checkout-gateway')
+            );
+        }
+
     }
 
     /**
