@@ -101,7 +101,7 @@ if ($order_total <= $order_data['authorized_amount']) {
         <?php echo __('Order ID', 'reepay-checkout-gateway') ?>
     </li>
     <li class="reepay-admin-section-li-small">
-        <?php echo 'order-' . $order_id; ?>
+        <?php echo $order_id; ?>
     </li>
     <li class="reepay-admin-section-li-header-small">
         <?php echo esc_html__('Transaction ID', 'reepay-checkout-gateway') ?>
