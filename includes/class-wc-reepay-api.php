@@ -112,7 +112,7 @@ class WC_Reepay_Api
                 }
 
                 if (!empty($data['code']) && !empty($data['error'])) {
-                    return new WP_Error($http_code,
+                    return new WP_Error($data['code'],
                         sprintf(__('API Error (request): %s. Error Code: %s', 'reepay-checkout-gateway'), $data['error'], $data['code']));
                 } else {
                     return new WP_Error($http_code,
@@ -393,10 +393,13 @@ class WC_Reepay_Api
 
         try {
             $result = $this->request('POST', 'https://api.reepay.com/v1/charge', $params);
+
             if (is_wp_error($result)) {
+
                 if ('yes' == $this->gateway->handle_failover &&
                     (in_array($result->get_error_code(), array(105, 79, 29, 99, 72)))
                 ) {
+
                     // Workaround: handle already exists lets create another with unique handle
                     $params['handle'] = rp_get_order_handle($order, true);
                     $result = $this->request('POST', 'https://api.reepay.com/v1/charge', $params);
@@ -442,7 +445,7 @@ class WC_Reepay_Api
      * @return array|WP_Error
      * @throws Exception
      */
-    public function settle(WC_Order $order, $amount = null, $item_data = false)
+    public function settle(WC_Order $order, $amount = null, $item_data = false, $item = false)
     {
         $this->log(sprintf('Settle: %s, %s', $order->get_id(), $amount));
 
@@ -479,6 +482,27 @@ class WC_Reepay_Api
             if (mb_strpos($result->get_error_message(), 'Invoice already settled', 0, 'UTF-8') !== false) {
                 // @todo Fetch invoice transaction
                 return array(); // @todo
+            }
+
+
+            if (mb_strpos($result->get_error_message(), 'Amount higher than authorized amount', 0, 'UTF-8') !== false && !empty($item)) {
+                $order_data = $this->get_invoice_data($order);
+                $remaining = $order_data['authorized_amount'] - $order_data['settled_amount'];
+                $price = WC_Reepay_Order_Capture::get_item_price($item, $order);
+                if ($remaining > 0 && round($remaining / 100) == $price['with_tax'] && !empty($request_data['order_lines'][0])) {
+                    $full = $remaining / ($request_data["order_lines"][0]['vat'] + 1);
+                    if ($full > 0) {
+                        $request_data["order_lines"][0]['amount'] = $full;
+
+                        $result = $this->request(
+                            'POST',
+                            'https://api.reepay.com/v1/charge/' . $handle . '/settle',
+                            $request_data
+                        );
+                        
+                        return $result;
+                    }
+                }
             }
 
             // need to be shown on admin notices

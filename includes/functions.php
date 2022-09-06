@@ -258,6 +258,39 @@ if (!function_exists('rp_get_order_by_handle')) {
     }
 }
 
+if (!function_exists('rp_get_order_by_session')) {
+    /**
+     * Get Order By Reepay Order Session.
+     *
+     * @param string $handle
+     *
+     * @return false|WC_Order
+     */
+    function rp_get_order_by_session($session_id)
+    {
+        global $wpdb;
+
+        $query = "
+			SELECT post_id FROM {$wpdb->prefix}postmeta 
+			LEFT JOIN {$wpdb->prefix}posts ON ({$wpdb->prefix}posts.ID = {$wpdb->prefix}postmeta.post_id)
+			WHERE meta_key = %s AND meta_value = %s;";
+        $sql = $wpdb->prepare($query, 'reepay_session_id', $session_id);
+        $order_id = $wpdb->get_var($sql);
+        if (!$order_id) {
+            throw new Exception(sprintf(__('Session #%s isn\'t exists in store.', 'reepay-checkout-gateway'), $session_id));
+        }
+
+        // Get Order
+        clean_post_cache($order_id);
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            return false;
+        }
+
+        return $order;
+    }
+}
+
 if (!function_exists('rp_get_customer_handle')) {
     /**
      * Get Customer handle by User ID.
