@@ -1,6 +1,6 @@
 <?php
 /*
- * Plugin Name: WooCommerce Reepay Checkout Gateway
+ * Plugin Name: Reepay Checkout for WooCommerce
  * Description: Provides a Payment Gateway through Reepay for WooCommerce.
  * Author: reepay
  * Author URI: http://reepay.com
