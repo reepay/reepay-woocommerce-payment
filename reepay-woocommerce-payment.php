@@ -1,7 +1,7 @@
 <?php
 /*
  * Plugin Name: Reepay Checkout for WooCommerce
- * Description: Provides a Payment Gateway through Reepay for WooCommerce.
+ * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: reepay
  * Author URI: http://reepay.com
  * Version: 1.4.30
