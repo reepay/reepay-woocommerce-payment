@@ -389,7 +389,9 @@ class WC_Reepay_Order_Statuses
      */
     public static function set_authorized_status(WC_Order $order, $note, $transaction_id)
     {
-        if ('1' === $order->get_meta('_reepay_state_authorized')) {
+        $authorized_status = apply_filters('reepay_authorized_order_status', 'on-hold', $order);
+
+        if (!empty($order->get_meta('_reepay_state_authorized')) || $order->get_status() == $authorized_status) {
             return;
         }
 
@@ -401,7 +403,7 @@ class WC_Reepay_Order_Statuses
 
         self::update_order_status(
             $order,
-            apply_filters('reepay_authorized_order_status', 'on-hold', $order),
+            $authorized_status,
             $note,
             $transaction_id
         );
