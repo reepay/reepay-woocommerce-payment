@@ -630,7 +630,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
         // If here's Subscription or zero payment
         if (abs($order->get_total()) < 0.01 || wcs_cart_only_subscriptions()) {
             $params = [
-                'locale' > $this->get_language(),
+                'locale' => $this->get_language(),
                 'button_text' => __('Pay', 'woocommerce-gateway-reepay-checkout'),
                 'create_customer' => [
                     'test' => $this->test_mode === 'yes',
