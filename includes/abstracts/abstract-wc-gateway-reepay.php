@@ -582,7 +582,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
                     );
                 }
 
-                if (wcs_cart_only_subscriptions()) {
+                if (wc_cart_only_reepay_subscriptions()) {
                     $method = $this->api->request('GET', 'https://api.reepay.com/v1/payment_method/' . $token->get_token());
                     if (!empty($method) && $method['state'] == 'active') {
 
@@ -628,7 +628,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
         $customer_handle = $this->api->get_customer_handle_order($order->get_id());
 
         // If here's Subscription or zero payment
-        if (abs($order->get_total()) < 0.01 || wcs_cart_only_subscriptions()) {
+        if (abs($order->get_total()) < 0.01 || wc_cart_only_reepay_subscriptions()) {
+            var_dump(wc_cart_only_reepay_subscriptions());
+            exit;
             $params = [
                 'locale' => $this->get_language(),
                 'button_text' => __('Pay', 'woocommerce-gateway-reepay-checkout'),
