@@ -1,10 +1,10 @@
 <?php
 /*
- * Plugin Name: WooCommerce Reepay Checkout Gateway
- * Description: Provides a Payment Gateway through Reepay for WooCommerce.
+ * Plugin Name: Reepay Checkout for WooCommerce
+ * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: reepay
  * Author URI: http://reepay.com
- * Version: 1.4.30
+ * Version: 1.4.31
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -60,6 +60,7 @@ class WC_ReepayCheckout
         add_action('woocommerce_loaded', array($this, 'woocommerce_loaded'), 40);
         add_action('init', __CLASS__ . '::may_add_notices');
         add_action('wp_enqueue_scripts', array($this, 'add_scripts'));
+        add_filter('plugin_row_meta', array($this, 'plugin_row_meta'), 10, 2);
 
         // Add statuses for payment complete
         add_filter('woocommerce_valid_order_statuses_for_payment_complete', array(
@@ -80,6 +81,30 @@ class WC_ReepayCheckout
             add_action('customize_save_after', array($this, 'maybe_process_queue'));
             add_action('after_switch_theme', array($this, 'maybe_process_queue'));
         }
+    }
+
+    /**
+     * Show row meta on the plugin screen.
+     *
+     * @param mixed $links Plugin Row Meta.
+     * @param mixed $file Plugin Base file.
+     *
+     * @return array
+     */
+    public function plugin_row_meta($links, $file)
+    {
+
+        if (plugin_basename(__FILE__) !== $file) {
+            return $links;
+        }
+
+        $row_meta = array(
+            'account' => '<a target="_blank" href="https://signup.reepay.com/?_gl=1*1iccm28*_gcl_aw*R0NMLjE2NTY1ODI3MTQuQ2p3S0NBandrX1dWQmhCWkVpd0FVSFFDbVJaNDJmVmVQWFc4LUlpVDRndE83bWRmaW5NNG5wZDhkaG12dVJFOEZkbDR4eXVMNlZpMTRSb0N1b2NRQXZEX0J3RQ..*_ga*MjA3MDA3MTk4LjE2NTM2MzgwNjY.*_ga_F82PFFEF3F*MTY2Mjk2NTEwNS4xOS4xLjE2NjI5NjUxODkuMC4wLjA.&_ga=2.98685660.319325710.1662963483-207007198.1653638066#/en">' . esc_html__('Get free test account', 'reepay-checkout-gateway') . '</a>',
+            'pricing' => '<a target="_blank" href="https://reepay.com/pricing/">' . esc_html__('Pricing', 'reepay-checkout-gateway') . '</a>',
+        );
+
+
+        return array_merge($links, $row_meta);
     }
 
     /**
