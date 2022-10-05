@@ -167,12 +167,7 @@ class WC_Reepay_Webhook {
 
 				WC_Reepay_Order_Statuses::set_settled_status(
 					$order,
-					sprintf(
-						__( 'Payment has been settled. Amount: %s. Transaction: %s',
-							'reepay-checkout-gateway' ),
-						wc_price( rp_make_initial_amount( $invoice_data['amount'], $order->get_currency() ) ),
-						$data['transaction']
-					),
+					false,
 					$data['transaction']
 				);
 

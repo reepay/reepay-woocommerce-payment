@@ -1108,7 +1108,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	 *
 	 * @return array
 	 */
-	public function get_order_items( $order ) {
+	public function get_order_items( $order, $not_settled = false ) {
 		$prices_incl_tax = wc_prices_include_tax();
 
 		$items = [];
@@ -1125,6 +1125,10 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$taxPercent   = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
 			$unitPrice    = round( ( $prices_incl_tax ? $priceWithTax : $price ) / $order_item->get_quantity(), 2 );
 
+			if ( $not_settled && ! empty( $order_item->get_meta( 'settled' ) ) ) {
+				continue;
+			}
+
 			$items[] = array(
 				'ordertext'       => $order_item->get_name(),
 				'quantity'        => $order_item->get_quantity(),
@@ -1136,18 +1140,27 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		// Add Shipping Line
 		if ( (float) $order->get_shipping_total() > 0 ) {
-			$shipping        = $order->get_shipping_total();
-			$tax             = $order->get_shipping_tax();
-			$shippingWithTax = $shipping + $tax;
-			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $shipping / $tax ) ) : 0;
+			foreach ( $order->get_items( 'shipping' ) as $item_shipping ) {
+				$prices_incl_tax = wc_prices_include_tax();
 
-			$items[] = array(
-				'ordertext'       => $order->get_shipping_method(),
-				'quantity'        => 1,
-				'amount'          => rp_prepare_amount( $prices_incl_tax ? $shippingWithTax : $shipping, $order->get_currency() ),
-				'vat'             => round( $taxPercent / 100, 2 ),
-				'amount_incl_vat' => $prices_incl_tax
-			);
+				$price = WC_Reepay_Order_Capture::get_item_price( $item_shipping, $order );
+
+				$tax        = $price['with_tax'] - $price['original'];
+				$taxPercent = ( $tax > 0 ) ? 100 / ( $price['original'] / $tax ) : 0;
+				$unitPrice  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $item_shipping->get_quantity(), 2 );
+
+				if ( $not_settled && ! empty( $item_shipping->get_meta( 'settled' ) ) ) {
+					continue;
+				}
+
+				$items[] = [
+					'ordertext'       => $item_shipping->get_name(),
+					'quantity'        => $item_shipping->get_quantity(),
+					'amount'          => rp_prepare_amount( $unitPrice, $order->get_currency() ),
+					'vat'             => round( $taxPercent / 100, 2 ),
+					'amount_incl_vat' => $prices_incl_tax
+				];
+			}
 		}
 
 		// Add fee lines
@@ -1157,6 +1170,10 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$tax        = $order_fee->get_total_tax();
 			$feeWithTax = $fee + $tax;
 			$taxPercent = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
+
+			if ( $not_settled && ! empty( $order_fee->get_meta( 'settled' ) ) ) {
+				continue;
+			}
 
 			$items[] = array(
 				'ordertext'       => $order_fee->get_name(),
