@@ -166,6 +166,7 @@ class WC_ReepayCheckout {
 		include_once( dirname( __FILE__ ) . '/includes/trait-wc-reepay-token.php' );
 		include_once( dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-gateway-reepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-api.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-capture.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-instant-settle.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-webhook.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-thankyou.php' );
@@ -184,7 +185,6 @@ class WC_ReepayCheckout {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-vipps.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-ms.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-slice-it.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-capture.php' );
 	}
 
 	/**
@@ -413,3 +413,10 @@ class WC_ReepayCheckout {
 }
 
 new WC_ReepayCheckout();
+
+
+add_action( 'woocommerce_cart_calculate_fees', 'my_new_fee' );
+
+function my_new_fee() {
+	WC()->cart->add_fee( __( 'Test fee', 'tipple' ), 25 );
+}
