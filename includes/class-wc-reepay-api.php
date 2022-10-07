@@ -370,16 +370,17 @@ class WC_Reepay_Api {
 	 *
 	 * @return array|WP_Error
 	 */
-	public function charge( WC_Order $order, $token, $amount, $currency ) {
+	public function charge( WC_Order $order, $token, $amount, $currency, $order_lines = null ) {
 		// @todo Use order lines instead of amount
 		// @todo Use `settle` parameter
 		// @todo Add `customer`, `billing_address`, `shipping_address`
 		$params = array(
-			'handle'    => rp_get_order_handle( $order ),
-			'amount'    => rp_prepare_amount( $amount, $currency ),
-			'currency'  => $currency,
-			'source'    => $token,
-			'recurring' => order_contains_subscription( $order ),
+			'handle'      => rp_get_order_handle( $order ),
+			'amount'      => ! is_null( $amount ) ? rp_prepare_amount( $amount, $currency ) : null,
+			'currency'    => $currency,
+			'source'      => $token,
+			'recurring'   => order_contains_subscription( $order ),
+			'order_lines' => $order_lines,
 		);
 
 		if ( $order->get_payment_method() == 'reepay_mobilepay_subscriptions' ) {

@@ -583,17 +583,19 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 						do_action( 'reepay_create_subscription', $data, $order );
 					}
 				} else {
+					$order_lines = $this->skip_order_lines === 'no' ? $this->get_order_items( $order ) : null;
+					$amount      = $this->skip_order_lines === 'yes' ? $order->get_total() : null;
 					// Charge payment
-					$result = $this->api->charge( $order, $token->get_token(), $order->get_total(), $order->get_currency() );
+					$result = $this->api->charge( $order, $token->get_token(), $amount, $order->get_currency(), $order_lines );
 					if ( is_wp_error( $result ) ) {
 						wc_add_notice( $result->get_error_message(), 'error' );
 
 						return false;
 					}
-
-					// Settle the charge
-					do_action( 'reepay_instant_settle', $order );
 				}
+
+				// Settle the charge
+				do_action( 'reepay_instant_settle', $order );
 
 			}
 
