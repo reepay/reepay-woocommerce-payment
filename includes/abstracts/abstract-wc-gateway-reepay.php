@@ -533,7 +533,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			}
 		}
 
-
+		// Get Customer reference
+		$customer_handle = $this->api->get_customer_handle_order( $order->get_id() );
 		// Try to charge with saved token
 		if ( absint( $token_id ) > 0 ) {
 			$token = new WC_Payment_Token_Reepay( $token_id );
@@ -582,6 +583,25 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 						do_action( 'reepay_create_subscription', $data, $order );
 					}
+				} elseif ( wcs_cart_only_subscriptions() ) {
+					$result = $this->api->recurring( $this->payment_methods, $country, $customer_handle, $order, $this->test_mode, $this->get_return_url( $order ), $this->get_language() );
+					if ( ! empty( $result['id'] ) ) {
+						update_post_meta( $order_id, 'reepay_session_id', $result['id'] );
+					}
+
+					if ( is_wp_error( $result ) ) {
+						/** @var WP_Error $result */
+						throw new Exception( $result->get_error_message(), $result->get_error_code() );
+					}
+
+					return array(
+						'result'             => 'success',
+						'redirect'           => '#!reepay-checkout',
+						'is_reepay_checkout' => true,
+						'reepay'             => $result,
+						'accept_url'         => $this->get_return_url( $order ),
+						'cancel_url'         => $order->get_cancel_order_url()
+					);
 				} else {
 					$order_lines = $this->skip_order_lines === 'no' ? $this->get_order_items( $order ) : null;
 					$amount      = $this->skip_order_lines === 'yes' ? $order->get_total() : null;
@@ -615,44 +635,10 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		$order->update_meta_data( '_reepay_maybe_save_card', $maybe_save_card );
 		$order->save_meta_data();
 
-		// Get Customer reference
-		$customer_handle = $this->api->get_customer_handle_order( $order->get_id() );
 
 		// If here's Subscription or zero payment
-		if ( abs( $order->get_total() ) < 0.01 || wc_cart_only_reepay_subscriptions() ) {
-			$params = [
-				'locale'          => $this->get_language(),
-				'button_text'     => __( 'Pay', 'woocommerce-gateway-reepay-checkout' ),
-				'create_customer' => [
-					'test'        => $this->test_mode === 'yes',
-					'handle'      => $customer_handle,
-					'email'       => $order->get_billing_email(),
-					'address'     => $order->get_billing_address_1(),
-					'address2'    => $order->get_billing_address_2(),
-					'city'        => $order->get_billing_city(),
-					'phone'       => $order->get_billing_phone(),
-					'company'     => $order->get_billing_company(),
-					'vat'         => '',
-					'first_name'  => $order->get_billing_first_name(),
-					'last_name'   => $order->get_billing_last_name(),
-					'postal_code' => $order->get_billing_postcode()
-				],
-				'accept_url'      => $this->get_return_url( $order ),
-				'cancel_url'      => $order->get_cancel_order_url()
-			];
-			if ( ! empty( $country ) ) {
-				$params['create_customer']['country'] = $country;
-			}
-
-			if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
-				$params['payment_methods'] = $this->payment_methods;
-			}
-
-			$result = $this->api->request(
-				'POST',
-				'https://checkout-api.reepay.com/v1/session/recurring',
-				$params
-			);
+		if ( abs( $order->get_total() ) < 0.01 || wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions() ) {
+			$result = $this->api->recurring( $this->payment_methods, $country, $customer_handle, $order, $this->test_mode, $this->get_return_url( $order ), $this->get_language() );
 
 			if ( ! empty( $result['id'] ) ) {
 				update_post_meta( $order_id, 'reepay_session_id', $result['id'] );

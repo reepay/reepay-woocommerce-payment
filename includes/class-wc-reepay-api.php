@@ -360,6 +360,44 @@ class WC_Reepay_Api {
 		}
 	}
 
+	public function recurring( $payment_methods, $country, $customer_handle, $order, $test_mode, $return_url, $language ) {
+		$params = [
+			'locale'          => $language,
+			'button_text'     => __( 'Pay', 'woocommerce-gateway-reepay-checkout' ),
+			'create_customer' => [
+				'test'        => $test_mode === 'yes',
+				'handle'      => $customer_handle,
+				'email'       => $order->get_billing_email(),
+				'address'     => $order->get_billing_address_1(),
+				'address2'    => $order->get_billing_address_2(),
+				'city'        => $order->get_billing_city(),
+				'phone'       => $order->get_billing_phone(),
+				'company'     => $order->get_billing_company(),
+				'vat'         => '',
+				'first_name'  => $order->get_billing_first_name(),
+				'last_name'   => $order->get_billing_last_name(),
+				'postal_code' => $order->get_billing_postcode()
+			],
+			'accept_url'      => $return_url,
+			'cancel_url'      => $order->get_cancel_order_url()
+		];
+		if ( ! empty( $country ) ) {
+			$params['create_customer']['country'] = $country;
+		}
+
+		if ( $payment_methods && count( $payment_methods ) > 0 ) {
+			$params['payment_methods'] = $payment_methods;
+		}
+
+		$result = $this->request(
+			'POST',
+			'https://checkout-api.reepay.com/v1/session/recurring',
+			$params
+		);
+
+		return $result;
+	}
+
 	/**
 	 * Charge payment.
 	 *
