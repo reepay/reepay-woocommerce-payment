@@ -68,17 +68,17 @@ class WC_Reepay_Api {
 		$http_code = wp_remote_retrieve_response_code( $response );
 		$code      = (int) ( $http_code / 100 );
 
-        if ($this->gateway->debug === 'yes') {
-            $this->log(print_r([
-                'source'    => 'WC_Reepay_Api::request',
-                'url'       => $url,
-                'method'    => $method,
-                'request'   => $params,
-                'response'  => $body,
-                'time'      => microtime(true) - $start,
-                'http_code' => $http_code,
-            ], true));
-        }
+		if ( $this->gateway->debug === 'yes' ) {
+			$this->log( print_r( [
+				'source'    => 'WC_Reepay_Api::request',
+				'url'       => $url,
+				'method'    => $method,
+				'request'   => $params,
+				'response'  => $body,
+				'time'      => microtime( true ) - $start,
+				'http_code' => $http_code,
+			], true ) );
+		}
 
 		switch ( $code ) {
 			case 0:
@@ -367,13 +367,13 @@ class WC_Reepay_Api {
 		}
 	}
 
-	public function recurring( $payment_methods, $country, $customer_handle, $order, $test_mode, $return_url, $language ) {
+	public function recurring( $payment_methods, $order, $data, $token = false ) {
 		$params = [
-			'locale'          => $language,
+			'locale'          => $data['language'],
 			'button_text'     => __( 'Pay', 'woocommerce-gateway-reepay-checkout' ),
 			'create_customer' => [
-				'test'        => $test_mode === 'yes',
-				'handle'      => $customer_handle,
+				'test'        => $data['test_mode'] === 'yes',
+				'handle'      => $data['customer_handle'],
 				'email'       => $order->get_billing_email(),
 				'address'     => $order->get_billing_address_1(),
 				'address2'    => $order->get_billing_address_2(),
@@ -385,11 +385,18 @@ class WC_Reepay_Api {
 				'last_name'   => $order->get_billing_last_name(),
 				'postal_code' => $order->get_billing_postcode()
 			],
-			'accept_url'      => $return_url,
+			'accept_url'      => $data['return_url'],
 			'cancel_url'      => $order->get_cancel_order_url()
 		];
-		if ( ! empty( $country ) ) {
-			$params['create_customer']['country'] = $country;
+
+		if ( ! empty( $token ) ) {
+			$params['card_on_file']                  = $token;
+			$params['card_on_file_require_cvv']      = false;
+			$params['card_on_file_require_exp_date'] = false;
+		}
+
+		if ( ! empty( $data['country'] ) ) {
+			$params['create_customer']['country'] = $data['country'];
 		}
 
 		if ( $payment_methods && count( $payment_methods ) > 0 ) {

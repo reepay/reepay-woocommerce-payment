@@ -353,6 +353,14 @@ class WC_Reepay_Webhook {
 				// @todo
 				$this->log( sprintf( 'WebHook: TODO: customer_payment_method_added: %s', var_export( $data, true ) ) );
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+
+				if ( ! empty( $data['payment_method_reference'] ) ) {
+					$order = rp_get_order_by_session( $data['payment_method_reference'] );
+					if ( order_contains_subscription( $order ) ) {
+						WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
+					}
+				}
+
 				break;
 			default:
 				global $wp_filter;
