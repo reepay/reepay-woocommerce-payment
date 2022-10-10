@@ -68,10 +68,17 @@ class WC_Reepay_Api {
 		$http_code = wp_remote_retrieve_response_code( $response );
 		$code      = (int) ( $http_code / 100 );
 
-		if ( $this->gateway->debug === 'yes' ) {
-			$time = microtime( true ) - $start;
-			$this->log( sprintf( '[%.4F] HTTP Code: %s. Response: %s', $time, $http_code, $body ) );
-		}
+        if ($this->gateway->debug === 'yes') {
+            $this->log(print_r([
+                'source'    => 'WC_Reepay_Api::request',
+                'url'       => $url,
+                'method'    => $method,
+                'request'   => $params,
+                'response'  => $body,
+                'time'      => microtime(true) - $start,
+                'http_code' => $http_code,
+            ], true));
+        }
 
 		switch ( $code ) {
 			case 0:
