@@ -53,83 +53,126 @@ class WC_Reepay_Instant_Settle {
 	 * @return void
 	 */
 	public function process_instant_settle( $order ) {
+		/** @var WC_Reepay_Order_Capture $WC_Reepay_Order_Capture */
+		global $WC_Reepay_Order_Capture;
+		if ( is_null( $WC_Reepay_Order_Capture ) ) {
+			$WC_Reepay_Order_Capture = new WC_Reepay_Order_Capture();
+		}
+
 		if ( ! empty ( $order->get_meta( '_is_instant_settled' ) ) ) {
 			return;
 		}
 
-		$gateway = rp_get_payment_method( $order );
+		$settle_items = self::get_items_to_settle( $order );
 
-		// Calculate if the order is to be instant settled
-		$instant_settle = self::calculate_instant_settle( $order );
-		$to_settle      = $instant_settle->settle_amount;
-		$this->log(
-			sprintf(
-				'%s instant-settle-array calculated %s',
-				__METHOD__,
-				json_encode( $instant_settle, JSON_PRETTY_PRINT )
-			)
-		);
-
-		if ( $to_settle >= 0.001 ) {
-			$result = $gateway->api->settle( $order, $to_settle );
-			if ( is_wp_error( $result ) ) {
-				$this->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-
-				return;
+		if ( ! empty( $settle_items ) ) {
+			foreach ( $settle_items as $item ) {
+				$WC_Reepay_Order_Capture->settle_item( $item, $order );
 			}
-
 			$order->add_meta_data( '_is_instant_settled', '1' );
 			$order->save_meta_data();
 		}
 	}
 
 
-    public static function get_instant_items($order)
-    {
+	public static function get_instant_items( $order ) {
 
-        /** @var array $settle */
-        $settle = rp_get_payment_method($order)->settle;
-        $items_data = [];
+		/** @var array $settle */
+		$settle     = rp_get_payment_method( $order )->settle;
+		$items_data = [];
 
-        // Now walk through the order-lines and check per order if it is virtual, downloadable, recurring or physical
-        foreach ($order->get_items() as $item) {
-            /** @var WC_Order_Item_Product $order_item */
-            /** @var WC_Product $product */
-            $product = $item->get_product();
+		// Now walk through the order-lines and check per order if it is virtual, downloadable, recurring or physical
+		foreach ( $order->get_items() as $item ) {
+			/** @var WC_Order_Item_Product $order_item */
+			/** @var WC_Product $product */
+			$product = $item->get_product();
 
-            if (in_array(self::SETTLE_PHYSICAL, $settle, true) &&
-                (!wcs_is_subscription_product($product) &&
-                    $product->needs_shipping() &&
-                    !$product->is_downloadable())
-            ) {
-                $items_data[] = $item->get_id();
-                continue;
-            } elseif (in_array(self::SETTLE_VIRTUAL, $settle, true) &&
-                (!wcs_is_subscription_product($product) &&
-                    ($product->is_virtual() || $product->is_downloadable()))
-            ) {
-                $items_data[] = $item->get_id();
-                continue;
-            } elseif (in_array(self::SETTLE_RECURRING, $settle, true) &&
-                wcs_is_subscription_product($product)
-            ) {
-                $items_data[] = $item->get_id();
-                continue;
-            }
-        }
+			if ( in_array( self::SETTLE_PHYSICAL, $settle, true ) &&
+			     ( ! wcs_is_subscription_product( $product ) &&
+			       $product->needs_shipping() &&
+			       ! $product->is_downloadable() )
+			) {
+				$items_data[] = $item->get_id();
+				continue;
+			} elseif ( in_array( self::SETTLE_VIRTUAL, $settle, true ) &&
+			           ( ! wcs_is_subscription_product( $product ) &&
+			             ( $product->is_virtual() || $product->is_downloadable() ) )
+			) {
+				$items_data[] = $item->get_id();
+				continue;
+			} elseif ( in_array( self::SETTLE_RECURRING, $settle, true ) &&
+			           wcs_is_subscription_product( $product )
+			) {
+				$items_data[] = $item->get_id();
+				continue;
+			}
+		}
 
-        return $items_data;
-    }
+		return $items_data;
+	}
 
-    /**
-     * Calculate the amount to be settled instantly based by the order items.
-     *
-     * @param WC_Order $order - is the WooCommerce order object
-     *
-     * @return stdClass
-     */
+	public static function get_items_to_settle( $order ) {
+		$settle = rp_get_payment_method( $order )->settle;
+
+		$items_data = [];
+
+		// Now walk through the order-lines and check per order if it is virtual, downloadable, recurring or physical
+		foreach ( $order->get_items() as $item ) {
+			/** @var WC_Order_Item_Product $order_item */
+			/** @var WC_Product $product */
+			$product        = $item->get_product();
+			$price_incl_tax = $order->get_line_subtotal( $item, true, false );
+
+			if ( in_array( self::SETTLE_PHYSICAL, $settle, true ) &&
+			     ( ! wcs_is_subscription_product( $product ) &&
+			       $product->needs_shipping() &&
+			       ! $product->is_downloadable() )
+			) {
+				$items_data[] = $item;
+
+				continue;
+			} elseif ( in_array( self::SETTLE_VIRTUAL, $settle, true ) &&
+			           ( ! wcs_is_subscription_product( $product ) &&
+			             ( $product->is_virtual() || $product->is_downloadable() ) )
+			) {
+				$items_data[] = $item;
+
+				continue;
+			} elseif ( in_array( self::SETTLE_RECURRING, $settle, true ) &&
+			           wcs_is_subscription_product( $product )
+			) {
+				$items_data[] = $item;
+
+				continue;
+			}
+		}
+
+		if ( in_array( self::SETTLE_FEE, $settle ) ) {
+			foreach ( $order->get_fees() as $i => $order_fee ) {
+				/** @var WC_Order_Item_Fee $order_fee */
+				$items_data[ $i ] = $order_fee;
+			}
+		}
+
+		// Add Shipping Total
+		if ( in_array( self::SETTLE_PHYSICAL, $settle ) ) {
+			foreach ( $order->get_items( 'shipping' ) as $i => $item_shipping ) {
+				$items_data[ $i ] = $item_shipping;
+			}
+		}
+
+		return $items_data;
+	}
+
+	/**
+	 * Calculate the amount to be settled instantly based by the order items.
+	 *
+	 * @param WC_Order $order - is the WooCommerce order object
+	 *
+	 * @return stdClass
+	 */
 	public static function calculate_instant_settle( $order ) {
-		/** @var WC_Reepay_Order_Capture $WC_Reepay_Order_Capture*/
+		/** @var WC_Reepay_Order_Capture $WC_Reepay_Order_Capture */
 		global $WC_Reepay_Order_Capture;
 
 		if ( is_null( $WC_Reepay_Order_Capture ) ) {
@@ -165,8 +208,8 @@ class WC_Reepay_Instant_Settle {
 					'type'    => self::SETTLE_PHYSICAL
 				);
 
-				$physical   = true;
-				$total      += $price_incl_tax;
+				$physical     = true;
+				$total        += $price_incl_tax;
 				$items_data[] = $WC_Reepay_Order_Capture->get_item_data( $item, $order );
 
 				continue;
@@ -183,7 +226,7 @@ class WC_Reepay_Instant_Settle {
 
 				$online_virtual = true;
 				$total          += $price_incl_tax;
-				$items_data[]     = $WC_Reepay_Order_Capture->get_item_data( $item, $order );
+				$items_data[]   = $WC_Reepay_Order_Capture->get_item_data( $item, $order );
 
 				continue;
 			} elseif ( in_array( self::SETTLE_RECURRING, $settle, true ) &&
@@ -196,8 +239,8 @@ class WC_Reepay_Instant_Settle {
 					'type'    => self::SETTLE_RECURRING
 				);
 
-				$recurring  = true;
-				$total      += $price_incl_tax;
+				$recurring    = true;
+				$total        += $price_incl_tax;
 				$items_data[] = $WC_Reepay_Order_Capture->get_item_data( $item, $order );
 
 				continue;
@@ -264,7 +307,7 @@ class WC_Reepay_Instant_Settle {
 	}
 
 	/**
-	 * @param  WC_Order  $order
+	 * @param WC_Order $order
 	 *
 	 * @return array<array>
 	 */
