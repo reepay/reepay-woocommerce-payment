@@ -659,7 +659,35 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 			if ( abs( $order->get_total() ) < 0.01 ) {
 				// Don't charge payment if zero amount
-				$order->payment_complete();
+				if ( wcs_cart_only_subscriptions() ) {
+					$result = $this->api->recurring( $this->payment_methods, $order, $data, $token->get_token() );
+
+					if ( is_wp_error( $result ) ) {
+						/** @var WP_Error $result */
+						throw new Exception( $result->get_error_message(), $result->get_error_code() );
+					}
+
+					if ( ! empty( $result['id'] ) ) {
+						update_post_meta( $order_id, 'reepay_session_id', $result['id'] );
+					}
+
+					if ( is_wp_error( $result ) ) {
+						/** @var WP_Error $result */
+						throw new Exception( $result->get_error_message(), $result->get_error_code() );
+					}
+
+					return array(
+						'result'             => 'success',
+						'redirect'           => '#!reepay-checkout',
+						'is_reepay_checkout' => true,
+						'reepay'             => $result,
+						'accept_url'         => $this->get_return_url( $order ),
+						'cancel_url'         => $order->get_cancel_order_url()
+					);
+				} else {
+					$order->payment_complete();
+				}
+
 			} else {
 
 				// Replace token
@@ -689,31 +717,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 						do_action( 'reepay_create_subscription', $data, $order );
 					}
-				} elseif ( wcs_cart_only_subscriptions() ) {
-					$result = $this->api->recurring( $this->payment_methods, $order, $data, $token->get_token() );
-
-					if ( is_wp_error( $result ) ) {
-						/** @var WP_Error $result */
-						throw new Exception( $result->get_error_message(), $result->get_error_code() );
-					}
-
-					if ( ! empty( $result['id'] ) ) {
-						update_post_meta( $order_id, 'reepay_session_id', $result['id'] );
-					}
-
-					if ( is_wp_error( $result ) ) {
-						/** @var WP_Error $result */
-						throw new Exception( $result->get_error_message(), $result->get_error_code() );
-					}
-
-					return array(
-						'result'             => 'success',
-						'redirect'           => '#!reepay-checkout',
-						'is_reepay_checkout' => true,
-						'reepay'             => $result,
-						'accept_url'         => $this->get_return_url( $order ),
-						'cancel_url'         => $order->get_cancel_order_url()
-					);
 				} elseif ( wcs_cart_have_subscription() ) {
 					$params['card_on_file']                  = $token->get_token();
 					$params['card_on_file_require_cvv']      = false;
@@ -1140,7 +1143,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		foreach ( $order->get_items() as $order_item ) {
 			/** @var WC_Order_Item_Product $order_item */
 
-			if ( wcs_is_subscription_product( $order_item->get_product() ) || wcr_is_subscription_product( $order_item->get_product() ) ) {
+			if ( wcr_is_subscription_product( $order_item->get_product() ) ) {
 				continue;
 			}
 

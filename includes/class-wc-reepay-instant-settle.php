@@ -139,7 +139,7 @@ class WC_Reepay_Instant_Settle {
 
 				continue;
 			} elseif ( in_array( self::SETTLE_RECURRING, $settle, true ) &&
-			           wcs_is_subscription_product( $product ) && count( wcs_get_subscriptions_for_order( $order ) ) == count( $order->get_items() )
+			           wcs_is_subscription_product( $product )
 			) {
 				$items_data[] = $item;
 

@@ -47,7 +47,9 @@ class WC_Reepay_Order_Capture {
 			$line_item_data = [ $item_data ];
 			$total          = $item_data['amount'] * $item_data['quantity'];
 			unset( $_POST['post_status'] );
-			if ( $total > 0 && $this->check_allow_capture( $order ) ) {
+			if ( $total == 0 && wcs_is_subscription_product( $item->get_product() ) ) {
+				WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
+			} elseif ( $total > 0 && $this->check_allow_capture( $order ) ) {
 				$result = $gateway->api->settle( $order, $total, $line_item_data, $item );
 				if ( is_wp_error( $result ) ) {
 					$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
@@ -57,6 +59,9 @@ class WC_Reepay_Order_Capture {
 				}
 
 				if ( $result ) {
+					if ( wcs_is_subscription_product( $item->get_product() ) ) {
+						WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
+					}
 					$item->update_meta_data( 'settled', $total / 100 );
 					$item->save(); // Save item
 				}
