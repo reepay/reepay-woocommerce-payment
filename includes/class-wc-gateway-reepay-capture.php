@@ -58,6 +58,13 @@ class WC_Reepay_Order_Capture {
 					return false;
 				}
 
+				if ( $result['state'] == 'failed' ) {
+					$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
+					set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+
+					return false;
+				}
+
 				if ( $result ) {
 					if ( method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
 						WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
