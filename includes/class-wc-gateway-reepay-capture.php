@@ -21,19 +21,95 @@ class WC_Reepay_Order_Capture {
 		}
 
 		if ( $this_status_transition_to == 'completed' ) {
+			$this->multi_settle( $order );
+		}
+	}
 
-			foreach ( $order->get_items() as $item ) {
-				$this->settle_item( $item, $order );
-			}
+	public function settle_items( $order, $items_data, $total_all, $line_items ) {
+		unset( $_POST['post_status'] );
 
-			foreach ( $order->get_items( 'shipping' ) as $item ) {
-				$this->settle_item( $item, $order );
-			}
+		$gateway = rp_get_payment_method( $order );
+		$result  = $gateway->api->settle( $order, $total_all, $items_data );
 
-			foreach ( $order->get_items( 'fee' ) as $item ) {
-				$this->settle_item( $item, $order );
+		if ( is_wp_error( $result ) ) {
+			$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
+			set_transient( 'reepay_api_action_error', __( $result->get_error_message(), 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+
+			return false;
+		}
+
+		if ( $result['state'] == 'failed' ) {
+			$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
+			set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+
+			return false;
+		}
+
+		if ( $result ) {
+			foreach ( $line_items as $item ) {
+				$item_data = $this->get_item_data( $item, $order );
+				$total     = $item_data['amount'] * $item_data['quantity'];
+				$this->complete_settle( $item, $order, $total );
 			}
 		}
+	}
+
+	public function multi_settle( $order ) {
+		$items_data = [];
+		$line_items = [];
+		$total_all  = 0;
+
+		foreach ( $order->get_items() as $item ) {
+			if ( empty( $item->get_meta( 'settled' ) ) ) {
+				$item_data = $this->get_item_data( $item, $order );
+				$total     = $item_data['amount'] * $item_data['quantity'];
+				if ( $total == 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
+					WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
+				} elseif ( $total > 0 && $this->check_allow_capture( $order ) ) {
+					$items_data[] = $item_data;
+					$line_items[] = $item;
+					$total_all    += $total;
+				}
+
+			}
+		}
+
+		foreach ( $order->get_items( 'shipping' ) as $item ) {
+			if ( empty( $item->get_meta( 'settled' ) ) ) {
+				$item_data = $this->get_item_data( $item, $order );
+				$total     = $item_data['amount'] * $item_data['quantity'];
+				if ( $total > 0 && $this->check_allow_capture( $order ) ) {
+					$items_data[] = $item_data;
+					$line_items[] = $item;
+					$total_all    += $total;
+				}
+			}
+		}
+
+		foreach ( $order->get_items( 'fee' ) as $item ) {
+			if ( empty( $item->get_meta( 'settled' ) ) ) {
+				$item_data = $this->get_item_data( $item, $order );
+				$total     = $item_data['amount'] * $item_data['quantity'];
+				if ( $total > 0 && $this->check_allow_capture( $order ) ) {
+					$items_data[] = $item_data;
+					$line_items[] = $item;
+					$total_all    += $total;
+				}
+			}
+		}
+
+
+		if ( ! empty( $items_data ) ) {
+			$this->settle_items( $order, $items_data, $total_all, $line_items );
+		}
+	}
+
+	public function complete_settle( $item, $order, $total ) {
+		if ( method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
+			WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
+		}
+		$item->update_meta_data( 'settled', $total / 100 );
+		$item->save(); // Save item
 	}
 
 	public function settle_item( $item, $order ) {
@@ -41,12 +117,12 @@ class WC_Reepay_Order_Capture {
 		$settled = $item->get_meta( 'settled' );
 
 		if ( empty( $settled ) ) {
-			$gateway = rp_get_payment_method( $order );
 
 			$item_data      = $this->get_item_data( $item, $order );
 			$line_item_data = [ $item_data ];
 			$total          = $item_data['amount'] * $item_data['quantity'];
 			unset( $_POST['post_status'] );
+			$gateway = rp_get_payment_method( $order );
 			if ( $total == 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
 				WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 			} elseif ( $total > 0 && $this->check_allow_capture( $order ) ) {
@@ -66,11 +142,7 @@ class WC_Reepay_Order_Capture {
 				}
 
 				if ( $result ) {
-					if ( method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
-						WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
-					}
-					$item->update_meta_data( 'settled', $total / 100 );
-					$item->save(); // Save item
+					$this->complete_settle( $item, $order, $total );
 				}
 			}
 		}
@@ -183,17 +255,7 @@ class WC_Reepay_Order_Capture {
 					return;
 				}
 
-				foreach ( $order->get_items() as $item ) {
-					$this->settle_item( $item, $order );
-				}
-
-				foreach ( $order->get_items( 'shipping' ) as $item ) {
-					$this->settle_item( $item, $order );
-				}
-
-				foreach ( $order->get_items( 'fee' ) as $item ) {
-					$this->settle_item( $item, $order );
-				}
+				$this->multi_settle( $order );
 			}
 		}
 	}
