@@ -22,7 +22,7 @@ class WC_Reepay_Order_Capture {
 
 		$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
 
-		if ( $this_status_transition_to == 'completed' && 1 == $value || false === $value ) {
+		if ( $this_status_transition_to == 'completed' && ( 1 == $value || false === $value ) ) {
 			$this->multi_settle( $order );
 		}
 	}
@@ -187,6 +187,16 @@ class WC_Reepay_Order_Capture {
 		}
 
 		foreach ( $order->get_items( 'shipping' ) as $item_id => $item ) {
+			$settled = $item->get_meta( 'settled' );
+			if ( empty( $settled ) ) {
+				$price = self::get_item_price( $item, $order );
+				if ( ! empty( $price ) ) {
+					$amount += $price['with_tax'];
+				}
+			}
+		}
+
+		foreach ( $order->get_items( 'fee' ) as $item_id => $item ) {
 			$settled = $item->get_meta( 'settled' );
 			if ( empty( $settled ) ) {
 				$price = self::get_item_price( $item, $order );
