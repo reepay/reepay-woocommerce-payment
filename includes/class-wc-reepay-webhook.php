@@ -165,6 +165,21 @@ class WC_Reepay_Webhook {
 
 				$this->log( sprintf( 'WebHook: Invoice data: %s', var_export( $invoice_data, true ) ) );
 
+
+				if ( ! empty( $invoice_data['id'] ) && ! empty( $data['transaction'] ) ) {
+					$transaction = $gateway->api->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice_data['id'] . '/transaction/' . $data['transaction'] );
+					$this->log( sprintf( 'WebHook: Transaction data: %s', var_export( $transaction, true ) ) );
+
+					if ( ! empty( $transaction['card_transaction']['card'] ) ) {
+						if ( ! empty( $transaction['card_transaction']['error'] ) && ! empty( $transaction['card_transaction']['acquirer_message'] ) ) {
+							$order->add_order_note( 'Item settle error: ' . $transaction['card_transaction']['acquirer_message'] );
+
+							return;
+						}
+					}
+				}
+
+
 				WC_Reepay_Order_Statuses::set_settled_status(
 					$order,
 					false,
