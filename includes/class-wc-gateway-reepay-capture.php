@@ -20,7 +20,9 @@ class WC_Reepay_Order_Capture {
 			return;
 		}
 
-		if ( $this_status_transition_to == 'completed' ) {
+		$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
+
+		if ( $this_status_transition_to == 'completed' && 1 == $value || false === $value ) {
 			$this->multi_settle( $order );
 		}
 	}
