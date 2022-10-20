@@ -406,8 +406,8 @@ class WC_Reepay_Subscriptions {
 
 			$gateway->log( sprintf( 'WCS charge payment result: %s', var_export( $result, true ) ) );
 
-			if ( is_wp_error( $result ) ) {
-				throw new Exception( $result );
+			if ( is_wp_error( $result ) && ! empty( $result->get_error_message() ) ) {
+				throw new Exception( $result->get_error_message(), $result->get_error_code() );
 			}
 
 			// Instant settle
