@@ -760,45 +760,43 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		$order->update_meta_data( '_reepay_maybe_save_card', $maybe_save_card );
 		$order->save_meta_data();
 
+		if ( ! empty( $customer_handle ) && $order->get_customer_id() == 0 ) {
+			$this->api->request(
+				'PUT',
+				'https://api.reepay.com/v1/customer/' . $customer_handle,
+				$params['order']['customer']
+			);
+		}
+
 
 		// If here's Subscription or zero payment
-		if ( wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions() ) {
-			if ( ! empty( $customer_handle ) && $order->get_customer_id() == 0 ) {
-				$this->api->request(
-					'PUT',
-					'https://api.reepay.com/v1/customer/' . $customer_handle,
-					$params['order']['customer']
-				);
+		if ( ( wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions() ) && abs( $order->get_total() ) < 0.01 ) {
+
+			$result = $this->api->recurring( $this->payment_methods, $order, $data );
+
+			if ( is_wp_error( $result ) ) {
+				/** @var WP_Error $result */
+				throw new Exception( $result->get_error_message(), $result->get_error_code() );
 			}
 
-			if ( abs( $order->get_total() ) < 0.01 ) {
-				$result = $this->api->recurring( $this->payment_methods, $order, $data );
-
-				if ( is_wp_error( $result ) ) {
-					/** @var WP_Error $result */
-					throw new Exception( $result->get_error_message(), $result->get_error_code() );
-				}
-
-				if ( ! empty( $result['id'] ) ) {
-					update_post_meta( $order_id, 'reepay_session_id', $result['id'] );
-				}
-
-				return array(
-					'result'             => 'success',
-					'redirect'           => '#!reepay-checkout',
-					'is_reepay_checkout' => true,
-					'reepay'             => $result,
-					'accept_url'         => $this->get_return_url( $order ),
-					'cancel_url'         => $order->get_cancel_order_url()
-				);
-			} else {
-				try {
-					return $this->process_session_charge( $params, $order );
-				} catch ( Exception $e ) {
-					throw new Exception( $e->get_error_message(), $e->get_error_code() );
-				}
+			if ( ! empty( $result['id'] ) ) {
+				update_post_meta( $order_id, 'reepay_session_id', $result['id'] );
 			}
 
+			return array(
+				'result'             => 'success',
+				'redirect'           => '#!reepay-checkout',
+				'is_reepay_checkout' => true,
+				'reepay'             => $result,
+				'accept_url'         => $this->get_return_url( $order ),
+				'cancel_url'         => $order->get_cancel_order_url()
+			);
+		}
+
+		try {
+			return $this->process_session_charge( $params, $order );
+		} catch ( Exception $e ) {
+			throw new Exception( $e->get_error_message(), $e->get_error_code() );
 		}
 
 	}
