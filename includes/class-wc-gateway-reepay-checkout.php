@@ -504,7 +504,10 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		     ( wcs_cart_have_subscription() || wcs_is_payment_change() )
 		) {
 			$this->tokenization_script();
-			$this->saved_payment_methods();
+			if ( $this->save_cc === 'yes' ) {
+				$this->saved_payment_methods();
+			}
+
 			$this->save_payment_method_checkbox();
 		}
 	}
