@@ -153,6 +153,10 @@ class WC_Reepay_Order_Capture {
 	public function check_allow_capture( $order ) {
 		$payment_method = $order->get_payment_method();
 
+		if ( class_exists( 'WC_Reepay_Renewals' ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
+			return false;
+		}
+
 		if ( strpos( $payment_method, 'reepay' ) === false ) {
 			return false;
 		}
