@@ -437,8 +437,9 @@ class WC_Reepay_Admin
 			            }
 
 			            $amount_to_capture = rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order->get_currency() );
+			            $items_to_capture = WC_Reepay_Instant_Settle::calculate_instant_settle( $order )->items;
 
-			            if ( $amount_to_capture > 0 ) {
+			            if ( ! empty( $items_to_capture ) && $amount_to_capture > 0 ) {
 				            $gateway->capture_payment( $order, $amount_to_capture );
 			            }
 		            } catch ( Exception $e ) {
