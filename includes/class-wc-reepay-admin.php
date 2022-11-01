@@ -429,31 +429,36 @@ class WC_Reepay_Admin
             case REEPAY_STATUS_SETTLED:
                 // Capture payment
                 $value = get_transient('reepay_order_complete_should_settle_' . $order->get_id());
-                if (1 == $value || false === $value) {
-                    if ($gateway->can_capture($order)) {
-                        $amount = $order->get_total();
+	            if ( ( 1 == $value || false === $value ) && $gateway->can_capture( $order ) ) {
+		            try {
+			            $order_data = $gateway->api->get_invoice_data( $order );
+			            if ( is_wp_error( $order_data ) ) {
+				            throw new Exception( $order_data->get_error_message() );
+			            }
 
-                        try {
-                            $order_data = $gateway->api->get_invoice_data($order);
-                            if (is_wp_error($order_data)) {
-                                throw new Exception($order_data->get_error_message());
-                            }
+			            $amount_to_capture = rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order->get_currency() );
+			            $items_to_capture = WC_Reepay_Instant_Settle::calculate_instant_settle( $order )->items;
 
-                            $amount_to_capture = rp_make_initial_amount($order_data['authorized_amount'] - $order_data['settled_amount'], $order->get_currency());
+			            if ( ! empty( $items_to_capture ) && $amount_to_capture > 0 ) {
+				            $gateway->capture_payment( $order, $amount_to_capture );
+			            }
+		            } catch ( Exception $e ) {
+			            $message = $e->getMessage();
+			            WC_Admin_Meta_Boxes::add_error(
+				            sprintf(
+				            	__( 'Error with order <a href="%s">#%u</a>. View order notes for more info', 'reepay-checkout-gateway' ),
+					            $order->get_edit_order_url(),
+					            $order_id
+				            )
+			            );
 
-                            $gateway->capture_payment($order, $amount_to_capture);
-                        } catch (Exception $e) {
-                            $message = $e->getMessage();
-                            WC_Admin_Meta_Boxes::add_error($message);
-
-                            // Rollback
-                            $order->update_status(
-                                $from,
-                                sprintf(__('Order status rollback. %s', 'reepay-checkout-gateway'), $message)
-                            );
-                        }
-                    }
-                }
+			            // Rollback
+			            $order->update_status(
+				            $from,
+				            sprintf( __( 'Order status rollback. %s', 'reepay-checkout-gateway' ), $message )
+			            );
+		            }
+	            }
                 break;
             default:
                 // no break

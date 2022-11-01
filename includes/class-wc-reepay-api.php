@@ -514,7 +514,7 @@ class WC_Reepay_Api {
 		}
 
 		$request_data['order_lines'] = $item_data;
-		if ( floatval( current( $item_data )['amount'] ) <= 0 ) {
+		if ( ! empty( $item_data ) && floatval( current( $item_data )['amount'] ) <= 0 ) {
 			return new WP_Error( 100, 'Amount must be lager than zero' );
 		}
 

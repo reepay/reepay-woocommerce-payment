@@ -834,6 +834,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 							'message' => $result->get_error_message()
 						);
 					}
+				} else {
+					return array(
+						'result'  => 'failure',
+						'message' => $result->get_error_message()
+					);
 				}
 			} else {
 				return array(
