@@ -657,6 +657,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				return false;
 			}
 
+			$params['card_on_file']                  = $token->get_token();
+			$params['card_on_file_require_cvv']      = false;
+			$params['card_on_file_require_exp_date'] = false;
+			unset( $params['recurring'] );
+
 			if ( abs( $order->get_total() ) < 0.01 ) {
 				// Don't charge payment if zero amount
 				if ( wcs_cart_only_subscriptions() ) {
@@ -718,9 +723,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 						do_action( 'reepay_create_subscription', $data, $order );
 					}
 				} elseif ( wcs_cart_have_subscription() ) {
-					$params['card_on_file']                  = $token->get_token();
-					$params['card_on_file_require_cvv']      = false;
-					$params['card_on_file_require_exp_date'] = false;
 					try {
 						return $this->process_session_charge( $params, $order );
 					} catch ( Exception $e ) {
@@ -1140,11 +1142,16 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	public function get_order_items( $order, $not_settled = false ) {
 		$prices_incl_tax = wc_prices_include_tax();
 
-		$items = [];
+		$items      = [];
+		$setup_fees = [];
 		foreach ( $order->get_items() as $order_item ) {
 			/** @var WC_Order_Item_Product $order_item */
 
 			if ( wcr_is_subscription_product( $order_item->get_product() ) ) {
+				$fee = $order_item->get_product()->get_meta( '_reepay_subscription_fee' );
+				if ( ! empty( $fee ) && ! empty( $fee['enabled'] ) && $fee['enabled'] == 'yes' ) {
+					$setup_fees[] = $order_item->get_product()->get_name() . ' - ' . $fee["text"];
+				}
 				continue;
 			}
 
@@ -1195,6 +1202,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		// Add fee lines
 		foreach ( $order->get_fees() as $order_fee ) {
 			/** @var WC_Order_Item_Fee $order_fee */
+
+			if ( ! empty( $setup_fees ) && in_array( $order_fee['name'], $setup_fees ) ) {
+				continue;
+			}
+
 			$fee        = $order_fee->get_total();
 			$tax        = $order_fee->get_total_tax();
 			$feeWithTax = $fee + $tax;

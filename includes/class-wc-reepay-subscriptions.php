@@ -14,7 +14,6 @@ class WC_Reepay_Subscriptions {
 		// Add payment token when subscription was created
 		add_action( 'woocommerce_payment_token_added_to_order', array( $this, 'add_payment_token_id' ), 10, 4 );
 		add_action( 'woocommerce_payment_complete', __CLASS__ . '::add_subscription_card_id', 10, 1 );
-		add_filter( 'woocommerce_available_payment_gateways', array( $this, 'payment_methods_by_product_type' ) );
 		add_action(
 			'woocommerce_payment_complete_order_status_on-hold',
 			__CLASS__ . '::add_subscription_card_id',
@@ -85,19 +84,6 @@ class WC_Reepay_Subscriptions {
 			10,
 			2
 		);
-	}
-
-	public function payment_methods_by_product_type( $gateways ) {
-		// do nothing in /wp-admin
-		if ( is_admin() ) {
-			return $gateways;
-		}
-
-		if ( wcs_cart_have_subscription() ) {
-			unset( $gateways['reepay_mobilepay'] );
-		}
-
-		return $gateways;
 	}
 
 	/**

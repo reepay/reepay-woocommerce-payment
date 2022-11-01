@@ -10,7 +10,29 @@ class WC_Reepay_Order_Capture {
 		add_action( 'woocommerce_order_status_changed', array( $this, 'capture_full_order' ), 10, 4 );
 		add_action( 'admin_init', array( $this, 'process_item_capture' ) );
 		add_action( 'woocommerce_order_item_add_action_buttons', array( $this, 'capture_full_order_button' ), 10, 1 );
+		add_filter( 'woocommerce_order_item_get_formatted_meta_data', array(
+			$this,
+			'unset_specific_order_item_meta_data'
+		), 10, 2 );
 	}
+
+	public function unset_specific_order_item_meta_data( $formatted_meta, $item ) {
+		// Only on emails notifications
+
+
+		if ( is_admin() ) {
+			return $formatted_meta;
+		}
+
+		foreach ( $formatted_meta as $key => $meta ) {
+			if ( in_array( $meta->key, array( 'settled' ) ) ) {
+				unset( $formatted_meta[ $key ] );
+			}
+		}
+
+		return $formatted_meta;
+	}
+
 
 	public function capture_full_order( $order_id, $this_status_transition_from, $this_status_transition_to, $instance ) {
 		$order          = wc_get_order( $order_id );
@@ -152,6 +174,10 @@ class WC_Reepay_Order_Capture {
 
 	public function check_allow_capture( $order ) {
 		$payment_method = $order->get_payment_method();
+
+		if ( class_exists( 'WC_Reepay_Renewals' ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
+			return false;
+		}
 
 		if ( strpos( $payment_method, 'reepay' ) === false ) {
 			return false;
