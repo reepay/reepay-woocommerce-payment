@@ -176,11 +176,10 @@ jQuery(document).ready(function ($) {
 
         var order_id = $("#reepay_order_id").data('order-id');
         var amount = $('#reepay_order_total').data('order-total');
+        var authorized = $('#reepay_order_total_authorized').val();
         var settled = $('#reepay_order_total_settled').val();
         var formatted_amount = $("#reepay_order_total").val();
-        var original_status = $('#original_post_status').val();
-
-        if (amount > 0 && settled < amount && original_status != $("#order_status option:selected").val() && $("#order_status option:selected").val() == 'wc-completed') {
+        if (amount > 0 && settled < authorized && $("#order_status option:selected").val() == 'wc-completed') {
             const settle = window.confirm('You are about to change the order status. Do you want to capture the remaining amount of ' + formatted_amount + ' at the same time? Click OK to continue with settle. Click Cancel to continue without settle.');
 
             $.ajax({
@@ -192,8 +191,10 @@ jQuery(document).ready(function ($) {
                     order_id: order_id,
                     settle_order: Number(settle)
                 },
-                beforeSend: function () {},
-                success: function () {},
+                beforeSend: function () {
+                },
+                success: function () {
+                },
                 error: function (response) {
                     alert("error response: " + JSON.stringify(response));
                 },

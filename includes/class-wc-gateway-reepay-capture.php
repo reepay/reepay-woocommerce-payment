@@ -21,6 +21,12 @@ class WC_Reepay_Order_Capture {
 
 
 		if ( is_admin() ) {
+			foreach ( $formatted_meta as $key => $meta ) {
+				if ( in_array( $meta->key, array( 'settled' ) ) ) {
+					$meta->display_key = 'Settle';
+				}
+			}
+
 			return $formatted_meta;
 		}
 
@@ -236,6 +242,12 @@ class WC_Reepay_Order_Capture {
 	}
 
 	public function capture_full_order_button( $order ) {
+		$gateway    = rp_get_payment_method( $order );
+		$order_data = $gateway->api->get_invoice_data( $order );
+		if ( ! is_wp_error( $order_data ) ) {
+			echo '<a href="https://app.reepay.com/#/rp/payments/invoices/invoice/' . $order_data['id'] . '" target="_blank" class="button refund-items">' . __( 'See invoice', 'reepay-checkout-gateway' ) . '</a>';
+		}
+
 		if ( $this->check_allow_capture( $order ) ) {
 			$amount = $this->get_no_settled_amount( $order );
 			if ( $amount > 0 ) {
