@@ -694,7 +694,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				}
 
 			} else {
-
 				// Replace token
 				try {
 					self::assign_payment_token( $order, $token );
@@ -770,9 +769,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			);
 		}
 
-
 		// If here's Subscription or zero payment
-		if ( ( wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions() ) && abs( $order->get_total() ) < 0.01 ) {
+		if ( ( wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions() ) && ( abs( $order->get_total() ) < 0.01 || empty( $params['order_lines'] ) ) ) {
 
 			$result = $this->api->recurring( $this->payment_methods, $order, $data );
 
@@ -810,7 +808,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$params
 		);
 
-
 		if ( is_wp_error( $result ) ) {
 			/** @var WP_Error $result */
 			if ( 'yes' === $this->handle_failover ) {
@@ -834,6 +831,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 							'message' => $result->get_error_message()
 						);
 					}
+				} else {
+					return array(
+						'result'  => 'failure',
+						'message' => $result->get_error_message()
+					);
 				}
 			} else {
 				return array(

@@ -21,7 +21,7 @@ if ( $order_total <= $order_data['authorized_amount'] ) {
 ?>
 
 <ul class="order_action">
-    <li class="reepay-admin-section-li-header">
+    <li class="reepay-admin-section-li-header" style="text-transform: capitalize;">
 		<?php echo esc_html__( 'State', 'reepay-checkout-gateway' ); ?>: <?php echo $order_data['state']; ?>
     </li>
 
@@ -58,6 +58,8 @@ if ( $order_total <= $order_data['authorized_amount'] ) {
     <input id="reepay_order_id" type="hidden" data-order-id="<?php echo $order_id; ?>">
     <input id="reepay_order_total_settled" type="hidden"
            value="<?php echo rp_make_initial_amount( $order_data['settled_amount'], $order_data['currency'] ); ?>">
+    <input id="reepay_order_total_authorized" type="hidden"
+           value="<?php echo rp_make_initial_amount( $order_data['authorized_amount'], $order_data['currency'] ); ?>">
     <input id="reepay_order_total" type="hidden"
            value="<?php echo rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency'] ) . ' ' . $order_data['currency']; ?>"
            data-order-total="<?php echo rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency'] ); ?>">
@@ -101,10 +103,10 @@ if ( $order_total <= $order_data['authorized_amount'] ) {
 	<?php endif; ?>
 
     <li class="reepay-admin-section-li-header-small">
-		<?php echo __( 'Order ID', 'reepay-checkout-gateway' ) ?>
+		<?php echo __( 'Invoice handle', 'reepay-checkout-gateway' ) ?>
     </li>
     <li class="reepay-admin-section-li-small">
-		<?php echo $order_id; ?>
+		<?php echo $order_data['handle']; ?>
     </li>
     <li class="reepay-admin-section-li-header-small">
 		<?php echo esc_html__( 'Transaction ID', 'reepay-checkout-gateway' ) ?>
