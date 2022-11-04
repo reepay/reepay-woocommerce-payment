@@ -546,7 +546,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		$order_handle = rp_get_order_handle( $order );
 
-
 		// Initialize Payment
 		$params = [
 			'locale'     => $this->get_language(),
@@ -768,9 +767,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				$params['order']['customer']
 			);
 		}
-
+        
 		// If here's Subscription or zero payment
-		if ( ( wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions() ) && ( abs( $order->get_total() ) < 0.01 || empty( $params['order_lines'] ) ) ) {
+		if ( ( wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions() ) && ( abs( $order->get_total() ) < 0.01 || empty( $params['order']['order_lines'] ) ) ) {
 
 			$result = $this->api->recurring( $this->payment_methods, $order, $data );
 

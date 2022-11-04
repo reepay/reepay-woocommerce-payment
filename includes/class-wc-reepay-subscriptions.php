@@ -84,6 +84,29 @@ class WC_Reepay_Subscriptions {
 			10,
 			2
 		);
+
+		add_action( 'woocommerce_order_status_changed', array( $this, 'create_sub_invoice' ), 10, 4 );
+	}
+
+	public function create_sub_invoice( $order_id, $this_status_transition_from, $this_status_transition_to, $instance ) {
+		$renewal_order = wc_get_order( $order_id );
+		$renewal_sub   = get_post_meta( $order_id, '_subscription_renewal', true );
+		$gateway       = rp_get_payment_method( $renewal_order );
+		if ( ! empty( $renewal_sub ) && ! empty( $gateway ) ) {
+			$order_data = $gateway->api->get_invoice_data( $renewal_order );
+			if ( is_wp_error( $order_data ) && floatval( $renewal_order->get_total() ) > 0 ) {
+
+				if ( $this_status_transition_from == 'pending' && $this_status_transition_to == REEPAY_STATUS_AUTHORIZED ) {
+					self::scheduled_subscription_payment( floatval( $renewal_order->get_total() ), $renewal_order );
+				}
+
+				if ( $this_status_transition_from == 'pending' && $this_status_transition_to == REEPAY_STATUS_SETTLED ) {
+					self::scheduled_subscription_payment( floatval( $renewal_order->get_total() ), $renewal_order, true );
+				}
+			}
+		}
+
+
 	}
 
 	/**
@@ -310,7 +333,7 @@ class WC_Reepay_Subscriptions {
 	 * @param          $amount_to_charge
 	 * @param WC_Order $renewal_order
 	 */
-	public static function scheduled_subscription_payment( $amount_to_charge, $renewal_order ) {
+	public static function scheduled_subscription_payment( $amount_to_charge, $renewal_order, $settle = false ) {
 		$gateway = rp_get_payment_method( $renewal_order );
 		$gateway->log( 'WCS process scheduled payment' );
 		// Lookup token
@@ -387,7 +410,9 @@ class WC_Reepay_Subscriptions {
 				$renewal_order,
 				$token->get_token(),
 				$amount_to_charge,
-				$renewal_order->get_currency()
+				$renewal_order->get_currency(),
+				null,
+				$settle
 			);
 
 			$gateway->log( sprintf( 'WCS charge payment result: %s', var_export( $result, true ) ) );
