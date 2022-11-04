@@ -679,18 +679,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 						/** @var WP_Error $result */
 						throw new Exception( $result->get_error_message(), $result->get_error_code() );
 					}
-
-					return array(
-						'result'             => 'success',
-						'redirect'           => '#!reepay-checkout',
-						'is_reepay_checkout' => true,
-						'reepay'             => $result,
-						'accept_url'         => $this->get_return_url( $order ),
-						'cancel_url'         => $order->get_cancel_order_url()
-					);
-				} else {
-					$order->payment_complete();
 				}
+
+				$order->payment_complete();
 
 			} else {
 				// Replace token
@@ -767,7 +758,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				$params['order']['customer']
 			);
 		}
-        
+
 		// If here's Subscription or zero payment
 		if ( ( wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions() ) && ( abs( $order->get_total() ) < 0.01 || empty( $params['order']['order_lines'] ) ) ) {
 
