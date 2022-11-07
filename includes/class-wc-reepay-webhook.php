@@ -327,14 +327,17 @@ class WC_Reepay_Webhook {
 					throw new Exception( 'Missing Invoice parameter' );
 				}
 
-				$this->log( sprintf( 'WebHook: Invoice created: %s', var_export( $data['invoice'], true ) ) );
+				$this->log( sprintf( 'WebHook: Invoice created: %s', var_export( $data, true ) ) );
 
 				// Get Order by handle
 				$order = rp_get_order_by_handle( $data['invoice'] );
 				if ( ! $order ) {
 					$this->log( sprintf( 'WebHook: Order is not found. Invoice: %s', $data['invoice'] ) );
+					do_action( 'reepay_webhook_invoice_created', $data );
 
 					return;
+				} else {
+					$this->log( sprintf( 'WebHook: Order is found. Order: %s', $order ) );
 				}
 
 				$data['order_id'] = $order->get_id();
