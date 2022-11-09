@@ -111,6 +111,51 @@ class WC_Reepay_Webhook {
 				do_action( 'reepay_webhook_invoice_authorized', $data );
 
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+
+				if ( ! empty( $invoice_data['order_lines'] ) ) {
+					foreach ( $invoice_data['order_lines'] as $invoice_lines ) {
+						$is_exist = false;
+						foreach ( $order->get_items() as $item ) {
+							if ( $item['name'] == $invoice_lines['ordertext'] ) {
+								$is_exist = true;
+							}
+						}
+						foreach ( $order->get_items( 'fee' ) as $item ) {
+							if ( $item['name'] == $invoice_lines['ordertext'] ) {
+								$is_exist = true;
+							}
+						}
+						foreach ( $order->get_items( 'shipping' ) as $item ) {
+							if ( $item['name'] == $invoice_lines['ordertext'] ) {
+								$is_exist = true;
+							}
+						}
+
+						if ( ! $is_exist ) {
+							if ( $invoice_lines['origin'] == 'surcharge_fee' ) {
+								$fees_item = new WC_Order_Item_Fee();
+								$fees_item->set_name( $invoice_lines['ordertext'] );
+								$fees_item->set_amount( floatval( $invoice_lines['unit_amount'] ) / 100 );
+								$fees_item->set_total( floatval( $invoice_lines['amount'] ) / 100 );
+								$order->add_item( $fees_item );
+							} else {
+								$product_item = new WC_Order_Item_Product();
+								$product_item->set_name( $invoice_lines['ordertext'] );
+								$product_item->set_quantity( $invoice_lines['quantity'] );
+								$product_item->set_subtotal( floatval( $invoice_lines['unit_amount'] ) / 100 );
+								$product_item->set_total( floatval( $invoice_lines['amount'] ) / 100 );
+								$order->add_item( $product_item );
+							}
+
+							$order->calculate_totals();
+							$order->save();
+							$order->calculate_totals();
+						}
+
+
+					}
+				}
+
 				break;
 			case 'invoice_settled':
 				if ( ! isset( $data['invoice'] ) ) {
