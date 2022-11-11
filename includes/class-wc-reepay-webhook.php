@@ -115,17 +115,7 @@ class WC_Reepay_Webhook {
 				if ( ! empty( $invoice_data['order_lines'] ) ) {
 					foreach ( $invoice_data['order_lines'] as $invoice_lines ) {
 						$is_exist = false;
-						foreach ( $order->get_items() as $item ) {
-							if ( $item['name'] == $invoice_lines['ordertext'] ) {
-								$is_exist = true;
-							}
-						}
 						foreach ( $order->get_items( 'fee' ) as $item ) {
-							if ( $item['name'] == $invoice_lines['ordertext'] ) {
-								$is_exist = true;
-							}
-						}
-						foreach ( $order->get_items( 'shipping' ) as $item ) {
 							if ( $item['name'] == $invoice_lines['ordertext'] ) {
 								$is_exist = true;
 							}
@@ -138,13 +128,6 @@ class WC_Reepay_Webhook {
 								$fees_item->set_amount( floatval( $invoice_lines['unit_amount'] ) / 100 );
 								$fees_item->set_total( floatval( $invoice_lines['amount'] ) / 100 );
 								$order->add_item( $fees_item );
-							} else {
-								$product_item = new WC_Order_Item_Product();
-								$product_item->set_name( $invoice_lines['ordertext'] );
-								$product_item->set_quantity( $invoice_lines['quantity'] );
-								$product_item->set_subtotal( floatval( $invoice_lines['unit_amount'] ) / 100 );
-								$product_item->set_total( floatval( $invoice_lines['amount'] ) / 100 );
-								$order->add_item( $product_item );
 							}
 
 							$order->calculate_totals();
@@ -300,14 +283,14 @@ class WC_Reepay_Webhook {
 				// Get Order by handle
 				$order = rp_get_order_by_handle( $data['invoice'] );
 
-				$sub_order = get_post_meta( $order->get_id(), '_reepay_subscription_handle', true );
-				if ( ! empty( $sub_order ) ) {
-					return;
-				}
-
 				if ( ! $order ) {
 					$this->log( sprintf( 'WebHook: Order is not found. Invoice: %s', $data['invoice'] ) );
 
+					return;
+				}
+
+				$sub_order = get_post_meta( $order->get_id(), '_reepay_subscription_handle', true );
+				if ( ! empty( $sub_order ) ) {
 					return;
 				}
 
