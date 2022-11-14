@@ -723,6 +723,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 					$amount      = $this->skip_order_lines === 'yes' ? $order->get_total() : null;
 					// Charge payment
 					$result = $this->api->charge( $order, $token->get_token(), $amount, $order->get_currency(), $order_lines );
+                    
 					if ( is_wp_error( $result ) ) {
 						wc_add_notice( $result->get_error_message(), 'error' );
 
@@ -772,6 +773,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			if ( ! empty( $result['id'] ) ) {
 				update_post_meta( $order_id, 'reepay_session_id', $result['id'] );
 			}
+
+			do_action( 'reepay_instant_settle', $order );
 
 			return array(
 				'result'             => 'success',

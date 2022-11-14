@@ -4,11 +4,11 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: reepay
  * Author URI: http://reepay.com
- * Version: 1.4.40
+ * Version: 1.4.41
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
- * WC tested up to: 6.3.1
+ * WC tested up to: 7.0.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
