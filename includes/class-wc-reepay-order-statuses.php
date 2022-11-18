@@ -10,6 +10,7 @@ class WC_Reepay_Order_Statuses {
 			$settings = array();
 		}
 
+		define( 'REEPAY_STATUS_SYNC', $settings['enable_sync'] == 'yes' );
 		define( 'REEPAY_STATUS_CREATED', isset( $settings['status_created'] ) ? str_replace( 'wc-', '', $settings['status_created'] ) : 'pending' );
 		define( 'REEPAY_STATUS_AUTHORIZED', isset( $settings['status_authorized'] ) ? str_replace( 'wc-', '', $settings['status_authorized'] ) : 'on-hold' );
 		define( 'REEPAY_STATUS_SETTLED', isset( $settings['status_settled'] ) ? str_replace( 'wc-', '', $settings['status_settled'] ) : 'processing' );
@@ -98,6 +99,15 @@ class WC_Reepay_Order_Statuses {
 	 * @return mixed
 	 */
 	public function form_fields( $form_fields ) {
+
+		$form_fields['enable_sync'] = array(
+			'title'       => __( 'Sync statuses', 'reepay-checkout-gateway' ),
+			'type'        => 'checkbox',
+			'label'       => __( 'Enable sync', 'reepay-checkout-gateway' ),
+			'description' => __( '2-way synchronization of order statuses in Woocommerce with invoice statuses in Reepay', 'reepay-checkout-gateway' ),
+			'default'     => 'yes'
+		);
+
 		$pending_statuses = wc_get_order_statuses();
 		unset(
 			$pending_statuses['wc-processing'],
@@ -325,7 +335,7 @@ class WC_Reepay_Order_Statuses {
 		if ( in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS, true ) ) {
 			if ( order_contains_subscription( $order ) ) {
 				$status = 'on-hold';
-			} else {
+			} elseif ( REEPAY_STATUS_SYNC ) {
 				$status = REEPAY_STATUS_AUTHORIZED;
 			}
 		}
@@ -342,7 +352,8 @@ class WC_Reepay_Order_Statuses {
 	 * @return string
 	 */
 	public function reepay_settled_order_status( $status, $order ) {
-		if ( in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS, true ) ) {
+		if ( in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS, true ) && REEPAY_STATUS_SYNC ) {
+
 			$status = REEPAY_STATUS_SETTLED;
 		}
 
