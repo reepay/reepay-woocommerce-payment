@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 26.3.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 90 43.1" style="enable-background:new 0 0 90 43.1;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#FFFFFF;}
+	.st1{fill:#F2F5F7;}
+	.st2{fill:url(#SVGID_1_);}
+</style>
+<g>
+	<path class="st0" d="M87.7,0.5H2.3c-1,0-1.8,0.8-1.8,1.8v38.6c0,1,0.8,1.8,1.8,1.8h85.4c1,0,1.8-0.8,1.8-1.8V2.3
+		C89.5,1.3,88.7,0.5,87.7,0.5z M89,40.9c0,0.7-0.6,1.3-1.3,1.3H2.3c-0.7,0-1.3-0.6-1.3-1.3V2.3C1,1.6,1.6,1,2.3,1h85.4
+		C88.4,1,89,1.6,89,2.3V40.9z"/>
+	<path class="st1" d="M87.7,0H2.3C1,0,0,1,0,2.3v38.6c0,1.3,1,2.3,2.3,2.3h85.4c1.3,0,2.3-1,2.3-2.3V2.3C90,1,89,0,87.7,0z M89,40.9
+		c0,0.7-0.6,1.3-1.3,1.3H2.3c-0.7,0-1.3-0.6-1.3-1.3V2.3C1,1.6,1.6,1,2.3,1h85.4C88.4,1,89,1.6,89,2.3V40.9z"/>
+	<path d="M89,2.3v38.6c0,0.7-0.6,1.3-1.3,1.3H2.3c-0.7,0-1.3-0.6-1.3-1.3V2.3C1,1.6,1.6,1,2.3,1h85.4C88.4,1,89,1.6,89,2.3z"/>
+</g>
+<g id="Layer_2_00000111191290001052903100000007008198135604752059_">
+	<g id="Layer_1-2">
+		<rect x="41.2" y="13.5" class="st0" width="3" height="16.6"/>
+		<rect x="46.6" y="19.1" class="st0" width="3" height="11"/>
+		<polygon class="st0" points="62.8,30.1 58.4,24.3 58.4,24.3 62.5,19.1 59,19.1 55.1,24.1 55.1,13.5 52.1,13.5 52.1,30.1 
+			55.1,30.1 55.1,24.4 59,30.1 		"/>
+		<path class="st0" d="M33.6,19c-0.9,0-1.8,0.2-2.7,0.7v-6.1h-3v11.1c0,3.1,2.5,5.6,5.6,5.6c3.1,0,5.6-2.5,5.6-5.6S36.7,19,33.6,19
+			L33.6,19z M33.6,27.2c-1.5,0-2.7-1.2-2.7-2.7s1.2-2.7,2.7-2.7s2.7,1.2,2.7,2.7l0,0C36.3,26,35.1,27.2,33.6,27.2z"/>
+		
+			<radialGradient id="SVGID_1_" cx="177.1494" cy="1512.8475" r="39.8928" gradientTransform="matrix(0.2166 0 0 0.2166 -3.9955 -315.0707)" gradientUnits="userSpaceOnUse">
+			<stop  offset="0" style="stop-color:#FF0000"/>
+			<stop  offset="0.495" style="stop-color:#E83E49"/>
+			<stop  offset="1" style="stop-color:#FF00FF"/>
+		</radialGradient>
+		<circle class="st2" cx="36.5" cy="15.3" r="2.6"/>
+	</g>
+</g>
+</svg>

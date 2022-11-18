@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="600px" height="400px" viewBox="0 0 600 400" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>generic card</title>
+    <defs>
+        <linearGradient x1="50%" y1="2.88837139%" x2="50%" y2="100%" id="linearGradient-1">
+            <stop stop-color="#2B3990" offset="0%"></stop>
+            <stop stop-color="#26A8E0" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="generic-card">
+            <rect id="card" stroke="#979797" fill="url(#linearGradient-1)" x="0.5" y="0.5" width="599" height="399" rx="20"></rect>
+            <circle id="Oval" stroke="#979797" fill="#FF9906" cx="434" cy="101" r="53.5"></circle>
+            <circle id="Oval" stroke="#979797" fill="#F9EC00" cx="490" cy="100" r="54.5"></circle>
+            <g id="Group-2" transform="translate(61.000000, 244.000000)" fill="#FFFFFF" fill-rule="nonzero" font-family="ArialMT, Arial" font-size="45" font-weight="normal" letter-spacing="1.125">
+                <text id="1112">
+                    <tspan x="378.536133" y="41">1112</tspan>
+                </text>
+                <text id="8910">
+                    <tspan x="251.196289" y="41">8910</tspan>
+                </text>
+                <text id="4567">
+                    <tspan x="128.196289" y="41">4567</tspan>
+                </text>
+                <text id="0123">
+                    <tspan x="4.19628906" y="41">0123</tspan>
+                </text>
+            </g>
+            <g id="Group-3" transform="translate(61.000000, 329.000000)" fill="#FFFFFF">
+                <rect id="box1" x="0" y="0" width="103" height="19"></rect>
+                <rect id="box2" x="114" y="0" width="56" height="19"></rect>
+                <rect id="box3" x="181" y="0" width="101" height="19"></rect>
+            </g>
+            <g id="Group-4" transform="translate(61.000000, 100.000000)">
+                <rect id="Rectangle" stroke="#979797" fill="#EEE1B6" x="0.5" y="0.5" width="88" height="88" rx="29"></rect>
+                <line x1="25" y1="65" x2="25" y2="89" id="vertical-line-1-p1" stroke="#2970B7" stroke-width="4" stroke-linecap="square"></line>
+                <line x1="25" y1="26" x2="25" y2="65" id="vertical-line-1-p2" stroke="#2960AC" stroke-width="4" stroke-linecap="square"></line>
+                <line x1="25" y1="2" x2="25" y2="26" id="vertical-line-1-p3" stroke="#2A51A1" stroke-width="4" stroke-linecap="square"></line>
+                <line x1="64" y1="65" x2="64" y2="88" id="vertical-line-2-p1" stroke="#286FB7" stroke-width="4" stroke-linecap="square"></line>
+                <line x1="64" y1="26" x2="64" y2="65" id="vertical-line-2-p2" stroke="#2A5BA8" stroke-width="4" stroke-linecap="square"></line>
+                <line x1="87" y1="26" x2="2" y2="26" id="horizontal-line-1" stroke="#2A5BA8" stroke-width="4" stroke-linecap="square"></line>
+                <line x1="87" y1="65" x2="2" y2="65" id="horizontal-line-2" stroke="#2965AF" stroke-width="4" stroke-linecap="square"></line>
+            </g>
+        </g>
+    </g>
+</svg>
