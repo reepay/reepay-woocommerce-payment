@@ -723,7 +723,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 					$amount      = $this->skip_order_lines === 'yes' ? $order->get_total() : null;
 					// Charge payment
 					$result = $this->api->charge( $order, $token->get_token(), $amount, $order->get_currency(), $order_lines );
-                    
+
 					if ( is_wp_error( $result ) ) {
 						wc_add_notice( $result->get_error_message(), 'error' );
 
@@ -1376,6 +1376,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				return untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/images/' . $logo . '.png';
 		}
 
-		return untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/images/' . $image;
+		return untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/images/svg/' . $image . '.logo.svg';
 	}
 }
