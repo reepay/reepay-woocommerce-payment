@@ -407,6 +407,8 @@ class WC_Reepay_Webhook {
 					}
 				}
 
+				do_action( 'reepay_webhook_customer_payment_method_added', $data );
+
 				break;
 			default:
 				global $wp_filter;
