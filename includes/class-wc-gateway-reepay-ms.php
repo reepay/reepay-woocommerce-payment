@@ -4,8 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay_Checkout
-{
+class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay_Checkout {
 	/**
 	 * Logos
 	 * @var array
@@ -33,7 +32,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay_Checko
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Mobilepay Subscriptions', 'reepay-checkout-gateway' );
 
-		$this->supports     = array(
+		$this->supports = array(
 			'products',
 			'refunds',
 			'add_payment_method',
@@ -59,9 +58,9 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay_Checko
 		$this->init_settings();
 
 		// Define user set variables
-		$this->enabled                  = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title                    = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description              = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->enabled     = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
+		$this->title       = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
+		$this->description = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
 
 		$this->payment_methods = array(
 			'mobilepay_subscriptions'
@@ -79,7 +78,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay_Checko
 		$this->payment_type            = $settings['payment_type'];
 		$this->skip_order_lines        = $settings['skip_order_lines'];
 		$this->enable_order_autocancel = $settings['enable_order_autocancel'];
-	    $this->is_webhook_configured   = $settings['is_webhook_configured'];
+		$this->is_webhook_configured   = $settings['is_webhook_configured'];
 
 		if ( ! is_array( $this->settle ) ) {
 			$this->settle = array();
@@ -98,19 +97,26 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay_Checko
 	 */
 	public function init_form_fields() {
 		$this->form_fields = array(
-			'enabled'        => array(
-				'title'   => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
-				'type'    => 'checkbox',
-				'label'   => __( 'Enable plugin', 'reepay-checkout-gateway' ),
-				'default' => 'no'
+			'is_reepay_configured' => array(
+				'title'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
+				'type'    => 'gateway_status',
+				'label'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
+				'default' => $this->test_mode
 			),
-			'title'          => array(
+			'enabled'              => array(
+				'title'    => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
+				'type'     => 'checkbox',
+				'label'    => __( 'Enable plugin', 'reepay-checkout-gateway' ),
+				'default'  => 'no',
+				'disabled' => ! $this->is_configured()
+			),
+			'title'                => array(
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
 				'default'     => __( 'Reepay - Mobilepay Subscriptions', 'reepay-checkout-gateway' )
 			),
-			'description'    => array(
+			'description'          => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
@@ -160,7 +166,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay_Checko
 
 		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription
 		if ( ( true /*$this->save_cc === 'yes'*/ && ! is_add_payment_method_page() ) ||
-			( wcs_cart_have_subscription() || wcs_is_payment_change() )
+		     ( wcs_cart_have_subscription() || wcs_is_payment_change() )
 		) {
 			$this->tokenization_script();
 			$this->saved_payment_methods();
