@@ -27,11 +27,11 @@ class WC_Gateway_Reepay_Resurs extends WC_Gateway_Reepay {
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Resurs Bank', 'reepay-checkout-gateway' );
 		//$this->icon         = apply_filters( 'woocommerce_reepay_resurs_icon', plugins_url( '/assets/images/resurs.png', dirname( __FILE__ ) ) );
-		$this->supports     = array(
+		$this->supports = array(
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'resurs' );
+		$this->logos    = array( 'resurs' );
 
 		parent::__construct();
 
@@ -42,9 +42,9 @@ class WC_Gateway_Reepay_Resurs extends WC_Gateway_Reepay {
 		$this->init_settings();
 
 		// Define user set variables
-		$this->enabled                  = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title                    = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description              = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->enabled     = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
+		$this->title       = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
+		$this->description = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
 
 		// Load setting from parent method
 		$settings = $this->get_parent_settings();
@@ -60,9 +60,9 @@ class WC_Gateway_Reepay_Resurs extends WC_Gateway_Reepay {
 		$this->enable_order_autocancel = $settings['enable_order_autocancel'];
 		$this->is_webhook_configured   = $settings['is_webhook_configured'];
 
-		if (!is_array($this->settle)) {
-            $this->settle = array();
-        }
+		if ( ! is_array( $this->settle ) ) {
+			$this->settle = array();
+		}
 
 		// Actions
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
@@ -77,19 +77,26 @@ class WC_Gateway_Reepay_Resurs extends WC_Gateway_Reepay {
 	 */
 	public function init_form_fields() {
 		$this->form_fields = array(
-			'enabled'        => array(
-				'title'   => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
-				'type'    => 'checkbox',
-				'label'   => __( 'Enable plugin', 'reepay-checkout-gateway' ),
-				'default' => 'no'
+			'is_reepay_configured' => array(
+				'title'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
+				'type'    => 'gateway_status',
+				'label'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
+				'default' => $this->test_mode
 			),
-			'title'          => array(
+			'enabled'              => array(
+				'title'    => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
+				'type'     => 'checkbox',
+				'label'    => __( 'Enable plugin', 'reepay-checkout-gateway' ),
+				'default'  => 'no',
+				'disabled' => ! $this->is_configured()
+			),
+			'title'                => array(
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
 				'default'     => __( 'Reepay - Resurs Bank', 'reepay-checkout-gateway' )
 			),
-			'description'    => array(
+			'description'          => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),

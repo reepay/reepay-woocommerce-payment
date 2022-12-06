@@ -156,6 +156,87 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		add_action( 'wp_ajax_nopriv_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
 	}
 
+	public function is_configured() {
+		$configured = false;
+		$gateway    = new WC_Gateway_Reepay_Checkout();
+
+		if ( ! empty( $gateway->payment_methods ) ) {
+			if ( in_array( 'card', $gateway->payment_methods ) ) {
+				$configured = true;
+			} else {
+				foreach ( $gateway->payment_methods as $payment_method ) {
+
+					if ( stripos( $this->id, $payment_method ) !== false ) {
+						$configured = true;
+					}
+				}
+			}
+		}
+
+		return $configured;
+	}
+
+	/**
+	 * Generate Gateway Status HTML.
+	 *
+	 * @param string $key Field key.
+	 * @param array $data Field data.
+	 *
+	 * @return string
+	 */
+	public function generate_gateway_status_html( $key, $data ) {
+		$field_key = $this->get_field_key( $key );
+		$defaults  = array(
+			'title'       => '',
+			'type'        => 'webhook_status',
+			'desc_tip'    => false,
+			'description' => '',
+		);
+
+		$data = wp_parse_args( $data, $defaults );
+
+		$enabled = $this->get_option( 'enabled' ) == 'yes';
+
+		$configured = $this->is_configured();
+
+		ob_start();
+		?>
+        <tr valign="top">
+            <th scope="row" class="titledesc">
+                <label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?><?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok.
+					?></label>
+            </th>
+            <td class="forminp">
+                <fieldset>
+                    <legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span>
+                    </legend>
+
+					<?php if ( $configured && $enabled ): ?>
+                        <span style="color: green;">
+							<?php esc_html_e( 'Enabled.', 'reepay-checkout-gateway' ); ?>
+						</span>
+					<?php elseif ( ! $configured ): ?>
+                        <span style="color: red;">
+							<?php esc_html_e( 'Not configured', 'reepay-checkout-gateway' ); ?>
+						</span>
+					<?php else : ?>
+                        <span style="color: red;">
+							<?php esc_html_e( 'Disabled', 'reepay-checkout-gateway' ); ?>
+						</span>
+					<?php endif; ?>
+
+                    <input type="hidden" name="<?php echo esc_attr( $field_key ); ?>"
+                           id="<?php echo esc_attr( $field_key ); ?>"
+                           value="<?php echo esc_attr( $this->get_option( $key ) ); // WPCS: XSS ok.
+					       ?>"/>
+                </fieldset>
+            </td>
+        </tr>
+		<?php
+
+		return ob_get_clean();
+	}
+
 	/**
 	 * Check is Capture possible
 	 *
