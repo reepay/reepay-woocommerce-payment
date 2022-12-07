@@ -451,7 +451,15 @@ class WC_Reepay_Subscriptions {
 
 		$tokens = $subscription->get_payment_tokens();
 		foreach ( $tokens as $token_id ) {
-			$token = new WC_Payment_Token_Reepay( $token_id );
+
+			try {
+
+				$token = new WC_Payment_Token_Reepay( $token_id );
+
+			} catch (Exception $e) {
+				continue;
+			}
+
 			if ( ! in_array( $token->get_gateway_id(), self::PAYMENT_METHODS ) ) {
 				continue;
 			}
