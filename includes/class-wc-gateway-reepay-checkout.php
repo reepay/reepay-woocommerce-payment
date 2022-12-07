@@ -92,8 +92,25 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		add_action( 'wp_ajax_nopriv_reepay_card_store', array( $this, 'reepay_card_store' ) );
 		add_action( 'wp_ajax_reepay_finalize', array( $this, 'reepay_finalize' ) );
 		add_action( 'wp_ajax_nopriv_reepay_finalize', array( $this, 'reepay_finalize' ) );
-
+		add_action( 'admin_notices', array( $this, 'admin_notice_warning' ) );
 	}
+
+	/**
+	 * Admin notice warning
+	 */
+	public function admin_notice_warning() {
+		if ( 'yes' === $this->enabled && ! is_ssl() ) {
+			$message      = __( 'Reepay is enabled, but a SSL certificate is not detected. Your checkout may not be secure! Please ensure your server has a valid', 'reepay-checkout-gateway' );
+			$message_href = __( 'SSL certificate', 'reepay-checkout-gateway' );
+			$url          = 'https://en.wikipedia.org/wiki/Transport_Layer_Security';
+			printf( '<div class="notice notice-warning is-dismissible"><p>%1$s <a href="%2$s" target="_blank">%3$s</a></p></div>',
+				esc_html( $message ),
+				esc_html( $url ),
+				esc_html( $message_href )
+			);
+		}
+	}
+
 
 	public function generate_separator_html( $key, $data ) {
 

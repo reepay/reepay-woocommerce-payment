@@ -141,7 +141,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		$this->api = new WC_Reepay_Api( $this );
 
-		add_action( 'admin_notices', array( $this, 'admin_notice_warning' ) );
 
 		add_action( 'admin_notices', array( $this, 'admin_notice_api_action' ) );
 
@@ -157,18 +156,19 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	}
 
 	public function is_configured() {
+
+		$gateway      = new WC_Gateway_Reepay_Checkout();
+		$this->api    = new WC_Reepay_Api( $gateway );
+		$gateways_app = $this->api->request( 'GET', 'https://api.reepay.com/v1/agreement/?only_active=true' );
+
+		$current_name = str_replace( 'reepay_', '', $this->id );
+
 		$configured = false;
-		$gateway    = new WC_Gateway_Reepay_Checkout();
 
-		if ( ! empty( $gateway->payment_methods ) ) {
-			if ( in_array( 'card', $gateway->payment_methods ) ) {
-				$configured = true;
-			} else {
-				foreach ( $gateway->payment_methods as $payment_method ) {
-
-					if ( stripos( $this->id, $payment_method ) !== false ) {
-						$configured = true;
-					}
+		if ( ! empty( $gateways_app ) ) {
+			foreach ( $gateways_app as $app ) {
+				if ( stripos( $app['type'], $current_name ) !== false ) {
+					$configured = true;
 				}
 			}
 		}
@@ -375,22 +375,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				<?php
 				set_transient( 'reepay_api_action_success', null, 1 );
 			endif;
-		}
-	}
-
-	/**
-	 * Admin notice warning
-	 */
-	public function admin_notice_warning() {
-		if ( 'yes' === $this->enabled && ! is_ssl() ) {
-			$message      = __( 'Reepay is enabled, but a SSL certificate is not detected. Your checkout may not be secure! Please ensure your server has a valid', 'reepay-checkout-gateway' );
-			$message_href = __( 'SSL certificate', 'reepay-checkout-gateway' );
-			$url          = 'https://en.wikipedia.org/wiki/Transport_Layer_Security';
-			printf( '<div class="notice notice-warning is-dismissible"><p>%1$s <a href="%2$s" target="_blank">%3$s</a></p></div>',
-				esc_html( $message ),
-				esc_html( $url ),
-				esc_html( $message_href )
-			);
 		}
 	}
 
