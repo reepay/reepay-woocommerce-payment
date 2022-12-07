@@ -141,7 +141,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		$this->api = new WC_Reepay_Api( $this );
 
-		add_action( 'admin_notices', array( $this, 'admin_notice_warning' ) );
 
 		add_action( 'admin_notices', array( $this, 'admin_notice_api_action' ) );
 
@@ -375,22 +374,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				<?php
 				set_transient( 'reepay_api_action_success', null, 1 );
 			endif;
-		}
-	}
-
-	/**
-	 * Admin notice warning
-	 */
-	public function admin_notice_warning() {
-		if ( 'yes' === $this->enabled && ! is_ssl() ) {
-			$message      = __( 'Reepay is enabled, but a SSL certificate is not detected. Your checkout may not be secure! Please ensure your server has a valid', 'reepay-checkout-gateway' );
-			$message_href = __( 'SSL certificate', 'reepay-checkout-gateway' );
-			$url          = 'https://en.wikipedia.org/wiki/Transport_Layer_Security';
-			printf( '<div class="notice notice-warning is-dismissible"><p>%1$s <a href="%2$s" target="_blank">%3$s</a></p></div>',
-				esc_html( $message ),
-				esc_html( $url ),
-				esc_html( $message_href )
-			);
 		}
 	}
 
