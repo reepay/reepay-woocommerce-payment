@@ -156,18 +156,19 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	}
 
 	public function is_configured() {
+
+		$gateway      = new WC_Gateway_Reepay_Checkout();
+		$this->api    = new WC_Reepay_Api( $gateway );
+		$gateways_app = $this->api->request( 'GET', 'https://api.reepay.com/v1/agreement/?only_active=true' );
+
+		$current_name = str_replace( 'reepay_', '', $this->id );
+
 		$configured = false;
-		$gateway    = new WC_Gateway_Reepay_Checkout();
 
-		if ( ! empty( $gateway->payment_methods ) ) {
-			if ( in_array( 'card', $gateway->payment_methods ) ) {
-				$configured = true;
-			} else {
-				foreach ( $gateway->payment_methods as $payment_method ) {
-
-					if ( stripos( $this->id, $payment_method ) !== false ) {
-						$configured = true;
-					}
+		if ( ! empty( $gateways_app ) ) {
+			foreach ( $gateways_app as $app ) {
+				if ( stripos( $app['type'], $current_name ) !== false ) {
+					$configured = true;
 				}
 			}
 		}
