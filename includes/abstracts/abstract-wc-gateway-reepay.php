@@ -156,21 +156,24 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	}
 
 	public function is_configured() {
-
-		$gateway      = new WC_Gateway_Reepay_Checkout();
-		$this->api    = new WC_Reepay_Api( $gateway );
-		$gateways_app = $this->api->request( 'GET', 'https://api.reepay.com/v1/agreement/?only_active=true' );
-
-		$current_name = str_replace( 'reepay_', '', $this->id );
-
 		$configured = false;
 
-		if ( ! empty( $gateways_app ) ) {
-			foreach ( $gateways_app as $app ) {
-				if ( stripos( $app['type'], $current_name ) !== false ) {
-					$configured = true;
+		if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'checkout' && ! empty( $_GET['section'] ) ) {
+			$gateway      = new WC_Gateway_Reepay_Checkout();
+			$this->api    = new WC_Reepay_Api( $gateway );
+			$gateways_app = $this->api->request( 'GET', 'https://api.reepay.com/v1/agreement?only_active=true' );
+
+			$current_name = str_replace( 'reepay_', '', $this->id );
+
+
+			if ( ! empty( $gateways_app ) ) {
+				foreach ( $gateways_app as $app ) {
+					if ( stripos( $app['type'], $current_name ) !== false ) {
+						$configured = true;
+					}
 				}
 			}
+
 		}
 
 		return $configured;
@@ -211,13 +214,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
                     <legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span>
                     </legend>
 
-					<?php if ( $configured && $enabled ): ?>
+					<?php if ( $configured ): ?>
                         <span style="color: green;">
 							<?php esc_html_e( 'Enabled.', 'reepay-checkout-gateway' ); ?>
-						</span>
-					<?php elseif ( ! $configured ): ?>
-                        <span style="color: red;">
-							<?php esc_html_e( 'Not configured', 'reepay-checkout-gateway' ); ?>
 						</span>
 					<?php else : ?>
                         <span style="color: red;">

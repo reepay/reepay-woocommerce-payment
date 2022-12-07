@@ -100,10 +100,10 @@ class WC_Reepay_Order_Statuses {
 	 */
 	public function form_fields( $form_fields ) {
 
-        $form_fields['hr_sync'] = array(
-            'type' => 'hr',
-            'id' => 'hr_sync',
-        );
+		$form_fields['hr_sync'] = array(
+			'type' => 'separator',
+			'id'   => 'hr_sync'
+		);
 
 		$form_fields['enable_sync'] = array(
 			'title'       => __( 'Sync statuses', 'reepay-checkout-gateway' ),
