@@ -216,11 +216,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 					<?php if ( $configured ): ?>
                         <span style="color: green;">
-							<?php esc_html_e( 'Enabled.', 'reepay-checkout-gateway' ); ?>
+							<?php esc_html_e( 'Active', 'reepay-checkout-gateway' ); ?>
 						</span>
 					<?php else : ?>
                         <span style="color: red;">
-							<?php esc_html_e( 'Disabled', 'reepay-checkout-gateway' ); ?>
+							<?php esc_html_e( 'Inactive', 'reepay-checkout-gateway' ); ?>
 						</span>
 					<?php endif; ?>
 

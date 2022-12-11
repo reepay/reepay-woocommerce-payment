@@ -78,7 +78,7 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'is_reepay_configured' => array(
-				'title'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
+				'title'   => __( 'Status in reepay Admin', 'reepay-checkout-gateway' ),
 				'type'    => 'gateway_status',
 				'label'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
 				'default' => $this->test_mode
