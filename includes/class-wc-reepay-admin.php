@@ -55,21 +55,6 @@ class WC_Reepay_Admin {
 	 * @return void
 	 */
 	public function add_meta_boxes() {
-		/*global $post_id;
-		if ( $order = wc_get_order( $post_id ) ) {
-			$payment_method = $order->get_payment_method();
-			if ( in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
-				add_meta_box(
-					'reepay_payment_actions',
-					__( 'Reepay Payments Actions', 'reepay-checkout-gateway' ),
-					__CLASS__ . '::order_meta_box_payment_actions',
-					'shop_order',
-					'side',
-					'default'
-				);
-			}
-		}*/
-
 		global $post;
 
 		$screen     = get_current_screen();
@@ -90,44 +75,8 @@ class WC_Reepay_Admin {
 						'side',
 						'high'
 					);
-					/* add_meta_box(
-						'reepay-payment-actions',
-						__( 'Reepay Subscription', 'reepay-checkout-gateway' ),
-						array(
-							$this,
-							'meta_box_subscription',
-						),
-						'shop_subscription',
-						'side',
-						'high'
-					); */
 				}
 			}
-		}
-	}
-
-	/**
-	 * MetaBox for Payment Actions
-	 * @return void
-	 */
-	public static function order_meta_box_payment_actions() {
-		global $post_id;
-
-		$order = wc_get_order( $post_id );
-		if ( in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS ) ) {
-			/** @var WC_Gateway_Reepay_Checkout $gateway */
-			$gateway = rp_get_payment_method( $order );
-
-			wc_get_template(
-				'admin/payment-actions.php',
-				array(
-					'gateway'  => $gateway,
-					'order'    => $order,
-					'order_id' => $post_id,
-				),
-				'',
-				dirname( __FILE__ ) . '/../templates/'
-			);
 		}
 	}
 
@@ -166,10 +115,6 @@ class WC_Reepay_Admin {
 				);
 			}
 		}
-	}
-
-	public function meta_box_subscription() {
-		$this->meta_box_payment();
 	}
 
 	/**
