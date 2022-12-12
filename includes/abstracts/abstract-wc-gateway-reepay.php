@@ -613,7 +613,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		// Initialize Payment
 		$params = [
 			'locale'     => $this->get_language(),
-			'recurring'  => $maybe_save_card || order_contains_subscription( $order ) || wcs_is_payment_change(),
+			'recurring'  => apply_filters('order_contains_reepay_subscription', $maybe_save_card || order_contains_subscription( $order ) || wcs_is_payment_change(), $order),
 			'order'      => [
 				'handle'          => $order_handle,
 				'amount'          => $this->skip_order_lines === 'yes' ? rp_prepare_amount( $order->get_total(), $order->get_currency() ) : null,
@@ -859,6 +859,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	}
 
 	public function process_session_charge( $params, $order ) {
+        if (empty($params['button_text'])) {
+            $params['button_text'] = strip_tags(__('Pay', 'reepay-checkout-gateway') . ' ' . $order->get_formatted_order_total());
+        }
 		$result = $this->api->request(
 			'POST',
 			'https://checkout-api.reepay.com/v1/session/charge',
