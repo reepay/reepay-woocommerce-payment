@@ -63,7 +63,7 @@ class WC_Reepay_Admin {
 		if ( in_array( $screen->id, $post_types, true ) && in_array( $post->post_type, $post_types, true ) ) {
 			if ( $order = wc_get_order( $post->ID ) ) {
 				$payment_method = $order->get_payment_method();
-				if ( in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
+				if ( in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) && apply_filters( 'reepay_checkout_product_show_meta_box', true ) ) {
 					add_meta_box(
 						'reepay-payment-actions',
 						__( 'Reepay Payment', 'reepay-checkout-gateway' ),
