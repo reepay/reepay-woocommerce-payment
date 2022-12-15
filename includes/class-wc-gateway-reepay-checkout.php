@@ -575,7 +575,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 */
 	public function add_payment_method() {
 		$user            = get_userdata( get_current_user_id() );
-		$customer_handle = get_user_meta( $user->ID, 'reepay_customer_id', true );
+		$customer_handle = rp_get_customer_handle( $user->ID );
 
 		$accept_url = add_query_arg( 'action', 'reepay_card_store', admin_url( 'admin-ajax.php' ) );
 		$accept_url = apply_filters( 'woocommerce_reepay_payment_accept_url', $accept_url );
@@ -584,8 +584,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
 		if ( empty ( $customer_handle ) ) {
 			// Create reepay customer
-			$customer_handle = rp_get_customer_handle( $user->ID );
-			$location        = wc_get_base_location();
+			$location = wc_get_base_location();
 
 			$params = [
 				'locale'          => $this->get_language(),
@@ -626,7 +625,41 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		$result = $this->api->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
 		if ( is_wp_error( $result ) ) {
 			/** @var WP_Error $result */
-			throw new Exception( $result->get_error_message(), $result->get_error_code() );
+
+			if ( $result->get_error_code() == 71 || $result->get_error_code() == 9 ) {
+				$params = [
+					'locale'          => $this->get_language(),
+					'button_text'     => __( 'Add card', 'reepay-checkout-gateway' ),
+					'create_customer' => [
+						'test'        => $this->test_mode === 'yes',
+						'handle'      => $customer_handle,
+						'email'       => $user->user_email,
+						'address'     => '',
+						'address2'    => '',
+						'city'        => '',
+						'country'     => $location['country'],
+						'phone'       => '',
+						'company'     => '',
+						'vat'         => '',
+						'first_name'  => $user->first_name,
+						'last_name'   => $user->last_name,
+						'postal_code' => ''
+					],
+					'accept_url'      => $accept_url,
+					'cancel_url'      => $cancel_url
+				];
+
+				$result = $this->api->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
+
+				if ( is_wp_error( $result ) ) {
+					/** @var WP_Error $result */
+					throw new Exception( $result->get_error_message(), $result->get_error_code() );
+				}
+			} else {
+				throw new Exception( $result->get_error_message(), $result->get_error_code() );
+			}
+
+
 		}
 
 		$this->log( sprintf( '%s Result %s', __METHOD__, var_export( $result, true ) ) );
