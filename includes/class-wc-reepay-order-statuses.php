@@ -10,7 +10,7 @@ class WC_Reepay_Order_Statuses {
 			$settings = array();
 		}
 
-		define( 'REEPAY_STATUS_SYNC', isset( $settings['enable_sync'] ) && $settings['enable_sync'] == 'yes' );
+		define( 'REEPAY_STATUS_SYNC', ! isset( $settings['enable_sync'] ) || $settings['enable_sync'] == 'yes' );
 		define( 'REEPAY_STATUS_CREATED', isset( $settings['status_created'] ) ? str_replace( 'wc-', '', $settings['status_created'] ) : 'pending' );
 		define( 'REEPAY_STATUS_AUTHORIZED', isset( $settings['status_authorized'] ) ? str_replace( 'wc-', '', $settings['status_authorized'] ) : 'on-hold' );
 		define( 'REEPAY_STATUS_SETTLED', isset( $settings['status_settled'] ) ? str_replace( 'wc-', '', $settings['status_settled'] ) : 'processing' );
