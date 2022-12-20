@@ -367,10 +367,10 @@ class WC_Reepay_Api {
 		}
 	}
 
-	public function recurring( $payment_methods, $order, $data, $token = false ) {
+	public function recurring( $payment_methods, $order, $data, $token = false, $payment_text = '' ) {
 		$params = [
 			'locale'          => $data['language'],
-			'button_text'     => __( 'Pay', 'woocommerce-gateway-reepay-checkout' ),
+			'button_text'     => $payment_text ?: __( 'Pay', 'woocommerce-gateway-reepay-checkout' ),
 			'create_customer' => [
 				'test'        => $data['test_mode'] === 'yes',
 				'handle'      => $data['customer_handle'],
