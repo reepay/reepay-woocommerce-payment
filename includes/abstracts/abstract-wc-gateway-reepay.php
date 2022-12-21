@@ -158,16 +158,21 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	public function is_configured() {
 		$configured = false;
 
-		if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'checkout' && ! empty( $_GET['section'] ) ) {
-			$gateway      = new WC_Gateway_Reepay_Checkout();
-			$this->api    = new WC_Reepay_Api( $gateway );
-			$gateways_app = $this->api->request( 'GET', 'https://api.reepay.com/v1/agreement?only_active=true' );
+		if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'checkout' && ! empty( $_GET['section'] ) && $_GET['section'] != 'reepay_checkout' ) {
+			$gateway   = new WC_Gateway_Reepay_Checkout();
+			$this->api = new WC_Reepay_Api( $gateway );
+
+			$gateways_reepay = get_transient( 'gateways_reepay' );
+			if ( empty( $gateways_reepay ) ) {
+				$gateways_reepay = $this->api->request( 'GET', 'https://api.reepay.com/v1/agreement?only_active=true' );
+				set_transient( 'gateways_reepay', $gateways_reepay, 5 );
+			}
 
 			$current_name = str_replace( 'reepay_', '', $this->id );
 
 
-			if ( ! empty( $gateways_app ) ) {
-				foreach ( $gateways_app as $app ) {
+			if ( ! empty( $this->gateways_reepay ) ) {
+				foreach ( $this->gateways_reepay as $app ) {
 					if ( stripos( $app['type'], $current_name ) !== false ) {
 						$configured = true;
 					}
@@ -177,6 +182,24 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		}
 
 		return $configured;
+	}
+
+	public function get_account_info( $gateway ) {
+		if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'checkout' && ! empty( $_GET['section'] ) && $_GET['section'] == 'reepay_checkout' ) {
+
+			$this->api = new WC_Reepay_Api( $gateway );
+
+			$account_info = get_transient( 'account_info' );
+			if ( empty( $account_info ) ) {
+				$account_info = $this->api->request( 'GET', 'https://api.reepay.com/v1/account' );
+				set_transient( 'account_info', $account_info, 5 );
+			}
+
+			return $account_info;
+		}
+
+		return [];
+
 	}
 
 	/**
@@ -613,7 +636,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		// Initialize Payment
 		$params = [
 			'locale'     => $this->get_language(),
-			'recurring'  => apply_filters('order_contains_reepay_subscription', $maybe_save_card || order_contains_subscription( $order ) || wcs_is_payment_change(), $order),
+			'recurring'  => apply_filters( 'order_contains_reepay_subscription', $maybe_save_card || order_contains_subscription( $order ) || wcs_is_payment_change(), $order ),
 			'order'      => [
 				'handle'          => $order_handle,
 				'amount'          => $this->skip_order_lines === 'yes' ? rp_prepare_amount( $order->get_total(), $order->get_currency() ) : null,
@@ -728,7 +751,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			if ( abs( $order->get_total() ) < 0.01 ) {
 				// Don't charge payment if zero amount
 				if ( wcs_cart_only_subscriptions() ) {
-                    $result = $this->api->recurring( $this->payment_methods, $order, $data, $token->get_token(), $params['button_text'] );
+					$result = $this->api->recurring( $this->payment_methods, $order, $data, $token->get_token(), $params['button_text'] );
 
 					if ( is_wp_error( $result ) ) {
 						/** @var WP_Error $result */
@@ -827,7 +850,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		// If here's Subscription or zero payment
 		if ( ( wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions() ) && ( abs( $order->get_total() ) < 0.01 || empty( $params['order']['order_lines'] ) ) ) {
 
-            $result = $this->api->recurring( $this->payment_methods, $order, $data, false, $params['button_text'] );
+			$result = $this->api->recurring( $this->payment_methods, $order, $data, false, $params['button_text'] );
 
 			if ( is_wp_error( $result ) ) {
 				/** @var WP_Error $result */
@@ -859,9 +882,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	}
 
 	public function process_session_charge( $params, $order ) {
-        if (empty($params['button_text'])) {
-            $params['button_text'] = strip_tags(__('Pay', 'reepay-checkout-gateway') . ' ' . $order->get_formatted_order_total());
-        }
+		if ( empty( $params['button_text'] ) ) {
+			$params['button_text'] = strip_tags( __( 'Pay', 'reepay-checkout-gateway' ) . ' ' . $order->get_formatted_order_total() );
+		}
 		$result = $this->api->request(
 			'POST',
 			'https://checkout-api.reepay.com/v1/session/charge',
