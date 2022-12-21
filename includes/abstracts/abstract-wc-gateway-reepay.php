@@ -155,34 +155,33 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		add_action( 'wp_ajax_nopriv_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
 	}
 
+    public function check_is_active() {
+        $gateway      = new WC_Gateway_Reepay_Checkout();
+        $this->api    = new WC_Reepay_Api( $gateway );
+        $gateways_app = $this->api->request( 'GET', 'https://api.reepay.com/v1/agreement?only_active=true' );
+
+		$current_name = str_replace( 'reepay_', '', $this->id );
+
+
+        if ( ! empty( $gateways_app ) ) {
+            foreach ( $gateways_app as $app ) {
+                if ( stripos( $app['type'], $current_name ) !== false ) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 	public function is_configured() {
 		$configured = false;
 
 		if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'checkout' && ! empty( $_GET['section'] ) && $_GET['section'] != 'reepay_checkout' ) {
-			$gateway   = new WC_Gateway_Reepay_Checkout();
-			$this->api = new WC_Reepay_Api( $gateway );
-
-			$gateways_reepay = get_transient( 'gateways_reepay' );
-			if ( empty( $gateways_reepay ) ) {
-				$gateways_reepay = $this->api->request( 'GET', 'https://api.reepay.com/v1/agreement?only_active=true' );
-				set_transient( 'gateways_reepay', $gateways_reepay, 5 );
-			}
-
-			$current_name = str_replace( 'reepay_', '', $this->id );
-
-
-			if ( ! empty( $this->gateways_reepay ) ) {
-				foreach ( $this->gateways_reepay as $app ) {
-					if ( stripos( $app['type'], $current_name ) !== false ) {
-						$configured = true;
-					}
-				}
-			}
-
+			$configured = $this->check_is_active();
 		}
-
 		return $configured;
 	}
+
 
 	public function get_account_info( $gateway ) {
 		if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'checkout' && ! empty( $_GET['section'] ) && $_GET['section'] == 'reepay_checkout' ) {
@@ -201,6 +200,14 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		return [];
 
 	}
+
+    public function needs_setup()
+    {
+        if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'woocommerce_toggle_gateway_enabled') {
+            return !$this->check_is_active();
+        }
+        return false;
+    }
 
 	/**
 	 * Generate Gateway Status HTML.
