@@ -208,6 +208,65 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 	}
 
+	public function is_webhook_configured( $gateway ) {
+		try {
+			$this->api = new WC_Reepay_Api( $gateway );
+			$result    = $this->api->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
+			if ( is_wp_error( $result ) ) {
+				/** @var WP_Error $result */
+				throw new Exception( $result->get_error_message(), $result->get_error_code() );
+			}
+
+			// The webhook settings
+			$urls         = $result['urls'];
+			$alert_emails = $result['alert_emails'];
+
+			// The webhook settings of the payment plugin
+			$webhook_url = WC()->api_request_url( get_class() );
+			$alert_email = '';
+			if ( ! empty( $this->settings['failed_webhooks_email'] ) &&
+			     is_email( $this->settings['failed_webhooks_email'] )
+			) {
+				$alert_email = $this->settings['failed_webhooks_email'];
+			}
+
+			// Verify the webhook settings
+			if ( in_array( $webhook_url, $urls ) &&
+			     ( ! empty( $alert_email ) ? in_array( $alert_email, $alert_emails ) : true )
+			) {
+				// Skip the update
+				return true;
+			}
+
+			// Update the webhook settings
+			try {
+				$urls[] = $webhook_url;
+
+				if ( ! empty( $alert_email ) && is_email( $alert_email ) ) {
+					$alert_emails[] = $alert_email;
+				}
+
+				$data            = array(
+					'urls'         => array_unique( $urls ),
+					'disabled'     => false,
+					'alert_emails' => array_unique( $alert_emails )
+				);
+				$this->test_mode = 'yes';
+				$result          = $this->api->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
+				if ( is_wp_error( $result ) ) {
+					/** @var WP_Error $result */
+					throw new Exception( $result->get_error_message(), $result->get_error_code() );
+				}
+
+				return true;
+			} catch ( Exception $e ) {
+				return false;
+			}
+		} catch ( Exception $e ) {
+			return false;
+		}
+	}
+
 	public function needs_setup() {
 		if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] === 'woocommerce_toggle_gateway_enabled' ) {
 			return ! $this->check_is_active();

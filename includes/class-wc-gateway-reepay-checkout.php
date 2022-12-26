@@ -169,15 +169,19 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
 		);
 
+		if ( isset( $_POST['woocommerce_reepay_checkout_private_key'] ) ) {
+			$this->settings['private_key_test'] = $_POST['woocommerce_reepay_checkout_private_key'];
+		}
+
 		if ( empty( $this->settings['private_key'] ) ) {
 			$this->form_fields['verify_key'] = array(
 				'title'       => '',
-				'type'        => 'submit',
+				'type'        => 'verify_key',
 				'description' => '',
 				'default'     => 'Save and verify'
 			);
 		} else {
-			$this->private_key = $this->settings['private_key'];
+			$this->private_key = ! empty( $this->settings['private_key'] ) ? $this->settings['private_key'] : $_POST['woocommerce_reepay_checkout_private_key'];
 			$this->test_mode   = 'no';
 			$account_info      = $this->get_account_info( $this );
 
@@ -198,11 +202,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 					'title'   => __( 'Webhook', 'reepay-checkout-gateway' ),
 					'type'    => 'webhook_status',
 					'label'   => __( 'Webhook', 'reepay-checkout-gateway' ),
-					'default' => $this->test_mode
+					'default' => $this->is_webhook_configured( $this )
 				);
 			}
 
-			$this->test_mode = $this->settings['test_mode'];
+			$this->test_mode = ! empty( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $_POST['woocommerce_reepay_checkout_test_mode'];
 		}
 
 		$this->form_fields['hr10'] = array(
@@ -218,15 +222,19 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		);
 
 
+		if ( isset( $_POST['woocommerce_reepay_checkout_private_key_test'] ) ) {
+			$this->settings['private_key_test'] = $_POST['woocommerce_reepay_checkout_private_key_test'];
+		}
+
 		if ( empty( $this->settings['private_key_test'] ) ) {
 			$this->form_fields['verify_key_test'] = array(
 				'title'       => '',
-				'type'        => 'submit',
+				'type'        => 'verify_key',
 				'description' => '',
 				'default'     => 'Save and verify'
 			);
 		} else {
-			$this->private_key_test = $this->settings['private_key_test'];
+			$this->private_key_test = $this->private_key = ! empty( $this->settings['private_key_test'] ) ? $this->settings['private_key_test'] : $_POST['woocommerce_reepay_checkout_private_key_test'];
 			$this->test_mode        = 'yes';
 			$account_info           = $this->get_account_info( $this );
 
@@ -247,11 +255,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 					'title'   => __( 'Webhook', 'reepay-checkout-gateway' ),
 					'type'    => 'webhook_status',
 					'label'   => __( 'Webhook', 'reepay-checkout-gateway' ),
-					'default' => $this->test_mode
+					'default' => $this->is_webhook_configured( $this )
 				);
 			}
 
-			$this->test_mode = $this->settings['test_mode'];
+			$this->test_mode = ! empty( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $_POST['woocommerce_reepay_checkout_test_mode'];
 		}
 
 		$this->form_fields['hr9'] = array(
@@ -271,12 +279,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			'id'   => 'hr3'
 		);
 
-		$this->form_fields['is_webhook_configured'] = array(
+		/*$this->form_fields['is_webhook_configured'] = array(
 			'title'   => __( 'Webhook status', 'reepay-checkout-gateway' ),
 			'type'    => 'webhook_status',
 			'label'   => __( 'Webhook status', 'reepay-checkout-gateway' ),
 			'default' => $this->test_mode
-		);
+		);*/
 
 		$this->form_fields['failed_webhooks_email'] = array(
 			'title'             => __( 'Email address for notification about failed webhooks', 'reepay-checkout-gateway' ),
@@ -531,6 +539,48 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 *
 	 * @return string
 	 */
+	public function generate_verify_key_html( $key, $data ) {
+		$field_key = $this->get_field_key( $key );
+		$defaults  = array(
+			'title'       => '',
+			'type'        => 'verify_key',
+			'desc_tip'    => false,
+			'description' => '',
+		);
+
+		$data = wp_parse_args( $data, $defaults );
+
+		ob_start();
+		?>
+        <tr valign="top">
+            <th scope="row" class="titledesc">
+                <label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?><?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok.
+					?></label>
+            </th>
+            <td class="forminp">
+                <fieldset>
+                    <legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span>
+                    </legend>
+
+                    <button name="save" class="button-primary woocommerce-save-button" type="submit"
+                            value="Save changes">Save and verify
+                    </button>
+                </fieldset>
+            </td>
+        </tr>
+		<?php
+
+		return ob_get_clean();
+	}
+
+	/**
+	 * Generate WebHook Status HTML.
+	 *
+	 * @param string $key Field key.
+	 * @param array $data Field data.
+	 *
+	 * @return string
+	 */
 	public function generate_webhook_status_html( $key, $data ) {
 		$field_key = $this->get_field_key( $key );
 		$defaults  = array(
@@ -554,9 +604,9 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
                     <legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span>
                     </legend>
 
-					<?php if ( 'yes' === $this->get_option( $key ) ): ?>
+					<?php if ( $data['default'] ): ?>
                         <span style="color: green;">
-							<?php esc_html_e( 'Configured.', 'reepay-checkout-gateway' ); ?>
+							<?php esc_html_e( 'Active', 'reepay-checkout-gateway' ); ?>
 						</span>
 					<?php else: ?>
                         <span style="color: red;">
@@ -659,13 +709,13 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 					$alert_emails[] = $alert_email;
 				}
 
-				$data = array(
+				$data            = array(
 					'urls'         => array_unique( $urls ),
 					'disabled'     => false,
 					'alert_emails' => array_unique( $alert_emails )
 				);
-
-				$result = $this->api->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
+				$this->test_mode = 'yes';
+				$result          = $this->api->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
 				if ( is_wp_error( $result ) ) {
 					/** @var WP_Error $result */
 					throw new Exception( $result->get_error_message(), $result->get_error_code() );
