@@ -242,7 +242,14 @@ class WC_Reepay_Order_Capture {
 	}
 
 	public function capture_full_order_button( $order ) {
+		$payment_method = $order->get_payment_method();
+
+		if ( strpos( $payment_method, 'reepay' ) === false ) {
+			return;
+		}
+
 		$gateway = rp_get_payment_method( $order );
+
 		if ( ! empty( $gateway ) && ! empty( $gateway->api ) ) {
 			$order_data = $gateway->api->get_invoice_data( $order );
 			if ( ! is_wp_error( $order_data ) ) {
@@ -264,6 +271,12 @@ class WC_Reepay_Order_Capture {
 	public function add_item_capture_button( $item_id, $item, $product ) {
 		$order_id = wc_get_order_id_by_order_item_id( $item_id );
 		$order    = wc_get_order( $order_id );
+
+		$payment_method = $order->get_payment_method();
+
+		if ( strpos( $payment_method, 'reepay' ) === false ) {
+			return;
+		}
 
 		$settled = $item->get_meta( 'settled' );
 		$data    = $item->get_data();
