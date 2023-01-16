@@ -20,7 +20,7 @@ class WC_Reepay_Order_Capture {
 		// Only on emails notifications
 
 
-		if ( is_admin() ) {
+		if ( is_admin() && isset( $_GET['post'] ) ) {
 			foreach ( $formatted_meta as $key => $meta ) {
 				if ( in_array( $meta->key, array( 'settled' ) ) ) {
 					$meta->display_key = 'Settle';
