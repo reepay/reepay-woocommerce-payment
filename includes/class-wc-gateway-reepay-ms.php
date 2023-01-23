@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay_Checkout {
+class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 	/**
 	 * Logos
 	 * @var array
