@@ -139,6 +139,10 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 			return $item;
 		}
 
+		if ( ! method_exists( $payment_token, 'get_card_type' ) ) {
+			return $item;
+		}
+        
 		$card_type               = $payment_token->get_card_type();
 		$item['method']['id']    = $payment_token->get_id();
 		$item['method']['last4'] = $payment_token->get_last4();

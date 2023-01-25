@@ -170,7 +170,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		);
 
 		if ( isset( $_POST['woocommerce_reepay_checkout_private_key'] ) ) {
-			$this->settings['private_key_test'] = $_POST['woocommerce_reepay_checkout_private_key'];
+			$this->settings['private_key'] = $_POST['woocommerce_reepay_checkout_private_key'];
 		}
 
 		if ( empty( $this->settings['private_key'] ) ) {
@@ -234,9 +234,9 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'default'     => 'Save and verify'
 			);
 		} else {
-			$this->private_key_test = $this->private_key = ! empty( $this->settings['private_key_test'] ) ? $this->settings['private_key_test'] : $_POST['woocommerce_reepay_checkout_private_key_test'];
+			$this->private_key_test = $this->private_key_test = ! empty( $this->settings['private_key_test'] ) ? $this->settings['private_key_test'] : $_POST['woocommerce_reepay_checkout_private_key_test'];
 			$this->test_mode        = 'yes';
-			$account_info           = $this->get_account_info( $this );
+			$account_info           = $this->get_account_info( $this, true );
 
 			if ( ! empty( $account_info ) ) {
 				$this->form_fields['account_test']               = array(
