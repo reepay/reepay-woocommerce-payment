@@ -1477,64 +1477,64 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	public function get_logo( $card_type ) {
 		switch ( $card_type ) {
 			case 'visa':
-				$image = 'visa.png';
+				$image = 'visa';
 				break;
 			case 'mc':
-				$image = 'mastercard.png';
+				$image = 'mastercard';
 				break;
 			case 'dankort':
 			case 'visa_dk':
-				$image = 'dankort.png';
+				$image = 'dankort';
 				break;
 			case 'ffk':
-				$image = 'forbrugsforeningen.png';
+				$image = 'forbrugsforeningen';
 				break;
 			case 'visa_elec':
-				$image = 'visa-electron.png';
+				$image = 'visa-electron';
 				break;
 			case 'maestro':
-				$image = 'maestro.png';
+				$image = 'maestro';
 				break;
 			case 'amex':
-				$image = 'american-express.png';
+				$image = 'american-express';
 				break;
 			case 'diners':
-				$image = 'diners.png';
+				$image = 'diners';
 				break;
 			case 'discover':
-				$image = 'discover.png';
+				$image = 'discover';
 				break;
 			case 'jcb':
-				$image = 'jcb.png';
+				$image = 'jcb';
 				break;
 			case 'mobilepay':
 			case 'ms_subscripiton':
-				$image = 'mobilepay.png';
+				$image = 'mobilepay';
 				break;
 			case 'viabill':
-				$image = 'viabill.png';
+				$image = 'viabill';
 				break;
 			case 'klarna_pay_later':
 			case 'klarna_pay_now':
-				$image = 'klarna.png';
+				$image = 'klarna';
 				break;
 			case 'resurs':
-				$image = 'resurs.png';
+				$image = 'resurs';
 				break;
 			case 'china_union_pay':
-				$image = 'cup.png';
+				$image = 'cup';
 				break;
 			case 'paypal':
-				$image = 'paypal.png';
+				$image = 'paypal';
 				break;
 			case 'applepay':
-				$image = 'applepay.png';
+				$image = 'applepay';
 				break;
 			case 'googlepay':
-				$image = 'googlepay.png';
+				$image = 'googlepay';
 				break;
 			case 'vipps':
-				$image = 'vipps.png';
+				$image = 'vipps';
 				break;
 			default:
 				//$image = 'reepay.png';
