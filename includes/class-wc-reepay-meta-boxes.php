@@ -48,7 +48,7 @@ class WC_Reepay_Meta_Boxes {
 		}
 
 
-		if ( ! empty( $customer ) ) {
+		if ( ! empty( $subscription ) ) {
 			add_meta_box(
 				'reepay_checkout_customer',
 				__( 'Customer' ),
