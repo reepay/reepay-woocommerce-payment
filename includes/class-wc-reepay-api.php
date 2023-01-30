@@ -66,7 +66,7 @@ class WC_Reepay_Api {
 		$response  = wp_remote_request( $url, $args );
 		$body      = wp_remote_retrieve_body( $response );
 		$http_code = wp_remote_retrieve_response_code( $response );
-		$code      = (int) ( $http_code / 100 );
+		$code = (int) ( intval($http_code) / 100 );
 
 		if ( $this->gateway->debug === 'yes' ) {
 			$this->log( print_r( [
@@ -155,7 +155,14 @@ class WC_Reepay_Api {
 			return new WP_Error( 0, 'Unable to get invoice data.' );
 		}
 
-		$order_data = $this->get_invoice_by_handle( rp_get_order_handle( $order ) );
+		$handle = rp_get_order_handle( $order );
+
+		if ( empty( $handle ) ) {
+			return new WP_Error( 400, 'Empty reepay invoice handle', 'empty_handle' );
+		}
+
+		$order_data = $this->get_invoice_by_handle( $handle );
+
 		if ( is_wp_error( $order_data ) ) {
 			/** @var WP_Error $order_data */
 			$this->log(
