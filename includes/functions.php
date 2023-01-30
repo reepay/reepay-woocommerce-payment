@@ -9,14 +9,9 @@ if ( ! function_exists( 'rp_get_payment_method ' ) ) {
 	 * @return false|WC_Gateway_Reepay_Checkout
 	 */
 	function rp_get_payment_method( WC_Order $order ) {
-		// Get Payment Gateway
 		$gateways = WC()->payment_gateways()->payment_gateways();
-		if ( ! isset( $gateways[ $order->get_payment_method() ] ) ) {
-			return false;
-		}
 
-		/** @var WC_Gateway_Reepay_Checkout $gateway */
-		return $gateways[ $order->get_payment_method() ];
+		return $gateways[ $order->get_payment_method() ] ?? false;
 	}
 }
 
