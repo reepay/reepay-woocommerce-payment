@@ -40,24 +40,20 @@ class WC_Reepay_Meta_Boxes {
 
 
 		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && $post->post_parent != 0 ) {
-			$customer     = get_post_meta( $post->post_parent, '_reepay_customer', true );
 			$subscription = get_post_meta( $post->post_parent, '_reepay_subscription_handle', true );
 		} else {
-			$customer     = get_post_meta( $post->ID, '_reepay_customer', true );
 			$subscription = get_post_meta( $post->ID, '_reepay_subscription_handle', true );
 		}
 
 
-		if ( ! empty( $customer ) ) {
-			add_meta_box(
-				'reepay_checkout_customer',
-				__( 'Customer' ),
-				array( $this, 'generate_meta_box_content_customer' ),
-				'shop_order',
-				'side',
-				'high'
-			);
-		}
+		add_meta_box(
+			'reepay_checkout_customer',
+			__( 'Customer' ),
+			array( $this, 'generate_meta_box_content_customer' ),
+			'shop_order',
+			'side',
+			'high'
+		);
 
 		if ( empty( $subscription ) || ( $post->post_parent != 0 ) ) {
 			add_meta_box(
