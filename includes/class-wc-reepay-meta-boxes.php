@@ -188,7 +188,7 @@ class WC_Reepay_Meta_Boxes {
 			'plan'   => $plan
 		];
 
-		if ( empty( $template_args['plan'] ) && ! empty( reepay_s() ) ) {
+		if ( empty( $template_args['plan'] ) && function_exists( 'reepay_s' ) ) {
 			try {
 				$subscription          = reepay_s()->api()->request( "subscription/{$template_args['handle']}" );
 				$template_args['plan'] = $subscription['plan'];
