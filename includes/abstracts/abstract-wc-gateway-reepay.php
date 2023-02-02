@@ -926,8 +926,15 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			);
 		}
 
+		$have_sub = wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions();
+
+		if ( class_exists( 'WC_Reepay_Renewals' && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) ) {
+			$have_sub = true;
+		}
+
+
 		// If here's Subscription or zero payment
-		if ( ( wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions() ) && ( abs( $order->get_total() ) < 0.01 || empty( $params['order']['order_lines'] ) ) ) {
+		if ( ( $have_sub ) && ( abs( $order->get_total() ) < 0.01 || empty( $params['order']['order_lines'] ) ) ) {
 
 			$result = $this->api->recurring( $this->payment_methods, $order, $data, false, $params['button_text'] );
 
@@ -942,9 +949,15 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 			do_action( 'reepay_instant_settle', $order );
 
+			$redirect = '#!reepay-checkout';
+
+			if ( ! empty( $result['url'] ) ) {
+				$redirect = $result['url'];
+			}
+
 			return array(
 				'result'             => 'success',
-				'redirect'           => '#!reepay-checkout',
+				'redirect'           => $redirect,
 				'is_reepay_checkout' => true,
 				'reepay'             => $result,
 				'accept_url'         => $this->get_return_url( $order ),
