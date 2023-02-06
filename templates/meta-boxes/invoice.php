@@ -9,7 +9,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-$card_logo = $gateway->get_logo( $order_data['transactions'][0]['card_transaction']['card_type'] );
+if ( ! empty( $order_data['transactions'][0] ) ) {
+	$card_logo = $gateway->get_logo( $order_data['transactions'][0]['card_transaction']['card_type'] );
+}
+
 ?>
 
 <ul class="order_action order_action_reepay_subscriotions clearfix">
