@@ -181,32 +181,37 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'default'     => 'Save and verify'
 			);
 		} else {
-			$this->private_key = ! empty( $this->settings['private_key'] ) ? $this->settings['private_key'] : $_POST['woocommerce_reepay_checkout_private_key'];
-			$this->test_mode   = 'no';
-			$account_info      = $this->get_account_info( $this );
 
-			if ( ! empty( $account_info ) ) {
-				$this->form_fields['account']                    = array(
+			$this->private_key = ! empty( $this->settings['private_key'] ) ? $this->settings['private_key'] : $_POST['woocommerce_reepay_checkout_private_key'];
+
+			$this->test_mode = 'no';
+			$account_info    = $this->get_account_info( $this );
+
+			if ( ! empty( $account_info ) && ! is_wp_error( $account_info ) ) {
+				$this->form_fields['account'] = array(
 					'title'       => __( 'Account', 'reepay-checkout-gateway' ),
 					'type'        => 'account_info',
 					'description' => '',
 					'default'     => $account_info['name']
 				);
-				$this->form_fields['state']                      = array(
+				$this->form_fields['state']   = array(
 					'title'       => __( 'State', 'reepay-checkout-gateway' ),
 					'type'        => 'account_info',
 					'description' => '',
 					'default'     => $account_info['state']
 				);
-				$this->form_fields['is_webhook_configured_live'] = array(
-					'title'   => __( 'Webhook', 'reepay-checkout-gateway' ),
-					'type'    => 'webhook_status',
-					'label'   => __( 'Webhook', 'reepay-checkout-gateway' ),
-					'default' => $this->is_webhook_configured( $this )
-				);
+
 			}
 
-			$this->test_mode = ! empty( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $_POST['woocommerce_reepay_checkout_test_mode'];
+			$this->form_fields['is_webhook_configured_live'] = array(
+				'title'   => __( 'Webhook', 'reepay-checkout-gateway' ),
+				'type'    => 'webhook_status',
+				'label'   => __( 'Webhook', 'reepay-checkout-gateway' ),
+				'default' => $this->is_webhook_configured( $this )
+			);
+
+			$this->test_mode = ! empty( $_POST['woocommerce_reepay_checkout_test_mode'] ) ? $_POST['woocommerce_reepay_checkout_test_mode'] : '';
+			$this->test_mode = ! empty( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $this->test_mode;
 		}
 
 		$this->form_fields['hr10'] = array(
@@ -259,7 +264,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				);
 			}
 
-			$this->test_mode = ! empty( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $_POST['woocommerce_reepay_checkout_test_mode'];
+			$this->test_mode = ! empty( $_POST['woocommerce_reepay_checkout_test_mode'] ) ? $_POST['woocommerce_reepay_checkout_test_mode'] : '';
+			$this->test_mode = ! empty( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $this->test_mode;
 		}
 
 		$this->form_fields['hr9'] = array(

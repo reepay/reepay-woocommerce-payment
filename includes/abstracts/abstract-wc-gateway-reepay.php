@@ -223,13 +223,16 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				throw new Exception( $result->get_error_message(), $result->get_error_code() );
 			}
 
+
 			// The webhook settings
 			$urls         = $result['urls'];
 			$alert_emails = $result['alert_emails'];
 
+
 			// The webhook settings of the payment plugin
-			$webhook_url = WC()->api_request_url( get_class() );
-			$alert_email = '';
+			$webhook_url          = WC()->api_request_url( get_class() );
+			$webhook_url_checkout = WC()->api_request_url( 'WC_Gateway_Reepay_Checkout' );
+			$alert_email          = '';
 			if ( ! empty( $this->settings['failed_webhooks_email'] ) &&
 			     is_email( $this->settings['failed_webhooks_email'] )
 			) {
@@ -237,7 +240,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			}
 
 			// Verify the webhook settings
-			if ( in_array( $webhook_url, $urls ) &&
+			if ( ( in_array( $webhook_url, $urls ) || in_array( $webhook_url_checkout, $urls ) ) &&
 			     ( ! empty( $alert_email ) ? in_array( $alert_email, $alert_emails ) : true )
 			) {
 				// Skip the update
