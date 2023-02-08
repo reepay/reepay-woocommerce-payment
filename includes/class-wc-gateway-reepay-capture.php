@@ -248,14 +248,14 @@ class WC_Reepay_Order_Capture {
 			return;
 		}
 
-		$gateway = rp_get_payment_method( $order );
+		/*$gateway = rp_get_payment_method( $order );
 
 		if ( ! empty( $gateway ) && ! empty( $gateway->api ) ) {
 			$order_data = $gateway->api->get_invoice_data( $order );
 			if ( ! is_wp_error( $order_data ) ) {
 				echo '<a href="https://app.reepay.com/#/rp/payments/invoices/invoice/' . $order_data['id'] . '" target="_blank" class="button refund-items">' . __( 'See invoice', 'reepay-checkout-gateway' ) . '</a>';
 			}
-		}
+		}*/
 
 		if ( $this->check_allow_capture( $order ) ) {
 			$amount = $this->get_no_settled_amount( $order );

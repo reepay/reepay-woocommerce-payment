@@ -4,7 +4,7 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: reepay
  * Author URI: http://reepay.com
- * Version: 1.4.52
+ * Version: 1.4.53
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -181,10 +181,12 @@ class WC_ReepayCheckout {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-swish.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-paypal.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-apple-pay.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-anyday.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-googlepay.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-vipps.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-ms.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-slice-it.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-meta-boxes.php' );
 	}
 
 	/**
