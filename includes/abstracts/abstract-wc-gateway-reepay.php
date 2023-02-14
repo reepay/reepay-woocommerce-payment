@@ -154,11 +154,17 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		add_action( 'wp_ajax_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
 		add_action( 'wp_ajax_nopriv_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
 
-		// Payment listener/API hook
-		add_action( 'woocommerce_api_' . strtolower( get_class($this) ), array(
-			$this,
-			'return_handler'
-		) );
+		static $handler_added = false;
+
+		if ( ! $handler_added ) {
+			// Payment listener/API hook
+			add_action( 'woocommerce_api_' . __CLASS__, array(
+				$this,
+				'return_handler'
+			) );
+
+			$handler_added = true;
+		}
 	}
 
 	public function check_is_active() {
@@ -236,8 +242,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 
 			// The webhook settings of the payment plugin
-			$webhook_url          = WC()->api_request_url( get_class() );
-			$webhook_url_checkout = WC()->api_request_url( 'WC_Gateway_Reepay_Checkout' );
+			$webhook_url= WC()->api_request_url( __CLASS__ );
 			$alert_email          = '';
 			if ( ! empty( $this->settings['failed_webhooks_email'] ) &&
 			     is_email( $this->settings['failed_webhooks_email'] )
@@ -246,8 +251,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			}
 
 			// Verify the webhook settings
-			if ( ( in_array( $webhook_url, $urls ) || in_array( $webhook_url_checkout, $urls ) ) &&
-			     ( ! empty( $alert_email ) ? in_array( $alert_email, $alert_emails ) : true )
+			if ( in_array( $webhook_url, $urls )  &&
+			     ( empty( $alert_email ) || in_array( $alert_email, $alert_emails ) )
 			) {
 				// Skip the update
 				return true;
