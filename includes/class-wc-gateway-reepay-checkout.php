@@ -81,12 +81,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			'process_admin_options'
 		) );
 
-		// Payment listener/API hook
-		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array(
-			$this,
-			'return_handler'
-		) );
-
 		// Action for "Add Payment Method"
 		add_action( 'wp_ajax_reepay_card_store', array( $this, 'reepay_card_store' ) );
 		add_action( 'wp_ajax_nopriv_reepay_card_store', array( $this, 'reepay_card_store' ) );

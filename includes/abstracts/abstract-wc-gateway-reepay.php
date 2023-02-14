@@ -153,6 +153,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		// Cancel actions
 		add_action( 'wp_ajax_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
 		add_action( 'wp_ajax_nopriv_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
+
+		// Payment listener/API hook
+		add_action( 'woocommerce_api_' . strtolower( get_class($this) ), array(
+			$this,
+			'return_handler'
+		) );
 	}
 
 	public function check_is_active() {
