@@ -158,7 +158,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		if ( ! $handler_added ) {
 			// Payment listener/API hook
-			add_action( 'woocommerce_api_' . __CLASS__, array(
+			add_action( 'woocommerce_api_' . strtolower( __CLASS__), array(
 				$this,
 				'return_handler'
 			) );
