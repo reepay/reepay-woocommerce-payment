@@ -158,7 +158,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		if ( ! $handler_added ) {
 			// Payment listener/API hook
-			add_action( 'woocommerce_api_' . strtolower( __CLASS__), array(
+			add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array(
 				$this,
 				'return_handler'
 			) );
@@ -248,8 +248,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				$alert_email = $this->settings['failed_webhooks_email'];
 			}
 
-			$default_wc_api_url = WC()->api_request_url('');
-			$exist_waste_urls = false;
+			$default_wc_api_url = WC()->api_request_url( '' );
+			$exist_waste_urls   = false;
 
 			foreach ( $request['urls'] as $url ) {
 				if ( strpos( $url, $default_wc_api_url ) === false ||
@@ -257,7 +257,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 					$urls[] = $url;
 				} else {
 					$exist_waste_urls = true;
-                }
+				}
 			}
 
 			// Verify the webhook settings
@@ -282,13 +282,15 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 					$alert_emails[] = $alert_email;
 				}
 
-				$data            = array(
+				$data = array(
 					'urls'         => array_unique( $urls ),
 					'disabled'     => false,
 					'alert_emails' => array_unique( $alert_emails )
 				);
-				$this->test_mode = 'yes';
-				$request          = $this->api->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
+
+				//$this->test_mode = 'yes';
+
+				$request = $this->api->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
 				if ( is_wp_error( $request ) ) {
 					/** @var WP_Error $request */
 					throw new Exception( $request->get_error_message(), $request->get_error_code() );
@@ -297,6 +299,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				$this->log( sprintf( 'WebHook has been successfully created/updated: %s', var_export( $request, true ) ) );
 				$this->update_option( 'is_webhook_configured', 'yes' );
 				WC_Admin_Settings::add_message( __( 'Reepay: WebHook has been successfully created/updated', 'reepay-checkout-gateway' ) );
+
 				return true;
 			} catch ( Exception $e ) {
 				$this->update_option( 'is_webhook_configured', 'no' );
