@@ -4,7 +4,7 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: reepay
  * Author URI: http://reepay.com
- * Version: 1.4.53
+ * Version: 1.4.54
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -36,7 +36,7 @@ class WC_ReepayCheckout {
 		'reepay_mobilepay_subscriptions'
 	);
 
-	public static $db_version = '1.2.9';
+	public static $db_version = '1.4.54';
 
 	/**
 	 * @var WC_Background_Reepay_Queue

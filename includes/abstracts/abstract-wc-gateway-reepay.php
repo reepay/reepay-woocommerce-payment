@@ -153,6 +153,18 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		// Cancel actions
 		add_action( 'wp_ajax_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
 		add_action( 'wp_ajax_nopriv_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
+
+		static $handler_added = false;
+
+		if ( ! $handler_added ) {
+			// Payment listener/API hook
+			add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array(
+				$this,
+				'return_handler'
+			) );
+
+			$handler_added = true;
+		}
 	}
 
 	public function check_is_active() {
@@ -214,21 +226,21 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 	}
 
-	public function is_webhook_configured( $gateway ) {
+	/**
+	 * @return bool
+	 */
+	public function is_webhook_configured() {
 		try {
-			$this->api = new WC_Reepay_Api( $gateway );
-			$result    = $this->api->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
-			if ( is_wp_error( $result ) ) {
-				/** @var WP_Error $result */
-				throw new Exception( $result->get_error_message(), $result->get_error_code() );
+			$request = $this->api->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
+			if ( is_wp_error( $request ) ) {
+				/** @var WP_Error $request */
+				throw new Exception( $request->get_error_message(), $request->get_error_code() );
 			}
 
-			// The webhook settings
-			$urls         = $result['urls'];
-			$alert_emails = $result['alert_emails'];
+			$alert_emails = $request['alert_emails'];
 
 			// The webhook settings of the payment plugin
-			$webhook_url = WC()->api_request_url( get_class() );
+			$webhook_url = WC()->api_request_url( 'WC_Gateway_Reepay' );
 			$alert_email = '';
 			if ( ! empty( $this->settings['failed_webhooks_email'] ) &&
 			     is_email( $this->settings['failed_webhooks_email'] )
@@ -236,41 +248,70 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				$alert_email = $this->settings['failed_webhooks_email'];
 			}
 
+			$default_wc_api_url = WC()->api_request_url( '' );
+			$exist_waste_urls   = false;
+
+			foreach ( $request['urls'] as $url ) {
+				if ( strpos( $url, $default_wc_api_url ) === false ||
+				     $url === $webhook_url ) {
+					$urls[] = $url;
+				} else {
+					$exist_waste_urls = true;
+				}
+			}
+
 			// Verify the webhook settings
-			if ( in_array( $webhook_url, $urls ) &&
-			     ( ! empty( $alert_email ) ? in_array( $alert_email, $alert_emails ) : true )
+			if ( in_array( $webhook_url, $urls )
+			     && ( empty( $alert_email ) || in_array( $alert_email, $alert_emails ) )
+			     && ! $exist_waste_urls
 			) {
+				// Webhook has been configured before
+				$this->update_option( 'is_webhook_configured', 'yes' );
+
 				// Skip the update
 				return true;
 			}
 
 			// Update the webhook settings
 			try {
-				$urls[] = $webhook_url;
+				if ( ! in_array( $webhook_url, $urls ) ) {
+					$urls[] = $webhook_url;
+				}
 
 				if ( ! empty( $alert_email ) && is_email( $alert_email ) ) {
 					$alert_emails[] = $alert_email;
 				}
 
-				$data            = array(
+				$data = array(
 					'urls'         => array_unique( $urls ),
 					'disabled'     => false,
 					'alert_emails' => array_unique( $alert_emails )
 				);
-				$this->test_mode = 'yes';
-				$result          = $this->api->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
-				if ( is_wp_error( $result ) ) {
-					/** @var WP_Error $result */
-					throw new Exception( $result->get_error_message(), $result->get_error_code() );
+
+				//$this->test_mode = 'yes';
+
+				$request = $this->api->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
+				if ( is_wp_error( $request ) ) {
+					/** @var WP_Error $request */
+					throw new Exception( $request->get_error_message(), $request->get_error_code() );
 				}
+
+				$this->log( sprintf( 'WebHook has been successfully created/updated: %s', var_export( $request, true ) ) );
+				$this->update_option( 'is_webhook_configured', 'yes' );
+				WC_Admin_Settings::add_message( __( 'Reepay: WebHook has been successfully created/updated', 'reepay-checkout-gateway' ) );
 
 				return true;
 			} catch ( Exception $e ) {
-				return false;
+				$this->update_option( 'is_webhook_configured', 'no' );
+				$this->log( sprintf( 'WebHook creation/update has been failed: %s', var_export( $request, true ) ) );
+				WC_Admin_Settings::add_error( __( 'Reepay: WebHook creation/update has been failed', 'reepay-checkout-gateway' ) );
 			}
 		} catch ( Exception $e ) {
-			return false;
+			$this->update_option( 'is_webhook_configured', 'no' );
+			WC_Admin_Settings::add_error( __( 'Unable to retrieve the webhook settings. Wrong api credentials?', 'reepay-checkout-gateway' ) );
 		}
+
+		return false;
 	}
 
 	public function needs_setup() {
