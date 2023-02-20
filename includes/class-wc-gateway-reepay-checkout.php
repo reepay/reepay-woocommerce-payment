@@ -786,13 +786,14 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
 				if ( is_wp_error( $result ) ) {
 					/** @var WP_Error $result */
-					throw new Exception( $result->get_error_message(), $result->get_error_code() );
+					wc_add_notice( $result->get_error_message(), 'error' );
+					parent::add_payment_method();
 				}
 			} else {
-				throw new Exception( $result->get_error_message(), $result->get_error_code() );
+				/** @var WP_Error $result */
+				wc_add_notice( $result->get_error_message(), 'error' );
+				parent::add_payment_method();
 			}
-
-
 		}
 
 		$this->log( sprintf( '%s Result %s', __METHOD__, var_export( $result, true ) ) );
