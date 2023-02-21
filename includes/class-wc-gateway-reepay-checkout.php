@@ -669,7 +669,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		$this->private_key_test = isset( $this->settings['private_key_test'] ) ? $this->settings['private_key_test'] : $this->private_key_test;
 		$this->test_mode        = isset( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $this->test_mode;
 
-        parent::is_webhook_configured();
+		parent::is_webhook_configured();
 
 		return true;
 	}
@@ -786,13 +786,14 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
 				if ( is_wp_error( $result ) ) {
 					/** @var WP_Error $result */
-					throw new Exception( $result->get_error_message(), $result->get_error_code() );
+					wc_add_notice( $result->get_error_message(), 'error' );
+					parent::add_payment_method();
 				}
 			} else {
-				throw new Exception( $result->get_error_message(), $result->get_error_code() );
+				/** @var WP_Error $result */
+				wc_add_notice( $result->get_error_message(), 'error' );
+				parent::add_payment_method();
 			}
-
-
 		}
 
 		$this->log( sprintf( '%s Result %s', __METHOD__, var_export( $result, true ) ) );
@@ -1197,6 +1198,9 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				$token->set_card_type( $source['card_type'] );
 				$token->set_user_id( get_current_user_id() );
 				$token->set_masked_card( $source['masked_card'] );
+
+				update_post_meta( $id, 'reepay_masked_card', $source['masked_card'] );
+				update_post_meta( $id, 'reepay_card_type', $source['card_type'] );
 			}
 
 			// Save Credit Card
