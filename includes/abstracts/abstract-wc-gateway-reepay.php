@@ -971,7 +971,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		$have_sub = wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions();
 
-		if ( class_exists( 'WC_Reepay_Renewals' && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) ) {
+		if ( class_exists( 'WC_Reepay_Renewals' ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
 			$have_sub = true;
 		}
 
