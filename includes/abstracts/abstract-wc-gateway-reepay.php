@@ -251,6 +251,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$default_wc_api_url = WC()->api_request_url( '' );
 			$exist_waste_urls   = false;
 
+			$urls = [];
+
 			foreach ( $request['urls'] as $url ) {
 				if ( strpos( $url, $default_wc_api_url ) === false ||
 				     $url === $webhook_url ) {
@@ -261,7 +263,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			}
 
 			// Verify the webhook settings
-			if ( in_array( $webhook_url, $urls )
+			if ( ! empty( $urls ) && in_array( $webhook_url, $urls )
 			     && ( empty( $alert_email ) || in_array( $alert_email, $alert_emails ) )
 			     && ! $exist_waste_urls
 			) {
@@ -969,7 +971,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		$have_sub = wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions();
 
-		if ( class_exists( 'WC_Reepay_Renewals' && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) ) {
+		if ( class_exists( 'WC_Reepay_Renewals' ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
 			$have_sub = true;
 		}
 
