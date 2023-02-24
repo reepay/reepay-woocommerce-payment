@@ -7,7 +7,7 @@ if (wc && wc.wcBlocksRegistry && React) {
     const {getSetting} = wc.wcSettings;
     const {decodeEntities} = wp.htmlEntities;
 
-    const PAYMENT_METHOD_NAME = 'reepay'
+    const PAYMENT_METHOD_NAME = 'reepay_checkout'
 
     const settings = getSetting('reepay_checkout_data', {});
     const defaultLabel = __(
@@ -21,7 +21,7 @@ if (wc && wc.wcBlocksRegistry && React) {
      */
 
     const Content = React.createElement(
-        '',
+        'span',
         null,
         decodeEntities(settings.description || '')
         )
@@ -31,10 +31,7 @@ if (wc && wc.wcBlocksRegistry && React) {
      *
      * @param {*} props Props from payment API.
      */
-    const Label = (props) => {
-        const {PaymentMethodLabel} = props.components;
-        return React.createElement(PaymentMethodLabel, {text: label}, null)
-    };
+    const Label = React.createElement('span', null, label)
 
     /**
      * Payment method config object.
@@ -44,10 +41,15 @@ if (wc && wc.wcBlocksRegistry && React) {
         label: Label,
         content: Content,
         edit: Content,
-        canMakePayment: () => true,
+        canMakePayment: (data) => {
+            // console.log(data);
+            return true;
+        },
         ariaLabel: label,
         supports: {
             features: settings?.supports ?? [],
+            // registerPaymentMethod: true,
+            // showSaveOption: true
         },
     };
 
