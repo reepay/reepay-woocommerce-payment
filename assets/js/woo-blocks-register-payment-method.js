@@ -19,19 +19,17 @@ if (wc && wc.wcBlocksRegistry && React) {
     /**
      * Content component
      */
-
-    const Content = React.createElement(
-        'span',
-        null,
-        decodeEntities(settings.description || '')
-        )
+    const Content = React.createElement(() => decodeEntities(settings.description || ""), null);
 
     /**
      * Label component
      *
      * @param {*} props Props from payment API.
      */
-    const Label = React.createElement('span', null, label)
+    const Label = React.createElement(props => {
+        const {PaymentMethodLabel} = props.components;
+        return React.createElement(PaymentMethodLabel, {text: label})
+    }, null)
 
     /**
      * Payment method config object.
