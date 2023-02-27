@@ -1,6 +1,5 @@
 <?php
 
-use Automattic\WooCommerce\Blocks\Assets\Api as AssetApi;
 use Automattic\WooCommerce\Blocks\Package;
 use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
 use Automattic\WooCommerce\Blocks\Registry\Container;
@@ -8,6 +7,13 @@ use Automattic\WooCommerce\Blocks\Registry\Container;
 defined( 'ABSPATH' ) || exit;
 
 class Reepay_Woo_Blocks_Integration {
+	use WC_Reepay_Log;
+
+	/**
+	 * @var string
+	 */
+	private $logging_source = 'reepay_woo_blocks_integration';
+
 	public function __construct() {
 		add_action( 'woocommerce_blocks_payment_method_type_registration', array( $this, 'register_payment_method_integrations' ) );
 	}
@@ -24,14 +30,17 @@ class Reepay_Woo_Blocks_Integration {
 			Package::container()->register(
 				$payment_method,
 				function( Container $container ) use ( $payment_method ){
-					$asset_api = $container->get( AssetApi::class );
-					return new Reepay_Woo_Blocks_Payment_Method( $payment_method, $asset_api );
+					return new Reepay_Woo_Blocks_Payment_Method( $payment_method );
 				}
 			);
 
-			$payment_method_registry->register(
-				Package::container()->get( $payment_method )
-			);
+			try {
+				$payment_method_registry->register(
+					Package::container()->get( $payment_method )
+				);
+			} catch (Exception $e) {
+				$this->log( $e->getMessage(), 'error' );
+			}
 		}
 	}
 }

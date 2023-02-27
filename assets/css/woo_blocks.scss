@@ -1,0 +1,23 @@
+.reepay-blocks {
+  &-list {
+    margin: 0;
+    list-style-type: none;
+
+    &-item {
+      display: flex;
+      flex-wrap: wrap;
+
+      & > * {
+        margin-right: 5px;
+      }
+
+      & > img {
+        //
+      }
+
+      & > input[type="radio"] {
+        //
+      }
+    }
+  }
+}

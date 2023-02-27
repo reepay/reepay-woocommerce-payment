@@ -33,20 +33,18 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 	 * @return string
 	 */
 	public function get_display_name( $deprecated = '' ) {
+		$img   = $this->get_card_image_url();
+		$style = '';
 
 		if ( $this->get_card_type() == 'visa_dk' ) {
-			$img   = plugins_url( '/assets/images/dankort.png', dirname( __FILE__ ) );
 			$style = 'style="width: 46px; height: 24px;"';
-		} else {
-			$img   = WC_HTTPS::force_https_url( WC()->plugin_url() . '/assets/images/icons/credit-cards/' . $this->get_card_type() . '.png' );
-			$style = '';
 		}
 
 		ob_start();
 		?>
         <img <?php echo $style ?> src="<?php echo $img ?>"
                                   alt="<?php echo wc_get_credit_card_type_label( $this->get_card_type() ); ?>"/>
-		<?php echo esc_html( $this->get_meta( 'masked_card' ) ); ?>
+		<?php echo esc_html( $this->get_masked_card() ); ?>
 		<?php echo esc_html( $this->get_expiry_month() . '/' . substr( $this->get_expiry_year(), 2 ) ); ?>
 
 		<?php
@@ -54,6 +52,19 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 		ob_end_clean();
 
 		return $display;
+	}
+
+	/**
+     * Get card image url
+     *
+	 * @return string
+	 */
+	public function get_card_image_url() {
+		if ( $this->get_card_type() == 'visa_dk' ) {
+			return plugins_url( '/assets/images/dankort.png', dirname( __FILE__ ) );
+		} else {
+			return WC_HTTPS::force_https_url( WC()->plugin_url() . '/assets/images/icons/credit-cards/' . $this->get_card_type() . '.png' );
+		}
 	}
 
 	/**
