@@ -66,7 +66,7 @@ class WC_Reepay_Api {
 		$response  = wp_remote_request( $url, $args );
 		$body      = wp_remote_retrieve_body( $response );
 		$http_code = wp_remote_retrieve_response_code( $response );
-		$code = (int) ( intval($http_code) / 100 );
+		$code      = (int) ( intval( $http_code ) / 100 );
 
 		if ( $this->gateway->debug === 'yes' ) {
 			$this->log( print_r( [
@@ -377,7 +377,6 @@ class WC_Reepay_Api {
 	public function recurring( $payment_methods, $order, $data, $token = false, $payment_text = '' ) {
 		$params = [
 			'locale'          => $data['language'],
-			'button_text'     => $payment_text ?: __( 'Pay', 'woocommerce-gateway-reepay-checkout' ),
 			'create_customer' => [
 				'test'        => $data['test_mode'] === 'yes',
 				'handle'      => $data['customer_handle'],
@@ -395,6 +394,10 @@ class WC_Reepay_Api {
 			'accept_url'      => $data['return_url'],
 			'cancel_url'      => $order->get_cancel_order_url()
 		];
+
+		if ( ! empty( $payment_text ) ) {
+			$params['button_text'] = $payment_text;
+		}
 
 		if ( ! empty( $token ) ) {
 			$params['card_on_file']                  = $token;
