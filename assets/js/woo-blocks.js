@@ -9,7 +9,7 @@ if (wc && wc.wcBlocksRegistry && React && wc_reepay) {
      * External dependencies
      */
     const {registerPaymentMethod} = wc.wcBlocksRegistry;
-    const {createElement, useEffect} = React;
+    const {createElement, useEffect, useState} = React;
     const {useSelect, useDispatch} = wp.data;
     const {__} = wp.i18n;
     const {getSetting} = wc.wcSettings;
@@ -20,11 +20,19 @@ if (wc && wc.wcBlocksRegistry && React && wc_reepay) {
 
     const label = decodeEntities(settings.title) || __('Reepay checkout', 'reepay-checkout-gateway');
 
-    const Tokens = createElement(() => {
-        const tokens = settings.tokens.map((token) => createElement(Token, token))
+    if(settings.tokens) {
+        settings.tokens.push({
+            id: 'new'
+        })
+    }
 
-        tokens.push(createElement(Token, {
-            id: 'new',
+    const Tokens = createElement(() => {
+        const [activeToken, setActiveToken] = useState( settings.default_token )
+
+        const tokens = settings.tokens.map((token) => createElement(Token, {
+            token,
+            activeToken,
+            setActiveToken
         }))
 
         return createElement('ul', {
@@ -32,7 +40,9 @@ if (wc && wc.wcBlocksRegistry && React && wc_reepay) {
         }, ...tokens)
     });
 
-    const Token = (token) => {
+    const Token = ({token, activeToken, setActiveToken}) => {
+        console.log(activeToken);
+
         const {paymentMethodData} = useSelect((select) => ({
             paymentMethodData: select(PAYMENT_STORE_KEY).getPaymentMethodData()
         }));
@@ -51,13 +61,15 @@ if (wc && wc.wcBlocksRegistry && React && wc_reepay) {
             'name': name,
             'id': `${name}-${token.id}`,
             'value': token.id,
-            'onChange': (event) => {
-                if( paymentMethodData[name] !== token) {
-                    console.log(event.target.value)
+            'checked': activeToken === token.id,
+            'onChange': () => {
+                if( paymentMethodData[name] !== token.id) {
                     setPaymentMethodData({
                         ...paymentMethodData,
-                        [name]: event.target.value
+                        [name]: parseInt(token.id)
                     })
+
+                    setActiveToken( token.id )
                 }
             }
         })

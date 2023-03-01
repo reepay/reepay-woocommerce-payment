@@ -136,23 +136,38 @@ final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
 			'supports'    => $this->get_supported_features(),
 		];
 
-		if ( in_array( 'cards', $data['supports'] ) ) {
-			$data['tokens'] = [];
 
-			foreach ( $this->gateway->get_tokens() as $token ) {
-				if( $token instanceof WC_Payment_Token_Reepay ) {
-					/** @var WC_Payment_Token_Reepay $token */
-					$data['tokens'][] = [
-						'id'         => $token->get_id(),
-						'expiry_month' => $token->get_expiry_month(),
-						'expiry_year' => $token->get_expiry_year(),
-						'masked' => $token->get_masked_card(),
-						'type' => $token->get_card_type(),
-						'image' => $token->get_card_image_url(),
-						'image_alt' => wc_get_credit_card_type_label( $token->get_card_type() ),
-						'is_default' => checked( $token->is_default(), true, false ),
-					];
+		if ( in_array( 'cards', $data['supports'] ) ) {
+			$tokens = $this->gateway->get_tokens();
+
+			if ( ! empty( $tokens ) ) {
+				$data['tokens'] = [];
+
+				foreach ( $this->gateway->get_tokens() as $token ) {
+					if ( $token instanceof WC_Payment_Token_Reepay ) {
+						/** @var WC_Payment_Token_Reepay $token */
+						$data['tokens'][] = [
+							'id'           => $token->get_id(),
+							'expiry_month' => $token->get_expiry_month(),
+							'expiry_year'  => $token->get_expiry_year(),
+							'masked'       => $token->get_masked_card(),
+							'type'         => $token->get_card_type(),
+							'image'        => $token->get_card_image_url(),
+							'image_alt'    => wc_get_credit_card_type_label( $token->get_card_type() ),
+							'is_default'   => checked( $token->is_default(), true, false ),
+						];
+					}
 				}
+
+				$default_token = WC_Payment_Tokens::get_customer_default_token( WC()->cart->get_customer()->get_id() );
+
+				if(!empty($default_token)) {
+					$data['default_token'] = $default_token->get_id();
+				} else {
+					$data['default_token'] = $data['tokens'][0]['id'];
+				}
+			} else {
+				$data['default_token'] = 'new';
 			}
 		}
 
