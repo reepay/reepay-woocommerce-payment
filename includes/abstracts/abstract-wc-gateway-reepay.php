@@ -629,6 +629,24 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	 * @return array|false
 	 */
 	public function process_payment( $order_id ) {
+        if('application/json' === $_SERVER['CONTENT_TYPE']) {
+	        try {
+		        $_POST = json_decode(file_get_contents('php://input'), true);
+
+		        foreach ( $_POST['payment_data'] ?? [] as $data ) {
+			        if ( empty( $_POST[ $data['key'] ] ) ) {
+				        $_POST[ $data['key'] ] = $data['value'];
+			        }
+		        }
+
+	        } catch (Exception $e) {
+                return [
+                    'messages' => __( 'Wrong Request. Try again', 'reepay-checkout-gateway' ),
+                    'result' => 'failure'
+                ];
+	        }
+        }
+
 		$order    = wc_get_order( $order_id );
 		$token_id = isset( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) ? wc_clean( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) : 'new';
 

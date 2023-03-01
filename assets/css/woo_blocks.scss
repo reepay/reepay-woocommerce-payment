@@ -6,17 +6,16 @@
     &-item {
       display: flex;
       flex-wrap: wrap;
+      padding-top: .8em;
+      padding-bottom: .8em;
 
       & > * {
         margin-right: 5px;
       }
 
-      & > img {
-        //
-      }
-
-      & > input[type="radio"] {
-        //
+      & > label {
+        display: flex;
+        flex-wrap: wrap;
       }
     }
   }

@@ -10,34 +10,22 @@ if (wc && wc.wcBlocksRegistry && React && wc_reepay) {
      */
     const {registerPaymentMethod} = wc.wcBlocksRegistry;
     const {createElement, useEffect} = React;
+    const {useSelect, useDispatch} = wp.data;
     const {__} = wp.i18n;
     const {getSetting} = wc.wcSettings;
+    const {PAYMENT_STORE_KEY} = wc.wcBlocksData;
     const {decodeEntities} = wp.htmlEntities;
 
     const settings = getSetting(PAYMENT_METHOD_NAME + '_data', {});
 
     const label = decodeEntities(settings.title) || __('Reepay checkout', 'reepay-checkout-gateway');
 
-    const Tokens = createElement((props) => {
+    const Tokens = createElement(() => {
         const tokens = settings.tokens.map((token) => createElement(Token, token))
 
-        tokens.push(
-            createElement(
-                'li',
-                {
-                    key: 'new',
-                    className: 'reepay-blocks-list-item'
-                },
-                createElement(
-                    'input', {
-                        'type': 'radio',
-                        'name': 'wc-reepay_checkout-payment-token',
-                        'value': 'new'
-                    }
-                ),
-                __('Use a new payment method', 'reepay-checkout-gateway')
-            )
-        )
+        tokens.push(createElement(Token, {
+            id: 'new',
+        }))
 
         return createElement('ul', {
             className: 'reepay-blocks-list'
@@ -45,16 +33,45 @@ if (wc && wc.wcBlocksRegistry && React && wc_reepay) {
     });
 
     const Token = (token) => {
-        const Img = createElement('img', {
+        const {paymentMethodData} = useSelect((select) => ({
+            paymentMethodData: select(PAYMENT_STORE_KEY).getPaymentMethodData()
+        }));
+
+        const {__internalSetPaymentMethodData: setPaymentMethodData} = useDispatch(PAYMENT_STORE_KEY);
+
+        const Img = token.image ? createElement('img', {
             'src': token.image,
             'image_alt': token.label,
-        });
+        }) : null;
+
+        const name = `wc-${PAYMENT_METHOD_NAME}-payment-token`;
 
         const Radio = createElement('input', {
             'type': 'radio',
-            'name': 'wc-reepay_checkout-payment-token',
-            'value': token.id
+            'name': name,
+            'id': `${name}-${token.id}`,
+            'value': token.id,
+            'onChange': (event) => {
+                if( paymentMethodData[name] !== token) {
+                    console.log(event.target.value)
+                    setPaymentMethodData({
+                        ...paymentMethodData,
+                        [name]: event.target.value
+                    })
+                }
+            }
         })
+
+        const Label = createElement(
+            'label',
+            {
+                'htmlFor': `wc-${PAYMENT_METHOD_NAME}-payment-token-${token.id}`,
+            },
+            Img,
+            'new' === token.id ?
+                __('Use a new payment method', 'reepay-checkout-gateway') :
+                `${token.masked} ${token.expiry_month}/${token.expiry_year}`
+        )
 
         return createElement(
             'li',
@@ -63,8 +80,7 @@ if (wc && wc.wcBlocksRegistry && React && wc_reepay) {
                 className: 'reepay-blocks-list-item'
             },
             Radio,
-            Img,
-            `${token.masked} ${token.expiry_month}/${token.expiry_year}`
+            Label,
         )
     }
 
@@ -77,17 +93,21 @@ if (wc && wc.wcBlocksRegistry && React && wc_reepay) {
 
         useEffect( () => {
             const unsubscribe1 = onPaymentProcessing( async (result) => {
+                console.log('onPaymentProcessing', result);
             } );
 
             const unsubscribe2 = onCheckoutAfterProcessingWithSuccess( async (result) => {
+                console.log('onCheckoutAfterProcessingWithSuccess',result);
                 const { processingResponse } = result;
                 const { paymentDetails } = processingResponse;
 
-                wc_reepay.buildModalCheckout( paymentDetails.reepay_id, paymentDetails.accept_url );
+                if (paymentDetails.reepay_id && paymentDetails.accept_url) {
+                    wc_reepay.buildModalCheckout(paymentDetails.reepay_id, paymentDetails.accept_url);
+                }
             } );
 
-            const unsubscribe3 = onCheckoutAfterProcessingWithError( async () => {
-
+            const unsubscribe3 = onCheckoutAfterProcessingWithError( async (result) => {
+                console.log('onCheckoutAfterProcessingWithSuccess',result);
             } );
 
             // Unsubscribes when this component is unmounted.
@@ -98,6 +118,8 @@ if (wc && wc.wcBlocksRegistry && React && wc_reepay) {
             };
         }, [
             emitResponse.responseTypes.SUCCESS,
+            emitResponse.responseTypes.ERROR,
+            emitResponse.responseTypes.FAIL,
         ] );
 
         if(settings.tokens) {

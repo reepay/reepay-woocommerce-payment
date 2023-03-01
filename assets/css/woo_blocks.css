@@ -3,6 +3,11 @@
   list-style-type: none; }
   .reepay-blocks-list-item {
     display: flex;
-    flex-wrap: wrap; }
+    flex-wrap: wrap;
+    padding-top: .8em;
+    padding-bottom: .8em; }
     .reepay-blocks-list-item > * {
       margin-right: 5px; }
+    .reepay-blocks-list-item > label {
+      display: flex;
+      flex-wrap: wrap; }
