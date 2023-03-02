@@ -800,6 +800,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		// Get setting from parent method
 		$settings = get_option( 'woocommerce_reepay_checkout_settings' );
 
+		$have_sub = wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions();
+
 		if ( $params['recurring'] ) {
 			$params['button_text'] = $settings['payment_button_text'];
 		}
@@ -969,7 +971,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			);
 		}
 
-		$have_sub = wc_cart_only_reepay_subscriptions() || wcs_cart_only_subscriptions();
 
 		if ( class_exists( 'WC_Reepay_Renewals' ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
 			$have_sub = true;
@@ -1017,9 +1018,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	}
 
 	public function process_session_charge( $params, $order ) {
-		if ( empty( $params['button_text'] ) ) {
-			$params['button_text'] = strip_tags( __( 'Pay', 'reepay-checkout-gateway' ) . ' ' . $order->get_formatted_order_total() );
-		}
+
 		$result = $this->api->request(
 			'POST',
 			'https://checkout-api.reepay.com/v1/session/charge',
