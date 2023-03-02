@@ -39,7 +39,7 @@ class Reepay_Woo_Blocks_Integration {
 					Package::container()->get( $payment_method )
 				);
 			} catch (Exception $e) {
-				$this->log( $e->getMessage(), 'error' );
+				//$this->log( $e->getMessage(), 'error' );
 			}
 		}
 	}

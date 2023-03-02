@@ -35,7 +35,7 @@ final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
 		$this->gateway = WC()->payment_gateways()->get_available_payment_gateways()[ $this->name ] ?? null;
 
 		if ( is_null( $this->gateway ) ) {
-			throw new Exception( 'Gateway not found' );
+			throw new Exception( "Gateway '{$this->name}' not found" );
 		}
 	}
 
