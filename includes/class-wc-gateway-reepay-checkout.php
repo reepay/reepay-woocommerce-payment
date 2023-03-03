@@ -36,6 +36,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			'subscription_payment_method_change_customer',
 			'subscription_payment_method_change_admin',
 			'multiple_subscriptions',
+            'woo_blocks_only_subscriptions_in_cart'
 		);
 
 		parent::__construct();

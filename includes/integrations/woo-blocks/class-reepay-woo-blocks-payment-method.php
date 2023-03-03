@@ -115,7 +115,14 @@ final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
 	 * @return string[]
 	 */
 	public function get_supported_features() {
-		$features = [ 'products' ];
+		/** @var WC_Gateway_Reepay $gateway */
+		$gateway = WC()->payment_gateways()->get_available_payment_gateways()[ $this->name ] ?? null;
+
+		if ( !empty( $gateway ) ) {
+			$features= $gateway->supports;
+		} else {
+			$features = [ 'products' ];
+		}
 
 		if ( in_array( $this->name, $this->support_cards ) ) {
 			$features[] = 'cards';
