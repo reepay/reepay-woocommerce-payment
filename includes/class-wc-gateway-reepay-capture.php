@@ -59,7 +59,7 @@ class WC_Reepay_Order_Capture {
 		unset( $_POST['post_status'] );
 
 		$gateway = rp_get_payment_method( $order );
-		$result  = $gateway->api->settle( $order, $total_all, $items_data );
+		$result  = $gateway->api->settle( $order, $total_all, $items_data, $line_items );
 
 		if ( is_wp_error( $result ) ) {
 			$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
