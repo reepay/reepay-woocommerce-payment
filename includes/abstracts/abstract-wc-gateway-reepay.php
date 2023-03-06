@@ -650,7 +650,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		$order    = wc_get_order( $order_id );
 		$token_id = isset( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) ? wc_clean( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) : 'new';
 
-		if ( isset( $_POST[ 'wc-' . $this->id . '-new-payment-method' ] ) ) {
+		if ( isset( $_POST[ 'wc-' . $this->id . '-new-payment-method' ] ) && $_POST[ 'wc-' . $this->id . '-new-payment-method' ] !== false ) {
 			$maybe_save_card = (bool) $_POST[ 'wc-' . $this->id . '-new-payment-method' ];
 		} else {
 			$maybe_save_card = wcs_cart_have_subscription();

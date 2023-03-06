@@ -178,6 +178,7 @@ final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
 			}
 		}
 
-		return $data;
+		$data = apply_filters( 'reepay_blocks_payment_method_data', $data, $this );
+		return apply_filters( 'reepay_blocks_payment_method_data_' . $this->name, $data, $this );
 	}
 }
