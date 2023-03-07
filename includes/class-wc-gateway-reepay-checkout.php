@@ -237,7 +237,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			$this->test_mode        = 'yes';
 			$account_info           = $this->get_account_info( $this, true );
 
-			if ( ! empty( $account_info ) ) {
+			if ( ! empty( $account_info ) && ! is_wp_error( $account_info ) ) {
 				$this->form_fields['account_test']               = array(
 					'title'       => __( 'Account', 'reepay-checkout-gateway' ),
 					'type'        => 'account_info',
