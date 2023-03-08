@@ -141,7 +141,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		$this->api = new WC_Reepay_Api( $this );
 
-
 		add_action( 'admin_notices', array( $this, 'admin_notice_api_action' ) );
 
 		// JS Scrips
