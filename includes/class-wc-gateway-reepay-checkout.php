@@ -42,21 +42,21 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		parent::__construct();
 
 		// Define user set variables
-		$this->private_key             = apply_filters( 'woocommerce_reepay_private_key', isset( $this->settings['private_key'] ) ? $this->settings['private_key'] : $this->private_key );
-		$this->private_key_test        = apply_filters( 'woocommerce_reepay_private_key_test', isset( $this->settings['private_key_test'] ) ? $this->settings['private_key_test'] : $this->private_key_test );
-		$this->test_mode               = isset( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $this->test_mode;
-		$this->settle                  = isset( $this->settings['settle'] ) ? $this->settings['settle'] : $this->settle;
-		$this->language                = isset( $this->settings['language'] ) ? $this->settings['language'] : $this->language;
-		$this->save_cc                 = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
-		$this->debug                   = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
-		$this->logos                   = isset( $this->settings['logos'] ) ? $this->settings['logos'] : $this->logos;
-		$this->payment_type            = isset( $this->settings['payment_type'] ) ? $this->settings['payment_type'] : $this->payment_type;
-		$this->payment_methods         = isset( $this->settings['payment_methods'] ) ? $this->settings['payment_methods'] : $this->payment_methods;
-		$this->skip_order_lines        = isset( $this->settings['skip_order_lines'] ) ? $this->settings['skip_order_lines'] : $this->skip_order_lines;
-		$this->enable_order_autocancel = isset( $this->settings['enable_order_autocancel'] ) ? $this->settings['enable_order_autocancel'] : $this->enable_order_autocancel;
-		$this->failed_webhooks_email   = isset( $this->settings['failed_webhooks_email'] ) ? $this->settings['failed_webhooks_email'] : $this->failed_webhooks_email;
-		$this->is_webhook_configured   = isset( $this->settings['is_webhook_configured'] ) ? $this->settings['is_webhook_configured'] : $this->is_webhook_configured;
-		$this->handle_failover         = isset( $this->settings['handle_failover'] ) ? $this->settings['handle_failover'] : $this->handle_failover;
+		$this->private_key             = apply_filters( 'woocommerce_reepay_private_key', $this->settings['private_key'] ?? $this->private_key );
+		$this->private_key_test        = apply_filters( 'woocommerce_reepay_private_key_test', $this->settings['private_key_test'] ?? $this->private_key_test );
+		$this->test_mode               = $this->settings['test_mode'] ?? $this->test_mode;
+		$this->settle                  = $this->settings['settle'] ?? $this->settle;
+		$this->language                = $this->settings['language'] ?? $this->language;
+		$this->save_cc                 = $this->settings['save_cc'] ?? $this->save_cc;
+		$this->debug                   = $this->settings['debug'] ?? $this->debug;
+		$this->logos                   = $this->settings['logos'] ?? $this->logos;
+		$this->payment_type            = $this->settings['payment_type'] ?? $this->payment_type;
+		$this->payment_methods         = $this->settings['payment_methods'] ?? $this->payment_methods;
+		$this->skip_order_lines        = $this->settings['skip_order_lines'] ?? $this->skip_order_lines;
+		$this->enable_order_autocancel = $this->settings['enable_order_autocancel'] ?? $this->enable_order_autocancel;
+		$this->failed_webhooks_email   = $this->settings['failed_webhooks_email'] ?? $this->failed_webhooks_email;
+		$this->is_webhook_configured   = $this->settings['is_webhook_configured'] ?? $this->is_webhook_configured;
+		$this->handle_failover         = $this->settings['handle_failover'] ?? $this->handle_failover;
 
 		// Disable "Add payment method" if the CC saving is disabled
 		if ( $this->save_cc !== 'yes' && ( $key = array_search( 'add_payment_method', $this->supports ) ) !== false ) {
@@ -78,366 +78,308 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		add_action( 'wp_ajax_nopriv_reepay_card_store', array( $this, 'reepay_card_store' ) );
 		add_action( 'wp_ajax_reepay_finalize', array( $this, 'reepay_finalize' ) );
 		add_action( 'wp_ajax_nopriv_reepay_finalize', array( $this, 'reepay_finalize' ) );
-		//add_action( 'admin_notices', array( $this, 'admin_notice_warning' ) );
 	}
 
 	/**
 	 * Initialise Settings Form Fields
-	 * @return string|void
 	 */
 	public function init_form_fields() {
-		$this->form_fields = array(
-			'enabled'     => array(
+		$this->form_fields = apply_filters( 'reepay_checkout_form_fields', array(
+			'enabled'                    => array(
 				'title'   => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable plugin', 'reepay-checkout-gateway' ),
-				'default' => 'no'
+				'default' => 'no',
 			),
-			'hr1'         => array(
-				'type'    => 'separator',
-				'id'      => 'separator_1',
-				'title'   => __( 'Webhook status', 'reepay-checkout-gateway' ),
-				'label'   => __( 'Webhook status', 'reepay-checkout-gateway' ),
-				'default' => $this->test_mode
+			'hr1'                        => array(
+				'type' => 'separator',
 			),
-			'title'       => array(
+			'title'                      => array(
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay Checkout', 'reepay-checkout-gateway' )
+				'default'     => __( 'Reepay Checkout', 'reepay-checkout-gateway' ),
 			),
-			'description' => array(
+			'description'                => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
 				'default'     => __( 'Reepay Checkout', 'reepay-checkout-gateway' ),
 			),
-			'hr2'         => array(
+			'hr2'                        => array(
 				'type' => 'separator',
-				'id'   => 'hr2'
 			),
-			'private_key' => array(
+			'private_key'                => array(
 				'title'       => __( 'Live Private Key', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'Insert your private key from your live account', 'reepay-checkout-gateway' ),
-				'default'     => $this->private_key
+				'default'     => '',
 			),
-
-		);
-
-		if ( isset( $_POST['woocommerce_reepay_checkout_private_key'] ) ) {
-			$this->settings['private_key'] = $_POST['woocommerce_reepay_checkout_private_key'];
-		}
-
-		if ( empty( $this->settings['private_key'] ) ) {
-			$this->form_fields['verify_key'] = array(
-				'title'       => '',
+			'verify_key'                 => array(
 				'type'        => 'verify_key',
-				'description' => '',
-				'default'     => 'Save and verify'
-			);
-		} else {
-
-			$this->private_key = ! empty( $this->settings['private_key'] ) ? $this->settings['private_key'] : $_POST['woocommerce_reepay_checkout_private_key'];
-
-			$this->test_mode = 'no';
-			$account_info    = $this->get_account_info( $this );
-
-			if ( ! empty( $account_info ) && ! is_wp_error( $account_info ) ) {
-				$this->form_fields['account'] = array(
-					'title'       => __( 'Account', 'reepay-checkout-gateway' ),
-					'type'        => 'account_info',
-					'description' => '',
-					'default'     => $account_info['name']
-				);
-				$this->form_fields['state']   = array(
-					'title'       => __( 'State', 'reepay-checkout-gateway' ),
-					'type'        => 'account_info',
-					'description' => '',
-					'default'     => $account_info['state']
-				);
-
-			}
-
-			$this->form_fields['is_webhook_configured_live'] = array(
-				'title'   => __( 'Webhook', 'reepay-checkout-gateway' ),
+                'show' => function() {
+	                return empty( $this->get_option( 'private_key' ) );
+                }
+			),
+			'account'                    => array(
+				'title'       => __( 'Account', 'reepay-checkout-gateway' ),
+				'type'        => 'account_info',
+				'show' => function() {
+					return ! empty( $this->get_option( 'private_key' ) );
+				},
+                'info_type' => 'name',
+				'is_test' => false
+			),
+			'state'                      => array(
+				'title'       => __( 'State', 'reepay-checkout-gateway' ),
+				'type'        => 'account_info',
+				'show' => function() {
+					return ! empty( $this->get_option( 'private_key' ) );
+				},
+				'info_type' => 'state',
+				'is_test' => false
+			),
+			'is_webhook_configured_live' => array(
 				'type'    => 'webhook_status',
-				'label'   => __( 'Webhook', 'reepay-checkout-gateway' ),
-				'default' => $this->is_webhook_configured()
-			);
-
-			$this->test_mode = ! empty( $_POST['woocommerce_reepay_checkout_test_mode'] ) ? $_POST['woocommerce_reepay_checkout_test_mode'] : '';
-			$this->test_mode = ! empty( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $this->test_mode;
-		}
-
-		$this->form_fields['hr10'] = array(
-			'type' => 'separator',
-			'id'   => 'hr10'
-		);
-
-		$this->form_fields['private_key_test'] = array(
-			'title'       => __( 'Test Private Key', 'reepay-checkout-gateway' ),
-			'type'        => 'text',
-			'description' => __( 'Insert your private key from your Reepay test account', 'reepay-checkout-gateway' ),
-			'default'     => $this->private_key_test
-		);
-
-
-		if ( isset( $_POST['woocommerce_reepay_checkout_private_key_test'] ) ) {
-			$this->settings['private_key_test'] = $_POST['woocommerce_reepay_checkout_private_key_test'];
-		}
-
-		if ( empty( $this->settings['private_key_test'] ) ) {
-			$this->form_fields['verify_key_test'] = array(
-				'title'       => '',
-				'type'        => 'verify_key',
-				'description' => '',
-				'default'     => 'Save and verify'
-			);
-		} else {
-			$this->private_key_test = $this->private_key_test = ! empty( $this->settings['private_key_test'] ) ? $this->settings['private_key_test'] : $_POST['woocommerce_reepay_checkout_private_key_test'];
-			$this->test_mode        = 'yes';
-			$account_info           = $this->get_account_info( $this, true );
-
-			if ( ! empty( $account_info ) && ! is_wp_error( $account_info ) ) {
-				$this->form_fields['account_test']               = array(
-					'title'       => __( 'Account', 'reepay-checkout-gateway' ),
-					'type'        => 'account_info',
-					'description' => '',
-					'default'     => $account_info['name']
-				);
-				$this->form_fields['state_test']                 = array(
-					'title'       => __( 'State', 'reepay-checkout-gateway' ),
-					'type'        => 'account_info',
-					'description' => '',
-					'default'     => $account_info['state']
-				);
-				$this->form_fields['is_webhook_configured_test'] = array(
-					'title'   => __( 'Webhook', 'reepay-checkout-gateway' ),
-					'type'    => 'webhook_status',
-					'label'   => __( 'Webhook', 'reepay-checkout-gateway' ),
-					'default' => $this->is_webhook_configured()
-				);
-			}
-
-			$this->test_mode = ! empty( $_POST['woocommerce_reepay_checkout_test_mode'] ) ? $_POST['woocommerce_reepay_checkout_test_mode'] : '';
-			$this->test_mode = ! empty( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $this->test_mode;
-		}
-
-		$this->form_fields['hr9'] = array(
-			'type' => 'separator',
-			'id'   => 'hr9'
-		);
-
-		$this->form_fields['test_mode'] = array(
-			'title'   => __( 'Test Mode', 'reepay-checkout-gateway' ),
-			'type'    => 'checkbox',
-			'label'   => __( 'Enable Test Mode', 'reepay-checkout-gateway' ),
-			'default' => $this->test_mode
-		);
-
-		$this->form_fields['hr3'] = array(
-			'type' => 'separator',
-			'id'   => 'hr3'
-		);
-
-		$this->form_fields['failed_webhooks_email'] = array(
-			'title'             => __( 'Email address for notification about failed webhooks', 'reepay-checkout-gateway' ),
-			'type'              => 'text',
-			'description'       => __( 'Email address for notification about failed webhooks', 'reepay-checkout-gateway' ),
-			'default'           => '',
-			'sanitize_callback' => function ( $value ) {
-				if ( ! empty( $value ) ) {
-					if ( ! is_email( $value ) ) {
-						throw new Exception( __( 'Email address is invalid.', 'reepay-checkout-gateway' ) );
-					}
+				'show' => function() {
+					return ! empty( $this->get_option( 'private_key' ) );
 				}
-
-				return $value;
-			},
-		);
-
-		$this->form_fields['payment_type'] = array(
-			'title'       => __( 'Payment Window Display', 'reepay-checkout-gateway' ),
-			'description' => __( 'Choose between a redirect window or a overlay window', 'reepay-checkout-gateway' ),
-			'type'        => 'select',
-			'options'     => array(
-				self::METHOD_WINDOW  => 'Window',
-				self::METHOD_OVERLAY => 'Overlay',
 			),
-			'default'     => $this->payment_type
-		);
-
-		$this->form_fields['payment_methods'] = array(
-			'title'       => __( 'Payment Methods', 'reepay-checkout-gateway' ),
-			'description' => __( 'Payment Methods', 'reepay-checkout-gateway' ),
-			'type'        => 'multiselect',
-			'css'         => 'height: 250px',
-			'options'     => array(
-				'card'             => 'All available debit / credit cards',
-				'dankort'          => 'Dankort',
-				'visa'             => 'VISA',
-				'visa_dk'          => 'VISA/Dankort',
-				'visa_elec'        => 'VISA Electron',
-				'mc'               => 'MasterCard',
-				'amex'             => 'American Express',
-				'mobilepay'        => 'MobilePay',
-				'viabill'          => 'ViaBill',
-				'klarna_pay_later' => 'Klarna Pay Later',
-				'klarna_pay_now'   => 'Klarna Pay Now',
-				'klarna_slice_it'  => 'Klarna Slice It',
-				'resurs'           => 'Resurs Bank',
-				'swish'            => 'Swish',
-				'diners'           => 'Diners Club',
-				'maestro'          => 'Maestro',
-				'laser'            => 'Laser',
-				'discover'         => 'Discover',
-				'jcb'              => 'JCB',
-				'china_union_pay'  => 'China Union Pay',
-				'ffk'              => 'Forbrugsforeningen',
-				'paypal'           => 'PayPal',
-				'applepay'         => 'Apple Pay',
-				'googlepay'        => 'Google Pay',
-				'vipps'            => 'Vipps'
+			'hr3'                        => array(
+				'type' => 'separator',
 			),
-			'default'     => $this->payment_methods
-		);
-
-		$this->form_fields['settle'] = array(
-			'title'          => __( 'Instant Settle', 'reepay-checkout-gateway' ),
-			'description'    => __( 'Instant Settle will charge your customers right away', 'reepay-checkout-gateway' ),
-			'type'           => 'multiselect',
-			'css'            => 'height: 150px',
-			'options'        => array(
-				WC_Reepay_Instant_Settle::SETTLE_VIRTUAL   => __( 'Instant Settle online / virtualproducts', 'reepay-checkout-gateway' ),
-				WC_Reepay_Instant_Settle::SETTLE_PHYSICAL  => __( 'Instant Settle physical  products', 'reepay-checkout-gateway' ),
-				WC_Reepay_Instant_Settle::SETTLE_RECURRING => __( 'Instant Settle recurring (subscription) products', 'reepay-checkout-gateway' ),
-				WC_Reepay_Instant_Settle::SETTLE_FEE       => __( 'Instant Settle fees', 'reepay-checkout-gateway' ),
+			'private_key_test'           => array(
+				'title'       => __( 'Test Private Key', 'reepay-checkout-gateway' ),
+				'type'        => 'text',
+				'description' => __( 'Insert your private key from your Reepay test account', 'reepay-checkout-gateway' ),
+				'default'     => $this->private_key_test,
 			),
-			'select_buttons' => true,
-			'default'        => array()
-		);
-
-		$this->form_fields['language'] = array(
-			'title'   => __( 'Language In Payment Window', 'reepay-checkout-gateway' ),
-			'type'    => 'select',
-			'options' => array(
-				''      => __( 'Detect Automatically', 'reepay-checkout-gateway' ),
-				'en_US' => __( 'English', 'reepay-checkout-gateway' ),
-				'da_DK' => __( 'Danish', 'reepay-checkout-gateway' ),
-				'sv_SE' => __( 'Swedish', 'reepay-checkout-gateway' ),
-				'no_NO' => __( 'Norwegian', 'reepay-checkout-gateway' ),
-				'de_DE' => __( 'German', 'reepay-checkout-gateway' ),
-				'es_ES' => __( 'Spanish', 'reepay-checkout-gateway' ),
-				'fr_FR' => __( 'French', 'reepay-checkout-gateway' ),
-				'it_IT' => __( 'Italian', 'reepay-checkout-gateway' ),
-				'nl_NL' => __( 'Netherlands', 'reepay-checkout-gateway' ),
+			'verify_key_test'            => array(
+				'type'        => 'verify_key',
+				'show' => function() {
+					return empty( $this->get_option( 'private_key_test' ) );
+				}
 			),
-			'default' => $this->language
-		);
-
-		$this->form_fields['save_cc'] = array(
-			'title'   => __( 'Allow Credit Card saving', 'reepay-checkout-gateway' ),
-			'type'    => 'checkbox',
-			'label'   => __( 'Enable Save CC feature', 'reepay-checkout-gateway' ),
-			'default' => 'no'
-		);
-
-		$this->form_fields['hr5'] = array(
-			'type' => 'separator',
-			'id'   => 'hr5'
-		);
-
-		$this->form_fields['debug'] = array(
-			'title'   => __( 'Debug', 'reepay-checkout-gateway' ),
-			'type'    => 'checkbox',
-			'label'   => __( 'Enable logging', 'reepay-checkout-gateway' ),
-			'default' => $this->debug
-		);
-
-		$this->form_fields['hr7'] = array(
-			'type' => 'separator',
-			'id'   => 'hr7'
-		);
-
-		$this->form_fields['logos'] = array(
-			'title'          => __( 'Payment Logos', 'reepay-checkout-gateway' ),
-			'description'    => __( 'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Reepay Dashboard', 'reepay-checkout-gateway' ),
-			'type'           => 'multiselect',
-			'css'            => 'height: 250px',
-			'options'        => array(
-				'dankort'            => __( 'Dankort', 'reepay-checkout-gateway' ),
-				'visa'               => __( 'Visa', 'reepay-checkout-gateway' ),
-				'mastercard'         => __( 'MasterCard', 'reepay-checkout-gateway' ),
-				'visa-electron'      => __( 'Visa Electron', 'reepay-checkout-gateway' ),
-				'maestro'            => __( 'Maestro', 'reepay-checkout-gateway' ),
-				'paypal'             => __( 'Paypal', 'reepay-checkout-gateway' ),
-				'mobilepay'          => __( 'MobilePay Online', 'reepay-checkout-gateway' ),
-				'applepay'           => __( 'ApplePay', 'reepay-checkout-gateway' ),
-				'klarna'             => __( 'Klarna', 'reepay-checkout-gateway' ),
-				'viabill'            => __( 'Viabill', 'reepay-checkout-gateway' ),
-				'resurs'             => __( 'Resurs Bank', 'reepay-checkout-gateway' ),
-				'forbrugsforeningen' => __( 'Forbrugsforeningen', 'reepay-checkout-gateway' ),
-				'amex'               => __( 'AMEX', 'reepay-checkout-gateway' ),
-				'jcb'                => __( 'JCB', 'reepay-checkout-gateway' ),
-				'diners'             => __( 'Diners Club', 'reepay-checkout-gateway' ),
-				'unionpay'           => __( 'Unionpay', 'reepay-checkout-gateway' ),
-				'discover'           => __( 'Discover', 'reepay-checkout-gateway' ),
-				'googlepay'          => __( 'Google pay', 'reepay-checkout-gateway' ),
-				'vipps'              => __( 'Vipps', 'reepay-checkout-gateway' )
+			'account_test'               => array(
+				'title'       => __( 'Account', 'reepay-checkout-gateway' ),
+				'type'        => 'account_info',
+				'show' => function() {
+					return ! empty( $this->get_option( 'private_key_test' ) );
+				},
+				'info_type' => 'name',
+				'is_test' => true
 			),
-			'select_buttons' => true,
-		);
-
-		$this->form_fields['logo_height'] = array(
-			'title'       => __( 'Logo Height', 'reepay-checkout-gateway' ),
-			'type'        => 'text',
-			'description' => __( 'Set the Logo height in pixels', 'reepay-checkout-gateway' ),
-			'default'     => ''
-		);
-
-		$this->form_fields['order_hr'] = array(
-			'type' => 'separator',
-			'id'   => 'order_hr'
-		);
-
-		$this->form_fields['handle_failover'] = array(
-			'title'       => __( 'Order handle failover', 'reepay-checkout-gateway' ),
-			'type'        => 'checkbox',
-			'label'       => __( 'Order handle failover', 'reepay-checkout-gateway' ),
-			'description' => __( 'In case if invoice with current handle was settled before, plugin will generate unique handle', 'reepay-checkout-gateway' ),
-			'default'     => 'yes'
-		);
-
-		$this->form_fields['skip_order_lines'] = array(
-			'title'       => __( 'Skip order lines', 'reepay-checkout-gateway' ),
-			'description' => __( 'Select if order lines should not be send to Reepay', 'reepay-checkout-gateway' ),
-			'type'        => 'select',
-			'options'     => array(
-				'no'  => 'Include order lines',
-				'yes' => 'Skip order lines'
+			'state_test'                 => array(
+				'title'       => __( 'State', 'reepay-checkout-gateway' ),
+				'type'        => 'account_info',
+				'show' => function() {
+					return ! empty( $this->get_option( 'private_key_test' ) );
+				},
+				'info_type' => 'state',
+                'is_test' => true
 			),
-			'default'     => $this->skip_order_lines
-		);
-
-		$this->form_fields['enable_order_autocancel'] = array(
-			'title'       => __( 'The automatic order auto-cancel', 'reepay-checkout-gateway' ),
-			'description' => __( 'The automatic order auto-cancel', 'reepay-checkout-gateway' ),
-			'type'        => 'select',
-			'options'     => array(
-				'yes' => 'Enable auto-cancel',
-				'no'  => 'Ignore / disable auto-cancel'
+			'is_webhook_configured_test' => array(
+				'type'    => 'webhook_status',
+				'show' => function() {
+					return ! empty( $this->get_option( 'private_key_test' ) );
+				}
 			),
-			'default'     => $this->enable_order_autocancel
-		);
+			'hr9'                        => array(
+				'type' => 'separator',
+				'id'   => 'hr9',
+			),
+			'test_mode'                  => array(
+				'title'   => __( 'Test Mode', 'reepay-checkout-gateway' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable Test Mode', 'reepay-checkout-gateway' ),
+				'default' => '',
+			),
+			'hr4'                        => array(
+				'type' => 'separator',
+			),
+			'failed_webhooks_email'      => array(
+				'title'             => __( 'Email address for notification about failed webhooks', 'reepay-checkout-gateway' ),
+				'type'              => 'text',
+				'description'       => __( 'Email address for notification about failed webhooks', 'reepay-checkout-gateway' ),
+				'default'           => '',
+				'sanitize_callback' => function ( $value ) {
+					if ( ! empty( $value ) ) {
+						if ( ! is_email( $value ) ) {
+							throw new Exception( __( 'Email address is invalid.', 'reepay-checkout-gateway' ) );
+						}
+					}
 
-		$this->form_fields['payment_button_text'] = array(
-			'title'       => __( 'Payment button text', 'reepay-checkout-gateway' ),
-			'type'        => 'text',
-			'description' => __( 'Text on button which will be displayed on payment page if subscription products is being purchased', 'reepay-checkout-gateway' ),
-			'default'     => __( 'PAY AND SAVE CARD', 'reepay-checkout-gateway' )
-		);
-        
+					return $value;
+				},
+			),
+			'payment_type'               => array(
+				'title'       => __( 'Payment Window Display', 'reepay-checkout-gateway' ),
+				'description' => __( 'Choose between a redirect window or a overlay window', 'reepay-checkout-gateway' ),
+				'type'        => 'select',
+				'options'     => array(
+					self::METHOD_WINDOW  => 'Window',
+					self::METHOD_OVERLAY => 'Overlay',
+				),
+				'default'     => '',
+			),
+			'payment_methods'            => array(
+				'title'       => __( 'Payment Methods', 'reepay-checkout-gateway' ),
+				'description' => __( 'Payment Methods', 'reepay-checkout-gateway' ),
+				'type'        => 'multiselect',
+				'css'         => 'height: 250px',
+				'options'     => array(
+					'card'             => 'All available debit / credit cards',
+					'dankort'          => 'Dankort',
+					'visa'             => 'VISA',
+					'visa_dk'          => 'VISA/Dankort',
+					'visa_elec'        => 'VISA Electron',
+					'mc'               => 'MasterCard',
+					'amex'             => 'American Express',
+					'mobilepay'        => 'MobilePay',
+					'viabill'          => 'ViaBill',
+					'klarna_pay_later' => 'Klarna Pay Later',
+					'klarna_pay_now'   => 'Klarna Pay Now',
+					'klarna_slice_it'  => 'Klarna Slice It',
+					'resurs'           => 'Resurs Bank',
+					'swish'            => 'Swish',
+					'diners'           => 'Diners Club',
+					'maestro'          => 'Maestro',
+					'laser'            => 'Laser',
+					'discover'         => 'Discover',
+					'jcb'              => 'JCB',
+					'china_union_pay'  => 'China Union Pay',
+					'ffk'              => 'Forbrugsforeningen',
+					'paypal'           => 'PayPal',
+					'applepay'         => 'Apple Pay',
+					'googlepay'        => 'Google Pay',
+					'vipps'            => 'Vipps',
+				),
+				'default'     => array(),
+			),
+			'settle'                     => array(
+				'title'          => __( 'Instant Settle', 'reepay-checkout-gateway' ),
+				'description'    => __( 'Instant Settle will charge your customers right away', 'reepay-checkout-gateway' ),
+				'type'           => 'multiselect',
+				'css'            => 'height: 150px',
+				'options'        => array(
+					WC_Reepay_Instant_Settle::SETTLE_VIRTUAL   => __( 'Instant Settle online / virtualproducts', 'reepay-checkout-gateway' ),
+					WC_Reepay_Instant_Settle::SETTLE_PHYSICAL  => __( 'Instant Settle physical  products', 'reepay-checkout-gateway' ),
+					WC_Reepay_Instant_Settle::SETTLE_RECURRING => __( 'Instant Settle recurring (subscription) products', 'reepay-checkout-gateway' ),
+					WC_Reepay_Instant_Settle::SETTLE_FEE       => __( 'Instant Settle fees', 'reepay-checkout-gateway' ),
+				),
+				'select_buttons' => true,
+				'default'        => array(),
+			),
+			'language'                   => array(
+				'title'   => __( 'Language In Payment Window', 'reepay-checkout-gateway' ),
+				'type'    => 'select',
+				'options' => array(
+					''      => __( 'Detect Automatically', 'reepay-checkout-gateway' ),
+					'en_US' => __( 'English', 'reepay-checkout-gateway' ),
+					'da_DK' => __( 'Danish', 'reepay-checkout-gateway' ),
+					'sv_SE' => __( 'Swedish', 'reepay-checkout-gateway' ),
+					'no_NO' => __( 'Norwegian', 'reepay-checkout-gateway' ),
+					'de_DE' => __( 'German', 'reepay-checkout-gateway' ),
+					'es_ES' => __( 'Spanish', 'reepay-checkout-gateway' ),
+					'fr_FR' => __( 'French', 'reepay-checkout-gateway' ),
+					'it_IT' => __( 'Italian', 'reepay-checkout-gateway' ),
+					'nl_NL' => __( 'Netherlands', 'reepay-checkout-gateway' ),
+				),
+				'default' => 'en_US',
+			),
+			'save_cc'                    => array(
+				'title'   => __( 'Allow Credit Card saving', 'reepay-checkout-gateway' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable Save CC feature', 'reepay-checkout-gateway' ),
+				'default' => 'no',
+			),
+			'hr5'                        => array(
+				'type' => 'separator',
+			),
+			'debug'                      => array(
+				'title'   => __( 'Debug', 'reepay-checkout-gateway' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable logging', 'reepay-checkout-gateway' ),
+				'default' => 'yes',
+			),
+			'hr6'                        => array(
+				'type' => 'separator',
+			),
+			'logos'                      => array(
+				'title'          => __( 'Payment Logos', 'reepay-checkout-gateway' ),
+				'description'    => __(
+					'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Reepay Dashboard',
+					'reepay-checkout-gateway'
+				),
+				'type'           => 'multiselect',
+				'css'            => 'height: 250px',
+				'options'        => array(
+					'dankort'            => __( 'Dankort', 'reepay-checkout-gateway' ),
+					'visa'               => __( 'Visa', 'reepay-checkout-gateway' ),
+					'mastercard'         => __( 'MasterCard', 'reepay-checkout-gateway' ),
+					'visa-electron'      => __( 'Visa Electron', 'reepay-checkout-gateway' ),
+					'maestro'            => __( 'Maestro', 'reepay-checkout-gateway' ),
+					'paypal'             => __( 'Paypal', 'reepay-checkout-gateway' ),
+					'mobilepay'          => __( 'MobilePay Online', 'reepay-checkout-gateway' ),
+					'applepay'           => __( 'ApplePay', 'reepay-checkout-gateway' ),
+					'klarna'             => __( 'Klarna', 'reepay-checkout-gateway' ),
+					'viabill'            => __( 'Viabill', 'reepay-checkout-gateway' ),
+					'resurs'             => __( 'Resurs Bank', 'reepay-checkout-gateway' ),
+					'forbrugsforeningen' => __( 'Forbrugsforeningen', 'reepay-checkout-gateway' ),
+					'amex'               => __( 'AMEX', 'reepay-checkout-gateway' ),
+					'jcb'                => __( 'JCB', 'reepay-checkout-gateway' ),
+					'diners'             => __( 'Diners Club', 'reepay-checkout-gateway' ),
+					'unionpay'           => __( 'Unionpay', 'reepay-checkout-gateway' ),
+					'discover'           => __( 'Discover', 'reepay-checkout-gateway' ),
+					'googlepay'          => __( 'Google pay', 'reepay-checkout-gateway' ),
+					'vipps'              => __( 'Vipps', 'reepay-checkout-gateway' ),
+				),
+				'select_buttons' => true,
+				'default'        => array(),
+			),
+			'logo_height'                => array(
+				'title'       => __( 'Logo Height', 'reepay-checkout-gateway' ),
+				'type'        => 'text',
+				'description' => __( 'Set the Logo height in pixels', 'reepay-checkout-gateway' ),
+				'default'     => '',
+			),
+			'hr7'                        => array(
+				'type' => 'separator',
+			),
+			'handle_failover'            => array(
+				'title'       => __( 'Order handle failover', 'reepay-checkout-gateway' ),
+				'type'        => 'checkbox',
+				'label'       => __( 'Order handle failover', 'reepay-checkout-gateway' ),
+				'description' => __( 'In case if invoice with current handle was settled before, plugin will generate unique handle', 'reepay-checkout-gateway' ),
+				'default'     => 'yes',
+			),
+			'skip_order_lines'           => array(
+				'title'       => __( 'Skip order lines', 'reepay-checkout-gateway' ),
+				'description' => __( 'Select if order lines should not be send to Reepay', 'reepay-checkout-gateway' ),
+				'type'        => 'select',
+				'options'     => array(
+					'no'  => 'Include order lines',
+					'yes' => 'Skip order lines',
+				),
+				'default'     => 'no',
+			),
+			'enable_order_autocancel'    => array(
+				'title'       => __( 'The automatic order auto-cancel', 'reepay-checkout-gateway' ),
+				'description' => __( 'The automatic order auto-cancel', 'reepay-checkout-gateway' ),
+				'type'        => 'select',
+				'options'     => array(
+					'yes' => 'Enable auto-cancel',
+					'no'  => 'Ignore / disable auto-cancel',
+				),
+				'default'     => 'no',
+			),
+			'payment_button_text'        => array(
+				'title'       => __( 'Payment button text', 'reepay-checkout-gateway' ),
+				'type'        => 'text',
+				'description' => __( 'Text on button which will be displayed on payment page if subscription products is being purchased', 'reepay-checkout-gateway' ),
+				'default'     => __( 'PAY AND SAVE CARD', 'reepay-checkout-gateway' ),
+			),
+		), $this );
 	}
 
 	/**
@@ -461,31 +403,40 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * @return string
 	 */
 	public function generate_account_info_html( $key, $data ) {
-		$field_key = $this->get_field_key( $key );
-		$defaults  = array(
-			'title'       => '',
-			'type'        => 'account_info',
-			'desc_tip'    => false,
-			'description' => '',
+		$data = wp_parse_args(
+			$data,
+			array(
+				'title' => '',
+				'info_type' => 'name',
+				'is_test' => false,
+				'show'  => function () {
+					return true;
+				},
+			)
 		);
 
-		$data = wp_parse_args( $data, $defaults );
+		if ( empty( $data['show'] ) || ! is_callable( $data['show'] ) || ! call_user_func( $data['show'] ) ) {
+			return '';
+		}
+
+		$info = $this->get_account_info( $this, $data['is_test'] );
+
+		if ( is_wp_error( $info ) ) {
+		    /** @var WP_Error $info */
+		    __log('!1!', $data['is_test'], $info->get_error_message());
+		}
 
 		ob_start();
 		?>
         <tr valign="top">
             <th scope="row" class="titledesc">
-                <label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?><?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok.
-					?></label>
+                <label><?php echo wp_kses_post( $data['title'] ); ?></label>
             </th>
             <td class="forminp">
                 <fieldset>
-                    <legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span>
-                    </legend>
-
-					<?php if ( ! empty( $data['default'] ) ): ?>
+	                <?php if ( !is_wp_error($info) && ! empty( $info[ $data['info_type'] ] ) ): ?>
                         <span>
-							<?php echo $data['default'] ?>
+							<?php echo $info[ $data['info_type'] ] ?>
 						</span>
 					<?php endif; ?>
                 </fieldset>
@@ -505,36 +456,35 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * @return string
 	 */
 	public function generate_verify_key_html( $key, $data ) {
-		$field_key = $this->get_field_key( $key );
-		$defaults  = array(
-			'title'       => '',
-			'type'        => 'verify_key',
-			'desc_tip'    => false,
-			'description' => '',
+		$data = wp_parse_args(
+			$data,
+			array(
+				'show' => function () {
+					return true;
+                },
+			)
 		);
 
-		$data = wp_parse_args( $data, $defaults );
+		if ( empty( $data['show'] ) || ! is_callable( $data['show'] ) || ! call_user_func( $data['show'] ) ) {
+			return '';
+		}
 
 		ob_start();
 		?>
         <tr valign="top">
-            <th scope="row" class="titledesc">
-                <label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?><?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok.
-					?></label>
-            </th>
+            <th></th>
             <td class="forminp">
                 <fieldset>
-                    <legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span>
-                    </legend>
-
-                    <button name="save" class="button-primary woocommerce-save-button" type="submit"
-                            value="Save changes">Save and verify
+                    <button name="save"
+                            class="button-primary woocommerce-save-button"
+                            type="submit"
+                            value="Save changes">
+						<?php _e( 'Save and verify', 'reepay-checkout-gateway' ) ?>
                     </button>
                 </fieldset>
             </td>
         </tr>
 		<?php
-
 		return ob_get_clean();
 	}
 
@@ -547,29 +497,31 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * @return string
 	 */
 	public function generate_webhook_status_html( $key, $data ) {
-		$field_key = $this->get_field_key( $key );
-		$defaults  = array(
-			'title'       => '',
-			'type'        => 'webhook_status',
-			'desc_tip'    => false,
-			'description' => '',
+		$data = wp_parse_args(
+			$data,
+			array(
+				'show' => function () {
+					return true;
+				},
+			)
 		);
 
-		$data = wp_parse_args( $data, $defaults );
+		if ( empty( $data['show'] ) || ! is_callable( $data['show'] ) || ! call_user_func( $data['show'] ) ) {
+			return '';
+		}
+
+
 
 		ob_start();
 		?>
         <tr valign="top">
             <th scope="row" class="titledesc">
-                <label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?><?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok.
-					?></label>
+                <label><?php _e( 'Webhook', 'reepay-checkout-gateway' ); ?></label>
             </th>
             <td class="forminp">
                 <fieldset>
-                    <legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span>
-                    </legend>
-
-					<?php if ( $data['default'] ): ?>
+					<?php
+                    if ( $this->check_is_active() ): ?>
                         <span style="color: green;">
 							<?php esc_html_e( 'Active', 'reepay-checkout-gateway' ); ?>
 						</span>
@@ -582,10 +534,9 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
                         </p>
 					<?php endif; ?>
 
-                    <input type="hidden" name="<?php echo esc_attr( $field_key ); ?>"
-                           id="<?php echo esc_attr( $field_key ); ?>"
-                           value="<?php echo esc_attr( $this->get_option( $key ) ); // WPCS: XSS ok.
-					       ?>"/>
+                    <input type="hidden"
+                           name="<?php echo esc_attr( $this->get_field_key( $key ) ); ?>"
+                           value="<?php echo esc_attr( $this->check_is_active() ); ?>"/>
                 </fieldset>
             </td>
         </tr>
@@ -624,7 +575,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	public function process_admin_options() {
 		parent::process_admin_options();
 
-		$current_key = isset( $this->settings['private_key'] ) ? $this->settings['private_key'] : '';
+		$current_key = isset( $this->private_key ) ? $this->private_key : '';
 		if ( $current_key != $_POST['woocommerce_reepay_checkout_private_key'] ) {
 			WC_Reepay_Gateway_Statistics::private_key_activated();
 		}

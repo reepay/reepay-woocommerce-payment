@@ -10,7 +10,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	/**
 	 * @var WC_Reepay_Api
 	 */
-	public $api;
+	public $api = null;
 
 	/**
 	 * Test Mode
@@ -21,18 +21,18 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	/**
 	 * @var string
 	 */
-	public $private_key;
+	public $private_key = '';
 
 	/**
 	 * @var
 	 */
-	public $private_key_test;
+	public $private_key_test = '';
 
 	/**
 	 * @var string
 	 */
 
-	public $public_key;
+	public $public_key = '';
 
 	/**
 	 * Settle
@@ -200,7 +200,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		return $configured;
 	}
 
-
+	/**
+	 * @param  WC_Payment_Gateway_Reepay_Interface  $gateway
+	 * @param  bool  $is_test
+	 *
+	 * @return array|mixed|object|WP_Error
+	 */
 	public function get_account_info( $gateway, $is_test = false ) {
 		if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'checkout' && ! empty( $_GET['section'] ) && $_GET['section'] == 'reepay_checkout' ) {
 
@@ -215,6 +220,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$account_info = get_transient( $key );
 			if ( empty( $account_info ) ) {
 				$account_info = $this->api->request( 'GET', 'https://api.reepay.com/v1/account' );
+
+				if ( is_wp_error( $account_info ) ) {
+					return $account_info;
+				}
+
 				set_transient( $key, $account_info, 5 );
 			}
 
