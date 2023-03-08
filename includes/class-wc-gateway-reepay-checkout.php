@@ -521,7 +521,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
             <td class="forminp">
                 <fieldset>
 					<?php
-                    if ( $this->check_is_active() ): ?>
+                    if ( $this->is_webhook_configured() ): ?>
                         <span style="color: green;">
 							<?php esc_html_e( 'Active', 'reepay-checkout-gateway' ); ?>
 						</span>
@@ -536,7 +536,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
                     <input type="hidden"
                            name="<?php echo esc_attr( $this->get_field_key( $key ) ); ?>"
-                           value="<?php echo esc_attr( $this->check_is_active() ); ?>"/>
+                           value="<?php echo esc_attr( $this->is_webhook_configured() ); ?>"/>
                 </fieldset>
             </td>
         </tr>
