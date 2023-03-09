@@ -61,7 +61,7 @@ final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
 	 * @return array
 	 */
 	public function get_payment_method_script_handles() {
-		if ( ! $this->is_active() ) {
+		if ( ! $this->is_active() || is_admin() ) {
 			return [];
 		}
 
