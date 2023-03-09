@@ -226,6 +226,33 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 	}
 
+
+	/**
+	 * @return string
+	 */
+	public static function get_default_api_url( $request = '' ) {
+		$default_wc_api_url = WC()->api_request_url( '' );
+
+		if ( class_exists( 'SitePress' ) ) {
+			$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
+			$languages = wp_list_pluck( $languages, 'default_locale' );
+		} else {
+			$languages = get_available_languages();
+		}
+
+		if ( ! empty( $languages ) ) {
+			foreach ( $languages as $available_language ) {
+				$lang = explode( '_', $available_language );
+				if ( stripos( $default_wc_api_url, '/' . $lang[0] . '/' ) !== false ) {
+					$default_wc_api_url = str_replace( '/' . $lang[0] . '/', '/', $default_wc_api_url );
+				}
+			}
+		}
+
+
+		return ! empty( $request ) ? $default_wc_api_url . $request . '/' : $default_wc_api_url;
+	}
+
 	/**
 	 * @return bool
 	 */
@@ -237,10 +264,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				throw new Exception( $request->get_error_message(), $request->get_error_code() );
 			}
 
+			$default_wc_api_url = self::get_default_api_url();
+
 			$alert_emails = $request['alert_emails'];
 
 			// The webhook settings of the payment plugin
-			$webhook_url = WC()->api_request_url( 'WC_Gateway_Reepay' );
+			$webhook_url = $default_wc_api_url . 'WC_Gateway_Reepay/';
 			$alert_email = '';
 			if ( ! empty( $this->settings['failed_webhooks_email'] ) &&
 			     is_email( $this->settings['failed_webhooks_email'] )
@@ -248,8 +277,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				$alert_email = $this->settings['failed_webhooks_email'];
 			}
 
-			$default_wc_api_url = WC()->api_request_url( '' );
-			$exist_waste_urls   = false;
+
+			$exist_waste_urls = false;
 
 			$urls = [];
 

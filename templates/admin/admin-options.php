@@ -22,8 +22,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<?php
 		echo sprintf(
 			__( 'WebHook URL: <a href="%s" target="_blank">%s</a>', 'reepay-checkout-gateway' ),
-			WC()->api_request_url( 'WC_Gateway_Reepay' ),
-			WC()->api_request_url( 'WC_Gateway_Reepay' )
+			WC_Gateway_Reepay::get_default_api_url( 'WC_Gateway_Reepay' ),
+			WC_Gateway_Reepay::get_default_api_url( 'WC_Gateway_Reepay' )
 		);
 		?>
     </p>
