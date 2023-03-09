@@ -224,7 +224,7 @@ if (wc && wc.wcBlocksRegistry && React && wc_reepay) {
         canMakePayment: () => true,
         ariaLabel: label,
         supports: {
-            features: settings.supports ?? [],
+            features: Object.values(settings.supports ?? {}),
             // showSavedCards: settings.supports.includes('cards'),
             // showSaveOption: settings.supports.includes('cards')
         },
