@@ -260,7 +260,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$request = $this->api->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
 			if ( is_wp_error( $request ) ) {
 				/** @var WP_Error $request */
-				throw new Exception( $request->get_error_message(), $request->get_error_code() );
+				if ( ! empty( $request->get_error_code() ) ) {
+					throw new Exception( $request->get_error_message(), intval( $request->get_error_code() ) );
+				}
 			}
 
 			$default_wc_api_url = self::get_default_api_url();
@@ -587,40 +589,40 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			return;
 		}
 
-        $this->enqueue_payment_scripts();
+		$this->enqueue_payment_scripts();
 	}
 
 	/**
 	 * enqueue_payment_scripts function.
-     *
+	 *
 	 * Outputs scripts used for payment
-     *
+	 *
 	 * @return void
 	 */
-    public function enqueue_payment_scripts() {
-	    $suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+	public function enqueue_payment_scripts() {
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
-	    wp_enqueue_script( 'reepay-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/js/checkout-cdn.js', array(), false, false );
-	    wp_enqueue_script( 'wc-gateway-reepay-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/js/checkout' . $suffix . '.js', array(
-		    'jquery',
-		    'wc-checkout',
-		    'reepay-checkout',
-	    ), false, true );
+		wp_enqueue_script( 'reepay-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/js/checkout-cdn.js', array(), false, false );
+		wp_enqueue_script( 'wc-gateway-reepay-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/js/checkout' . $suffix . '.js', array(
+			'jquery',
+			'wc-checkout',
+			'reepay-checkout',
+		), false, true );
 
-	    // Localize the script with new data
-	    $translation_array = array(
-		    'payment_type' => $this->payment_type,
-		    'public_key'   => $this->public_key,
-		    'language'     => substr( $this->get_language(), 0, 2 ),
-		    'buttonText'   => __( 'Pay', 'reepay-checkout-gateway' ),
-		    'recurring'    => true,
-		    'nonce'        => wp_create_nonce( 'reepay' ),
-		    'ajax_url'     => admin_url( 'admin-ajax.php' ),
-		    'cancel_text'  => __( 'Payment was canceled, please try again', 'reepay-checkout-gateway' ),
-		    'error_text'   => __( 'Error with payment, please try again', 'reepay-checkout-gateway' ),
-	    );
-	    wp_localize_script( 'wc-gateway-reepay-checkout', 'WC_Gateway_Reepay_Checkout', $translation_array );
-    }
+		// Localize the script with new data
+		$translation_array = array(
+			'payment_type' => $this->payment_type,
+			'public_key'   => $this->public_key,
+			'language'     => substr( $this->get_language(), 0, 2 ),
+			'buttonText'   => __( 'Pay', 'reepay-checkout-gateway' ),
+			'recurring'    => true,
+			'nonce'        => wp_create_nonce( 'reepay' ),
+			'ajax_url'     => admin_url( 'admin-ajax.php' ),
+			'cancel_text'  => __( 'Payment was canceled, please try again', 'reepay-checkout-gateway' ),
+			'error_text'   => __( 'Error with payment, please try again', 'reepay-checkout-gateway' ),
+		);
+		wp_localize_script( 'wc-gateway-reepay-checkout', 'WC_Gateway_Reepay_Checkout', $translation_array );
+	}
 
 	/**
 	 * If There are no payment fields show the description if set.
@@ -657,23 +659,23 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	 * @return array|false
 	 */
 	public function process_payment( $order_id ) {
-        if('application/json' === $_SERVER['CONTENT_TYPE']) {
-	        try {
-		        $_POST = json_decode(file_get_contents('php://input'), true);
+		if ( 'application/json' === $_SERVER['CONTENT_TYPE'] ) {
+			try {
+				$_POST = json_decode( file_get_contents( 'php://input' ), true );
 
-		        foreach ( $_POST['payment_data'] ?? [] as $data ) {
-			        if ( empty( $_POST[ $data['key'] ] ) ) {
-				        $_POST[ $data['key'] ] = $data['value'];
-			        }
-		        }
+				foreach ( $_POST['payment_data'] ?? [] as $data ) {
+					if ( empty( $_POST[ $data['key'] ] ) ) {
+						$_POST[ $data['key'] ] = $data['value'];
+					}
+				}
 
-	        } catch (Exception $e) {
-                return [
-                    'messages' => __( 'Wrong Request. Try again', 'reepay-checkout-gateway' ),
-                    'result' => 'failure'
-                ];
-	        }
-        }
+			} catch ( Exception $e ) {
+				return [
+					'messages' => __( 'Wrong Request. Try again', 'reepay-checkout-gateway' ),
+					'result'   => 'failure'
+				];
+			}
+		}
 
 		$order    = wc_get_order( $order_id );
 		$token_id = isset( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) ? wc_clean( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) : 'new';
@@ -1059,7 +1061,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				'redirect'           => $redirect,
 				'is_reepay_checkout' => true,
 				'reepay'             => $result,
-                'reepay_id'          => $result['id'],
+				'reepay_id'          => $result['id'],
 				'accept_url'         => $this->get_return_url( $order ),
 				'cancel_url'         => $order->get_cancel_order_url()
 			);
