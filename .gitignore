@@ -4,5 +4,14 @@
 #Ignore node_modules
 node_modules
 
+#Ignore composer
+vendor
+
 #Ignore PHP storm config
 .idea
+
+#Ignore generated assets
+assets/dist
+
+#Ignore build
+build
