@@ -6,3 +6,6 @@ node_modules
 
 #Ignore PHP storm config
 .idea
+
+#Ignore build
+build

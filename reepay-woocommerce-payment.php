@@ -245,7 +245,7 @@ class WC_ReepayCheckout {
 	public function add_scripts() {
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 		if ( is_checkout() ) {
-			wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/assets/css/style' . $suffix . '.css', __FILE__ ), array() );
+			wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/assets/dist/css/style' . $suffix . '.css', __FILE__ ), array() );
 		}
 	}
 

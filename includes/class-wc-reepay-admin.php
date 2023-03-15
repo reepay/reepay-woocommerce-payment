@@ -151,21 +151,21 @@ class WC_Reepay_Admin {
 
 			wp_register_script(
 				'reepay-js-input-mask',
-				plugin_dir_url( __FILE__ ) . '../assets/js/jquery.inputmask' . $suffix . '.js',
+				plugin_dir_url( __FILE__ ) . '../assets/dist/js/jquery.inputmask' . $suffix . '.js',
 				array( 'jquery' ),
 				'5.0.3'
 			);
 
 			wp_register_script(
 				'reepay-admin-js',
-				plugin_dir_url( __FILE__ ) . '../assets/js/admin' . $suffix . '.js',
+				plugin_dir_url( __FILE__ ) . '../assets/dist/js/admin' . $suffix . '.js',
 				array(
 					'jquery',
 					'reepay-js-input-mask'
 				)
 			);
 
-			wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/../assets/css/style' . $suffix . '.css', __FILE__ ), array(), false, 'all' );
+			wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/../assets/dist/css/style' . $suffix . '.css', __FILE__ ), array(), false, 'all' );
 
 			// Localize the script
 			$translation_array = array(
