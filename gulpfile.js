@@ -37,7 +37,7 @@ gulp.task(
 gulp.task(
     'js:build',
     function () {
-        return gulp.src( ['./assets/js/*.js', '!./assets/js/*.min.js'] )
+        return gulp.src( ['./assets/js/*.js', '!./assets/js/*.min.js', '!./assets/js/checkout-cdn.js'] )
             .pipe( sourcemaps.init() )
             .pipe( uglify() )
             .pipe(
