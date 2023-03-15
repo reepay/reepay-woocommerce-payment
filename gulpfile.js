@@ -7,7 +7,8 @@ const gulp       = require( 'gulp' ),
     sourcemaps = require( 'gulp-sourcemaps' ),
     cssmin     = require( 'gulp-clean-css' ),
     uglify     = require( 'gulp-uglify-es' ).default,
-    argv       = require('yargs').argv;
+    argv       = require('yargs').argv,
+    shell      = require( 'gulp-shell' );
 
 const fs = require('fs-extra');
 
@@ -30,8 +31,8 @@ gulp.task(
                     }
                 )
             )
-            .pipe( sourcemaps.write( '.' ) )
-            .pipe( gulpif( config.sourceMaps, gulp.dest( './assets/dist/css' ) ) );
+            .pipe( gulpif( config.sourceMaps,  sourcemaps.write( '.' ) ) )
+            .pipe( gulp.dest( './assets/dist/css' ) );
 
     }
 );
@@ -57,8 +58,8 @@ gulp.task(
                     }
                 )
             )
-            .pipe( sourcemaps.write( '.' ) )
-            .pipe( gulpif( config.sourceMaps, gulp.dest( './assets/dist/js' ) ) );
+            .pipe( gulpif( config.sourceMaps, sourcemaps.write( '.' ) ) )
+            .pipe( gulp.dest( './assets/dist/js' ) );
     }
 );
 
@@ -79,4 +80,9 @@ gulp.task(
 gulp.task(
     'build',
     gulp.series('clean', 'css:build', 'js:build')
+)
+
+gulp.task(
+    'zip',
+    shell.task( [ 'zip.sh' ] )
 )

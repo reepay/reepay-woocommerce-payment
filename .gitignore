@@ -12,3 +12,6 @@ vendor
 
 #Ignore generated assets
 assets/dist
+
+#Ignore build
+build
