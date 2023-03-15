@@ -677,6 +677,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			}
 		}
 
+
 		$order    = wc_get_order( $order_id );
 		$token_id = isset( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) ? wc_clean( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) : 'new';
 
@@ -1034,8 +1035,18 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		}
 
 
+		$only_items_lines = [];
+
+		foreach ( $order->get_items() as $order_item ) {
+			/** @var WC_Order_Item_Product $order_item */
+
+			if ( ! wcr_is_subscription_product( $order_item->get_product() ) ) {
+				$only_items_lines[] = $order_item;
+			}
+		}
+        
 		// If here's Subscription or zero payment
-		if ( ( $have_sub ) && ( abs( $order->get_total() ) < 0.01 || empty( $params['order']['order_lines'] ) ) ) {
+		if ( ( $have_sub ) && ( abs( $order->get_total() ) < 0.01 || empty( $only_items_lines ) ) ) {
 
 			$result = $this->api->recurring( $this->payment_methods, $order, $data, false, $params['button_text'] );
 
