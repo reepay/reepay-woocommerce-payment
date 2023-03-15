@@ -4,5 +4,16 @@
 #Ignore node_modules
 node_modules
 
+#Ignore composer
+vendor
+
 #Ignore PHP storm config
 .idea
+
+#Ignore generated assets
+assets/css/*.css
+assets/css/*.min.css
+assets/css/*.min.css.map
+
+assets/js/*.min.js
+assets/js/*.min.js.map
