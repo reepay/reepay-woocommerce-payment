@@ -4,48 +4,66 @@
 // Preload ModalCheckout
 window.rp = new Reepay.ModalCheckout();
 
-jQuery( function( $ ) {
+jQuery(function ($) {
     'use strict';
 
     // wc_checkout_params is required to continue, ensure the object exists
-    if ( typeof wc_checkout_params === 'undefined' ) {
+    if (typeof wc_checkout_params === 'undefined') {
         return false;
     }
 
-    $( document ).ajaxComplete( function ( event, xhr, settings ) {
-        if ( ( settings.url === wc_checkout_params.checkout_url ) || ( settings.url.indexOf( 'wc-ajax=complete_order' ) > -1 ) ) {
+    jQuery('form.checkout').on('checkout_place_order_success', function (e, result) {
+
+        try {
+            // Check is response from payment gateway
+            if (!result.hasOwnProperty('is_reepay_checkout')) {
+                return false;
+            }
+
+            wc_reepay.buildModalCheckout(result.reepay.id, result.accept_url);
+        } catch (e) {
+            console.warn(e);
+
+            return false;
+        }
+
+        return true;
+    });
+
+    /*$(document).ajaxComplete(function (event, xhr, settings) {
+        if ((settings.url === wc_checkout_params.checkout_url) || (settings.url.indexOf('wc-ajax=complete_order') > -1)) {
             const data = xhr.responseText;
 
             // Parse
             try {
-                const result = $.parseJSON( data );
+                const result = $.parseJSON(data);
 
                 // Check is response from payment gateway
-                if ( ! result.hasOwnProperty( 'is_reepay_checkout' ) ) {
+                if (!result.hasOwnProperty('is_reepay_checkout')) {
                     return false;
                 }
 
-                wc_reepay.buildModalCheckout( result.reepay.id, result.accept_url );
-            } catch ( e ) {
-                console.warn( e );
+                wc_reepay.buildModalCheckout(result.reepay.id, result.accept_url);
+            } catch (e) {
+                console.warn(e);
 
                 return false;
             }
         }
-    } );
+    });*/
 
-    $( document ).ready(function () {
-        if ( window.location.hash.indexOf( '#!reepay-pay' ) > -1 ) {
-            const url = document.location.hash.replace( '#!reepay-pay','' ),
-                params = new URLSearchParams( url );
+    $(document).ready(function () {
+        if (window.location.hash.indexOf('#!reepay-pay') > -1) {
+            const url = document.location.hash.replace('#!reepay-pay', ''),
+                params = new URLSearchParams(url);
 
-            let rid = params.get( 'rid' ),
-                accept_url = params.get( 'accept_url' );
+            let rid = params.get('rid'),
+                accept_url = params.get('accept_url');
 
-            window.setTimeout( function () {
-                wc_reepay.buildModalCheckout( rid, accept_url );
-                history.pushState( '', document.title, window.location.pathname );
-            }, 1000 );
+            window.setTimeout(function () {
+                wc_reepay.buildModalCheckout(rid, accept_url);
+                history.pushState('', document.title, window.location.pathname);
+            }, 300);
         }
     });
 });
@@ -57,47 +75,47 @@ wc_reepay = {
      * @param reepay_id
      * @param accept_url
      */
-    buildModalCheckout: function ( reepay_id, accept_url ) {
-        if ( WC_Gateway_Reepay_Checkout.payment_type === 'OVERLAY' ) {
+    buildModalCheckout: function (reepay_id, accept_url) {
+        if (WC_Gateway_Reepay_Checkout.payment_type === 'OVERLAY') {
             // Show modal
-            window.rp.show( reepay_id );
+            window.rp.show(reepay_id);
             //rp = new Reepay.ModalCheckout( reepay_id );
         } else {
-            window.rp = new Reepay.WindowCheckout( reepay_id );
+            window.rp = new Reepay.WindowCheckout(reepay_id);
         }
 
-        window.rp.addEventHandler( Reepay.Event.Accept, function( data ) {
-            console.log( 'Accept', data );
+        window.rp.addEventHandler(Reepay.Event.Accept, function (data) {
+            console.log('Accept', data);
 
             let redirect_url = accept_url;
-            for ( let prop in data ) {
-                redirect_url = wc_reepay.setUrlParameter( redirect_url, prop, data[prop] );
+            for (let prop in data) {
+                redirect_url = wc_reepay.setUrlParameter(redirect_url, prop, data[prop]);
             }
 
             window.location.href = redirect_url;
-        } );
+        });
 
-        window.rp.addEventHandler( Reepay.Event.Cancel, function( data ) {
-            console.log( 'Cancel', data );
-            wc_reepay.throw_error( WC_Gateway_Reepay_Checkout.cancel_text )
-        } );
+        window.rp.addEventHandler(Reepay.Event.Cancel, function (data) {
+            console.log('Cancel', data);
+            wc_reepay.throw_error(WC_Gateway_Reepay_Checkout.cancel_text)
+        });
 
-        window.rp.addEventHandler( Reepay.Event.Close, function( data ) {
-            var form = $('form.checkout');
-            form.removeClass( 'processing' ).unblock();
-            console.log( 'Close', data );
-        } );
+        window.rp.addEventHandler(Reepay.Event.Close, function (data) {
+            var form = jQuery('form.checkout');
+            form.removeClass('processing').unblock();
+            console.log('Close', data);
+        });
 
-        window.rp.addEventHandler( Reepay.Event.Error, function( data ) {
-            console.log( 'Error', data );
-            wc_reepay.throw_error( WC_Gateway_Reepay_Checkout.error_text )
-        } );
+        window.rp.addEventHandler(Reepay.Event.Error, function (data) {
+            console.log('Error', data);
+            wc_reepay.throw_error(WC_Gateway_Reepay_Checkout.error_text)
+        });
     },
 
-    throw_error: function ( errorThrown ) {
-        jQuery( function( $ ) {
+    throw_error: function (errorThrown) {
+        jQuery(function ($) {
             var form = $('form.checkout');
-            form.removeClass( 'processing' ).unblock();
+            form.removeClass('processing').unblock();
             $('.woocommerce-NoticeGroup').remove();
             var message = '<div class="woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout"><ul class="woocommerce-error" role="alert"><li>' + errorThrown + '</li></ul></div>';
             form.before(message);
@@ -114,7 +132,7 @@ wc_reepay = {
     },
 
 
-/**
+    /**
      * Add parameter for Url
      *
      * @param url
@@ -122,7 +140,7 @@ wc_reepay = {
      * @param value
      * @return {string}
      */
-    setUrlParameter: function ( url, key, value ) {
+    setUrlParameter: function (url, key, value) {
         var baseUrl = url.split('?')[0],
             urlQueryString = '?' + url.split('?')[1],
             newParam = key + '=' + value,

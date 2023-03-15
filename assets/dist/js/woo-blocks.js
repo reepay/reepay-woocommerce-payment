@@ -73,7 +73,7 @@ if (wc && wc.wcBlocksRegistry && React && wc_reepay) {
                 if (paymentMethodData[name] !== token.id) {
                     setPaymentMethodData({
                         ...paymentMethodData,
-                        [name]: token.id
+                        [name]: '' + token.id
                     })
 
                     setActiveToken(token.id)
