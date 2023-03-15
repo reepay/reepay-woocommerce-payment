@@ -8,9 +8,7 @@ const gulp       = require( 'gulp' ),
     cssmin     = require( 'gulp-clean-css' ),
     uglify     = require( 'gulp-uglify-es' ).default,
     argv       = require('yargs').argv,
-    shell      = require( 'gulp-shell' );
-
-const fs = require('fs-extra');
+    fs         = require('fs-extra');
 
 const config = {
     sourceMaps: !argv.production // --production
@@ -71,6 +69,11 @@ gulp.task(
 );
 
 gulp.task(
+    'watch',
+    gulp.parallel( 'js:build:watch', 'css:build:watch' )
+)
+
+gulp.task(
     'clean',
     async function () {
         fs.removeSync('./assets/dist');
@@ -80,9 +83,4 @@ gulp.task(
 gulp.task(
     'build',
     gulp.series('clean', 'css:build', 'js:build')
-)
-
-gulp.task(
-    'zip',
-    shell.task( [ 'zip.sh' ] )
 )
