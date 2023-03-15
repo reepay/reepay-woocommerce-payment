@@ -544,23 +544,41 @@ class WC_Reepay_Api {
 
 
 			if ( mb_strpos( $result->get_error_message(), 'Amount higher than authorized amount', 0, 'UTF-8' ) !== false && ! empty( $item ) ) {
-				$order_data = $this->get_invoice_data( $order );
-				$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
-				$price      = WC_Reepay_Order_Capture::get_item_price( $item, $order );
-				if ( $remaining > 0 && round( $remaining / 100 ) == $price['with_tax'] && ! empty( $request_data['order_lines'][0] ) ) {
-					$full = $remaining / ( $request_data["order_lines"][0]['vat'] + 1 );
-					if ( $full > 0 ) {
-						$request_data["order_lines"][0]['amount'] = $full;
 
-						$result = $this->request(
-							'POST',
-							'https://api.reepay.com/v1/charge/' . $handle . '/settle',
-							$request_data
-						);
+				if ( count( $request_data['order_lines'] ) > 1 && is_array( $item ) ) {
+					$order_data = $this->get_invoice_data( $order );
+					$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
 
-						return $result;
+					$request_data['amount'] = $remaining;
+					unset( $request_data['order_lines'] );
+
+					$result = $this->request(
+						'POST',
+						'https://api.reepay.com/v1/charge/' . $handle . '/settle',
+						$request_data
+					);
+
+					return $result;
+				} else {
+					$order_data = $this->get_invoice_data( $order );
+					$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
+					$price      = WC_Reepay_Order_Capture::get_item_price( $item, $order );
+					if ( $remaining > 0 && round( $remaining / 100 ) == $price['with_tax'] && ! empty( $request_data['order_lines'][0] ) ) {
+						$full = $remaining / ( $request_data["order_lines"][0]['vat'] + 1 );
+						if ( $full > 0 ) {
+							$request_data["order_lines"][0]['amount'] = $full;
+
+							$result = $this->request(
+								'POST',
+								'https://api.reepay.com/v1/charge/' . $handle . '/settle',
+								$request_data
+							);
+
+							return $result;
+						}
 					}
 				}
+
 			}
 
 			// need to be shown on admin notices

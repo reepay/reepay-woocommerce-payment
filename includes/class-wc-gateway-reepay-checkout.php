@@ -36,20 +36,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			'subscription_payment_method_change_customer',
 			'subscription_payment_method_change_admin',
 			'multiple_subscriptions',
+            'woo_blocks_only_subscriptions_in_cart'
 		);
 
 		parent::__construct();
 
-		// Load the form fields.
-		$this->init_form_fields();
-
-		// Load the settings.
-		$this->init_settings();
-
 		// Define user set variables
-		$this->enabled                 = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title                   = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description             = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
 		$this->private_key             = apply_filters( 'woocommerce_reepay_private_key', isset( $this->settings['private_key'] ) ? $this->settings['private_key'] : $this->private_key );
 		$this->private_key_test        = apply_filters( 'woocommerce_reepay_private_key_test', isset( $this->settings['private_key_test'] ) ? $this->settings['private_key_test'] : $this->private_key_test );
 		$this->test_mode               = isset( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $this->test_mode;
@@ -87,36 +79,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		add_action( 'wp_ajax_reepay_finalize', array( $this, 'reepay_finalize' ) );
 		add_action( 'wp_ajax_nopriv_reepay_finalize', array( $this, 'reepay_finalize' ) );
 		//add_action( 'admin_notices', array( $this, 'admin_notice_warning' ) );
-	}
-
-	/**
-	 * Admin notice warning
-	 */
-	/*public function admin_notice_warning() {
-		if ( 'yes' === $this->enabled && ! is_ssl() ) {
-			$message      = __( 'Reepay is enabled, but a SSL certificate is not detected. Your checkout may not be secure! Please ensure your server has a valid', 'reepay-checkout-gateway' );
-			$message_href = __( 'SSL certificate', 'reepay-checkout-gateway' );
-			$url          = 'https://en.wikipedia.org/wiki/Transport_Layer_Security';
-			printf( '<div class="notice notice-warning is-dismissible"><p>%1$s <a href="%2$s" target="_blank">%3$s</a></p></div>',
-				esc_html( $message ),
-				esc_html( $url ),
-				esc_html( $message_href )
-			);
-		}
-	}*/
-
-
-	public function generate_separator_html( $key, $data ) {
-
-
-		ob_start();
-		?>
-        <tr valign="top" style="border-top: 1px solid #c3c4c7">
-        </tr>
-		<?php
-
-		return ob_get_clean();
-
 	}
 
 	/**
@@ -237,7 +199,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			$this->test_mode        = 'yes';
 			$account_info           = $this->get_account_info( $this, true );
 
-			if ( ! empty( $account_info ) ) {
+			if ( ! empty( $account_info ) && ! is_wp_error( $account_info ) ) {
 				$this->form_fields['account_test']               = array(
 					'title'       => __( 'Account', 'reepay-checkout-gateway' ),
 					'type'        => 'account_info',
@@ -278,13 +240,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			'type' => 'separator',
 			'id'   => 'hr3'
 		);
-
-		/*$this->form_fields['is_webhook_configured'] = array(
-			'title'   => __( 'Webhook status', 'reepay-checkout-gateway' ),
-			'type'    => 'webhook_status',
-			'label'   => __( 'Webhook status', 'reepay-checkout-gateway' ),
-			'default' => $this->test_mode
-		);*/
 
 		$this->form_fields['failed_webhooks_email'] = array(
 			'title'             => __( 'Email address for notification about failed webhooks', 'reepay-checkout-gateway' ),
@@ -482,7 +437,19 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			'description' => __( 'Text on button which will be displayed on payment page if subscription products is being purchased', 'reepay-checkout-gateway' ),
 			'default'     => __( 'PAY AND SAVE CARD', 'reepay-checkout-gateway' )
 		);
+        
+	}
 
+	/**
+     * Generate separator HTML
+     *
+	 * @param string $key Field key.
+	 * @param array $data Field data.
+	 *
+	 * @return false|string
+	 */
+	public function generate_separator_html( $key, $data ) {
+		return '<tr valign="top" style="border-top: 1px solid #c3c4c7"></tr>';
 	}
 
 	/**
