@@ -47,7 +47,7 @@ then
 fi
 
 status "Generating build... 👷‍♀️"
-gulp build --production
+npm run build
 
 # Copy all files
 status "Copying files... ✌️"
