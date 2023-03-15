@@ -27,7 +27,7 @@ if (wc && wc.wcBlocksRegistry && React && wc_reepay) {
     }
 
     const Tokens = createElement(() => {
-        const [activeToken, setActiveToken] = useState(settings.default_token)
+        const [activeToken, setActiveToken] = useState(0)
 
         const tokens = settings.tokens.map((token) => createElement(Token, {
             token,
@@ -56,12 +56,12 @@ if (wc && wc.wcBlocksRegistry && React && wc_reepay) {
 
         const {__internalSetPaymentMethodData: setPaymentMethodData} = useDispatch(PAYMENT_STORE_KEY);
 
+        const name = `wc-${PAYMENT_METHOD_NAME}-payment-token`;
+
         const Img = token.image ? createElement('img', {
             'src': token.image,
             'image_alt': token.label,
         }) : null;
-
-        const name = `wc-${PAYMENT_METHOD_NAME}-payment-token`;
 
         const Radio = createElement('input', {
             'type': 'radio',

@@ -170,7 +170,7 @@ final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
 
 				if(!empty($default_token)) {
 					$data['default_token'] = $default_token->get_id();
-				} else {
+				} elseif ( ! empty( $data['tokens'] ) ) {
 					$data['default_token'] = $data['tokens'][0]['id'];
 				}
 			} else {

@@ -83,7 +83,7 @@ wc_reepay = {
         } );
 
         window.rp.addEventHandler( Reepay.Event.Close, function( data ) {
-            var form = $('form.checkout');
+            var form = jQuery('form.checkout');
             form.removeClass( 'processing' ).unblock();
             console.log( 'Close', data );
         } );
