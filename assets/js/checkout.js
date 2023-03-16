@@ -14,18 +14,16 @@ jQuery(function ($) {
 
     jQuery('form.checkout').on('checkout_place_order_success', function (e, result) {
 
-        try {
-            // Check is response from payment gateway
-            if (!result.hasOwnProperty('is_reepay_checkout')) {
+        if (result.hasOwnProperty('is_reepay_checkout')) {
+            try {
+                wc_reepay.buildModalCheckout(result.reepay.id, result.accept_url);
+            } catch (e) {
+                console.warn(e);
+
                 return false;
             }
-
-            wc_reepay.buildModalCheckout(result.reepay.id, result.accept_url);
-        } catch (e) {
-            console.warn(e);
-
-            return false;
         }
+
 
         return true;
     });
