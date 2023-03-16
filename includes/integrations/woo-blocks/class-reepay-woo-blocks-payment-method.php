@@ -61,7 +61,7 @@ final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
 	 * @return array
 	 */
 	public function get_payment_method_script_handles() {
-		if ( ! $this->is_active() ) {
+		if ( ! $this->is_active() || is_admin() ) {
 			return [];
 		}
 
@@ -81,7 +81,7 @@ final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
 
 			wp_enqueue_style(
 				'wc-reepay-blocks',
-				plugin_dir_url( __FILE__ ) . "../../../assets/css/woo_blocks.css",
+				plugin_dir_url( __FILE__ ) . "../../../assets/dist/css/woo_blocks.css",
 			);
 		}
 
@@ -100,7 +100,7 @@ final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
 
 		wp_register_script(
 			$handle,
-			plugin_dir_url( __FILE__ ) . "../../../assets/js/woo-blocks$suffix.js?name={$this->name}",
+			plugin_dir_url( __FILE__ ) . "../../../assets/dist/js/woo-blocks$suffix.js?name={$this->name}",
 			$script_dependencies,
 			false,
 			true
