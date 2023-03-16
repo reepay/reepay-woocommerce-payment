@@ -209,6 +209,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	public function get_account_info( $gateway, $is_test = false ) {
 		if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'checkout' && ! empty( $_GET['section'] ) && $_GET['section'] == 'reepay_checkout' ) {
 
+			$default_test_mode = $this->test_mode;
+			$this->test_mode = $is_test ? 'yes' : 'false';
+
 			$this->api = new WC_Reepay_Api( $gateway );
 
 			$key = 'account_info';
@@ -227,6 +230,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 				set_transient( $key, $account_info, 5 );
 			}
+
+			$this->test_mode = $default_test_mode;
 
 			return $account_info;
 		}

@@ -143,7 +143,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'type'    => 'webhook_status',
 				'show' => function() {
 					return ! empty( $this->get_option( 'private_key' ) );
-				}
+				},
+				'is_test' => false
 			),
 			'hr3'                        => array(
 				'type' => 'separator',
@@ -182,7 +183,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				'type'    => 'webhook_status',
 				'show' => function() {
 					return ! empty( $this->get_option( 'private_key_test' ) );
-				}
+				},
+				'is_test' => true
 			),
 			'hr9'                        => array(
 				'type' => 'separator',
@@ -421,11 +423,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
 		$info = $this->get_account_info( $this, $data['is_test'] );
 
-		if ( is_wp_error( $info ) ) {
-		    /** @var WP_Error $info */
-		    __log('!1!', $data['is_test'], $info->get_error_message());
-		}
-
 		ob_start();
 		?>
         <tr valign="top">
@@ -500,6 +497,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		$data = wp_parse_args(
 			$data,
 			array(
+				'is_test' => false,
 				'show' => function () {
 					return true;
 				},
@@ -510,7 +508,10 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			return '';
 		}
 
-
+		$default_test_mode = $this->test_mode;
+		$this->test_mode = $data['is_test'] ? 'yes' : 'no';
+        $is_webhook_configured = $this->is_webhook_configured();
+        $this->test_mode = $default_test_mode;
 
 		ob_start();
 		?>
@@ -521,7 +522,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
             <td class="forminp">
                 <fieldset>
 					<?php
-                    if ( $this->is_webhook_configured() ): ?>
+                    if ( $is_webhook_configured ): ?>
                         <span style="color: green;">
 							<?php esc_html_e( 'Active', 'reepay-checkout-gateway' ); ?>
 						</span>
@@ -536,7 +537,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
                     <input type="hidden"
                            name="<?php echo esc_attr( $this->get_field_key( $key ) ); ?>"
-                           value="<?php echo esc_attr( $this->is_webhook_configured() ); ?>"/>
+                           value="<?php echo esc_attr( $is_webhook_configured ); ?>"/>
                 </fieldset>
             </td>
         </tr>
