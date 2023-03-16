@@ -150,7 +150,7 @@ class WC_Reepay_Thankyou {
 
 		wp_register_script(
 			'wc-gateway-reepay-thankyou',
-			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/thankyou' . $suffix . '.js',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/dist/js/thankyou' . $suffix . '.js',
 			array(
 				'jquery',
 				'jquery-blockui'
