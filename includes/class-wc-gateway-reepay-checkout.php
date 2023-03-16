@@ -697,10 +697,10 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		$cancel_url = wc_get_account_endpoint_url( 'payment-methods' );
 		$cancel_url = apply_filters( 'woocommerce_reepay_payment_cancel_url', $cancel_url );
 
+		$location = wc_get_base_location();
+
 		if ( empty( $customer_handle ) ) {
 			// Create reepay customer
-			$location = wc_get_base_location();
-
 			$params = array(
 				'locale'          => $this->get_language(),
 				'button_text'     => __( 'Add card', 'reepay-checkout-gateway' ),
