@@ -130,38 +130,6 @@ trait WC_Reepay_Token {
 	 * @param WC_Order $order
 	 *
 	 * @return WC_Payment_Token_Reepay|false
-	 * @deprecated
-	 */
-	public static function retrieve_payment_token_order( $order ) {
-		$tokens = $order->get_payment_tokens();
-
-		foreach ( $tokens as $token_id ) {
-			try {
-				$token = new WC_Payment_Token_Reepay( $token_id );
-			} catch ( Exception $e ) {
-				return false;
-			}
-
-			if ( ! $token->get_id() ) {
-				continue;
-			}
-
-			if ( ! in_array( $token->get_gateway_id(), WC_ReepayCheckout::PAYMENT_METHODS, true ) ) {
-				continue;
-			}
-
-			return $token;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Get payment token.
-	 *
-	 * @param WC_Order $order
-	 *
-	 * @return WC_Payment_Token_Reepay|false
 	 */
 	public static function get_payment_token_order( WC_Order $order ) {
 		$token = $order->get_meta( '_reepay_token' );

@@ -39,7 +39,7 @@ try {
 	// Process Subscriptions
 	$processed = array();
 	foreach ( $subscriptions as $subscription ) {
-		$token = WC_Gateway_Reepay_Checkout::retrieve_payment_token_order( $subscription );
+		$token = WC_Gateway_Reepay_Checkout::get_payment_token_order( $subscription );
 
 		if ( ! $token ) {
 			$log->add( $handler, sprintf( '[INFO] Subscription #%s doesn\'t have assigned tokens.', $subscription->get_id() ) );
