@@ -1,9 +1,12 @@
 <?php
-/** @var WC_Gateway_Reepay_Checkout $gateway */
-/** @var WC_Order $order */
-/** @var int $order_id */
-/** @var array $order_data */
-/** @var bool $order_is_cancelled */
+/**
+ * @var WC_Gateway_Reepay_Checkout $gateway
+ * @var WC_Order                   $order
+ * @var int                        $order_id
+ * @var array                      $order_data
+ * @var bool                       $order_is_cancelled
+ * @var string                     $link
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -102,7 +105,7 @@ if ( ! empty( $order_data['transactions'][0] ) ) {
 	</li>
 
 	<li class="reepay-admin-section-li-small" style="margin-top: 15px;">
-		<a class="button" href="<?php echo $args['link']; ?>" target="_blank">
+		<a class="button" href="<?php echo $link; ?>" target="_blank">
 			<?php _e( 'See invoice', 'reepay-subscriptions-for-woocommerce' ); ?>
 		</a>
 	</li>

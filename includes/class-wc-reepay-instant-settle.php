@@ -104,7 +104,6 @@ class WC_Reepay_Instant_Settle {
 					   wcs_is_subscription_product( $product )
 			) {
 				$items_data[] = $item->get_id();
-				continue;
 			}
 		}
 
@@ -142,8 +141,6 @@ class WC_Reepay_Instant_Settle {
 					   wcs_is_subscription_product( $product )
 			) {
 				$items_data[] = $item;
-
-				continue;
 			}
 		}
 
@@ -191,7 +188,7 @@ class WC_Reepay_Instant_Settle {
 
 		// Now walk through the order-lines and check per order if it is virtual, downloadable, recurring or physical
 		foreach ( $order->get_items() as $item ) {
-			/** @var WC_Order_Item_Product $order_item */
+			/** @var WC_Order_Item_Product $item */
 			/** @var WC_Product $product */
 			$product        = $item->get_product();
 			$price_incl_tax = $order->get_line_subtotal( $item, true, false );
@@ -242,8 +239,6 @@ class WC_Reepay_Instant_Settle {
 				$recurring    = true;
 				$total       += $price_incl_tax;
 				$items_data[] = $WC_Reepay_Order_Capture->get_item_data( $item, $order );
-
-				continue;
 			}
 		}
 

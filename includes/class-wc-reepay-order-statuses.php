@@ -537,8 +537,8 @@ class WC_Reepay_Order_Statuses {
 		remove_action( 'woocommerce_process_shop_order_meta', 'WC_Meta_Box_Order_Data::save', 40 );
 
 		// Disable status change hook
-		remove_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10 );
-		remove_action( 'woocommerce_order_status_changed', 'WC_Reepay_Admin::order_status_changed', 10 );
+		remove_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed' );
+		remove_action( 'woocommerce_order_status_changed', 'WC_Reepay_Admin::order_status_changed' );
 
 		if ( ! empty( $transaction_id ) ) {
 			$order->set_transaction_id( $transaction_id );

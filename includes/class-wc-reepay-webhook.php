@@ -47,13 +47,6 @@ class WC_Reepay_Webhook {
 					return;
 				}
 
-				// Check transaction is applied
-				// if ( $order->get_transaction_id() === $data['transaction'] ) {
-				// $this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
-
-				// return;
-				// }
-
 				// Wait to be unlocked
 				$needs_reload = self::wait_for_unlock( $order->get_id() );
 				if ( $needs_reload ) {

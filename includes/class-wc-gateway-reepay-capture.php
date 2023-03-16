@@ -86,6 +86,8 @@ class WC_Reepay_Order_Capture {
 				$this->complete_settle( $item, $order, $total );
 			}
 		}
+
+		return true;
 	}
 
 	public function multi_settle( $order ) {
@@ -178,6 +180,8 @@ class WC_Reepay_Order_Capture {
 				}
 			}
 		}
+
+		return true;
 	}
 
 	public function check_allow_capture( $order ) {
@@ -336,15 +340,13 @@ class WC_Reepay_Order_Capture {
 		$tax        = $price['with_tax'] - $price['original'];
 		$taxPercent = ( $tax > 0 ) ? 100 / ( $price['original'] / $tax ) : 0;
 		$unitPrice  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
-		$item_data  = array(
+		return array(
 			'ordertext'       => $order_item->get_name(),
 			'quantity'        => $order_item->get_quantity(),
 			'amount'          => rp_prepare_amount( $unitPrice, $order->get_currency() ),
 			'vat'             => round( $taxPercent / 100, 2 ),
 			'amount_incl_vat' => $prices_incl_tax,
 		);
-
-		return $item_data;
 	}
 
 

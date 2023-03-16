@@ -314,9 +314,6 @@ class WC_Reepay_Thankyou {
 					return;
 				}
 
-				// Lock the order
-				// self::lock_order( $order->get_id() );
-
 				WC_Reepay_Order_Statuses::set_authorized_status(
 					$order,
 					sprintf(
@@ -329,9 +326,6 @@ class WC_Reepay_Thankyou {
 				// Settle an authorized payment instantly if possible
 				do_action( 'reepay_instant_settle', $order );
 
-				// Unlock the order
-				// self::unlock_order( $order->get_id() );
-
 				$this->log( sprintf( 'accept_url: Order #%s has been marked as authorized', $order->get_id() ) );
 				break;
 			case 'settled':
@@ -342,9 +336,6 @@ class WC_Reepay_Thankyou {
 					return;
 				}
 
-				// Lock the order
-				// self::lock_order( $order->get_id() );
-
 				WC_Reepay_Order_Statuses::set_settled_status(
 					$order,
 					sprintf(
@@ -353,9 +344,6 @@ class WC_Reepay_Thankyou {
 					),
 					null
 				);
-
-				// Unlock the order
-				// self::unlock_order( $order->get_id() );
 
 				$this->log( sprintf( 'accept_url: Order #%s has been marked as settled', $order->get_id() ) );
 

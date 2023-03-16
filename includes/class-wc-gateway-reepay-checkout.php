@@ -20,7 +20,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_checkout';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay Checkout', 'reepay-checkout-gateway' );
-		// $this->icon         = apply_filters( 'woocommerce_reepay_checkout_icon', plugins_url( '/assets/images/reepay.png', dirname( __FILE__ ) ) );
 		$this->supports = array(
 			'products',
 			'refunds',
@@ -808,8 +807,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * @return void
 	 */
 	public function update_failing_payment_method( $subscription, $renewal_order ) {
-		$subscription->update_meta_data( '_reepay_token', $renewal_order->get_meta( '_reepay_token', true ) );
-		$subscription->update_meta_data( '_reepay_token_id', $renewal_order->get_meta( '_reepay_token_id', true ) );
+		$subscription->update_meta_data( '_reepay_token', $renewal_order->get_meta( '_reepay_token' ) );
+		$subscription->update_meta_data( '_reepay_token_id', $renewal_order->get_meta( '_reepay_token_id' ) );
 	}
 
 	/**
@@ -889,43 +888,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	}
 
 	/**
-	 * Validate the payment meta data required to process automatic recurring payments so that store managers can
-	 * manually set up automatic recurring payments for a customer via the Edit Subscription screen in Subscriptions 2.0+.
-	 *
-	 * @param string          $payment_method_id The ID of the payment method to validate
-	 * @param array           $payment_meta associative array of meta data required for automatic payments
-	 * @param WC_Subscription $subscription
-	 *
-	 * @return array
-	 * @throws Exception
-	 */
-	public function validate_subscription_payment_meta( $payment_method_id, $payment_meta, $subscription ) {
-		if ( $payment_method_id === $this->id ) {
-			if ( empty( $payment_meta['post_meta']['_reepay_token']['value'] ) ) {
-				throw new Exception( 'A "Reepay Token" value is required.' );
-			}
-
-			$tokens = explode( ',', $payment_meta['post_meta']['_reepay_token']['value'] );
-			if ( count( $tokens ) > 1 ) {
-				throw new Exception( 'Only one "Reepay Token" is allowed.' );
-			}
-
-			$token = self::get_payment_token( $tokens[0] );
-			if ( ! $token ) {
-				throw new Exception( 'This "Reepay Token" value not found.' );
-			}
-
-			if ( $token->get_gateway_id() !== $this->id ) {
-				throw new Exception( 'This "Reepay Token" value should related to Reepay.' );
-			}
-
-			if ( $token->get_user_id() !== $subscription->get_user_id() ) {
-				throw new Exception( 'Access denied for this "Reepay Token" value.' );
-			}
-		}
-	}
-
-	/**
 	 * Save payment method meta data for the Subscription
 	 *
 	 * @param WC_Subscription $subscription
@@ -998,98 +960,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	}
 
 	/**
-	 * When a subscription payment is due.
-	 *
-	 * @param          $amount_to_charge
-	 * @param WC_Order         $renewal_order
-	 */
-	public function scheduled_subscription_payment( $amount_to_charge, $renewal_order ) {
-
-		$this->log( 'WCS process scheduled payment' );
-		// Lookup token
-		try {
-			$token = self::get_payment_token_order( $renewal_order );
-
-			// Try to find token in parent orders
-			if ( ! $token ) {
-				// Get Subscriptions
-				$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
-				foreach ( $subscriptions as $subscription ) {
-					/** @var WC_Subscription $subscription */
-					$token = self::get_payment_token_order( $subscription );
-					if ( ! $token ) {
-						$token = self::get_payment_token_order( $subscription->get_parent() );
-					}
-				}
-			}
-
-			// Failback: If token doesn't exist, but reepay token is here
-			// We need that to provide woocommerce_subscription_payment_meta support
-			// See https://github.com/Prospress/woocommerce-subscriptions-importer-exporter#importing-payment-gateway-meta-data
-			if ( ! $token ) {
-				$reepay_token = get_post_meta( $renewal_order->get_id(), '_reepay_token', true );
-
-				// Try to find token in parent orders
-				if ( empty( $reepay_token ) ) {
-					// Get Subscriptions
-					$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
-					foreach ( $subscriptions as $subscription ) {
-						/** @var WC_Subscription $subscription */
-						$reepay_token = get_post_meta( $subscription->get_id(), '_reepay_token', true );
-						if ( empty( $reepay_token ) ) {
-							if ( $order = $subscription->get_parent() ) {
-								$reepay_token = get_post_meta( $order->get_id(), '_reepay_token', true );
-							}
-						}
-					}
-				}
-
-				// Save token
-				if ( ! empty( $reepay_token ) ) {
-					if ( $token = $this->add_payment_token( $renewal_order, $reepay_token ) ) {
-						self::assign_payment_token( $renewal_order, $token );
-					}
-				}
-			}
-
-			if ( ! $token ) {
-				throw new Exception( 'Payment token isn\'t exists' );
-			}
-
-			// Validate
-			if ( empty( $token->get_token() ) ) {
-				throw new Exception( 'Payment token is empty' );
-			}
-
-			// Fix the reepay order value to prevent "Invoice already settled"
-			$currently = get_post_meta( $renewal_order->get_id(), '_reepay_order', true );
-			$shouldBe  = 'order-' . $renewal_order->get_id();
-			if ( $currently !== $shouldBe ) {
-				update_post_meta( $renewal_order->get_id(), '_reepay_order', $shouldBe );
-				$renewal_order->update_meta_data( '_reepay_order', $shouldBe );
-
-			}
-
-			// Charge payment
-			if ( true !== ( $result = $this->reepay_charge( $renewal_order, $token->get_token(), $amount_to_charge ) ) ) {
-				throw new Exception( $result );
-			}
-
-			// Instant settle
-			$this->process_instant_settle( $renewal_order );
-		} catch ( Exception $e ) {
-			$renewal_order->update_status( 'failed' );
-			$renewal_order->add_order_note(
-				sprintf(
-					__( 'Error: "%1$s". %2$s.', 'woocommerce-gateway-reepay-checkout' ),
-					wc_price( $amount_to_charge ),
-					$e->getMessage()
-				)
-			);
-		}
-	}
-
-	/**
 	 * Render the payment method used for a subscription in the "My Subscriptions" table
 	 *
 	 * @param string          $payment_method_to_display the default payment method text to display
@@ -1118,37 +988,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		}
 
 		return $payment_method_to_display;
-	}
-
-	/**
-	 * Modify "Save to account" to lock that if needs.
-	 *
-	 * @param string             $html
-	 * @param WC_Payment_Gateway $gateway
-	 *
-	 * @return string
-	 */
-	public function save_new_payment_method_option_html( $html, $gateway ) {
-		if ( $gateway->id !== $this->id ) {
-			return $html;
-		}
-
-		// Lock "Save to Account" for Recurring Payments / Payment Change
-		if ( self::wcs_cart_have_subscription() || self::wcs_is_payment_change() ) {
-			// Load XML
-			libxml_use_internal_errors( true );
-			$doc    = new \DOMDocument();
-			$status = @$doc->loadXML( $html );
-			if ( false !== $status ) {
-				$item = $doc->getElementsByTagName( 'input' )->item( 0 );
-				$item->setAttribute( 'checked', 'checked' );
-				$item->setAttribute( 'disabled', 'disabled' );
-
-				$html = $doc->saveHTML( $doc->documentElement );
-			}
-		}
-
-		return $html;
 	}
 
 	/**

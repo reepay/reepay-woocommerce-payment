@@ -172,8 +172,9 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 		);
 
 		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription
-		if ( ( true /*$this->save_cc === 'yes'*/ && ! is_add_payment_method_page() ) ||
-			 ( wcs_cart_have_subscription() || wcs_is_payment_change() )
+		if ( ! is_add_payment_method_page()
+		     || wcs_cart_have_subscription()
+		     || wcs_is_payment_change()
 		) {
 			$this->tokenization_script();
 			$this->saved_payment_methods();

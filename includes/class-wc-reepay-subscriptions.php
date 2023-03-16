@@ -209,8 +209,8 @@ class WC_Reepay_Subscriptions {
 	 * @return void
 	 */
 	public static function update_failing_payment_method( $subscription, $renewal_order ) {
-		$subscription->update_meta_data( '_reepay_token', $renewal_order->get_meta( '_reepay_token', true ) );
-		$subscription->update_meta_data( '_reepay_token_id', $renewal_order->get_meta( '_reepay_token_id', true ) );
+		$subscription->update_meta_data( '_reepay_token', $renewal_order->get_meta( '_reepay_token' ) );
+		$subscription->update_meta_data( '_reepay_token_id', $renewal_order->get_meta( '_reepay_token_id' ) );
 		$subscription->save_meta_data();
 	}
 

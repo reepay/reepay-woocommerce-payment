@@ -345,7 +345,7 @@ class WC_Reepay_Api {
 		foreach ( $settled_lines as $settled_line_key => $settled_line ) {
 			foreach ( $order_lines as $order_line_key => $order_line ) {
 				if ( $settled_line['ordertext'] == $order_line['ordertext'] ) {
-					$amount -= rp_make_initial_amount( $order_lines[ $order_line_key ]['amount'], $order->get_currency() );
+					$amount -= rp_make_initial_amount( $order_line['amount'], $order->get_currency() );
 
 					unset( $order_lines[ $order_line_key ] );
 					break;
@@ -425,13 +425,11 @@ class WC_Reepay_Api {
 			$params['payment_methods'] = $payment_methods;
 		}
 
-		$result = $this->request(
+		return $this->request(
 			'POST',
 			'https://checkout-api.reepay.com/v1/session/recurring',
 			$params
 		);
-
-		return $result;
 	}
 
 	/**
@@ -564,13 +562,11 @@ class WC_Reepay_Api {
 					$request_data['amount'] = $remaining;
 					unset( $request_data['order_lines'] );
 
-					$result = $this->request(
+					return $this->request(
 						'POST',
 						'https://api.reepay.com/v1/charge/' . $handle . '/settle',
 						$request_data
 					);
-
-					return $result;
 				} else {
 					$order_data = $this->get_invoice_data( $order );
 					$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
@@ -580,13 +576,11 @@ class WC_Reepay_Api {
 						if ( $full > 0 ) {
 							$request_data['order_lines'][0]['amount'] = $full;
 
-							$result = $this->request(
+							return $this->request(
 								'POST',
 								'https://api.reepay.com/v1/charge/' . $handle . '/settle',
 								$request_data
 							);
-
-							return $result;
 						}
 					}
 				}

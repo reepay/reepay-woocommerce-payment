@@ -184,7 +184,7 @@ class WC_Reepay_Admin {
 				)
 			);
 
-			wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/../assets/dist/css/style' . $suffix . '.css', __FILE__ ), array(), false, 'all' );
+			wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/../assets/dist/css/style' . $suffix . '.css', __FILE__ ), array() );
 
 			// Localize the script
 			$translation_array = array(

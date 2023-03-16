@@ -25,7 +25,7 @@ if ( $order_total <= $order_data['authorized_amount'] ) {
 		<?php echo esc_html__( 'State', 'reepay-checkout-gateway' ); ?>: <?php echo $order_data['state']; ?>
 	</li>
 
-	<?php $order_is_cancelled = ( $order->get_meta( '_reepay_order_cancelled', true ) === '1' ); ?>
+	<?php $order_is_cancelled = ( $order->get_meta( '_reepay_order_cancelled' ) === '1' ); ?>
 	<?php if ( $order_is_cancelled && 'cancelled' != $order_data['state'] ) : ?>
 		<li class="reepay-admin-section-li-small">
 			<?php echo esc_html__( 'Order is cancelled', 'reepay-checkout-gateway' ); ?>

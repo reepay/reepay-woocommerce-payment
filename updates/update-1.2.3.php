@@ -101,8 +101,7 @@ foreach ($processed as $subscription_id => $subscription) {
 
 			// Charge
 			try {
-				$gateway->scheduled_subscription_payment( $order->get_total(), $order );
-				$log->add( $handler, sprintf( '[SUCCESS] Charge success. Subscription #%s. Order #%s.', $subscription->get_id(), $order->get_id() ) );
+				$log->add( $handler, sprintf( '[SUCCESS] Charge method removed. Subscription #%s. Order #%s.', $subscription->get_id(), $order->get_id() ) );
 			} catch (Exception $e) {
 				$log->add( $handler, sprintf( '[ERROR] scheduled_subscription_payment: %s. %s', $e->getMessage(), $e->getTraceAsString() ) );
 			}

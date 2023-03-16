@@ -17,13 +17,10 @@ class WC_Background_Reepay_Queue extends WC_Background_Process {
 	 */
 	private $logging_source = 'wc_reepay_queue';
 
-
 	/**
 	 * Initiate new background process.
 	 */
 	public function __construct() {
-		$this->logger = wc_get_logger();
-
 		// Uses unique prefix per blog so each blog has separate queue.
 		$this->prefix = 'wp_' . get_current_blog_id();
 		$this->action = 'wc_reepay_queue';
