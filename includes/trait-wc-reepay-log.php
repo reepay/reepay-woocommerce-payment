@@ -14,7 +14,6 @@ trait WC_Reepay_Log {
 	 *
 	 * @return void
 	 * @see WC_Log_Levels
-	 *
 	 */
 	private function log( $message, $level = 'info' ) {
 		// Get Logger instance
@@ -25,9 +24,13 @@ trait WC_Reepay_Log {
 			$message = var_export( $message, true );
 		}
 
-		$logger->log( $level, $message, array(
-			'source'  => $this->logging_source,
-			'_legacy' => true
-		) );
+		$logger->log(
+			$level,
+			$message,
+			array(
+				'source'  => $this->logging_source,
+				'_legacy' => true,
+			)
+		);
 	}
 }

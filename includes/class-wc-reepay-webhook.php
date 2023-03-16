@@ -15,7 +15,6 @@ class WC_Reepay_Webhook {
 
 	/**
 	 * Constructor.
-	 *
 	 */
 	public function __construct( array $data ) {
 		$this->data = $data;
@@ -49,11 +48,11 @@ class WC_Reepay_Webhook {
 				}
 
 				// Check transaction is applied
-				//if ( $order->get_transaction_id() === $data['transaction'] ) {
-				//$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
+				// if ( $order->get_transaction_id() === $data['transaction'] ) {
+				// $this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
 
-				//return;
-				//}
+				// return;
+				// }
 
 				// Wait to be unlocked
 				$needs_reload = self::wait_for_unlock( $order->get_id() );
@@ -63,10 +62,13 @@ class WC_Reepay_Webhook {
 
 				// Check if the order has been marked as authorized before
 				if ( $order->has_status( REEPAY_STATUS_AUTHORIZED ) ) {
-					$this->log( sprintf( 'WebHook: Event type: %s success. But the order had status early: %s',
-						$data['event_type'],
-						$order->get_status()
-					) );
+					$this->log(
+						sprintf(
+							'WebHook: Event type: %s success. But the order had status early: %s',
+							$data['event_type'],
+							$order->get_status()
+						)
+					);
 
 					http_response_code( 200 );
 
@@ -94,7 +96,7 @@ class WC_Reepay_Webhook {
 				WC_Reepay_Order_Statuses::set_authorized_status(
 					$order,
 					sprintf(
-						__( 'Payment has been authorized. Amount: %s. Transaction: %s', 'reepay-checkout-gateway' ),
+						__( 'Payment has been authorized. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
 						wc_price( rp_make_initial_amount( $invoice_data['amount'], $order->get_currency() ) ),
 						$data['transaction']
 					),
@@ -134,8 +136,6 @@ class WC_Reepay_Webhook {
 							$order->save();
 							$order->calculate_totals();
 						}
-
-
 					}
 				}
 
@@ -162,18 +162,21 @@ class WC_Reepay_Webhook {
 				}
 
 				// Check transaction is applied
-				//if ( $order->get_transaction_id() === $data['transaction'] ) {
-				//$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
+				// if ( $order->get_transaction_id() === $data['transaction'] ) {
+				// $this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
 
-				//return;
-				//}
+				// return;
+				// }
 
 				// Check if the order has been marked as settled before
 				if ( $order->has_status( REEPAY_STATUS_SETTLED ) ) {
-					$this->log( sprintf( 'WebHook: Event type: %s success. But the order had status early: %s',
-						$data['event_type'],
-						$order->get_status()
-					) );
+					$this->log(
+						sprintf(
+							'WebHook: Event type: %s success. But the order had status early: %s',
+							$data['event_type'],
+							$order->get_status()
+						)
+					);
 
 					http_response_code( 200 );
 
@@ -193,7 +196,6 @@ class WC_Reepay_Webhook {
 
 				$this->log( sprintf( 'WebHook: Invoice data: %s', var_export( $invoice_data, true ) ) );
 
-
 				if ( ! empty( $invoice_data['id'] ) && ! empty( $data['transaction'] ) ) {
 					$transaction = $gateway->api->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice_data['id'] . '/transaction/' . $data['transaction'] );
 					$this->log( sprintf( 'WebHook: Transaction data: %s', var_export( $transaction, true ) ) );
@@ -206,7 +208,6 @@ class WC_Reepay_Webhook {
 						}
 					}
 				}
-
 
 				WC_Reepay_Order_Statuses::set_settled_status(
 					$order,
@@ -238,11 +239,11 @@ class WC_Reepay_Webhook {
 				}
 
 				// Check transaction is applied
-				//if ( $order->get_transaction_id() === $data['transaction'] ) {
-				//$this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
+				// if ( $order->get_transaction_id() === $data['transaction'] ) {
+				// $this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
 
-				//return;
-				//}
+				// return;
+				// }
 
 				// Add transaction ID
 				$order->set_transaction_id( $data['transaction'] );
@@ -294,7 +295,6 @@ class WC_Reepay_Webhook {
 					return;
 				}
 
-
 				// Get Invoice data
 				$gateway      = rp_get_payment_method( $order );
 				$invoice_data = $gateway->api->get_invoice_by_handle( $data['invoice'] );
@@ -324,11 +324,13 @@ class WC_Reepay_Webhook {
 					);
 
 					// Create Refund
-					$refund = wc_create_refund( array(
-						'amount'   => $amount,
-						'reason'   => '', // don't add Credit note to refund line
-						'order_id' => $order->get_id()
-					) );
+					$refund = wc_create_refund(
+						array(
+							'amount'   => $amount,
+							'reason'   => '', // don't add Credit note to refund line
+							'order_id' => $order->get_id(),
+						)
+					);
 
 					if ( $refund ) {
 						// Save Credit Note ID
@@ -337,7 +339,8 @@ class WC_Reepay_Webhook {
 						$order->save_meta_data();
 
 						$order->add_order_note(
-							sprintf( __( 'Refunded: %s. Reason: %s', 'reepay-checkout-gateway' ),
+							sprintf(
+								__( 'Refunded: %1$s. Reason: %2$s', 'reepay-checkout-gateway' ),
 								wc_price( $amount ),
 								$reason
 							)
@@ -413,7 +416,7 @@ class WC_Reepay_Webhook {
 			default:
 				global $wp_filter;
 				$this->log( sprintf( 'WebHook: %s', $data['event_type'] ) );
-				$base_hook_name    = "reepay_webhook_raw_event";
+				$base_hook_name    = 'reepay_webhook_raw_event';
 				$current_hook_name = "{$base_hook_name}_{$data['event_type']}";
 
 				if ( isset( $wp_filter[ $base_hook_name ] ) || isset( $wp_filter[ $current_hook_name ] ) ) {

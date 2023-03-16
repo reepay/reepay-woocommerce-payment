@@ -4,12 +4,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 interface WC_Payment_Gateway_Reepay_Interface {
-	const METHOD_WINDOW = 'WINDOW';
+	const METHOD_WINDOW  = 'WINDOW';
 	const METHOD_OVERLAY = 'OVERLAY';
 
 	/**
 	 * Check is Capture possible
-	 * @param \WC_Order $order
+	 *
+	 * @param \WC_Order  $order
 	 * @param bool|float $amount
 	 *
 	 * @return bool
@@ -18,6 +19,7 @@ interface WC_Payment_Gateway_Reepay_Interface {
 
 	/**
 	 * Check is Cancel possible
+	 *
 	 * @param \WC_Order $order
 	 *
 	 * @return bool
@@ -26,7 +28,8 @@ interface WC_Payment_Gateway_Reepay_Interface {
 
 	/**
 	 * Check is Refund possible
-	 * @param \WC_Order $order
+	 *
+	 * @param \WC_Order  $order
 	 * @param bool|float $amount
 	 *
 	 * @return bool
@@ -35,7 +38,8 @@ interface WC_Payment_Gateway_Reepay_Interface {
 
 	/**
 	 * Capture
-	 * @param \WC_Order $order
+	 *
+	 * @param \WC_Order  $order
 	 * @param bool|float $amount
 	 *
 	 * @throws \Exception
@@ -45,6 +49,7 @@ interface WC_Payment_Gateway_Reepay_Interface {
 
 	/**
 	 * Cancel
+	 *
 	 * @param \WC_Order $order
 	 *
 	 * @throws \Exception
@@ -54,9 +59,10 @@ interface WC_Payment_Gateway_Reepay_Interface {
 
 	/**
 	 * Refund
-	 * @param \WC_Order $order
+	 *
+	 * @param \WC_Order  $order
 	 * @param bool|float $amount
-	 * @param string $reason
+	 * @param string     $reason
 	 *
 	 * @throws \Exception
 	 * @return void

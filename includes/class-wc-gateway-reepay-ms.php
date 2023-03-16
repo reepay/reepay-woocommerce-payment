@@ -7,6 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 	/**
 	 * Logos
+	 *
 	 * @var array
 	 */
 	public $logos = array(
@@ -19,7 +20,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 	 * @var array|null
 	 */
 	public $payment_methods = array(
-		'mobilepay_subscriptions'
+		'mobilepay_subscriptions',
 	);
 
 	/**
@@ -46,7 +47,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 			'subscription_payment_method_change',
 			'subscription_payment_method_change_customer',
 			'subscription_payment_method_change_admin',
-			'multiple_subscriptions'
+			'multiple_subscriptions',
 		);
 
 		$this->logos = array( 'mobilepay' );
@@ -63,7 +64,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 		$this->description = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
 
 		$this->payment_methods = array(
-			'mobilepay_subscriptions'
+			'mobilepay_subscriptions',
 		);
 
 		// Load setting from parent method
@@ -85,14 +86,18 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 		}
 
 		// Actions
-		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
-			$this,
-			'process_admin_options'
-		) );
+		add_action(
+			'woocommerce_update_options_payment_gateways_' . $this->id,
+			array(
+				$this,
+				'process_admin_options',
+			)
+		);
 	}
 
 	/**
 	 * Initialise Settings Form Fields
+	 *
 	 * @return string|void
 	 */
 	public function init_form_fields() {
@@ -101,20 +106,20 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 				'title'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
 				'type'    => 'gateway_status',
 				'label'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
-				'default' => $this->test_mode
+				'default' => $this->test_mode,
 			),
 			'enabled'              => array(
 				'title'    => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
 				'type'     => 'checkbox',
 				'label'    => __( 'Enable plugin', 'reepay-checkout-gateway' ),
 				'default'  => 'no',
-				'disabled' => ! $this->is_configured()
+				'disabled' => ! $this->is_configured(),
 			),
 			'title'                => array(
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Mobilepay Subscriptions', 'reepay-checkout-gateway' )
+				'default'     => __( 'Reepay - Mobilepay Subscriptions', 'reepay-checkout-gateway' ),
 			),
 			'description'          => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
@@ -127,6 +132,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 
 	/**
 	 * This payment method works only for subscription products
+	 *
 	 * @return bool
 	 */
 	public function is_available() {
@@ -152,6 +158,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 
 	/**
 	 * If There are no payment fields show the description if set.
+	 *
 	 * @return void
 	 */
 	public function payment_fields() {
@@ -166,7 +173,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 
 		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription
 		if ( ( true /*$this->save_cc === 'yes'*/ && ! is_add_payment_method_page() ) ||
-		     ( wcs_cart_have_subscription() || wcs_is_payment_change() )
+			 ( wcs_cart_have_subscription() || wcs_is_payment_change() )
 		) {
 			$this->tokenization_script();
 			$this->saved_payment_methods();

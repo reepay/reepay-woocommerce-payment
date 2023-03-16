@@ -7,6 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WC_Gateway_Reepay_Klarna_Slice_It extends WC_Gateway_Reepay {
 	/**
 	 * Logos
+	 *
 	 * @var array
 	 */
 	public $logos = array(
@@ -65,14 +66,18 @@ class WC_Gateway_Reepay_Klarna_Slice_It extends WC_Gateway_Reepay {
 		}
 
 		// Actions
-		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
-			$this,
-			'process_admin_options'
-		) );
+		add_action(
+			'woocommerce_update_options_payment_gateways_' . $this->id,
+			array(
+				$this,
+				'process_admin_options',
+			)
+		);
 	}
 
 	/**
 	 * Initialise Settings Form Fields
+	 *
 	 * @return string|void
 	 */
 	public function init_form_fields() {
@@ -81,20 +86,20 @@ class WC_Gateway_Reepay_Klarna_Slice_It extends WC_Gateway_Reepay {
 				'title'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
 				'type'    => 'gateway_status',
 				'label'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
-				'default' => $this->test_mode
+				'default' => $this->test_mode,
 			),
 			'enabled'              => array(
 				'title'    => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
 				'type'     => 'checkbox',
 				'label'    => __( 'Enable plugin', 'reepay-checkout-gateway' ),
 				'default'  => 'no',
-				'disabled' => ! $this->is_configured()
+				'disabled' => ! $this->is_configured(),
 			),
 			'title'                => array(
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Klarna Slice It', 'reepay-checkout-gateway' )
+				'default'     => __( 'Reepay - Klarna Slice It', 'reepay-checkout-gateway' ),
 			),
 			'description'          => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),

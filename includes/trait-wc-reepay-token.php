@@ -8,7 +8,7 @@ trait WC_Reepay_Token {
 	/**
 	 * Assign payment token to order.
 	 *
-	 * @param WC_Order $order
+	 * @param WC_Order                    $order
 	 * @param WC_Payment_Token_Reepay|int $token
 	 *
 	 * @return void
@@ -43,7 +43,7 @@ trait WC_Reepay_Token {
 	 * Save Payment Token
 	 *
 	 * @param WC_Order $order
-	 * @param string $reepay_token
+	 * @param string   $reepay_token
 	 *
 	 * @return bool|WC_Payment_Token_Reepay
 	 *
@@ -68,7 +68,7 @@ trait WC_Reepay_Token {
 	 * Add Payment Token.
 	 *
 	 * @param WC_Order $order
-	 * @param string $reepay_token
+	 * @param string   $reepay_token
 	 *
 	 * @return bool|WC_Payment_Token_Reepay
 	 * @throws Exception
@@ -112,11 +112,14 @@ trait WC_Reepay_Token {
 
 		update_post_meta( $order->get_id(), '_reepay_source', $source );
 		self::assign_payment_token( $order, $token );
-		$this->log( sprintf( '%s Payment token #%s created for %s',
-			__METHOD__,
-			$token->get_id(),
-			isset( $source['masked_card'] ) ? $source['masked_card'] : ''
-		) );
+		$this->log(
+			sprintf(
+				'%s Payment token #%s created for %s',
+				__METHOD__,
+				$token->get_id(),
+				isset( $source['masked_card'] ) ? $source['masked_card'] : ''
+			)
+		);
 
 		return $token;
 	}
@@ -128,7 +131,6 @@ trait WC_Reepay_Token {
 	 *
 	 * @return WC_Payment_Token_Reepay|false
 	 * @deprecated
-	 *
 	 */
 	public static function retrieve_payment_token_order( $order ) {
 		$tokens = $order->get_payment_tokens();
