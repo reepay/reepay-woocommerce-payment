@@ -607,7 +607,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			'jquery',
 			'wc-checkout',
 			'reepay-checkout',
-		), false, true );
+		), filemtime( REEPAY_CHECKOUT_PLUGIN_PATH . 'assets/dist/js/checkout' . $suffix . '.js' ), true );
 
 		// Localize the script with new data
 		$translation_array = array(
@@ -1044,7 +1044,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				$only_items_lines[] = $order_item;
 			}
 		}
-        
+
 		// If here's Subscription or zero payment
 		if ( ( $have_sub ) && ( abs( $order->get_total() ) < 0.01 || empty( $only_items_lines ) ) ) {
 

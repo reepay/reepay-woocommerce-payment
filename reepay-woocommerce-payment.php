@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 } // Exit if accessed directly
 
 define( 'REEPAY_CHECKOUT_PLUGIN_FILE', __FILE__ );
+define( 'REEPAY_CHECKOUT_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 
 include_once( dirname( __FILE__ ) . '/includes/trait-wc-reepay-log.php' );
 include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-statistics.php' );
