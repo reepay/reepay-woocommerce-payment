@@ -2,7 +2,7 @@
 
 standard='--standard=./ruleset.xml'
 path='./includes/*.php ./includes/**/*.php ./templates/**/*.php ./*.php'
-extra='--cache -p -s' #remove colors if your terminal doesn't support them
+extra='--cache --colors -p -s' #remove colors if your terminal doesn't support them
 
 if [ "$1" == "-full" ]; then
   php ./vendor/bin/phpcs $standard $path $extra
