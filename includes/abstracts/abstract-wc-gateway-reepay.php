@@ -146,9 +146,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		$this->init_settings();
 
 		// Define user set variables
-		$this->enabled     = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title       = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->enabled     = $this->settings['enabled'] ?? 'no';
+		$this->title       = $this->settings['title'] ?? 'no';
+		$this->description = $this->settings['description'] ?? 'no';
 
 		$this->api = new WC_Reepay_Api( $this );
 
@@ -452,10 +452,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	}
 
 	/**
-	 * @param \WC_Order $order
+	 * @param WC_Order $order
 	 * @param bool      $amount
 	 *
 	 * @return bool
+	 * @throws Exception
 	 * @api
 	 */
 	public function can_refund( $order, $amount = false ) {
@@ -676,9 +677,10 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	/**
 	 * Process Payment
 	 *
-	 * @param int $order_id
+	 * @param  int  $order_id
 	 *
 	 * @return array|false
+	 * @throws Exception
 	 */
 	public function process_payment( $order_id ) {
 		if ( 'application/json' === $_SERVER['CONTENT_TYPE'] ) {
@@ -1084,6 +1086,13 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		return $this->process_session_charge( $params, $order );
 	}
 
+	/**
+	 * @param array $params
+	 * @param WC_Order $order
+	 *
+	 * @return array
+	 * @throws Exception
+	 */
 	public function process_session_charge( $params, $order ) {
 
 		$result = $this->api->request(
@@ -1208,8 +1217,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	/**
 	 * Payment confirm action
 	 *
-     * @see WC_Reepay_Thankyou::thankyou_page()
 	 * @return void
+	 * @throws Exception
+	 * @see WC_Reepay_Thankyou::thankyou_page()
 	 */
 	public function payment_confirm() {
 		if ( ! ( is_wc_endpoint_url( 'order-received' ) ) ) {

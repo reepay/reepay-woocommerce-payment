@@ -43,9 +43,9 @@ class WC_Gateway_Reepay_Swish extends WC_Gateway_Reepay {
 		$this->init_settings();
 
 		// Define user set variables
-		$this->enabled     = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title       = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->enabled     = $this->settings['enabled'] ?? 'no';
+		$this->title       = $this->settings['title'] ?? 'no';
+		$this->description = $this->settings['description'] ?? 'no';
 
 		// Load setting from parent method
 		$settings = $this->get_parent_settings();

@@ -59,9 +59,9 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 		$this->init_settings();
 
 		// Define user set variables
-		$this->enabled     = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title       = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->enabled     = $this->settings['enabled'] ?? 'no';
+		$this->title       = $this->settings['title'] ?? 'no';
+		$this->description = $this->settings['description'] ?? 'no';
 
 		$this->payment_methods = array(
 			'mobilepay_subscriptions',
