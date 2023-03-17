@@ -784,15 +784,16 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	}
 
 	/**
-	 * Thank you page
-	 *
 	 * @param $order_id
 	 *
 	 * @return void
 	 */
 	public function thankyou_page( $order_id ) {
-		// Add Subscription card id
-		$this->add_subscription_card_id( $order_id );
+		try {
+			$this->add_subscription_card_id( $order_id );
+		} catch (Exception $e) {
+			$this->log( sprintf( 'add_subscription_card_id error: %s', $e->getMessage() ) );
+		}
 	}
 
 	/**

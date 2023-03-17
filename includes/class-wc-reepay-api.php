@@ -508,12 +508,12 @@ class WC_Reepay_Api {
 	/**
 	 * Settle the payment online.
 	 *
-	 * @param WC_Order       $order
-	 * @param float|int|null $amount
-	 * @param false|array    $item_data
+	 * @param  WC_Order        $order
+	 * @param  float|int|null  $amount
+	 * @param  false|array     $item_data
+	 * @param  bool            $item
 	 *
 	 * @return array|WP_Error
-	 * @throws Exception
 	 */
 	public function settle( WC_Order $order, $amount = null, $item_data = false, $item = false ) {
 		$this->log( sprintf( 'Settle: %s, %s', $order->get_id(), $amount ) );
@@ -615,7 +615,12 @@ class WC_Reepay_Api {
 		$order->save_meta_data();
 
 		// Set transaction Id
-		$order->set_transaction_id( $result['transaction'] );
+		try {
+			$order->set_transaction_id( $result['transaction'] );
+		} catch (Exception $e) {
+
+		}
+
 		$order->save();
 
 		// Check the amount and change the order status to settled if needs

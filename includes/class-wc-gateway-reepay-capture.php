@@ -99,6 +99,11 @@ class WC_Reepay_Order_Capture {
 		return true;
 	}
 
+	/**
+	 * @param WC_Order $order order to settle.
+	 *
+	 * @throws Exception
+	 */
 	public function multi_settle( $order ) {
 		$items_data = array();
 		$line_items = array();
@@ -160,7 +165,6 @@ class WC_Reepay_Order_Capture {
 	 * @param WC_Order $order current order.
 	 *
 	 * @return bool
-	 * @throws Exception
 	 */
 	public function settle_item( $item, $order ) {
 		$settled = $item->get_meta( 'settled' );
@@ -328,6 +332,11 @@ class WC_Reepay_Order_Capture {
 		}
 	}
 
+	/**
+	 * Capture items from request
+	 *
+	 * @throws Exception
+	 */
 	public function process_item_capture() {
 		if ( isset( $_POST['line_item_capture'] ) && isset( $_POST['post_type'] ) && isset( $_POST['post_ID'] ) ) {
 			if ( $_POST['post_type'] == 'shop_order' ) {
