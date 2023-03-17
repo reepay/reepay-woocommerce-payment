@@ -41,21 +41,21 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		parent::__construct();
 
 		// Define user set variables
-		$this->private_key             = apply_filters( 'woocommerce_reepay_private_key', isset( $this->settings['private_key'] ) ? $this->settings['private_key'] : $this->private_key );
-		$this->private_key_test        = apply_filters( 'woocommerce_reepay_private_key_test', isset( $this->settings['private_key_test'] ) ? $this->settings['private_key_test'] : $this->private_key_test );
-		$this->test_mode               = isset( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $this->test_mode;
-		$this->settle                  = isset( $this->settings['settle'] ) ? $this->settings['settle'] : $this->settle;
-		$this->language                = isset( $this->settings['language'] ) ? $this->settings['language'] : $this->language;
-		$this->save_cc                 = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
-		$this->debug                   = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
-		$this->logos                   = isset( $this->settings['logos'] ) ? $this->settings['logos'] : $this->logos;
-		$this->payment_type            = isset( $this->settings['payment_type'] ) ? $this->settings['payment_type'] : $this->payment_type;
-		$this->payment_methods         = isset( $this->settings['payment_methods'] ) ? $this->settings['payment_methods'] : $this->payment_methods;
-		$this->skip_order_lines        = isset( $this->settings['skip_order_lines'] ) ? $this->settings['skip_order_lines'] : $this->skip_order_lines;
-		$this->enable_order_autocancel = isset( $this->settings['enable_order_autocancel'] ) ? $this->settings['enable_order_autocancel'] : $this->enable_order_autocancel;
-		$this->failed_webhooks_email   = isset( $this->settings['failed_webhooks_email'] ) ? $this->settings['failed_webhooks_email'] : $this->failed_webhooks_email;
-		$this->is_webhook_configured   = isset( $this->settings['is_webhook_configured'] ) ? $this->settings['is_webhook_configured'] : $this->is_webhook_configured;
-		$this->handle_failover         = isset( $this->settings['handle_failover'] ) ? $this->settings['handle_failover'] : $this->handle_failover;
+		$this->private_key             = apply_filters( 'woocommerce_reepay_private_key', $this->settings['private_key'] ?? $this->private_key );
+		$this->private_key_test        = apply_filters( 'woocommerce_reepay_private_key_test', $this->settings['private_key_test'] ?? $this->private_key_test );
+		$this->test_mode               = $this->settings['test_mode'] ?? $this->test_mode;
+		$this->settle                  = $this->settings['settle'] ?? $this->settle;
+		$this->language                = $this->settings['language'] ?? $this->language;
+		$this->save_cc                 = $this->settings['save_cc'] ?? $this->save_cc;
+		$this->debug                   = $this->settings['debug'] ?? $this->debug;
+		$this->logos                   = $this->settings['logos'] ?? $this->logos;
+		$this->payment_type            = $this->settings['payment_type'] ?? $this->payment_type;
+		$this->payment_methods         = $this->settings['payment_methods'] ?? $this->payment_methods;
+		$this->skip_order_lines        = $this->settings['skip_order_lines'] ?? $this->skip_order_lines;
+		$this->enable_order_autocancel = $this->settings['enable_order_autocancel'] ?? $this->enable_order_autocancel;
+		$this->failed_webhooks_email   = $this->settings['failed_webhooks_email'] ?? $this->failed_webhooks_email;
+		$this->is_webhook_configured   = $this->settings['is_webhook_configured'] ?? $this->is_webhook_configured;
+		$this->handle_failover         = $this->settings['handle_failover'] ?? $this->handle_failover;
 
 		// Disable "Add payment method" if the CC saving is disabled
 		if ( $this->save_cc !== 'yes' && ( $key = array_search( 'add_payment_method', $this->supports ) ) !== false ) {
@@ -639,15 +639,15 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	public function process_admin_options() {
 		parent::process_admin_options();
 
-		$current_key = isset( $this->settings['private_key'] ) ? $this->settings['private_key'] : '';
+		$current_key = $this->settings['private_key'] ?? '';
 		if ( $current_key != $_POST['woocommerce_reepay_checkout_private_key'] ) {
 			WC_Reepay_Gateway_Statistics::private_key_activated();
 		}
 
 		$this->init_settings();
-		$this->private_key      = isset( $this->settings['private_key'] ) ? $this->settings['private_key'] : $this->private_key;
-		$this->private_key_test = isset( $this->settings['private_key_test'] ) ? $this->settings['private_key_test'] : $this->private_key_test;
-		$this->test_mode        = isset( $this->settings['test_mode'] ) ? $this->settings['test_mode'] : $this->test_mode;
+		$this->private_key      = $this->settings['private_key'] ?? $this->private_key;
+		$this->private_key_test = $this->settings['private_key_test'] ?? $this->private_key_test;
+		$this->test_mode        = $this->settings['test_mode'] ?? $this->test_mode;
 
 		parent::is_webhook_configured();
 

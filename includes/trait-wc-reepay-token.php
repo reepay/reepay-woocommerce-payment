@@ -117,7 +117,7 @@ trait WC_Reepay_Token {
 				'%s Payment token #%s created for %s',
 				__METHOD__,
 				$token->get_id(),
-				isset( $source['masked_card'] ) ? $source['masked_card'] : ''
+				$source['masked_card'] ?? ''
 			)
 		);
 

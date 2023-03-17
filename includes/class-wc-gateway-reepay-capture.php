@@ -397,7 +397,7 @@ class WC_Reepay_Order_Capture {
 		if ( ! empty( $taxes ) ) {
 			foreach ( $taxes as $tax ) {
 				$tax_item_id    = $tax->get_rate_id();
-				$tax_item_total = isset( $tax_data['total'][ $tax_item_id ] ) ? $tax_data['total'][ $tax_item_id ] : '';
+				$tax_item_total = $tax_data['total'][ $tax_item_id ] ?? '';
 				if ( ! empty( $tax_item_total ) ) {
 					$res_tax += floatval( $tax_item_total );
 				}

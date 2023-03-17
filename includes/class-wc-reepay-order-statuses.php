@@ -277,8 +277,8 @@ class WC_Reepay_Order_Statuses {
 			$order->set_prices_include_tax( 'yes' === get_option( 'woocommerce_prices_include_tax' ) );
 			$order->set_customer_ip_address( WC_Geolocation::get_ip_address() );
 			$order->set_customer_user_agent( wc_get_user_agent() );
-			$order->set_customer_note( isset( $data['order_comments'] ) ? $data['order_comments'] : '' );
-			$order->set_payment_method( isset( $available_gateways[ $data['payment_method'] ] ) ? $available_gateways[ $data['payment_method'] ] : $data['payment_method'] );
+			$order->set_customer_note( $data['order_comments'] ?? '' );
+			$order->set_payment_method( $available_gateways[ $data['payment_method'] ] ?? $data['payment_method'] );
 			$order->set_shipping_total( WC()->cart->get_shipping_total() );
 			$order->set_discount_total( WC()->cart->get_discount_total() );
 			$order->set_discount_tax( WC()->cart->get_discount_tax() );
