@@ -257,9 +257,10 @@ if ( ! function_exists( 'rp_get_order_by_session' ) ) {
 	/**
 	 * Get Order By Reepay Order Session.
 	 *
-	 * @param string $handle
+	 * @param  string  $handle
 	 *
 	 * @return false|WC_Order
+	 * @throws Exception
 	 */
 	function rp_get_order_by_session( $session_id ) {
 		global $wpdb;

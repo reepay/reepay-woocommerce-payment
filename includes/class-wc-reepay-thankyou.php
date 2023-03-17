@@ -66,11 +66,7 @@ class WC_Reepay_Thankyou {
 	 * @param $order_id
 	 *
 	 * @return void
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
-	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
-	 * @SuppressWarnings(PHPMD.Superglobals)
-	 * @SuppressWarnings(PHPMD.ElseExpression)
+	 * @throws Exception
 	 */
 	public function thankyou_page( $order_id ) {
 		$order = wc_get_order( $order_id );

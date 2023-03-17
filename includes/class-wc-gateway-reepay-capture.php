@@ -59,6 +59,15 @@ class WC_Reepay_Order_Capture {
 		}
 	}
 
+	/**
+	 * @param WC_Order $order order to settle.
+	 * @param $items_data
+	 * @param $total_all
+	 * @param $line_items
+	 *
+	 * @return bool
+	 * @throws Exception
+	 */
 	public function settle_items( $order, $items_data, $total_all, $line_items ) {
 		unset( $_POST['post_status'] );
 
@@ -146,12 +155,17 @@ class WC_Reepay_Order_Capture {
 		$item->save(); // Save item
 	}
 
+	/**
+	 * @param WC_Order_Item $item order item to settle.
+	 * @param WC_Order $order current order.
+	 *
+	 * @return bool
+	 * @throws Exception
+	 */
 	public function settle_item( $item, $order ) {
-
 		$settled = $item->get_meta( 'settled' );
 
 		if ( empty( $settled ) ) {
-
 			$item_data      = $this->get_item_data( $item, $order );
 			$line_item_data = array( $item_data );
 			$total          = $item_data['amount'] * $item_data['quantity'];
@@ -161,6 +175,7 @@ class WC_Reepay_Order_Capture {
 				WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 			} elseif ( $total > 0 && $this->check_allow_capture( $order ) ) {
 				$result = $gateway->api->settle( $order, $total, $line_item_data, $item );
+
 				if ( is_wp_error( $result ) ) {
 					$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
 					set_transient( 'reepay_api_action_error', __( $result->get_error_message(), 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
@@ -275,6 +290,13 @@ class WC_Reepay_Order_Capture {
 		}
 	}
 
+	/**
+	 * @param int $item_id the id of the item being displayed.
+	 * @param object $item the item being displayed.
+	 * @param WC_Product $product product of item.
+	 *
+	 * @throws Exception
+	 */
 	public function add_item_capture_button( $item_id, $item, $product ) {
 		$order_id = wc_get_order_id_by_order_item_id( $item_id );
 		$order    = wc_get_order( $order_id );
@@ -332,6 +354,12 @@ class WC_Reepay_Order_Capture {
 		}
 	}
 
+	/**
+	 * @param WC_Order_Item $order_item order item to get data.
+	 * @param WC_Order $order current order.
+	 *
+	 * @return array
+	 */
 	public function get_item_data( $order_item, $order ) {
 		$prices_incl_tax = wc_prices_include_tax();
 
@@ -340,6 +368,7 @@ class WC_Reepay_Order_Capture {
 		$tax        = $price['with_tax'] - $price['original'];
 		$taxPercent = ( $tax > 0 ) ? 100 / ( $price['original'] / $tax ) : 0;
 		$unitPrice  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
+
 		return array(
 			'ordertext'       => $order_item->get_name(),
 			'quantity'        => $order_item->get_quantity(),

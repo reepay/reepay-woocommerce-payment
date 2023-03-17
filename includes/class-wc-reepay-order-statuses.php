@@ -525,13 +525,14 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Update Order Status.
 	 *
-	 * @param WC_Order    $order
-	 * @param string      $new_status
-	 * @param string      $note
-	 * @param string|null $transaction_id
-	 * @param bool        $manual
+	 * @param  WC_Order     $order
+	 * @param  string       $new_status
+	 * @param  string       $note
+	 * @param  string|null  $transaction_id
+	 * @param  bool         $manual
 	 *
 	 * @return void
+	 * @throws WC_Data_Exception
 	 */
 	public static function update_order_status( $order, $new_status, $note = '', $transaction_id = null, $manual = false ) {
 		remove_action( 'woocommerce_process_shop_order_meta', 'WC_Meta_Box_Order_Data::save', 40 );

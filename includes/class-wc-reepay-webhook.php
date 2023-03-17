@@ -23,9 +23,10 @@ class WC_Reepay_Webhook {
 	/**
 	 * Process WebHook.
 	 *
-	 * @param array $data
+	 * @param  array  $data
 	 *
 	 * @return void
+	 * @throws Exception
 	 */
 	public function process() {
 		$data = $this->data;

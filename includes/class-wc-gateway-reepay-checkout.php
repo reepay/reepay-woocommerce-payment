@@ -890,10 +890,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	/**
 	 * Save payment method meta data for the Subscription
 	 *
-	 * @param WC_Subscription $subscription
-	 * @param string          $meta_table
-	 * @param string          $meta_key
-	 * @param string          $meta_value
+	 * @param  WC_Subscription  $subscription
+	 * @param  string           $meta_table
+	 * @param  string           $meta_key
+	 * @param  string           $meta_value
+	 *
+	 * @throws Exception
 	 */
 	public function save_subscription_payment_meta( $subscription, $meta_table, $meta_key, $meta_value ) {
 		if ( $subscription->get_payment_method() === $this->id ) {
@@ -936,6 +938,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * Clone Card ID when Subscription created
 	 *
 	 * @param $order_id
+	 *
+	 * @throws Exception
 	 */
 	public function add_subscription_card_id( $order_id ) {
 		if ( ! function_exists( 'wcs_get_subscriptions_for_order' ) ) {
@@ -945,7 +949,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		// Get subscriptions
 		$subscriptions = wcs_get_subscriptions_for_order( $order_id, array( 'order_type' => 'parent' ) );
 		foreach ( $subscriptions as $subscription ) {
-			/** @var WC_Subscription $subscription */
 			$token = self::get_payment_token_order( $subscription );
 			if ( ! $token ) {
 				// Copy tokens from parent order

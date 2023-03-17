@@ -129,7 +129,7 @@ trait WC_Reepay_Token {
 	 *
 	 * @param WC_Order $order
 	 *
-	 * @return WC_Payment_Token_Reepay|false
+	 * @return bool|WC_Payment_Token|null
 	 */
 	public static function get_payment_token_order( WC_Order $order ) {
 		$token = $order->get_meta( '_reepay_token' );
@@ -137,7 +137,7 @@ trait WC_Reepay_Token {
 			return false;
 		}
 
-		return self::get_payment_token( $token );
+		return self::get_payment_token( $token ) ?: false;
 	}
 
 	/**

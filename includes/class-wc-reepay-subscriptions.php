@@ -131,6 +131,8 @@ class WC_Reepay_Subscriptions {
 	 * Add Card ID when Subscription was created
 	 *
 	 * @param $order_id
+	 *
+	 * @throws Exception
 	 */
 	public static function add_subscription_card_id( $order_id ) {
 		if ( ! function_exists( 'wcs_get_subscriptions_for_order' ) ) {
@@ -301,10 +303,12 @@ class WC_Reepay_Subscriptions {
 	/**
 	 * Save payment method meta data for the Subscription
 	 *
-	 * @param WC_Subscription $subscription
-	 * @param string          $meta_table
-	 * @param string          $meta_key
-	 * @param string          $meta_value
+	 * @param  WC_Subscription  $subscription
+	 * @param  string           $meta_table
+	 * @param  string           $meta_key
+	 * @param  string           $meta_value
+	 *
+	 * @throws Exception
 	 */
 	public static function save_subscription_payment_meta( $subscription, $meta_table, $meta_key, $meta_value ) {
 		if ( in_array( $subscription->get_payment_method(), self::PAYMENT_METHODS ) ) {

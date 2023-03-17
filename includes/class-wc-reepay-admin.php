@@ -414,6 +414,12 @@ class WC_Reepay_Admin {
 		}
 	}
 
+	/**
+	 * @param WC_Order $order
+	 * @param $amount
+	 *
+	 * @throws Exception
+	 */
 	private function woocommerce_refund_add( $order, $amount ) {
 		$_POST['order_id']               = $order->get_id();
 		$_POST['refund_amount']          = $amount;
