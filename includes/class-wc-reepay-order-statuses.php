@@ -260,8 +260,8 @@ class WC_Reepay_Order_Statuses {
 				'shipping_tax'    => true,
 			);
 			foreach ( $data as $key => $value ) {
-				if ( is_callable( array( $order, "set_{$key}" ) ) ) {
-					$order->{"set_{$key}"}( $value );
+				if ( is_callable( array( $order, "set_$key" ) ) ) {
+					$order->{"set_$key"}( $value );
 					// Store custom fields prefixed with wither shipping_ or billing_. This is for backwards compatibility with 2.6.x.
 				} elseif ( isset( $fields_prefix[ current( explode( '_', $key ) ) ] ) ) {
 					if ( ! isset( $shipping_fields[ $key ] ) ) {

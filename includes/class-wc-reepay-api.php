@@ -270,11 +270,11 @@ class WC_Reepay_Api {
 	}
 
 	/**
-	 * @param \WC_Order $order
+	 * @param WC_Order $order
 	 * @param bool      $amount
 	 *
 	 * @return bool
-	 * @throws \Exception
+	 * @throws Exception
 	 */
 	public function can_refund( $order, $amount = false ) {
 		if ( is_int( $order ) ) {
@@ -327,7 +327,7 @@ class WC_Reepay_Api {
 
 		$order_data = $this->get_invoice_data( $order );
 
-		if ( floatval( $order->get_total() ) * 100 == $order_data['settled_amount'] ) {
+		if ( $order->get_total() * 100 == $order_data['settled_amount'] ) {
 			return false;
 		}
 
@@ -362,7 +362,7 @@ class WC_Reepay_Api {
 	 * @param WC_Order|int $order
 	 *
 	 * @return void
-	 * @throws \Exception
+	 * @throws Exception
 	 */
 	public function cancel_payment( $order ) {
 		if ( is_int( $order ) ) {
@@ -554,11 +554,10 @@ class WC_Reepay_Api {
 			}
 
 			if ( mb_strpos( $result->get_error_message(), 'Amount higher than authorized amount', 0, 'UTF-8' ) !== false && ! empty( $item ) ) {
+				$order_data = $this->get_invoice_data( $order );
+				$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
 
 				if ( count( $request_data['order_lines'] ) > 1 && is_array( $item ) ) {
-					$order_data = $this->get_invoice_data( $order );
-					$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
-
 					$request_data['amount'] = $remaining;
 					unset( $request_data['order_lines'] );
 
@@ -568,8 +567,6 @@ class WC_Reepay_Api {
 						$request_data
 					);
 				} else {
-					$order_data = $this->get_invoice_data( $order );
-					$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
 					$price      = WC_Reepay_Order_Capture::get_item_price( $item, $order );
 					if ( $remaining > 0 && round( $remaining / 100 ) == $price['with_tax'] && ! empty( $request_data['order_lines'][0] ) ) {
 						$full = $remaining / ( $request_data['order_lines'][0]['vat'] + 1 );

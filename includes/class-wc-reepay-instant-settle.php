@@ -277,7 +277,7 @@ class WC_Reepay_Instant_Settle {
 
 		// Add discounts
 		if ( $order->get_total_discount( false ) > 0 ) {
-			$discountWithTax = (float) $order->get_total_discount( false );
+			$discountWithTax = $order->get_total_discount( false );
 			$total          -= $discountWithTax;
 
 			$debug[] = array(

@@ -94,14 +94,14 @@ class WC_Reepay_Subscriptions {
 		$gateway       = rp_get_payment_method( $renewal_order );
 		if ( ! empty( $renewal_sub ) && ! empty( $gateway ) ) {
 			$order_data = $gateway->api->get_invoice_data( $renewal_order );
-			if ( is_wp_error( $order_data ) && floatval( $renewal_order->get_total() ) > 0 ) {
+			if ( is_wp_error( $order_data ) && $renewal_order->get_total()  > 0 ) {
 
 				if ( $this_status_transition_from == 'pending' && $this_status_transition_to == REEPAY_STATUS_AUTHORIZED ) {
-					self::scheduled_subscription_payment( floatval( $renewal_order->get_total() ), $renewal_order );
+					self::scheduled_subscription_payment( $renewal_order->get_total() , $renewal_order );
 				}
 
 				if ( $this_status_transition_from == 'pending' && $this_status_transition_to == REEPAY_STATUS_SETTLED ) {
-					self::scheduled_subscription_payment( floatval( $renewal_order->get_total() ), $renewal_order, true );
+					self::scheduled_subscription_payment( $renewal_order->get_total() , $renewal_order, true );
 				}
 			}
 		}
@@ -492,7 +492,7 @@ class WC_Reepay_Subscriptions {
 		if ( wcs_cart_have_subscription() || wcs_is_payment_change() ) {
 			// Load XML
 			libxml_use_internal_errors( true );
-			$doc    = new \DOMDocument();
+			$doc    = new DOMDocument();
 			$status = @$doc->loadXML( $html );
 			if ( false !== $status ) {
 				$item = $doc->getElementsByTagName( 'input' )->item( 0 );

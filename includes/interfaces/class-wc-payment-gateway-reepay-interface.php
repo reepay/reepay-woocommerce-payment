@@ -10,7 +10,7 @@ interface WC_Payment_Gateway_Reepay_Interface {
 	/**
 	 * Check is Capture possible
 	 *
-	 * @param \WC_Order  $order
+	 * @param WC_Order  $order
 	 * @param bool|float $amount
 	 *
 	 * @return bool
@@ -20,7 +20,7 @@ interface WC_Payment_Gateway_Reepay_Interface {
 	/**
 	 * Check is Cancel possible
 	 *
-	 * @param \WC_Order $order
+	 * @param WC_Order $order
 	 *
 	 * @return bool
 	 */
@@ -29,7 +29,7 @@ interface WC_Payment_Gateway_Reepay_Interface {
 	/**
 	 * Check is Refund possible
 	 *
-	 * @param \WC_Order  $order
+	 * @param WC_Order  $order
 	 * @param bool|float $amount
 	 *
 	 * @return bool
@@ -39,10 +39,10 @@ interface WC_Payment_Gateway_Reepay_Interface {
 	/**
 	 * Capture
 	 *
-	 * @param \WC_Order  $order
+	 * @param WC_Order  $order
 	 * @param bool|float $amount
 	 *
-	 * @throws \Exception
+	 * @throws Exception
 	 * @return void
 	 */
 	public function capture_payment( $order, $amount );
@@ -50,9 +50,9 @@ interface WC_Payment_Gateway_Reepay_Interface {
 	/**
 	 * Cancel
 	 *
-	 * @param \WC_Order $order
+	 * @param WC_Order $order
 	 *
-	 * @throws \Exception
+	 * @throws Exception
 	 * @return void
 	 */
 	public function cancel_payment( $order );
@@ -60,11 +60,11 @@ interface WC_Payment_Gateway_Reepay_Interface {
 	/**
 	 * Refund
 	 *
-	 * @param \WC_Order  $order
+	 * @param WC_Order  $order
 	 * @param bool|float $amount
 	 * @param string     $reason
 	 *
-	 * @throws \Exception
+	 * @throws Exception
 	 * @return void
 	 */
 	public function refund_payment( $order, $amount, $reason );

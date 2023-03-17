@@ -123,7 +123,7 @@ function reepay_get_order_notes( $order_id ) {
 	$table = $wpdb->prefix . 'comments';
 	$results = $wpdb->get_results("
         SELECT *
-        FROM {$table}
+        FROM $table
         WHERE  `comment_post_ID` = $order_id
         AND  `comment_type` LIKE  'order_note'
     ");
