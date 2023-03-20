@@ -443,6 +443,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	/**
 	 * Generate separator HTML
 	 *
+	 * @see WC_Settings_API::generate_settings_html
+     *
 	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
@@ -455,6 +457,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	/**
 	 * Generate WebHook Status HTML.
 	 *
+	 * @see WC_Settings_API::generate_settings_html
+     *
 	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
@@ -502,6 +506,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	/**
 	 * Generate WebHook Status HTML.
 	 *
+	 * @see WC_Settings_API::generate_settings_html
+     *
 	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
@@ -547,6 +553,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	/**
 	 * Generate WebHook Status HTML.
 	 *
+     * @see WC_Settings_API::generate_settings_html
+     *
 	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
@@ -793,141 +801,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	}
 
 	/**
-	 * Update the card meta for a subscription
-	 * to complete a payment to make up for an automatic renewal payment which previously failed.
-	 *
-	 * @access public
-	 *
-	 * @param WC_Subscription $subscription The subscription for which the failing payment method relates.
-	 * @param WC_Order        $renewal_order The order which recorded the successful payment (to make up for the failed automatic payment).
-	 *
-	 * @return void
-	 */
-	public function update_failing_payment_method( $subscription, $renewal_order ) {
-		$subscription->update_meta_data( '_reepay_token', $renewal_order->get_meta( '_reepay_token' ) );
-		$subscription->update_meta_data( '_reepay_token_id', $renewal_order->get_meta( '_reepay_token_id' ) );
-	}
-
-	/**
-	 * Don't transfer customer meta to resubscribe orders.
-	 *
-	 * @access public
-	 *
-	 * @param WC_Order $resubscribe_order The order created for the customer to resubscribe to the old expired/cancelled subscription
-	 *
-	 * @return void
-	 */
-	public function delete_resubscribe_meta( $resubscribe_order ) {
-		if ( $resubscribe_order->get_payment_method() === $this->id ) {
-			// Delete tokens
-			delete_post_meta( $resubscribe_order->get_id(), '_payment_tokens' );
-			delete_post_meta( $resubscribe_order->get_id(), '_reepay_token' );
-			delete_post_meta( $resubscribe_order->get_id(), '_reepay_token_id' );
-			delete_post_meta( $resubscribe_order->get_id(), '_reepay_order' );
-		}
-	}
-
-	/**
-	 * Create a renewal order to record a scheduled subscription payment.
-	 *
-	 * @param WC_Order|int        $renewal_order
-	 * @param WC_Subscription|int $subscription
-	 *
-	 * @return bool|WC_Order|WC_Order_Refund
-	 */
-	public function renewal_order_created( $renewal_order, $subscription ) {
-		if ( ! is_object( $renewal_order ) ) {
-			$renewal_order = wc_get_order( $renewal_order );
-		}
-
-		if ( $renewal_order->get_payment_method() === $this->id ) {
-			// Remove Reepay order handler from renewal order
-			delete_post_meta( $renewal_order->get_id(), '_reepay_order' );
-		}
-
-		return $renewal_order;
-	}
-
-	/**
-	 * Include the payment meta data required to process automatic recurring payments so that store managers can
-	 * manually set up automatic recurring payments for a customer via the Edit Subscription screen in Subscriptions v2.0+.
-	 *
-	 * @param array           $payment_meta associative array of meta data required for automatic payments
-	 * @param WC_Subscription $subscription An instance of a subscription object
-	 *
-	 * @return array
-	 */
-	public function add_subscription_payment_meta( $payment_meta, $subscription ) {
-		$reepay_token = get_post_meta( $subscription->get_id(), '_reepay_token', true );
-
-		// If token wasn't stored in Subscription
-		if ( empty( $reepay_token ) ) {
-			$order = $subscription->get_parent();
-			if ( $order ) {
-				$reepay_token = get_post_meta( $order->get_id(), '_reepay_token', true );
-			}
-		}
-
-		$payment_meta[ $this->id ] = array(
-			'post_meta' => array(
-				'_reepay_token' => array(
-					'value' => $reepay_token,
-					'label' => 'Reepay Token',
-				),
-			),
-		);
-
-		return $payment_meta;
-	}
-
-	/**
-	 * Save payment method meta data for the Subscription
-	 *
-	 * @param  WC_Subscription  $subscription
-	 * @param  string           $meta_table
-	 * @param  string           $meta_key
-	 * @param  string           $meta_value
-	 *
-	 * @throws Exception
-	 */
-	public function save_subscription_payment_meta( $subscription, $meta_table, $meta_key, $meta_value ) {
-		if ( $subscription->get_payment_method() === $this->id ) {
-			if ( $meta_table === 'post_meta' && $meta_key === '_reepay_token' ) {
-				// Add tokens
-				$tokens = explode( ',', $meta_value );
-				foreach ( $tokens as $reepay_token ) {
-					// Get Token ID
-					$token = self::get_payment_token( $reepay_token );
-					if ( ! $token ) {
-						// Create Payment Token
-						$token = $this->add_payment_token( $subscription, $reepay_token );
-					}
-
-					self::assign_payment_token( $subscription, $token );
-				}
-			}
-		}
-	}
-
-	/**
-	 * Add Token ID.
-	 *
-	 * @param int                     $order_id
-	 * @param int                     $token_id
-	 * @param WC_Payment_Token_Reepay $token
-	 * @param array                   $token_ids
-	 *
-	 * @return void
-	 */
-	public function add_payment_token_id( $order_id, $token_id, $token, $token_ids ) {
-		$order = wc_get_order( $order_id );
-		if ( $order->get_payment_method() === $this->id ) {
-			update_post_meta( $order->get_id(), '_reepay_token_id', $token_id );
-			update_post_meta( $order->get_id(), '_reepay_token', $token->get_token() );
-		}
-	}
-
-	/**
 	 * Clone Card ID when Subscription created
 	 *
 	 * @param $order_id
@@ -953,37 +826,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				}
 			}
 		}
-	}
-
-	/**
-	 * Render the payment method used for a subscription in the "My Subscriptions" table
-	 *
-	 * @param string          $payment_method_to_display the default payment method text to display
-	 * @param WC_Subscription $subscription the subscription details
-	 *
-	 * @return string the subscription payment method
-	 */
-	public function maybe_render_subscription_payment_method( $payment_method_to_display, $subscription ) {
-		if ( $this->id !== $subscription->get_payment_method() || ! $subscription->get_user_id() ) {
-			return $payment_method_to_display;
-		}
-
-		$tokens = $subscription->get_payment_tokens();
-		foreach ( $tokens as $token_id ) {
-			$token = new WC_Payment_Token_Reepay( $token_id );
-			if ( $token->get_gateway_id() !== $this->id ) {
-				continue;
-			}
-
-			return sprintf(
-				__( 'Via %1$s card ending in %2$s/%3$s', 'woocommerce-gateway-reepay-checkout' ),
-				$token->get_masked_card(),
-				$token->get_expiry_month(),
-				$token->get_expiry_year()
-			);
-		}
-
-		return $payment_method_to_display;
 	}
 
 	/**

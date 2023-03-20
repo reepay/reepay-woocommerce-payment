@@ -366,6 +366,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	/**
 	 * Generate Gateway Status HTML.
 	 *
+	 * @see WC_Settings_API::generate_settings_html
+     *
 	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
@@ -658,18 +660,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			dirname( __FILE__ ) . '/../../templates/'
 		);
 	}
-
-	/**
-	 * Validate frontend fields.
-	 *
-	 * Validate payment fields on the frontend.
-	 *
-	 * @return bool
-	 */
-	public function validate_fields() {
-		return true;
-	}
-
 
 	/**
 	 * Process Payment
@@ -1298,34 +1288,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$this->log( sprintf( 'WebHook: Error: %s', $e->getMessage() ) );
 			http_response_code( 200 );
 		}
-	}
-
-	/**
-	 * Enqueue the webhook processing.
-	 *
-	 * @param $raw_body
-	 *
-	 * @return void
-	 */
-	public function enqueue_webhook_processing( $raw_body ) {
-		$data = @json_decode( $raw_body, true );
-
-		// Create Background Process Task
-		$background_process = new WC_Background_Reepay_Queue();
-		$background_process->push_to_queue(
-			array(
-				'payment_method_id' => $this->id,
-				'webhook_data'      => $raw_body,
-			)
-		);
-		$background_process->save();
-
-		$this->log(
-			sprintf(
-				'WebHook: Task enqueued. ID: %s',
-				$data['id']
-			)
-		);
 	}
 
 	/**
