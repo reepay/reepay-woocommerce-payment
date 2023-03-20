@@ -191,7 +191,10 @@ class WC_Reepay_Order_Capture {
 
 		$gateway = rp_get_payment_method( $order );
 
-		$invoice_data = $gateway->api->get_invoice_data( $order );
+		if ( ! empty( $gateway ) && ! empty( $gateway->api ) ) {
+			$invoice_data = $gateway->api->get_invoice_data( $order );
+		}
+
 
 		if ( is_wp_error( $invoice_data ) ) {
 			echo __( 'Invoice not found', 'reepay-checkout-gateway' );
