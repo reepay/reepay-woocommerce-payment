@@ -9,7 +9,6 @@ class WC_Reepay_Order {
 	public function __construct() {
 		add_filter( 'woocommerce_order_data_store_cpt_get_orders_query', array( $this, 'handle_custom_query_var' ), 10, 2 );
 		add_filter( 'reepay_order_handle', array( $this, 'get_order_handle' ), 10, 3 );
-		add_filter( 'reepay_get_order', array( $this, 'get_orderid_by_handle' ), 10, 2 );
 	}
 
 	/**
@@ -48,30 +47,6 @@ class WC_Reepay_Order {
 		}
 
 		return $handle;
-	}
-
-	/**
-	 * Get Order Id by Reepay Order Handle.
-	 *
-	 * @param int|null $order_id
-	 * @param string   $handle
-	 *
-	 * @return bool|mixed
-	 */
-	public function get_orderid_by_handle( $order_id, $handle ) {
-		global $wpdb;
-
-		$query    = "
-			SELECT post_id FROM {$wpdb->prefix}postmeta 
-			LEFT JOIN {$wpdb->prefix}posts ON ({$wpdb->prefix}posts.ID = {$wpdb->prefix}postmeta.post_id)
-			WHERE meta_key = %s AND meta_value = %s;";
-		$sql      = $wpdb->prepare( $query, '_reepay_order', $handle );
-		$order_id = $wpdb->get_var( $sql );
-		if ( ! $order_id ) {
-			return false;
-		}
-
-		return $order_id;
 	}
 }
 
