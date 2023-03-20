@@ -626,7 +626,7 @@ class WC_Reepay_Api {
 	 *
 	 * @return array|WP_Error
 	 */
-	public function cancel( WC_Order $order ) {
+	public function cancel_payment( WC_Order $order ) {
 		$handle = rp_get_order_handle( $order );
 		if ( empty( $handle ) ) {
 			return new WP_Error( 0, 'Unable to get order handle' );

@@ -499,7 +499,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			throw new Exception( 'Order is already canceled' );
 		}
 
-		$result = $this->api->cancel( $order );
+		$result = $this->api->cancel_payment( $order );
 		if ( is_wp_error( $result ) ) {
 			throw new Exception( $result->get_error_message() );
 		}
