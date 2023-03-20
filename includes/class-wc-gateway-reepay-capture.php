@@ -43,9 +43,15 @@ class WC_Reepay_Order_Capture {
 		return $formatted_meta;
 	}
 
-
-	public function capture_full_order( $order_id, $this_status_transition_from, $this_status_transition_to, $instance ) {
-		$order          = wc_get_order( $order_id );
+	/**
+	 * @param  int       $order_id
+	 * @param  string    $this_status_transition_from
+	 * @param  string    $this_status_transition_to
+	 * @param  WC_Order  $order
+	 *
+	 * @throws Exception If settle error
+	 */
+	public function capture_full_order( $order_id, $this_status_transition_from, $this_status_transition_to, $order ) {
 		$payment_method = $order->get_payment_method();
 
 		if ( strpos( $payment_method, 'reepay' ) === false ) {

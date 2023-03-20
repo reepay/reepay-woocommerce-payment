@@ -132,7 +132,7 @@ class WC_Reepay_Subscriptions {
 	 *
 	 * @param $order_id
 	 *
-	 * @throws Exception
+	 * @throws Exception If invalid token sent to assign_payment_token.
 	 */
 	public static function add_subscription_card_id( $order_id ) {
 		if ( ! function_exists( 'wcs_get_subscriptions_for_order' ) ) {
@@ -142,7 +142,6 @@ class WC_Reepay_Subscriptions {
 		// Get subscriptions
 		$subscriptions = wcs_get_subscriptions_for_order( $order_id, array( 'order_type' => 'parent' ) );
 		foreach ( $subscriptions as $subscription ) {
-			/** @var WC_Subscription $subscription */
 			$gateway = rp_get_payment_method( $subscription );
 
 			if ( ! $gateway ) {
@@ -193,6 +192,7 @@ class WC_Reepay_Subscriptions {
 	 * @param $order_id
 	 *
 	 * @return void
+	 * @throws Exception If invalid order token.
 	 */
 	public static function thankyou_page( $order_id ) {
 		// Add Subscription card id

@@ -417,11 +417,12 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Set Pending Status.
 	 *
-	 * @param WC_Order    $order
-	 * @param string|null $note
-	 * @param string|null $transaction_id
+	 * @param  WC_Order     $order
+	 * @param  string|null  $note
+	 * @param  string|null  $transaction_id
 	 *
 	 * @return void
+	 * @throws WC_Data_Exception Throws exception when invalid data sent to update_order_status.
 	 */
 	public static function set_pending_status( WC_Order $order, $note, $transaction_id ) {
 		if ( '1' === $order->get_meta( '_reepay_state_pending' ) ) {
@@ -442,11 +443,12 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Set Authorized Status.
 	 *
-	 * @param WC_Order    $order
-	 * @param string|null $note
-	 * @param string|null $transaction_id
+	 * @param  WC_Order     $order
+	 * @param  string|null  $note
+	 * @param  string|null  $transaction_id
 	 *
 	 * @return void
+	 * @throws WC_Data_Exception Throws exception when invalid data sent to update_order_status.
 	 */
 	public static function set_authorized_status( WC_Order $order, $note, $transaction_id ) {
 		$authorized_status = apply_filters( 'reepay_authorized_order_status', 'on-hold', $order );
@@ -475,11 +477,12 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Set Settled Status.
 	 *
-	 * @param WC_Order    $order
-	 * @param string|null $note
-	 * @param string|null $transaction_id
+	 * @param  WC_Order     $order
+	 * @param  string|null  $note
+	 * @param  string|null  $transaction_id
 	 *
 	 * @return void
+	 * @throws WC_Data_Exception If cannot change order status.
 	 */
 	public static function set_settled_status( WC_Order $order, $note, $transaction_id ) {
 		// Check if the payment has been settled fully
@@ -532,7 +535,7 @@ class WC_Reepay_Order_Statuses {
 	 * @param  bool         $manual
 	 *
 	 * @return void
-	 * @throws WC_Data_Exception
+	 * @throws WC_Data_Exception Throws exception when invalid data sent to set_transaction_id.
 	 */
 	public static function update_order_status( $order, $new_status, $note = '', $transaction_id = null, $manual = false ) {
 		remove_action( 'woocommerce_process_shop_order_meta', 'WC_Meta_Box_Order_Data::save', 40 );

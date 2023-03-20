@@ -13,7 +13,7 @@ trait WC_Reepay_Token {
 	 *
 	 * @return void
 	 *
-	 * @throws Exception
+	 * @throws Exception If invalid token.
 	 */
 	public static function assign_payment_token( $order, $token ) {
 		if ( is_numeric( $token ) ) {
