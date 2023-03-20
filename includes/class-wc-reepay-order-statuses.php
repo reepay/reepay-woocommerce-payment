@@ -306,32 +306,6 @@ class WC_Reepay_Order_Statuses {
 	}
 
 	/**
-	 * Set Pending Status.
-	 *
-	 * @param  WC_Order     $order
-	 * @param  string|null  $note
-	 * @param  string|null  $transaction_id
-	 *
-	 * @return void
-	 * @throws WC_Data_Exception Throws exception when invalid data sent to update_order_status.
-	 */
-	public static function set_pending_status( WC_Order $order, $note, $transaction_id ) {
-		if ( '1' === $order->get_meta( '_reepay_state_pending' ) ) {
-			return;
-		}
-
-		self::update_order_status(
-			$order,
-			'pending',
-			$note,
-			$transaction_id
-		);
-
-		$order->update_meta_data( '_reepay_state_pending', 1 );
-		$order->save_meta_data();
-	}
-
-	/**
 	 * Set Authorized Status.
 	 *
 	 * @param  WC_Order     $order
