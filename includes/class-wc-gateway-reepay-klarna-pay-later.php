@@ -7,6 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WC_Gateway_Reepay_Klarna_Pay_Later extends WC_Gateway_Reepay {
 	/**
 	 * Logos
+	 *
 	 * @var array
 	 */
 	public $logos = array(
@@ -19,14 +20,14 @@ class WC_Gateway_Reepay_Klarna_Pay_Later extends WC_Gateway_Reepay {
 	 * @var array|null
 	 */
 	public $payment_methods = array(
-		'klarna_pay_later'
+		'klarna_pay_later',
 	);
 
 	public function __construct() {
 		$this->id           = 'reepay_klarna_pay_later';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Klarna Pay Later', 'reepay-checkout-gateway' );
-		//$this->icon         = apply_filters( 'woocommerce_reepay_klarna_pl_icon', plugins_url( '/assets/images/klarna-pay-later.png', dirname( __FILE__ ) ) );
+		// $this->icon         = apply_filters( 'woocommerce_reepay_klarna_pl_icon', plugins_url( '/assets/images/klarna-pay-later.png', dirname( __FILE__ ) ) );
 		$this->supports = array(
 			'products',
 			'refunds',
@@ -65,14 +66,18 @@ class WC_Gateway_Reepay_Klarna_Pay_Later extends WC_Gateway_Reepay {
 		}
 
 		// Actions
-		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
-			$this,
-			'process_admin_options'
-		) );
+		add_action(
+			'woocommerce_update_options_payment_gateways_' . $this->id,
+			array(
+				$this,
+				'process_admin_options',
+			)
+		);
 	}
 
 	/**
 	 * Initialise Settings Form Fields
+	 *
 	 * @return string|void
 	 */
 	public function init_form_fields() {
@@ -81,20 +86,20 @@ class WC_Gateway_Reepay_Klarna_Pay_Later extends WC_Gateway_Reepay {
 				'title'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
 				'type'    => 'gateway_status',
 				'label'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
-				'default' => $this->test_mode
+				'default' => $this->test_mode,
 			),
 			'enabled'              => array(
 				'title'    => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
 				'type'     => 'checkbox',
 				'label'    => __( 'Enable plugin', 'reepay-checkout-gateway' ),
 				'default'  => 'no',
-				'disabled' => ! $this->is_configured()
+				'disabled' => ! $this->is_configured(),
 			),
 			'title'                => array(
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Klarna Pay Later', 'reepay-checkout-gateway' )
+				'default'     => __( 'Reepay - Klarna Pay Later', 'reepay-checkout-gateway' ),
 			),
 			'description'          => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),

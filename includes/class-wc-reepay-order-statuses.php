@@ -15,61 +15,102 @@ class WC_Reepay_Order_Statuses {
 		define( 'REEPAY_STATUS_AUTHORIZED', isset( $settings['status_authorized'] ) ? str_replace( 'wc-', '', $settings['status_authorized'] ) : 'on-hold' );
 		define( 'REEPAY_STATUS_SETTLED', isset( $settings['status_settled'] ) ? str_replace( 'wc-', '', $settings['status_settled'] ) : 'processing' );
 
-		add_filter( 'woocommerce_settings_api_form_fields_reepay_checkout', array(
-			$this,
-			'form_fields'
-		), 10, 2 );
+		add_filter(
+			'woocommerce_settings_api_form_fields_reepay_checkout',
+			array(
+				$this,
+				'form_fields',
+			),
+			10,
+			2
+		);
 
-		/*add_filter('woocommerce_create_order', array(
+		/*
+		add_filter('woocommerce_create_order', array(
 			$this,
 			'woocommerce_create_order'
 		), 10, 2);*/
 
 		// Add statuses for payment complete
-		add_filter( 'woocommerce_valid_order_statuses_for_payment_complete', array(
-			$this,
-			'add_valid_order_statuses'
-		), 10, 2 );
+		add_filter(
+			'woocommerce_valid_order_statuses_for_payment_complete',
+			array(
+				$this,
+				'add_valid_order_statuses',
+			),
+			10,
+			2
+		);
 
-		add_filter( 'woocommerce_payment_complete_order_status', array(
-			$this,
-			'payment_complete_order_status'
-		), 10, 3 );
+		add_filter(
+			'woocommerce_payment_complete_order_status',
+			array(
+				$this,
+				'payment_complete_order_status',
+			),
+			10,
+			3
+		);
 
 		add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 10 );
 
 		add_action( 'woocommerce_payment_complete', array( $this, 'payment_complete' ), 10, 1 );
 
-		add_filter( 'reepay_authorized_order_status', array(
-			$this,
-			'reepay_authorized_order_status'
-		), 10, 2 );
+		add_filter(
+			'reepay_authorized_order_status',
+			array(
+				$this,
+				'reepay_authorized_order_status',
+			),
+			10,
+			2
+		);
 
-		add_filter( 'reepay_settled_order_status', array(
-			$this,
-			'reepay_settled_order_status'
-		), 10, 2 );
+		add_filter(
+			'reepay_settled_order_status',
+			array(
+				$this,
+				'reepay_settled_order_status',
+			),
+			10,
+			2
+		);
 
 		// Status Change Actions
 		add_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10, 4 );
 
 		// Woocommerce Subscriptions
-		//add_filter( 'woocommerce_can_subscription_be_updated_to', array($this, 'subscription_be_updated_to'), 10, 3 );
+		// add_filter( 'woocommerce_can_subscription_be_updated_to', array($this, 'subscription_be_updated_to'), 10, 3 );
 
-		add_filter( 'wc_order_is_editable', array(
-			$this,
-			'is_editable'
-		), 10, 2 );
+		add_filter(
+			'wc_order_is_editable',
+			array(
+				$this,
+				'is_editable',
+			),
+			10,
+			2
+		);
 
-		add_filter( 'woocommerce_order_is_paid', array(
-			$this,
-			'is_paid'
-		), 10, 2 );
+		add_filter(
+			'woocommerce_order_is_paid',
+			array(
+				$this,
+				'is_paid',
+			),
+			10,
+			2
+		);
 
-		add_filter( 'woocommerce_cancel_unpaid_order', array(
-			$this,
-			'cancel_unpaid_order'
-		), 10, 2 );
+		add_filter(
+			'woocommerce_cancel_unpaid_order',
+			array(
+				$this,
+				'cancel_unpaid_order',
+			),
+			10,
+			2
+		);
 	}
 
 	/**
@@ -84,10 +125,15 @@ class WC_Reepay_Order_Statuses {
 		$statuses = wc_get_order_statuses();
 		foreach ( $statuses as $status => $label ) {
 			$status = str_replace( 'wc-', '', $status );
-			add_action( 'woocommerce_payment_complete_order_status_' . $status, array(
-				$this,
-				'payment_complete'
-			), 10, 1 );
+			add_action(
+				'woocommerce_payment_complete_order_status_' . $status,
+				array(
+					$this,
+					'payment_complete',
+				),
+				10,
+				1
+			);
 		}
 	}
 
@@ -102,7 +148,7 @@ class WC_Reepay_Order_Statuses {
 
 		$form_fields['hr_sync'] = array(
 			'type' => 'separator',
-			'id'   => 'hr_sync'
+			'id'   => 'hr_sync',
 		);
 
 		$form_fields['enable_sync'] = array(
@@ -110,7 +156,7 @@ class WC_Reepay_Order_Statuses {
 			'type'        => 'checkbox',
 			'label'       => __( 'Enable sync', 'reepay-checkout-gateway' ),
 			'description' => __( '2-way synchronization of order statuses in Woocommerce with invoice statuses in Reepay', 'reepay-checkout-gateway' ),
-			'default'     => 'yes'
+			'default'     => 'yes',
 		);
 
 		$pending_statuses = wc_get_order_statuses();
@@ -127,7 +173,7 @@ class WC_Reepay_Order_Statuses {
 			'title'   => __( 'Status: Reepay Created', 'reepay-checkout-gateway' ),
 			'type'    => 'select',
 			'options' => $pending_statuses,
-			'default' => 'wc-pending'
+			'default' => 'wc-pending',
 		);
 
 		/**
@@ -146,7 +192,7 @@ class WC_Reepay_Order_Statuses {
 			'title'   => __( 'Status: Reepay Authorized', 'reepay-checkout-gateway' ),
 			'type'    => 'select',
 			'options' => $authorized_statuses,
-			'default' => 'wc-on-hold'
+			'default' => 'wc-on-hold',
 		);
 
 		$settled_statuses = wc_get_order_statuses();
@@ -161,14 +207,14 @@ class WC_Reepay_Order_Statuses {
 			'title'   => __( 'Status: Reepay Settled', 'reepay-checkout-gateway' ),
 			'type'    => 'select',
 			'options' => $settled_statuses,
-			'default' => 'wc-processing'
+			'default' => 'wc-processing',
 		);
 
 		return $form_fields;
 	}
 
 	/**
-	 * @param int $order_id
+	 * @param int         $order_id
 	 * @param WC_Checkout $checkout
 	 *
 	 * @return int|WP_Error
@@ -189,10 +235,12 @@ class WC_Reepay_Order_Statuses {
 			 * different items or cost, create a new order. We use a hash to
 			 * detect changes which is based on cart items + order total.
 			 */
-			if ( $order && $order->has_cart_hash( $cart_hash ) && $order->has_status( array(
+			if ( $order && $order->has_cart_hash( $cart_hash ) && $order->has_status(
+				array(
 					REEPAY_STATUS_CREATED,
-					'failed'
-				) ) ) {
+					'failed',
+				)
+			) ) {
 				// Action for 3rd parties.
 				do_action( 'woocommerce_resume_order', $order_id );
 
@@ -265,7 +313,7 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Allow processing/completed statuses for capture
 	 *
-	 * @param array $statuses
+	 * @param array    $statuses
 	 * @param WC_Order $order
 	 *
 	 * @return array
@@ -281,8 +329,8 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Get Status For Payment Complete.
 	 *
-	 * @param string $status
-	 * @param int $order_id
+	 * @param string   $status
+	 * @param int      $order_id
 	 * @param WC_Order $order
 	 *
 	 * @return mixed|string
@@ -295,7 +343,8 @@ class WC_Reepay_Order_Statuses {
 				$order
 			);
 
-			/* $status = apply_filters(
+			/*
+			 $status = apply_filters(
 				'reepay_settled_order_status',
 				REEPAY_STATUS_SETTLED,
 				$order
@@ -331,7 +380,7 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Get a status for Authorized payments.
 	 *
-	 * @param string $status
+	 * @param string   $status
 	 * @param WC_Order $order
 	 *
 	 * @return string
@@ -351,7 +400,7 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Get a status for Settled payments.
 	 *
-	 * @param string $status
+	 * @param string   $status
 	 * @param WC_Order $order
 	 *
 	 * @return string
@@ -368,7 +417,7 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Set Pending Status.
 	 *
-	 * @param WC_Order $order
+	 * @param WC_Order    $order
 	 * @param string|null $note
 	 * @param string|null $transaction_id
 	 *
@@ -393,7 +442,7 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Set Authorized Status.
 	 *
-	 * @param WC_Order $order
+	 * @param WC_Order    $order
 	 * @param string|null $note
 	 * @param string|null $transaction_id
 	 *
@@ -426,7 +475,7 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Set Settled Status.
 	 *
-	 * @param WC_Order $order
+	 * @param WC_Order    $order
 	 * @param string|null $note
 	 * @param string|null $transaction_id
 	 *
@@ -476,11 +525,11 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Update Order Status.
 	 *
-	 * @param WC_Order $order
-	 * @param string $new_status
-	 * @param string $note
+	 * @param WC_Order    $order
+	 * @param string      $new_status
+	 * @param string      $note
 	 * @param string|null $transaction_id
-	 * @param bool $manual
+	 * @param bool        $manual
 	 *
 	 * @return void
 	 */
@@ -537,7 +586,7 @@ class WC_Reepay_Order_Statuses {
 	 * Checks if an order can be edited, specifically for use on the Edit Order screen.
 	 *
 	 * @param $is_editable
-	 * @param WC_Order $order
+	 * @param WC_Order    $order
 	 *
 	 * @return bool
 	 */
@@ -572,7 +621,7 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Prevent the pending cancellation for Reepay Orders if allowed
 	 *
-	 * @param bool $maybe_cancel
+	 * @param bool     $maybe_cancel
 	 * @param WC_Order $order
 	 *
 	 * @return bool

@@ -9,3 +9,8 @@ node_modules
 
 #Ignore build
 build
+
+#Ignore all composer dependencies except autoloader
+vendor
+!vendor/autoload.php
+!vendor/composer

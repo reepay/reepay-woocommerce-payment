@@ -11,12 +11,20 @@ class ComposerStaticInita6758271609b1b7b0025b80dea0412ce
         array (
             'Reepay\\Checkout\\' => 16,
         ),
+        'D' => 
+        array (
+            'Dealerdirect\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\' => 55,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
         'Reepay\\Checkout\\' => 
         array (
             0 => __DIR__ . '/../..' . '/includes',
+        ),
+        'Dealerdirect\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/dealerdirect/phpcodesniffer-composer-installer/src',
         ),
     );
 

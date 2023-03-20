@@ -42,8 +42,8 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 
 		ob_start();
 		?>
-        <img <?php echo $style ?> src="<?php echo $img ?>"
-                                  alt="<?php echo wc_get_credit_card_type_label( $this->get_card_type() ); ?>"/>
+		<img <?php echo $style; ?> src="<?php echo $img; ?>"
+								  alt="<?php echo wc_get_credit_card_type_label( $this->get_card_type() ); ?>"/>
 		<?php echo esc_html( $this->get_masked_card() ); ?>
 		<?php echo esc_html( $this->get_expiry_month() . '/' . substr( $this->get_expiry_year(), 2 ) ); ?>
 
@@ -55,8 +55,8 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 	}
 
 	/**
-     * Get card image url
-     *
+	 * Get card image url
+	 *
 	 * @return string
 	 */
 	public function get_card_image_url() {
@@ -86,6 +86,7 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 
 	/**
 	 * Hook prefix
+	 *
 	 * @return string
 	 */
 	protected function get_hook_prefix() {
@@ -120,8 +121,8 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 	public function is_default() {
 		// Mark Method as Checked on "Payment Change" page
 		if ( wcs_is_payment_change() &&
-		     isset( $_GET['change_payment_method'] ) &&
-		     abs( $_GET['change_payment_method'] ) > 0 ) {
+			 isset( $_GET['change_payment_method'] ) &&
+			 abs( $_GET['change_payment_method'] ) > 0 ) {
 			$subscription = wcs_get_subscription( $_GET['change_payment_method'] );
 			$tokens       = $subscription->get_payment_tokens();
 			foreach ( $tokens as $token_id ) {
@@ -139,7 +140,7 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 	/**
 	 * Controls the output for credit cards on the my account page.
 	 *
-	 * @param array $item Individual list item from woocommerce_saved_payment_methods_list.
+	 * @param array            $item Individual list item from woocommerce_saved_payment_methods_list.
 	 * @param WC_Payment_Token $payment_token The payment token associated with this method entry.
 	 *
 	 * @return array                           Filtered item.
@@ -153,7 +154,7 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 		if ( ! method_exists( $payment_token, 'get_card_type' ) ) {
 			return $item;
 		}
-        
+
 		$card_type               = $payment_token->get_card_type();
 		$item['method']['id']    = $payment_token->get_id();
 		$item['method']['last4'] = $payment_token->get_last4();
@@ -201,8 +202,8 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 	/**
 	 * Fix html on Payment methods list
 	 *
-	 * @param string $html
-	 * @param WC_Payment_Token $token
+	 * @param string             $html
+	 * @param WC_Payment_Token   $token
 	 * @param WC_Payment_Gateway $gateway
 	 *
 	 * @return string

@@ -7,7 +7,7 @@ class WC_Reepay_Subscriptions {
 
 	const PAYMENT_METHODS = array(
 		'reepay_checkout',
-		'reepay_mobilepay_subscriptions'
+		'reepay_mobilepay_subscriptions',
 	);
 
 	public function __construct() {
@@ -106,16 +106,15 @@ class WC_Reepay_Subscriptions {
 			}
 		}
 
-
 	}
 
 	/**
 	 * Add Token ID.
 	 *
-	 * @param int $order_id
-	 * @param int $token_id
+	 * @param int                     $order_id
+	 * @param int                     $token_id
 	 * @param WC_Payment_Token_Reepay $token
-	 * @param array $token_ids
+	 * @param array                   $token_ids
 	 *
 	 * @return void
 	 */
@@ -164,7 +163,7 @@ class WC_Reepay_Subscriptions {
 	/**
 	 * Create a renewal order to record a scheduled subscription payment.
 	 *
-	 * @param WC_Order|int $renewal_order
+	 * @param WC_Order|int        $renewal_order
 	 * @param WC_Subscription|int $subscription
 	 *
 	 * @return bool|WC_Order|WC_Order_Refund
@@ -205,7 +204,7 @@ class WC_Reepay_Subscriptions {
 	 * @access public
 	 *
 	 * @param WC_Subscription $subscription The subscription for which the failing payment method relates.
-	 * @param WC_Order $renewal_order The order which recorded the successful payment (to make up for the failed automatic payment).
+	 * @param WC_Order        $renewal_order The order which recorded the successful payment (to make up for the failed automatic payment).
 	 *
 	 * @return void
 	 */
@@ -238,7 +237,7 @@ class WC_Reepay_Subscriptions {
 	 * Include the payment meta data required to process automatic recurring payments so that store managers can
 	 * manually set up automatic recurring payments for a customer via the Edit Subscription screen in Subscriptions v2.0+.
 	 *
-	 * @param array $payment_meta associative array of meta data required for automatic payments
+	 * @param array           $payment_meta associative array of meta data required for automatic payments
 	 * @param WC_Subscription $subscription An instance of a subscription object
 	 *
 	 * @return array
@@ -259,8 +258,8 @@ class WC_Reepay_Subscriptions {
 				'_reepay_token' => array(
 					'value' => $token,
 					'label' => 'Reepay Token',
-				)
-			)
+				),
+			),
 		);
 
 		return $payment_meta;
@@ -270,8 +269,8 @@ class WC_Reepay_Subscriptions {
 	 * Validate the payment meta data required to process automatic recurring payments so that store managers can
 	 * manually set up automatic recurring payments for a customer via the Edit Subscription screen in Subscriptions 2.0+.
 	 *
-	 * @param string $payment_method_id The ID of the payment method to validate
-	 * @param array $payment_meta associative array of meta data required for automatic payments
+	 * @param string          $payment_method_id The ID of the payment method to validate
+	 * @param array           $payment_meta associative array of meta data required for automatic payments
 	 * @param WC_Subscription $subscription
 	 *
 	 * @throws Exception
@@ -303,9 +302,9 @@ class WC_Reepay_Subscriptions {
 	 * Save payment method meta data for the Subscription
 	 *
 	 * @param WC_Subscription $subscription
-	 * @param string $meta_table
-	 * @param string $meta_key
-	 * @param string $meta_value
+	 * @param string          $meta_table
+	 * @param string          $meta_key
+	 * @param string          $meta_value
 	 */
 	public static function save_subscription_payment_meta( $subscription, $meta_table, $meta_key, $meta_value ) {
 		if ( in_array( $subscription->get_payment_method(), self::PAYMENT_METHODS ) ) {
@@ -331,7 +330,7 @@ class WC_Reepay_Subscriptions {
 	 * When a subscription payment is due.
 	 *
 	 * @param          $amount_to_charge
-	 * @param WC_Order $renewal_order
+	 * @param WC_Order         $renewal_order
 	 */
 	public static function scheduled_subscription_payment( $amount_to_charge, $renewal_order, $settle = false ) {
 		$gateway = rp_get_payment_method( $renewal_order );
@@ -426,7 +425,8 @@ class WC_Reepay_Subscriptions {
 		} catch ( Exception $e ) {
 			$renewal_order->update_status( 'failed' );
 			$renewal_order->add_order_note(
-				sprintf( __( 'Error: "%s". %s.', 'reepay-checkout-gateway' ),
+				sprintf(
+					__( 'Error: "%1$s". %2$s.', 'reepay-checkout-gateway' ),
 					wc_price( $amount_to_charge ),
 					$e->getMessage()
 				)
@@ -437,14 +437,14 @@ class WC_Reepay_Subscriptions {
 	/**
 	 * Render the payment method used for a subscription in the "My Subscriptions" table
 	 *
-	 * @param string $payment_method_to_display the default payment method text to display
+	 * @param string          $payment_method_to_display the default payment method text to display
 	 * @param WC_Subscription $subscription the subscription details
 	 *
 	 * @return string the subscription payment method
 	 */
 	public static function maybe_render_subscription_payment_method( $payment_method_to_display, $subscription ) {
 		if ( ! in_array( $subscription->get_payment_method(), self::PAYMENT_METHODS ) ||
-		     ! $subscription->get_user_id()
+			 ! $subscription->get_user_id()
 		) {
 			return $payment_method_to_display;
 		}
@@ -456,7 +456,7 @@ class WC_Reepay_Subscriptions {
 
 				$token = new WC_Payment_Token_Reepay( $token_id );
 
-			} catch (Exception $e) {
+			} catch ( Exception $e ) {
 				continue;
 			}
 
@@ -465,7 +465,7 @@ class WC_Reepay_Subscriptions {
 			}
 
 			return sprintf(
-			/* translators: 1: pan 2: month 3: year */ __( 'Via %s card ending in %s/%s', 'reepay-checkout-gateway' ),
+			/* translators: 1: pan 2: month 3: year */                __( 'Via %1$s card ending in %2$s/%3$s', 'reepay-checkout-gateway' ),
 				$token->get_masked_card(),
 				$token->get_expiry_month(),
 				$token->get_expiry_year()
@@ -478,7 +478,7 @@ class WC_Reepay_Subscriptions {
 	/**
 	 * Modify "Save to account" to lock that if needs.
 	 *
-	 * @param string $html
+	 * @param string             $html
 	 * @param WC_Payment_Gateway $gateway
 	 *
 	 * @return string

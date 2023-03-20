@@ -10,41 +10,59 @@ class WC_Reepay_Admin {
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
 
 		// Add action buttons
-		//add_action( 'woocommerce_order_item_add_action_buttons', __CLASS__ . '::add_action_buttons', 10, 1 );
+		// add_action( 'woocommerce_order_item_add_action_buttons', __CLASS__ . '::add_action_buttons', 10, 1 );
 
 		// Add scripts and styles for admin
 		add_action( 'admin_enqueue_scripts', __CLASS__ . '::admin_enqueue_scripts' );
 
 		// Add Admin Backend Actions
-		add_action( 'wp_ajax_reepay_capture', array(
-			$this,
-			'ajax_reepay_capture'
-		) );
+		add_action(
+			'wp_ajax_reepay_capture',
+			array(
+				$this,
+				'ajax_reepay_capture',
+			)
+		);
 
-		add_action( 'wp_ajax_reepay_cancel', array(
-			$this,
-			'ajax_reepay_cancel'
-		) );
+		add_action(
+			'wp_ajax_reepay_cancel',
+			array(
+				$this,
+				'ajax_reepay_cancel',
+			)
+		);
 
-		add_action( 'wp_ajax_reepay_refund', array(
-			$this,
-			'ajax_reepay_refund'
-		) );
+		add_action(
+			'wp_ajax_reepay_refund',
+			array(
+				$this,
+				'ajax_reepay_refund',
+			)
+		);
 
-		add_action( 'wp_ajax_reepay_capture_partly', array(
-			$this,
-			'ajax_reepay_capture_partly'
-		) );
+		add_action(
+			'wp_ajax_reepay_capture_partly',
+			array(
+				$this,
+				'ajax_reepay_capture_partly',
+			)
+		);
 
-		add_action( 'wp_ajax_reepay_refund_partly', array(
-			$this,
-			'ajax_reepay_refund_partly'
-		) );
+		add_action(
+			'wp_ajax_reepay_refund_partly',
+			array(
+				$this,
+				'ajax_reepay_refund_partly',
+			)
+		);
 
-		add_action( 'wp_ajax_reepay_set_complete_settle_transient', array(
-			$this,
-			'ajax_reepay_set_complete_settle_transient'
-		) );
+		add_action(
+			'wp_ajax_reepay_set_complete_settle_transient',
+			array(
+				$this,
+				'ajax_reepay_set_complete_settle_transient',
+			)
+		);
 
 		// Status Change Actions
 		add_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10, 4 );
@@ -52,6 +70,7 @@ class WC_Reepay_Admin {
 
 	/**
 	 * Add meta boxes in admin
+	 *
 	 * @return void
 	 */
 	public function add_meta_boxes() {
@@ -108,7 +127,7 @@ class WC_Reepay_Admin {
 						'gateway'    => $gateway,
 						'order'      => $order,
 						'order_id'   => $order->get_order_number(),
-						'order_data' => $order_data
+						'order_data' => $order_data,
 					),
 					'',
 					dirname( __FILE__ ) . '/../templates/'
@@ -129,7 +148,7 @@ class WC_Reepay_Admin {
 				'admin/action-buttons.php',
 				array(
 					'gateway' => $gateway,
-					'order'   => $order
+					'order'   => $order,
 				),
 				'',
 				dirname( __FILE__ ) . '/../templates/'
@@ -161,7 +180,7 @@ class WC_Reepay_Admin {
 				plugin_dir_url( __FILE__ ) . '../assets/dist/js/admin' . $suffix . '.js',
 				array(
 					'jquery',
-					'reepay-js-input-mask'
+					'reepay-js-input-mask',
 				)
 			);
 
@@ -376,7 +395,7 @@ class WC_Reepay_Admin {
 						$message = $e->getMessage();
 						WC_Admin_Meta_Boxes::add_error(
 							sprintf(
-								__( 'Error with order <a href="%s">#%u</a>. View order notes for more info', 'reepay-checkout-gateway' ),
+								__( 'Error with order <a href="%1$s">#%2$u</a>. View order notes for more info', 'reepay-checkout-gateway' ),
 								$order->get_edit_order_url(),
 								$order_id
 							)
