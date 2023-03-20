@@ -25,9 +25,9 @@ class WC_Reepay_Api {
 	/**
 	 * Constructor.
 	 *
-	 * @param WC_Payment_Gateway_Reepay_Interface $gateway
+	 * @param WC_Gateway_Reepay $gateway
 	 */
-	public function __construct( WC_Payment_Gateway_Reepay_Interface $gateway ) {
+	public function __construct( WC_Gateway_Reepay $gateway ) {
 		$this->gateway        = $gateway;
 		$this->logging_source = $gateway->id;
 	}

@@ -4,8 +4,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Payment_Gateway_Reepay_Interface {
+abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	use WC_Reepay_Token;
+
+	const METHOD_WINDOW  = 'WINDOW';
+
+	const METHOD_OVERLAY = 'OVERLAY';
 
 	/**
 	 * @var WC_Reepay_Api
