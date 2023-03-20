@@ -356,36 +356,6 @@ class WC_Reepay_Api {
 		return $this->settle( $order, $amount, array_values( $order_lines ) );
 	}
 
-	/**
-	 * Cancel
-	 *
-	 * @param WC_Order|int $order
-	 *
-	 * @return void
-	 * @throws Exception
-	 */
-	public function cancel_payment( $order ) {
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
-
-		// Check if hte order is cancelled - if so - then return as nothing has happened
-		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
-			return;
-		}
-
-		if ( ! $this->can_cancel( $order ) ) {
-			$this->log( sprintf( 'Payment can\'t be cancelled. Order ID: %s', $order->get_id() ) );
-
-			throw new Exception( 'Payment can\'t be cancelled.' );
-		}
-
-		$result = $this->cancel( $order );
-		if ( is_wp_error( $result ) ) {
-			throw new Exception( $result->get_error_message() );
-		}
-	}
-
 	public function recurring( $payment_methods, $order, $data, $token = false, $payment_text = '' ) {
 		$params = array(
 			'locale'          => $data['language'],
