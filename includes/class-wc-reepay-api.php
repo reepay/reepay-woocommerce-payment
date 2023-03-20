@@ -409,9 +409,6 @@ class WC_Reepay_Api {
 	 * @return array|WP_Error
 	 */
 	public function charge( WC_Order $order, $token, $amount, $currency, $order_lines = null, $settle = false ) {
-		// @todo Use order lines instead of amount
-		// @todo Use `settle` parameter
-		// @todo Add `customer`, `billing_address`, `shipping_address`
 		$params = array(
 			'handle'      => rp_get_order_handle( $order ),
 			'amount'      => ! is_null( $amount ) ? rp_prepare_amount( $amount, $currency ) : null,
@@ -515,8 +512,7 @@ class WC_Reepay_Api {
 		if ( is_wp_error( $result ) ) {
 			// Workaround: Check if the invoice has been settled before to prevent "Invoice already settled"
 			if ( mb_strpos( $result->get_error_message(), 'Invoice already settled', 0, 'UTF-8' ) !== false ) {
-				// @todo Fetch invoice transaction
-				return array(); // @todo
+				return array();
 			}
 
 			if ( mb_strpos( $result->get_error_message(), 'Amount higher than authorized amount', 0, 'UTF-8' ) !== false && ! empty( $item ) ) {
@@ -572,10 +568,6 @@ class WC_Reepay_Api {
 		if ( 'failed' === $result['state'] ) {
 			return new WP_Error( 0, 'Settle has been failed.' );
 		}
-
-		// @todo Check $result['processing']
-		// @todo Check $result['authorized_amount']
-		// @todo Check state $result['state']
 
 		$order->update_meta_data( '_reepay_capture_transaction', $result['transaction'] );
 		$order->save_meta_data();
@@ -732,10 +724,6 @@ class WC_Reepay_Api {
 	 * @throws Exception
 	 */
 	private function process_charge_result( WC_Order $order, array $result ) {
-		// @todo Check $result['processing']
-		// @todo Check $result['authorized_amount']
-		// @todo Check state $result['state']
-
 		// For asynchronous payment methods this flag indicates that the charge is awaiting result.
 		// The charge/invoice state will be pending.
 
@@ -836,7 +824,6 @@ class WC_Reepay_Api {
 			return new WP_Error( 0, 'Unable to retrieve customer payment methods' );
 		}
 
-		// @todo Add mps_subscriptions
 		if ( ! $reepay_token ) {
 			return $result['cards'];
 		}

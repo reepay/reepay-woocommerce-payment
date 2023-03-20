@@ -391,7 +391,6 @@ class WC_Reepay_Webhook {
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			case 'customer_payment_method_added':
-				// @todo
 				$this->log( sprintf( 'WebHook: TODO: customer_payment_method_added: %s', var_export( $data, true ) ) );
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 

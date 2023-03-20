@@ -1078,7 +1078,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				$order->payment_complete();
 			}
 
-			// @todo Transaction ID should applied via WebHook
 			if ( ! empty( $_GET['invoice'] ) ) {
 				$handle = wc_clean( $_GET['invoice'] );
 				if ( $handle !== rp_get_order_handle( $order ) ) {
@@ -1122,7 +1121,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 						);
 						break;
 					default:
-						// @todo Order failed?
+
 				}
 			}
 
