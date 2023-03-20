@@ -9,9 +9,6 @@ class WC_Reepay_Admin {
 		// Add meta boxes
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
 
-		// Add action buttons
-		// add_action( 'woocommerce_order_item_add_action_buttons', __CLASS__ . '::add_action_buttons', 10, 1 );
-
 		// Add scripts and styles for admin
 		add_action( 'admin_enqueue_scripts', __CLASS__ . '::admin_enqueue_scripts' );
 
@@ -133,26 +130,6 @@ class WC_Reepay_Admin {
 					dirname( __FILE__ ) . '/../templates/'
 				);
 			}
-		}
-	}
-
-	/**
-	 * @param WC_Order $order
-	 */
-	public static function add_action_buttons( $order ) {
-		$payment_method = $order->get_payment_method();
-		if ( in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
-			$gateway = rp_get_payment_method( $order );
-
-			wc_get_template(
-				'admin/action-buttons.php',
-				array(
-					'gateway' => $gateway,
-					'order'   => $order,
-				),
-				'',
-				dirname( __FILE__ ) . '/../templates/'
-			);
 		}
 	}
 
