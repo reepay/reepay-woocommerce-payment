@@ -34,7 +34,7 @@ interface WC_Payment_Gateway_Reepay_Interface {
 	 *
 	 * @return bool
 	 */
-	public function can_refund( $order, $amount = false );
+	public function can_refund( $order );
 
 	/**
 	 * Capture

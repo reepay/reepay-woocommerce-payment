@@ -271,12 +271,11 @@ class WC_Reepay_Api {
 
 	/**
 	 * @param WC_Order $order
-	 * @param bool      $amount
 	 *
 	 * @return bool
 	 * @throws Exception
 	 */
-	public function can_refund( $order, $amount = false ) {
+	public function can_refund( $order ) {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}

@@ -451,14 +451,13 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 	/**
 	 * @param WC_Order $order
-	 * @param bool      $amount
 	 *
 	 * @return bool
 	 * @throws Exception
 	 * @api
 	 */
-	public function can_refund( $order, $amount = false ) {
-		return $this->api->can_refund( $order, $amount );
+	public function can_refund( $order ) {
+		return $this->api->can_refund( $order );
 	}
 
 	/**
@@ -528,7 +527,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			throw new Exception( 'Order is already canceled' );
 		}
 
-		if ( ! $this->can_refund( $order, $amount ) ) {
+		if ( ! $this->can_refund( $order ) ) {
 			throw new Exception( 'Payment can\'t be refunded.' );
 		}
 
