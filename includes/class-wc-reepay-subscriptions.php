@@ -348,7 +348,6 @@ class WC_Reepay_Subscriptions {
 				// Get Subscriptions
 				$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
 				foreach ( $subscriptions as $subscription ) {
-					/** @var WC_Subscription $subscription */
 					$token = $gateway::get_payment_token_order( $subscription );
 					if ( ! $token ) {
 						$token = $gateway::get_payment_token_order( $subscription->get_parent() );
@@ -367,7 +366,6 @@ class WC_Reepay_Subscriptions {
 					// Get Subscriptions
 					$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
 					foreach ( $subscriptions as $subscription ) {
-						/** @var WC_Subscription $subscription */
 						$token = $subscription->get_meta( '_reepay_token' );
 						if ( empty( $reepay_token ) ) {
 							$order = $subscription->get_parent();
