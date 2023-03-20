@@ -70,9 +70,6 @@ class WC_Reepay_Order_Statuses {
 			2
 		);
 
-		// Status Change Actions
-		add_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10, 4 );
-
 		// Woocommerce Subscriptions
 		// add_filter( 'woocommerce_can_subscription_be_updated_to', array($this, 'subscription_be_updated_to'), 10, 3 );
 
@@ -438,7 +435,6 @@ class WC_Reepay_Order_Statuses {
 		remove_action( 'woocommerce_process_shop_order_meta', 'WC_Meta_Box_Order_Data::save', 40 );
 
 		// Disable status change hook
-		remove_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed' );
 		remove_action( 'woocommerce_order_status_changed', 'WC_Reepay_Admin::order_status_changed' );
 
 		if ( ! empty( $transaction_id ) ) {
@@ -450,20 +446,7 @@ class WC_Reepay_Order_Statuses {
 		$order->save();
 
 		// Enable status change hook
-		add_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10, 4 );
 		add_action( 'woocommerce_order_status_changed', 'WC_Reepay_Admin::order_status_changed', 10, 4 );
-	}
-
-	/**
-	 * Order Status Change: Capture/Cancel
-	 *
-	 * @param $order_id
-	 * @param $from
-	 * @param $to
-	 * @param WC_Order $order
-	 */
-	public static function order_status_changed( $order_id, $from, $to, $order ) {
-		// @see WC_Reepay_Admin::order_status_changed()
 	}
 
 	/**
