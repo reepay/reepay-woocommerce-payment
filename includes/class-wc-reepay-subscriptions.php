@@ -497,6 +497,9 @@ class WC_Reepay_Subscriptions {
 			$doc    = new DOMDocument();
 			$status = @$doc->loadXML( $html );
 			if ( false !== $status ) {
+				/**
+				 * @var DOMElement $item
+				 */
 				$item = $doc->getElementsByTagName( 'input' )->item( 0 );
 				$item->setAttribute( 'checked', 'checked' );
 				$item->setAttribute( 'disabled', 'disabled' );

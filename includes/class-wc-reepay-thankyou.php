@@ -191,6 +191,9 @@ class WC_Reepay_Thankyou {
 		}
 
 		foreach ( $order->get_items() as $item_id => $item ) {
+			/**
+			 * @var WC_Order_Item_Product $item
+			 */
 			if ( class_exists( 'WC_Subscriptions_Product' ) && WC_Subscriptions_Product::is_subscription( $item->get_product() ) ) {
 				if ( $order->get_total() == 0 ) {
 					$ret = array(
