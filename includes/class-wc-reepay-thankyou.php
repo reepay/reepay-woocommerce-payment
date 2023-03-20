@@ -190,7 +190,7 @@ class WC_Reepay_Thankyou {
 			return;
 		}
 
-		foreach ( $order->get_items() as $item_id => $item ) {
+		foreach ( $order->get_items() as $item ) {
 			/**
 			 * @var WC_Order_Item_Product $item
 			 */

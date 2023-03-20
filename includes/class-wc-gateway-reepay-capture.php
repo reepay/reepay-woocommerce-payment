@@ -25,7 +25,7 @@ class WC_Reepay_Order_Capture {
 		// Only on emails notifications
 
 		if ( is_admin() && isset( $_GET['post'] ) ) {
-			foreach ( $formatted_meta as $key => $meta ) {
+			foreach ( $formatted_meta as $meta ) {
 				if ( in_array( $meta->key, array( 'settled' ) ) ) {
 					$meta->display_key = 'Settle';
 				}
@@ -239,7 +239,7 @@ class WC_Reepay_Order_Capture {
 
 	public function get_no_settled_amount( $order ) {
 		$amount = 0;
-		foreach ( $order->get_items() as $item_key => $item ) {
+		foreach ( $order->get_items() as $item ) {
 			$settled = $item->get_meta( 'settled' );
 			if ( empty( $settled ) ) {
 				$price = self::get_item_price( $item, $order );
@@ -249,7 +249,7 @@ class WC_Reepay_Order_Capture {
 			}
 		}
 
-		foreach ( $order->get_items( 'shipping' ) as $item_id => $item ) {
+		foreach ( $order->get_items( 'shipping' ) as $item ) {
 			$settled = $item->get_meta( 'settled' );
 			if ( empty( $settled ) ) {
 				$price = self::get_item_price( $item, $order );
@@ -259,7 +259,7 @@ class WC_Reepay_Order_Capture {
 			}
 		}
 
-		foreach ( $order->get_items( 'fee' ) as $item_id => $item ) {
+		foreach ( $order->get_items( 'fee' ) as $item ) {
 			$settled = $item->get_meta( 'settled' );
 			if ( empty( $settled ) ) {
 				$price = self::get_item_price( $item, $order );

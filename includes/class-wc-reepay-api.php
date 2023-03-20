@@ -286,10 +286,6 @@ class WC_Reepay_Api {
 			return false;
 		}
 
-		if ( ! $amount ) {
-			$amount = $order->get_total();
-		}
-
 		$result = $this->get_invoice_data( $order );
 		if ( is_wp_error( $result ) ) {
 			/** @var WP_Error $result */
@@ -342,7 +338,7 @@ class WC_Reepay_Api {
 		$order_lines   = $gateway->get_order_items( $order, true );
 		$settled_lines = WC_Reepay_Instant_Settle::get_settled_items( $order );
 
-		foreach ( $settled_lines as $settled_line_key => $settled_line ) {
+		foreach ( $settled_lines as $settled_line ) {
 			foreach ( $order_lines as $order_line_key => $order_line ) {
 				if ( $settled_line['ordertext'] == $order_line['ordertext'] ) {
 					$amount -= rp_make_initial_amount( $order_line['amount'], $order->get_currency() );

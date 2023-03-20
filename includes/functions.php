@@ -84,7 +84,7 @@ if ( ! function_exists( 'wcs_cart_have_subscription' ) ) {
 			// Check is Recurring Payment
 			if ( ! is_null( WC()->cart ) ) {
 				$cart = WC()->cart->get_cart();
-				foreach ( $cart as $key => $item ) {
+				foreach ( $cart as $item ) {
 					if ( is_object( $item['data'] ) && WC_Subscriptions_Product::is_subscription( $item['data'] ) ) {
 						return true;
 					}
@@ -108,7 +108,7 @@ if ( ! function_exists( 'wcs_cart_only_subscriptions' ) ) {
 			// Check is Recurring Payment
 			$cart = WC()->cart->get_cart();
 			if ( wcs_cart_have_subscription() ) {
-				foreach ( $cart as $key => $item ) {
+				foreach ( $cart as $item ) {
 					if ( ! WC_Subscriptions_Product::is_subscription( $item['data'] ) ) {
 						$have_product = true;
 						break;

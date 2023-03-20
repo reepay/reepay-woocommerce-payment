@@ -836,10 +836,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * @return bool|WC_Order|WC_Order_Refund
 	 */
 	public function renewal_order_created( $renewal_order, $subscription ) {
-		if ( ! is_object( $subscription ) ) {
-			$subscription = wcs_get_subscription( $subscription );
-		}
-
 		if ( ! is_object( $renewal_order ) ) {
 			$renewal_order = wc_get_order( $renewal_order );
 		}
@@ -1050,8 +1046,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * @throws Exception
 	 */
 	public function reepay_finalize() {
-		$id              = wc_clean( $_GET['id'] );
-		$customer_handle = wc_clean( $_GET['customer'] );
 		$reepay_token    = wc_clean( $_GET['payment_method'] );
 
 		try {

@@ -382,8 +382,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		$data = wp_parse_args( $data, $defaults );
 
-		$enabled = $this->get_option( 'enabled' ) == 'yes';
-
 		$configured = $this->is_configured();
 
 		ob_start();
