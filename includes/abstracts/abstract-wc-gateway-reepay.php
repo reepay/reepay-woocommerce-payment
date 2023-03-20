@@ -1514,8 +1514,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				continue;
 			}
 
-			$fee        = $order_fee->get_total();
-			$tax        = $order_fee->get_total_tax();
+			$fee        = (float) $order_fee->get_total();
+			$tax        = (float) $order_fee->get_total_tax();
 			$feeWithTax = $fee + $tax;
 			$taxPercent = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
 
