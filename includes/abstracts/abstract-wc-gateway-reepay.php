@@ -659,7 +659,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	 * @return array|false
 	 */
 	public function process_payment( $order_id ) {
+		$is_woo_blocks_checkout_request = false;
+
 		if ( 'application/json' === $_SERVER['CONTENT_TYPE'] ) {
+			$is_woo_blocks_checkout_request = true;
+
 			try {
 				$_POST = json_decode( file_get_contents( 'php://input' ), true );
 
@@ -677,8 +681,15 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			}
 		}
 
-
 		$order    = wc_get_order( $order_id );
+
+		if ( $is_woo_blocks_checkout_request ) {
+			/**
+			 * Fix for zero total amount in woo blocks checkout integration
+			 */
+			$order->calculate_totals();
+		}
+
 		$token_id = isset( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) ? wc_clean( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) : 'new';
 
 		if ( $token_id === 'new' && isset( $_POST[ 'wc-' . $this->id . '-new-payment-method' ] ) && $_POST[ 'wc-' . $this->id . '-new-payment-method' ] !== false ) {
