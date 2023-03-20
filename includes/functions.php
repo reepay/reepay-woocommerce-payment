@@ -257,7 +257,7 @@ if ( ! function_exists( 'rp_get_order_by_session' ) ) {
 	/**
 	 * Get Order By Reepay Order Session.
 	 *
-	 * @param  string  $handle
+	 * @param  string  $session_id
 	 *
 	 * @return false|WC_Order
 	 * @throws Exception

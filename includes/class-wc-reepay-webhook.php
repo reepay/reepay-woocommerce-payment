@@ -23,8 +23,6 @@ class WC_Reepay_Webhook {
 	/**
 	 * Process WebHook.
 	 *
-	 * @param  array  $data
-	 *
 	 * @return void
 	 * @throws Exception
 	 */
