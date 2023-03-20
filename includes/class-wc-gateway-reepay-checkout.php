@@ -85,8 +85,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
 	/**
 	 * Initialise Settings Form Fields
-	 *
-	 * @return string|void
 	 */
 	public function init_form_fields() {
 		$this->form_fields = array(
@@ -448,7 +446,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
-	 * @return false|string
+	 * @return string
 	 */
 	public function generate_separator_html( $key, $data ) {
 		return '<tr valign="top" style="border-top: 1px solid #c3c4c7"></tr>';
@@ -684,8 +682,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 
 	/**
 	 * Add Payment Method.
-	 *
-	 * @return array
 	 */
 	public function add_payment_method() {
 		$user            = get_userdata( get_current_user_id() );

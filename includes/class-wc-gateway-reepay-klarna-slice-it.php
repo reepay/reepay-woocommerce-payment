@@ -77,8 +77,6 @@ class WC_Gateway_Reepay_Klarna_Slice_It extends WC_Gateway_Reepay {
 
 	/**
 	 * Initialise Settings Form Fields
-	 *
-	 * @return string|void
 	 */
 	public function init_form_fields() {
 		$this->form_fields = array(

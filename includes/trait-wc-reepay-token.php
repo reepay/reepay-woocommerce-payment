@@ -70,7 +70,7 @@ trait WC_Reepay_Token {
 	 * @param WC_Order $order
 	 * @param string   $reepay_token
 	 *
-	 * @return bool|WC_Payment_Token_Reepay
+	 * @return WC_Payment_Token_Reepay
 	 * @throws Exception
 	 */
 	public function add_payment_token( $order, $reepay_token ) {

@@ -143,7 +143,7 @@ if ( ! function_exists( 'rp_prepare_amount' ) ) {
 	 * @param float  $amount
 	 * @param string $currency
 	 *
-	 * @return int
+	 * @return float
 	 */
 	function rp_prepare_amount( $amount, $currency ) {
 		return round( $amount * rp_get_currency_multiplier( $currency ) );
