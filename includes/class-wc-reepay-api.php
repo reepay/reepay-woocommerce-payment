@@ -683,10 +683,6 @@ class WC_Reepay_Api {
 
 			$order->add_order_note( $error );
 
-			// if ( 'woocommerce_refund_line_items' == trim( wc_clean( $_POST['action'] ) ) ) {
-			// throw new Exception($api_error['error']);
-			// }
-
 			return $result;
 		}
 

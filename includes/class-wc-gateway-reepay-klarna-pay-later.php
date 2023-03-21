@@ -27,7 +27,6 @@ class WC_Gateway_Reepay_Klarna_Pay_Later extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_klarna_pay_later';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Klarna Pay Later', 'reepay-checkout-gateway' );
-		// $this->icon         = apply_filters( 'woocommerce_reepay_klarna_pl_icon', plugins_url( '/assets/images/klarna-pay-later.png', dirname( __FILE__ ) ) );
 		$this->supports = array(
 			'products',
 			'refunds',

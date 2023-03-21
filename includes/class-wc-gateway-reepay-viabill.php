@@ -27,7 +27,6 @@ class WC_Gateway_Reepay_Viabill extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_viabill';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - ViaBill', 'reepay-checkout-gateway' );
-		// $this->icon         = apply_filters( 'woocommerce_reepay_viabill_icon', plugins_url( '/assets/images/viabill.png', dirname( __FILE__ ) ) );
 		$this->supports = array(
 			'products',
 			'refunds',

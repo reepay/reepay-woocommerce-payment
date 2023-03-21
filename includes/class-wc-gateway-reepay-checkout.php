@@ -80,7 +80,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		add_action( 'wp_ajax_nopriv_reepay_card_store', array( $this, 'reepay_card_store' ) );
 		add_action( 'wp_ajax_reepay_finalize', array( $this, 'reepay_finalize' ) );
 		add_action( 'wp_ajax_nopriv_reepay_finalize', array( $this, 'reepay_finalize' ) );
-		// add_action( 'admin_notices', array( $this, 'admin_notice_warning' ) );
 	}
 
 	/**

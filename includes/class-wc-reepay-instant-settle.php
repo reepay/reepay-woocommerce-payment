@@ -24,7 +24,6 @@ class WC_Reepay_Instant_Settle {
 	 * Constructor.
 	 */
 	public function __construct() {
-		// add_action( 'woocommerce_order_status_on-hold', array( $this, 'maybe_settle_instantly' ), 50, 1 );
 		add_action( 'reepay_instant_settle', array( $this, 'maybe_settle_instantly' ), 10, 1 );
 	}
 

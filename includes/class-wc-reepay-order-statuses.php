@@ -233,13 +233,6 @@ class WC_Reepay_Order_Statuses {
 				$order->needs_processing() ? 'processing' : 'completed',
 				$order
 			);
-
-			/*
-			 $status = apply_filters(
-				'reepay_settled_order_status',
-				REEPAY_STATUS_SETTLED,
-				$order
-			); */
 		}
 
 		return $status;

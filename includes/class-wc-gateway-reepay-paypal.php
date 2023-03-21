@@ -27,7 +27,6 @@ class WC_Gateway_Reepay_Paypal extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_paypal';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - PayPal', 'reepay-checkout-gateway' );
-		// $this->icon         = apply_filters( 'woocommerce_reepay_paypal_icon', plugins_url( '/assets/images/paypal.png', dirname( __FILE__ ) ) );
 		$this->supports = array(
 			'products',
 			'refunds',

@@ -153,13 +153,6 @@ class WC_Reepay_Webhook {
 					$order = wc_get_order( $order->get_id() );
 				}
 
-				// Check transaction is applied
-				// if ( $order->get_transaction_id() === $data['transaction'] ) {
-				// $this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
-
-				// return;
-				// }
-
 				// Check if the order has been marked as settled before
 				if ( $order->has_status( REEPAY_STATUS_SETTLED ) ) {
 					$this->log(
@@ -229,13 +222,6 @@ class WC_Reepay_Webhook {
 
 					return;
 				}
-
-				// Check transaction is applied
-				// if ( $order->get_transaction_id() === $data['transaction'] ) {
-				// $this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
-
-				// return;
-				// }
 
 				// Add transaction ID
 				$order->set_transaction_id( $data['transaction'] );

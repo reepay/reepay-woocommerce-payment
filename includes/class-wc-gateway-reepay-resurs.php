@@ -27,7 +27,6 @@ class WC_Gateway_Reepay_Resurs extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_resurs';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Resurs Bank', 'reepay-checkout-gateway' );
-		// $this->icon         = apply_filters( 'woocommerce_reepay_resurs_icon', plugins_url( '/assets/images/resurs.png', dirname( __FILE__ ) ) );
 		$this->supports = array(
 			'products',
 			'refunds',
