@@ -84,7 +84,7 @@ if ( ! function_exists( 'wcs_cart_have_subscription' ) ) {
 			// Check is Recurring Payment
 			if ( ! is_null( WC()->cart ) ) {
 				$cart = WC()->cart->get_cart();
-				foreach ( $cart as $key => $item ) {
+				foreach ( $cart as $item ) {
 					if ( is_object( $item['data'] ) && WC_Subscriptions_Product::is_subscription( $item['data'] ) ) {
 						return true;
 					}
@@ -108,7 +108,7 @@ if ( ! function_exists( 'wcs_cart_only_subscriptions' ) ) {
 			// Check is Recurring Payment
 			$cart = WC()->cart->get_cart();
 			if ( wcs_cart_have_subscription() ) {
-				foreach ( $cart as $key => $item ) {
+				foreach ( $cart as $item ) {
 					if ( ! WC_Subscriptions_Product::is_subscription( $item['data'] ) ) {
 						$have_product = true;
 						break;
@@ -143,7 +143,7 @@ if ( ! function_exists( 'rp_prepare_amount' ) ) {
 	 * @param float  $amount
 	 * @param string $currency
 	 *
-	 * @return int
+	 * @return float
 	 */
 	function rp_prepare_amount( $amount, $currency ) {
 		return round( $amount * rp_get_currency_multiplier( $currency ) );
@@ -257,9 +257,10 @@ if ( ! function_exists( 'rp_get_order_by_session' ) ) {
 	/**
 	 * Get Order By Reepay Order Session.
 	 *
-	 * @param string $handle
+	 * @param  string $session_id
 	 *
 	 * @return false|WC_Order
+	 * @throws Exception
 	 */
 	function rp_get_order_by_session( $session_id ) {
 		global $wpdb;

@@ -1,3 +1,8 @@
+<?php
+/**
+ * @var array $args arguments sent to template.
+ */
+?>
 <ul class="order_action">
 	<li class="reepay-admin-section-li-header-small">
 		<?php _e( 'Handle', 'reepay-subscriptions-for-woocommerce' ); ?>

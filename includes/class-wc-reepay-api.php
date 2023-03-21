@@ -25,9 +25,9 @@ class WC_Reepay_Api {
 	/**
 	 * Constructor.
 	 *
-	 * @param WC_Payment_Gateway_Reepay_Interface $gateway
+	 * @param WC_Gateway_Reepay $gateway
 	 */
-	public function __construct( WC_Payment_Gateway_Reepay_Interface $gateway ) {
+	public function __construct( WC_Gateway_Reepay $gateway ) {
 		$this->gateway        = $gateway;
 		$this->logging_source = $gateway->id;
 	}
@@ -270,13 +270,12 @@ class WC_Reepay_Api {
 	}
 
 	/**
-	 * @param \WC_Order $order
-	 * @param bool      $amount
+	 * @param WC_Order $order
 	 *
 	 * @return bool
-	 * @throws \Exception
+	 * @throws Exception
 	 */
-	public function can_refund( $order, $amount = false ) {
+	public function can_refund( $order ) {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
@@ -284,10 +283,6 @@ class WC_Reepay_Api {
 		// Check if hte order is cancelled - if so - then return as nothing has happened
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
 			return false;
-		}
-
-		if ( ! $amount ) {
-			$amount = $order->get_total();
 		}
 
 		$result = $this->get_invoice_data( $order );
@@ -327,7 +322,7 @@ class WC_Reepay_Api {
 
 		$order_data = $this->get_invoice_data( $order );
 
-		if ( floatval( $order->get_total() ) * 100 == $order_data['settled_amount'] ) {
+		if ( $order->get_total() * 100 == $order_data['settled_amount'] ) {
 			return false;
 		}
 
@@ -342,10 +337,10 @@ class WC_Reepay_Api {
 		$order_lines   = $gateway->get_order_items( $order, true );
 		$settled_lines = WC_Reepay_Instant_Settle::get_settled_items( $order );
 
-		foreach ( $settled_lines as $settled_line_key => $settled_line ) {
+		foreach ( $settled_lines as $settled_line ) {
 			foreach ( $order_lines as $order_line_key => $order_line ) {
 				if ( $settled_line['ordertext'] == $order_line['ordertext'] ) {
-					$amount -= rp_make_initial_amount( $order_lines[ $order_line_key ]['amount'], $order->get_currency() );
+					$amount -= rp_make_initial_amount( $order_line['amount'], $order->get_currency() );
 
 					unset( $order_lines[ $order_line_key ] );
 					break;
@@ -354,36 +349,6 @@ class WC_Reepay_Api {
 		}
 
 		return $this->settle( $order, $amount, array_values( $order_lines ) );
-	}
-
-	/**
-	 * Cancel
-	 *
-	 * @param WC_Order|int $order
-	 *
-	 * @return void
-	 * @throws \Exception
-	 */
-	public function cancel_payment( $order ) {
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
-
-		// Check if hte order is cancelled - if so - then return as nothing has happened
-		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
-			return;
-		}
-
-		if ( ! $this->can_cancel( $order ) ) {
-			$this->log( sprintf( 'Payment can\'t be cancelled. Order ID: %s', $order->get_id() ) );
-
-			throw new Exception( 'Payment can\'t be cancelled.' );
-		}
-
-		$result = $this->cancel( $order );
-		if ( is_wp_error( $result ) ) {
-			throw new Exception( $result->get_error_message() );
-		}
 	}
 
 	public function recurring( $payment_methods, $order, $data, $token = false, $payment_text = '' ) {
@@ -425,13 +390,11 @@ class WC_Reepay_Api {
 			$params['payment_methods'] = $payment_methods;
 		}
 
-		$result = $this->request(
+		return $this->request(
 			'POST',
 			'https://checkout-api.reepay.com/v1/session/recurring',
 			$params
 		);
-
-		return $result;
 	}
 
 	/**
@@ -445,9 +408,6 @@ class WC_Reepay_Api {
 	 * @return array|WP_Error
 	 */
 	public function charge( WC_Order $order, $token, $amount, $currency, $order_lines = null, $settle = false ) {
-		// @todo Use order lines instead of amount
-		// @todo Use `settle` parameter
-		// @todo Add `customer`, `billing_address`, `shipping_address`
 		$params = array(
 			'handle'      => rp_get_order_handle( $order ),
 			'amount'      => ! is_null( $amount ) ? rp_prepare_amount( $amount, $currency ) : null,
@@ -510,12 +470,12 @@ class WC_Reepay_Api {
 	/**
 	 * Settle the payment online.
 	 *
-	 * @param WC_Order       $order
-	 * @param float|int|null $amount
-	 * @param false|array    $item_data
+	 * @param  WC_Order       $order
+	 * @param  float|int|null $amount
+	 * @param  false|array    $item_data
+	 * @param  bool           $item
 	 *
 	 * @return array|WP_Error
-	 * @throws Exception
 	 */
 	public function settle( WC_Order $order, $amount = null, $item_data = false, $item = false ) {
 		$this->log( sprintf( 'Settle: %s, %s', $order->get_id(), $amount ) );
@@ -551,42 +511,34 @@ class WC_Reepay_Api {
 		if ( is_wp_error( $result ) ) {
 			// Workaround: Check if the invoice has been settled before to prevent "Invoice already settled"
 			if ( mb_strpos( $result->get_error_message(), 'Invoice already settled', 0, 'UTF-8' ) !== false ) {
-				// @todo Fetch invoice transaction
-				return array(); // @todo
+				return array();
 			}
 
 			if ( mb_strpos( $result->get_error_message(), 'Amount higher than authorized amount', 0, 'UTF-8' ) !== false && ! empty( $item ) ) {
+				$order_data = $this->get_invoice_data( $order );
+				$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
 
 				if ( count( $request_data['order_lines'] ) > 1 && is_array( $item ) ) {
-					$order_data = $this->get_invoice_data( $order );
-					$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
-
 					$request_data['amount'] = $remaining;
 					unset( $request_data['order_lines'] );
 
-					$result = $this->request(
+					return $this->request(
 						'POST',
 						'https://api.reepay.com/v1/charge/' . $handle . '/settle',
 						$request_data
 					);
-
-					return $result;
 				} else {
-					$order_data = $this->get_invoice_data( $order );
-					$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
-					$price      = WC_Reepay_Order_Capture::get_item_price( $item, $order );
+					$price = WC_Reepay_Order_Capture::get_item_price( $item, $order );
 					if ( $remaining > 0 && round( $remaining / 100 ) == $price['with_tax'] && ! empty( $request_data['order_lines'][0] ) ) {
 						$full = $remaining / ( $request_data['order_lines'][0]['vat'] + 1 );
 						if ( $full > 0 ) {
 							$request_data['order_lines'][0]['amount'] = $full;
 
-							$result = $this->request(
+							return $this->request(
 								'POST',
 								'https://api.reepay.com/v1/charge/' . $handle . '/settle',
 								$request_data
 							);
-
-							return $result;
 						}
 					}
 				}
@@ -616,15 +568,16 @@ class WC_Reepay_Api {
 			return new WP_Error( 0, 'Settle has been failed.' );
 		}
 
-		// @todo Check $result['processing']
-		// @todo Check $result['authorized_amount']
-		// @todo Check state $result['state']
-
 		$order->update_meta_data( '_reepay_capture_transaction', $result['transaction'] );
 		$order->save_meta_data();
 
 		// Set transaction Id
-		$order->set_transaction_id( $result['transaction'] );
+		try {
+			$order->set_transaction_id( $result['transaction'] );
+		} catch ( Exception $e ) {
+
+		}
+
 		$order->save();
 
 		// Check the amount and change the order status to settled if needs
@@ -660,7 +613,7 @@ class WC_Reepay_Api {
 	 *
 	 * @return array|WP_Error
 	 */
-	public function cancel( WC_Order $order ) {
+	public function cancel_payment( WC_Order $order ) {
 		$handle = rp_get_order_handle( $order );
 		if ( empty( $handle ) ) {
 			return new WP_Error( 0, 'Unable to get order handle' );
@@ -730,10 +683,6 @@ class WC_Reepay_Api {
 
 			$order->add_order_note( $error );
 
-			// if ( 'woocommerce_refund_line_items' == trim( wc_clean( $_POST['action'] ) ) ) {
-			// throw new Exception($api_error['error']);
-			// }
-
 			return $result;
 		}
 
@@ -770,10 +719,6 @@ class WC_Reepay_Api {
 	 * @throws Exception
 	 */
 	private function process_charge_result( WC_Order $order, array $result ) {
-		// @todo Check $result['processing']
-		// @todo Check $result['authorized_amount']
-		// @todo Check state $result['state']
-
 		// For asynchronous payment methods this flag indicates that the charge is awaiting result.
 		// The charge/invoice state will be pending.
 
@@ -874,7 +819,6 @@ class WC_Reepay_Api {
 			return new WP_Error( 0, 'Unable to retrieve customer payment methods' );
 		}
 
-		// @todo Add mps_subscriptions
 		if ( ! $reepay_token ) {
 			return $result['cards'];
 		}

@@ -17,13 +17,10 @@ class WC_Background_Reepay_Queue extends WC_Background_Process {
 	 */
 	private $logging_source = 'wc_reepay_queue';
 
-
 	/**
 	 * Initiate new background process.
 	 */
 	public function __construct() {
-		$this->logger = wc_get_logger();
-
 		// Uses unique prefix per blog so each blog has separate queue.
 		$this->prefix = 'wp_' . get_current_blog_id();
 		$this->action = 'wc_reepay_queue';
@@ -68,7 +65,7 @@ class WC_Background_Reepay_Queue extends WC_Background_Process {
 			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
 
 			/** @var WC_Gateway_Reepay_Checkout $gateway */
-			$gateway = isset( $gateways[ $item['payment_method_id'] ] ) ? $gateways[ $item['payment_method_id'] ] : false;
+			$gateway = $gateways[ $item['payment_method_id'] ] ?? false;
 			if ( ! $gateway ) {
 				$this->log( '[ERROR]: Can\'t retrieve payment gateway instance: ' . $item['payment_method_id'] );
 

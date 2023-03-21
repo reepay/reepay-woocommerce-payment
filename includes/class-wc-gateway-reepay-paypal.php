@@ -27,12 +27,11 @@ class WC_Gateway_Reepay_Paypal extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_paypal';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - PayPal', 'reepay-checkout-gateway' );
-		// $this->icon         = apply_filters( 'woocommerce_reepay_paypal_icon', plugins_url( '/assets/images/paypal.png', dirname( __FILE__ ) ) );
-		$this->supports = array(
+		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos    = array( 'paypal' );
+		$this->logos        = array( 'paypal' );
 
 		parent::__construct();
 
@@ -43,9 +42,9 @@ class WC_Gateway_Reepay_Paypal extends WC_Gateway_Reepay {
 		$this->init_settings();
 
 		// Define user set variables
-		$this->enabled     = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title       = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->enabled     = $this->settings['enabled'] ?? 'no';
+		$this->title       = $this->settings['title'] ?? 'no';
+		$this->description = $this->settings['description'] ?? 'no';
 
 		// Load setting from parent method
 		$settings = $this->get_parent_settings();
@@ -77,8 +76,6 @@ class WC_Gateway_Reepay_Paypal extends WC_Gateway_Reepay {
 
 	/**
 	 * Initialise Settings Form Fields
-	 *
-	 * @return string|void
 	 */
 	public function init_form_fields() {
 		$this->form_fields = array(

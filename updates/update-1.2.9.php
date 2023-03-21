@@ -36,7 +36,7 @@ if ( empty( $is_webhook_configured ) &&
 
 		// Verify the webhook settings
 		if ( in_array( $webhook_url, $urls ) &&
-		     ( ! empty( $alert_email ) ? in_array( $alert_email, $alert_emails ) : true )
+		     ( empty( $alert_email ) || in_array( $alert_email, $alert_emails ) )
 		) {
 			// Webhook has been configured before
 			$gateway->update_option( 'is_webhook_configured', 'yes' );

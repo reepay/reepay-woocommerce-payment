@@ -1,9 +1,12 @@
 <?php
-/** @var WC_Gateway_Reepay_Checkout $gateway */
-/** @var WC_Order $order */
-/** @var int $order_id */
-/** @var array $order_data */
-/** @var bool $order_is_cancelled */
+/**
+ * @var WC_Gateway_Reepay_Checkout $gateway
+ * @var WC_Order                   $order
+ * @var int                        $order_id
+ * @var array                      $order_data
+ * @var bool                       $order_is_cancelled
+ * @var string                     $link
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -40,9 +43,11 @@ if ( ! empty( $order_data['transactions'][0] ) ) {
 			<?php echo esc_html__( 'Payment method', 'reepay-subscriptions-for-woocommerce' ); ?>
 		</li>
 		<li class="reepay-admin-section-li-small" style="display: flex;  align-items: center;">
-			<img style="max-width: 70px; margin-right: 0"
-				 src="<?php echo $card_logo; ?>"
-				 class="reepay-admin-card-logo"/>
+			<?php if ( isset( $card_logo ) ) : ?>
+				<img style="max-width: 70px; margin-right: 0"
+					 src="<?php echo $card_logo; ?>"
+					 class="reepay-admin-card-logo"/>
+			<?php endif; ?>
 			<?php echo esc_html( rp_format_credit_card( $order_data['transactions'][0]['card_transaction']['masked_card'] ) ); ?>
 		</li>
 	<?php endif; ?>
@@ -100,7 +105,7 @@ if ( ! empty( $order_data['transactions'][0] ) ) {
 	</li>
 
 	<li class="reepay-admin-section-li-small" style="margin-top: 15px;">
-		<a class="button" href="<?php echo $args['link']; ?>" target="_blank">
+		<a class="button" href="<?php echo $link; ?>" target="_blank">
 			<?php _e( 'See invoice', 'reepay-subscriptions-for-woocommerce' ); ?>
 		</a>
 	</li>

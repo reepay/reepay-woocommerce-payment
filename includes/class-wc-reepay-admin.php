@@ -9,9 +9,6 @@ class WC_Reepay_Admin {
 		// Add meta boxes
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
 
-		// Add action buttons
-		// add_action( 'woocommerce_order_item_add_action_buttons', __CLASS__ . '::add_action_buttons', 10, 1 );
-
 		// Add scripts and styles for admin
 		add_action( 'admin_enqueue_scripts', __CLASS__ . '::admin_enqueue_scripts' );
 
@@ -137,26 +134,6 @@ class WC_Reepay_Admin {
 	}
 
 	/**
-	 * @param WC_Order $order
-	 */
-	public static function add_action_buttons( $order ) {
-		$payment_method = $order->get_payment_method();
-		if ( in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
-			$gateway = rp_get_payment_method( $order );
-
-			wc_get_template(
-				'admin/action-buttons.php',
-				array(
-					'gateway' => $gateway,
-					'order'   => $order,
-				),
-				'',
-				dirname( __FILE__ ) . '/../templates/'
-			);
-		}
-	}
-
-	/**
 	 * Enqueue Scripts in admin
 	 *
 	 * @param $hook
@@ -184,7 +161,7 @@ class WC_Reepay_Admin {
 				)
 			);
 
-			wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/../assets/dist/css/style' . $suffix . '.css', __FILE__ ), array(), false, 'all' );
+			wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/../assets/dist/css/style' . $suffix . '.css', __FILE__ ), array() );
 
 			// Localize the script
 			$translation_array = array(
@@ -414,6 +391,12 @@ class WC_Reepay_Admin {
 		}
 	}
 
+	/**
+	 * @param WC_Order $order
+	 * @param $amount
+	 *
+	 * @throws Exception
+	 */
 	private function woocommerce_refund_add( $order, $amount ) {
 		$_POST['order_id']               = $order->get_id();
 		$_POST['refund_amount']          = $amount;

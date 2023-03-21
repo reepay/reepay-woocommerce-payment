@@ -66,11 +66,7 @@ class WC_Reepay_Thankyou {
 	 * @param $order_id
 	 *
 	 * @return void
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
-	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
-	 * @SuppressWarnings(PHPMD.Superglobals)
-	 * @SuppressWarnings(PHPMD.ElseExpression)
+	 * @throws Exception
 	 */
 	public function thankyou_page( $order_id ) {
 		$order = wc_get_order( $order_id );
@@ -194,7 +190,10 @@ class WC_Reepay_Thankyou {
 			return;
 		}
 
-		foreach ( $order->get_items() as $item_id => $item ) {
+		foreach ( $order->get_items() as $item ) {
+			/**
+			 * @var WC_Order_Item_Product $item
+			 */
 			if ( class_exists( 'WC_Subscriptions_Product' ) && WC_Subscriptions_Product::is_subscription( $item->get_product() ) ) {
 				if ( $order->get_total() == 0 ) {
 					$ret = array(
@@ -314,9 +313,6 @@ class WC_Reepay_Thankyou {
 					return;
 				}
 
-				// Lock the order
-				// self::lock_order( $order->get_id() );
-
 				WC_Reepay_Order_Statuses::set_authorized_status(
 					$order,
 					sprintf(
@@ -329,9 +325,6 @@ class WC_Reepay_Thankyou {
 				// Settle an authorized payment instantly if possible
 				do_action( 'reepay_instant_settle', $order );
 
-				// Unlock the order
-				// self::unlock_order( $order->get_id() );
-
 				$this->log( sprintf( 'accept_url: Order #%s has been marked as authorized', $order->get_id() ) );
 				break;
 			case 'settled':
@@ -342,9 +335,6 @@ class WC_Reepay_Thankyou {
 					return;
 				}
 
-				// Lock the order
-				// self::lock_order( $order->get_id() );
-
 				WC_Reepay_Order_Statuses::set_settled_status(
 					$order,
 					sprintf(
@@ -353,9 +343,6 @@ class WC_Reepay_Thankyou {
 					),
 					null
 				);
-
-				// Unlock the order
-				// self::unlock_order( $order->get_id() );
 
 				$this->log( sprintf( 'accept_url: Order #%s has been marked as settled', $order->get_id() ) );
 

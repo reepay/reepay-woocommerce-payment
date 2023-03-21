@@ -94,14 +94,14 @@ class WC_Reepay_Subscriptions {
 		$gateway       = rp_get_payment_method( $renewal_order );
 		if ( ! empty( $renewal_sub ) && ! empty( $gateway ) ) {
 			$order_data = $gateway->api->get_invoice_data( $renewal_order );
-			if ( is_wp_error( $order_data ) && floatval( $renewal_order->get_total() ) > 0 ) {
+			if ( is_wp_error( $order_data ) && $renewal_order->get_total() > 0 ) {
 
 				if ( $this_status_transition_from == 'pending' && $this_status_transition_to == REEPAY_STATUS_AUTHORIZED ) {
-					self::scheduled_subscription_payment( floatval( $renewal_order->get_total() ), $renewal_order );
+					self::scheduled_subscription_payment( $renewal_order->get_total(), $renewal_order );
 				}
 
 				if ( $this_status_transition_from == 'pending' && $this_status_transition_to == REEPAY_STATUS_SETTLED ) {
-					self::scheduled_subscription_payment( floatval( $renewal_order->get_total() ), $renewal_order, true );
+					self::scheduled_subscription_payment( $renewal_order->get_total(), $renewal_order, true );
 				}
 			}
 		}
@@ -131,6 +131,8 @@ class WC_Reepay_Subscriptions {
 	 * Add Card ID when Subscription was created
 	 *
 	 * @param $order_id
+	 *
+	 * @throws Exception If invalid token sent to assign_payment_token.
 	 */
 	public static function add_subscription_card_id( $order_id ) {
 		if ( ! function_exists( 'wcs_get_subscriptions_for_order' ) ) {
@@ -140,7 +142,6 @@ class WC_Reepay_Subscriptions {
 		// Get subscriptions
 		$subscriptions = wcs_get_subscriptions_for_order( $order_id, array( 'order_type' => 'parent' ) );
 		foreach ( $subscriptions as $subscription ) {
-			/** @var WC_Subscription $subscription */
 			$gateway = rp_get_payment_method( $subscription );
 
 			if ( ! $gateway ) {
@@ -169,10 +170,6 @@ class WC_Reepay_Subscriptions {
 	 * @return bool|WC_Order|WC_Order_Refund
 	 */
 	public function renewal_order_created( $renewal_order, $subscription ) {
-		if ( ! is_object( $subscription ) ) {
-			$subscription = wcs_get_subscription( $subscription );
-		}
-
 		if ( ! is_object( $renewal_order ) ) {
 			$renewal_order = wc_get_order( $renewal_order );
 		}
@@ -191,6 +188,7 @@ class WC_Reepay_Subscriptions {
 	 * @param $order_id
 	 *
 	 * @return void
+	 * @throws Exception If invalid order token.
 	 */
 	public static function thankyou_page( $order_id ) {
 		// Add Subscription card id
@@ -209,8 +207,8 @@ class WC_Reepay_Subscriptions {
 	 * @return void
 	 */
 	public static function update_failing_payment_method( $subscription, $renewal_order ) {
-		$subscription->update_meta_data( '_reepay_token', $renewal_order->get_meta( '_reepay_token', true ) );
-		$subscription->update_meta_data( '_reepay_token_id', $renewal_order->get_meta( '_reepay_token_id', true ) );
+		$subscription->update_meta_data( '_reepay_token', $renewal_order->get_meta( '_reepay_token' ) );
+		$subscription->update_meta_data( '_reepay_token_id', $renewal_order->get_meta( '_reepay_token_id' ) );
 		$subscription->save_meta_data();
 	}
 
@@ -301,10 +299,12 @@ class WC_Reepay_Subscriptions {
 	/**
 	 * Save payment method meta data for the Subscription
 	 *
-	 * @param WC_Subscription $subscription
-	 * @param string          $meta_table
-	 * @param string          $meta_key
-	 * @param string          $meta_value
+	 * @param  WC_Subscription $subscription
+	 * @param  string          $meta_table
+	 * @param  string          $meta_key
+	 * @param  string          $meta_value
+	 *
+	 * @throws Exception
 	 */
 	public static function save_subscription_payment_meta( $subscription, $meta_table, $meta_key, $meta_value ) {
 		if ( in_array( $subscription->get_payment_method(), self::PAYMENT_METHODS ) ) {
@@ -344,7 +344,6 @@ class WC_Reepay_Subscriptions {
 				// Get Subscriptions
 				$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
 				foreach ( $subscriptions as $subscription ) {
-					/** @var WC_Subscription $subscription */
 					$token = $gateway::get_payment_token_order( $subscription );
 					if ( ! $token ) {
 						$token = $gateway::get_payment_token_order( $subscription->get_parent() );
@@ -363,7 +362,6 @@ class WC_Reepay_Subscriptions {
 					// Get Subscriptions
 					$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
 					foreach ( $subscriptions as $subscription ) {
-						/** @var WC_Subscription $subscription */
 						$token = $subscription->get_meta( '_reepay_token' );
 						if ( empty( $reepay_token ) ) {
 							$order = $subscription->get_parent();
@@ -492,9 +490,12 @@ class WC_Reepay_Subscriptions {
 		if ( wcs_cart_have_subscription() || wcs_is_payment_change() ) {
 			// Load XML
 			libxml_use_internal_errors( true );
-			$doc    = new \DOMDocument();
+			$doc    = new DOMDocument();
 			$status = @$doc->loadXML( $html );
 			if ( false !== $status ) {
+				/**
+				 * @var DOMElement $item
+				 */
 				$item = $doc->getElementsByTagName( 'input' )->item( 0 );
 				$item->setAttribute( 'checked', 'checked' );
 				$item->setAttribute( 'disabled', 'disabled' );

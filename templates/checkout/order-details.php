@@ -1,4 +1,8 @@
-
+<?php
+/**
+ * @var WC_Order $order current order.
+ */
+?>
 <ul class="woocommerce-order-overview woocommerce-thankyou-order-details order_details">
 
 	<li class="woocommerce-order-overview__order order">

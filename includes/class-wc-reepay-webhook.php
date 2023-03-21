@@ -23,9 +23,8 @@ class WC_Reepay_Webhook {
 	/**
 	 * Process WebHook.
 	 *
-	 * @param array $data
-	 *
 	 * @return void
+	 * @throws Exception
 	 */
 	public function process() {
 		$data = $this->data;
@@ -46,13 +45,6 @@ class WC_Reepay_Webhook {
 
 					return;
 				}
-
-				// Check transaction is applied
-				// if ( $order->get_transaction_id() === $data['transaction'] ) {
-				// $this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
-
-				// return;
-				// }
 
 				// Wait to be unlocked
 				$needs_reload = self::wait_for_unlock( $order->get_id() );
@@ -161,13 +153,6 @@ class WC_Reepay_Webhook {
 					$order = wc_get_order( $order->get_id() );
 				}
 
-				// Check transaction is applied
-				// if ( $order->get_transaction_id() === $data['transaction'] ) {
-				// $this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
-
-				// return;
-				// }
-
 				// Check if the order has been marked as settled before
 				if ( $order->has_status( REEPAY_STATUS_SETTLED ) ) {
 					$this->log(
@@ -237,13 +222,6 @@ class WC_Reepay_Webhook {
 
 					return;
 				}
-
-				// Check transaction is applied
-				// if ( $order->get_transaction_id() === $data['transaction'] ) {
-				// $this->log( sprintf( 'WebHook: Transaction already applied: %s', $data['transaction'] ) );
-
-				// return;
-				// }
 
 				// Add transaction ID
 				$order->set_transaction_id( $data['transaction'] );
@@ -399,7 +377,6 @@ class WC_Reepay_Webhook {
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			case 'customer_payment_method_added':
-				// @todo
 				$this->log( sprintf( 'WebHook: TODO: customer_payment_method_added: %s', var_export( $data, true ) ) );
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 

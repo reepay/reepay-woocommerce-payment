@@ -29,5 +29,5 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</p>
 <?php endif; ?>
 <table class="form-table">
-	<?php $gateway->generate_settings_html( $gateway->get_form_fields(), true ); ?>
+	<?php $gateway->generate_settings_html( $gateway->get_form_fields() ); ?>
 </table>

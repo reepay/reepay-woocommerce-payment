@@ -4,8 +4,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Payment_Gateway_Reepay_Interface {
+abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	use WC_Reepay_Token;
+
+	const METHOD_WINDOW = 'WINDOW';
+
+	const METHOD_OVERLAY = 'OVERLAY';
 
 	/**
 	 * @var WC_Reepay_Api
@@ -146,9 +150,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		$this->init_settings();
 
 		// Define user set variables
-		$this->enabled     = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title       = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->enabled     = $this->settings['enabled'] ?? 'no';
+		$this->title       = $this->settings['title'] ?? 'no';
+		$this->description = $this->settings['description'] ?? 'no';
 
 		$this->api = new WC_Reepay_Api( $this );
 
@@ -331,8 +335,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 					'alert_emails' => array_unique( $alert_emails ),
 				);
 
-				// $this->test_mode = 'yes';
-
 				$request = $this->api->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
 				if ( is_wp_error( $request ) ) {
 					/** @var WP_Error $request */
@@ -368,6 +370,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	/**
 	 * Generate Gateway Status HTML.
 	 *
+	 * @see WC_Settings_API::generate_settings_html
+	 *
 	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
@@ -383,8 +387,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		);
 
 		$data = wp_parse_args( $data, $defaults );
-
-		$enabled = $this->get_option( 'enabled' ) == 'yes';
 
 		$configured = $this->is_configured();
 
@@ -454,14 +456,14 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	}
 
 	/**
-	 * @param \WC_Order $order
-	 * @param bool      $amount
+	 * @param WC_Order $order
 	 *
 	 * @return bool
+	 * @throws Exception
 	 * @api
 	 */
-	public function can_refund( $order, $amount = false ) {
-		return $this->api->can_refund( $order, $amount );
+	public function can_refund( $order ) {
+		return $this->api->can_refund( $order );
 	}
 
 	/**
@@ -500,7 +502,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			throw new Exception( 'Order is already canceled' );
 		}
 
-		$result = $this->api->cancel( $order );
+		$result = $this->api->cancel_payment( $order );
 		if ( is_wp_error( $result ) ) {
 			throw new Exception( $result->get_error_message() );
 		}
@@ -527,11 +529,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		}
 
 		// Check if the order is cancelled - if so - then return as nothing has happened
-		if ( '1' === $order->get_meta( '_reepay_order_cancelled', true ) ) {
+		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
 			throw new Exception( 'Order is already canceled' );
 		}
 
-		if ( ! $this->can_refund( $order, $amount ) ) {
+		if ( ! $this->can_refund( $order ) ) {
 			throw new Exception( 'Payment can\'t be refunded.' );
 		}
 
@@ -619,7 +621,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	public function enqueue_payment_scripts() {
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
-		wp_enqueue_script( 'reepay-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/dist/js/checkout-cdn.js', array(), false, false );
+		wp_enqueue_script( 'reepay-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/dist/js/checkout-cdn.js', array() );
 		wp_enqueue_script(
 			'wc-gateway-reepay-checkout',
 			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/dist/js/checkout' . $suffix . '.js',
@@ -664,23 +666,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	}
 
 	/**
-	 * Validate frontend fields.
-	 *
-	 * Validate payment fields on the frontend.
-	 *
-	 * @return bool
-	 */
-	public function validate_fields() {
-		return true;
-	}
-
-
-	/**
 	 * Process Payment
 	 *
-	 * @param int $order_id
+	 * @param  int $order_id
 	 *
 	 * @return array|false
+	 * @throws Exception
 	 */
 	public function process_payment( $order_id ) {
 		$is_woo_blocks_checkout_request = false;
@@ -903,13 +894,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$params['order']['billing_address']['country'] = $country;
 		}
 
-		// skip order lines if calculated amount not equal to total order amount
-		/*
-		if ($this->get_calculated_amount($order) != rp_prepare_amount($order->get_total(), $order->get_currency())) {
-			$params['order']['amount'] = rp_prepare_amount($order->get_total(), $order->get_currency());
-			$params['order']['order_lines'] = null;
-		}*/
-
 		if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
 			$params['payment_methods'] = $this->payment_methods;
 		}
@@ -934,10 +918,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			if ( ! empty( $country ) ) {
 				$params['order']['shipping_address']['country'] = $country;
 			}
-
-			// if (!strlen($params['order']['shipping_address'])) {
-			// $params['order']['shipping_address'] = $params['order']['billing_address'];
-			// }
 		}
 
 		if ( $order->get_payment_method() == 'reepay_mobilepay_subscriptions' ) {
@@ -1016,11 +996,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 						do_action( 'reepay_create_subscription', $data, $order );
 					}
 				} elseif ( wcs_cart_have_subscription() ) {
-					try {
-						return $this->process_session_charge( $params, $order );
-					} catch ( Exception $e ) {
-						throw new Exception( $e->get_error_message(), $e->get_error_code() );
-					}
+					return $this->process_session_charge( $params, $order );
 				} else {
 					$order_lines = $this->skip_order_lines === 'no' ? $this->get_order_items( $order ) : null;
 					$amount      = $this->skip_order_lines === 'yes' ? $order->get_total() : null;
@@ -1110,14 +1086,16 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			);
 		}
 
-		try {
-			return $this->process_session_charge( $params, $order );
-		} catch ( Exception $e ) {
-			throw new Exception( $e->get_error_message(), $e->get_error_code() );
-		}
-
+		return $this->process_session_charge( $params, $order );
 	}
 
+	/**
+	 * @param array    $params
+	 * @param WC_Order $order
+	 *
+	 * @return array
+	 * @throws Exception
+	 */
 	public function process_session_charge( $params, $order ) {
 
 		$result = $this->api->request(
@@ -1243,6 +1221,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	 * Payment confirm action
 	 *
 	 * @return void
+	 * @throws Exception
+	 * @see WC_Reepay_Thankyou::thankyou_page()
 	 */
 	public function payment_confirm() {
 		if ( ! ( is_wc_endpoint_url( 'order-received' ) ) ) {
@@ -1281,8 +1261,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		if ( ! empty( $_GET['payment_method'] ) && ( $maybe_save_card || order_contains_subscription( $order ) ) ) {
 			$this->reepay_save_token( $order, wc_clean( $_GET['payment_method'] ) );
 		}
-
-		// @see WC_Reepay_Thankyou::thankyou_page()
 	}
 
 	/**
@@ -1329,34 +1307,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	}
 
 	/**
-	 * Enqueue the webhook processing.
-	 *
-	 * @param $raw_body
-	 *
-	 * @return void
-	 */
-	public function enqueue_webhook_processing( $raw_body ) {
-		$data = @json_decode( $raw_body, true );
-
-		// Create Background Process Task
-		$background_process = new WC_Background_Reepay_Queue();
-		$background_process->push_to_queue(
-			array(
-				'payment_method_id' => $this->id,
-				'webhook_data'      => $raw_body,
-			)
-		);
-		$background_process->save();
-
-		$this->log(
-			sprintf(
-				'WebHook: Task enqueued. ID: %s',
-				$data['id']
-			)
-		);
-	}
-
-	/**
 	 * Get parent settings
 	 *
 	 * @return array
@@ -1392,8 +1342,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				'logo_height'             => $this->logo_height,
 				'skip_order_lines'        => $this->skip_order_lines,
 				'enable_order_autocancel' => $this->enable_order_autocancel,
-				'is_webhook_configured'   => isset( $settings['is_webhook_configured'] ) ?
-					$settings['is_webhook_configured'] : $this->is_webhook_configured,
+				'is_webhook_configured'   => $settings['is_webhook_configured'] ?? $this->is_webhook_configured,
 			),
 			$settings
 		);
@@ -1406,7 +1355,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	 * @param string $level Optional. Default 'info'.
 	 *     emergency|alert|critical|error|warning|notice|info|debug
 	 *
-	 * @return array
 	 * @see WC_Log_Levels
 	 * Get parent settings
 	 */
@@ -1541,8 +1489,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				continue;
 			}
 
-			$fee        = $order_fee->get_total();
-			$tax        = $order_fee->get_total_tax();
+			$fee        = (float) $order_fee->get_total();
+			$tax        = (float) $order_fee->get_total_tax();
 			$feeWithTax = $fee + $tax;
 			$taxPercent = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
 
@@ -1561,7 +1509,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		// Add discount line
 		if ( $order->get_total_discount( false ) > 0 ) {
-			$discount        = $order->get_total_discount( true );
+			$discount        = $order->get_total_discount();
 			$discountWithTax = $order->get_total_discount( false );
 			$tax             = $discountWithTax - $discount;
 			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
@@ -1596,25 +1544,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		}
 
 		return $items;
-	}
-
-	/**
-	 * calculate amount from order rows that
-	 * can be compared with amount from order
-	 *
-	 * @param $order
-	 *
-	 * @return float|int
-	 */
-	private function get_calculated_amount( $order ) {
-		$order_items = $this->get_order_items( $order );
-		$order_total = 0;
-
-		foreach ( $order_items as $item ) {
-			$order_total += $item['amount'] * $item['quantity'];
-		}
-
-		return $order_total;
 	}
 
 	/**

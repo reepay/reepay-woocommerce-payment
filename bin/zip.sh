@@ -39,12 +39,9 @@ then
   npm install
 fi
 
-# Install composer dependencies.
-if [ ! -d "./vendor" ];
-then
-  status "Installing composer dependencies... 📦"
-  composer install --optimize-autoloader --no-dev -q
-fi
+# Install composer no-dev dependencies.
+status "Installing composer no-dev dependencies... 📦"
+composer install --optimize-autoloader --no-dev -q
 
 status "Generating build... 👷‍♀️"
 npm run build
@@ -74,5 +71,10 @@ then
 else
   warning "zip command not found. Create archive by yourself ./build/reepay-woocommerce-payment"
 fi
+
+# Install composer dev dependencies.
+cd ..
+status "Return all composer dependencies... 📦"
+composer install
 
 success "Done. You've built plugin! 🎉 "

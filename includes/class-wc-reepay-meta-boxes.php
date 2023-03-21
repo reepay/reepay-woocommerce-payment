@@ -115,31 +115,24 @@ class WC_Reepay_Meta_Boxes {
 		$order = wc_get_order( $post );
 
 		if ( ! $order ) {
-			// echo 'Error: Order not found';
 			return;
 		}
 
 		$payment_method = $order->get_payment_method();
 
 		if ( ! in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
-			// echo 'Error: Wrong payment gateway';
 			return;
 		}
 
 		$gateway = rp_get_payment_method( $order );
 
 		if ( empty( $gateway ) ) {
-			// echo 'Error: Wrong payment gateway';
 			return;
 		}
 
 		$order_data = $gateway->api->get_invoice_data( $order );
 
 		if ( is_wp_error( $order_data ) ) {
-			// if ( $order_data->get_error_data() !== 'empty_handle' ) {
-			// echo 'Api error: ' . $order_data->get_error_message();
-			// }
-
 			return;
 		}
 
