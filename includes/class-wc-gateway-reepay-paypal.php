@@ -27,11 +27,11 @@ class WC_Gateway_Reepay_Paypal extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_paypal';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - PayPal', 'reepay-checkout-gateway' );
-		$this->supports = array(
+		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos    = array( 'paypal' );
+		$this->logos        = array( 'paypal' );
 
 		parent::__construct();
 

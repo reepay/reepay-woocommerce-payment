@@ -470,10 +470,10 @@ class WC_Reepay_Api {
 	/**
 	 * Settle the payment online.
 	 *
-	 * @param  WC_Order        $order
-	 * @param  float|int|null  $amount
-	 * @param  false|array     $item_data
-	 * @param  bool            $item
+	 * @param  WC_Order       $order
+	 * @param  float|int|null $amount
+	 * @param  false|array    $item_data
+	 * @param  bool           $item
 	 *
 	 * @return array|WP_Error
 	 */
@@ -528,7 +528,7 @@ class WC_Reepay_Api {
 						$request_data
 					);
 				} else {
-					$price      = WC_Reepay_Order_Capture::get_item_price( $item, $order );
+					$price = WC_Reepay_Order_Capture::get_item_price( $item, $order );
 					if ( $remaining > 0 && round( $remaining / 100 ) == $price['with_tax'] && ! empty( $request_data['order_lines'][0] ) ) {
 						$full = $remaining / ( $request_data['order_lines'][0]['vat'] + 1 );
 						if ( $full > 0 ) {
@@ -574,7 +574,7 @@ class WC_Reepay_Api {
 		// Set transaction Id
 		try {
 			$order->set_transaction_id( $result['transaction'] );
-		} catch (Exception $e) {
+		} catch ( Exception $e ) {
 
 		}
 

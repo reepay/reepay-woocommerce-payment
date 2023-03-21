@@ -27,11 +27,11 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_applepay';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Apple Pay', 'reepay-checkout-gateway' );
-		$this->supports = array(
+		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos    = array( 'applepay' );
+		$this->logos        = array( 'applepay' );
 
 		parent::__construct();
 

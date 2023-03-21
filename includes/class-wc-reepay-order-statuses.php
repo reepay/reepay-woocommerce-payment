@@ -301,9 +301,9 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Set Authorized Status.
 	 *
-	 * @param  WC_Order     $order
-	 * @param  string|null  $note
-	 * @param  string|null  $transaction_id
+	 * @param  WC_Order    $order
+	 * @param  string|null $note
+	 * @param  string|null $transaction_id
 	 *
 	 * @return void
 	 * @throws WC_Data_Exception Throws exception when invalid data sent to update_order_status.
@@ -335,9 +335,9 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Set Settled Status.
 	 *
-	 * @param  WC_Order     $order
-	 * @param  string|null  $note
-	 * @param  string|null  $transaction_id
+	 * @param  WC_Order    $order
+	 * @param  string|null $note
+	 * @param  string|null $transaction_id
 	 *
 	 * @return void
 	 * @throws WC_Data_Exception If cannot change order status.
@@ -386,11 +386,11 @@ class WC_Reepay_Order_Statuses {
 	/**
 	 * Update Order Status.
 	 *
-	 * @param  WC_Order     $order
-	 * @param  string       $new_status
-	 * @param  string       $note
-	 * @param  string|null  $transaction_id
-	 * @param  bool         $manual
+	 * @param  WC_Order    $order
+	 * @param  string      $new_status
+	 * @param  string      $note
+	 * @param  string|null $transaction_id
+	 * @param  bool        $manual
 	 *
 	 * @return void
 	 * @throws WC_Data_Exception Throws exception when invalid data sent to set_transaction_id.

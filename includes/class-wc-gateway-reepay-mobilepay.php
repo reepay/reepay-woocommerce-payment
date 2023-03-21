@@ -27,11 +27,11 @@ class WC_Gateway_Reepay_Mobilepay extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_mobilepay';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Mobilepay', 'reepay-checkout-gateway' );
-		$this->supports = array(
+		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos    = array( 'mobilepay' );
+		$this->logos        = array( 'mobilepay' );
 
 		parent::__construct();
 

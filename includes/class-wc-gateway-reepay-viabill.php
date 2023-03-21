@@ -27,11 +27,11 @@ class WC_Gateway_Reepay_Viabill extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_viabill';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - ViaBill', 'reepay-checkout-gateway' );
-		$this->supports = array(
+		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos    = array( 'viabill' );
+		$this->logos        = array( 'viabill' );
 
 		parent::__construct();
 

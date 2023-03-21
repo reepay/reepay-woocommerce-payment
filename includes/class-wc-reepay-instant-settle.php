@@ -114,7 +114,7 @@ class WC_Reepay_Instant_Settle {
 		foreach ( $order->get_items() as $item ) {
 			/** @var WC_Order_Item_Product $order_item */
 			/** @var WC_Product $product */
-			$product        = $item->get_product();
+			$product = $item->get_product();
 
 			if ( in_array( self::SETTLE_PHYSICAL, $settle, true ) &&
 				 ( ! wcs_is_subscription_product( $product ) &&

@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	use WC_Reepay_Token;
 
-	const METHOD_WINDOW  = 'WINDOW';
+	const METHOD_WINDOW = 'WINDOW';
 
 	const METHOD_OVERLAY = 'OVERLAY';
 
@@ -371,7 +371,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	 * Generate Gateway Status HTML.
 	 *
 	 * @see WC_Settings_API::generate_settings_html
-     *
+	 *
 	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
@@ -668,7 +668,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	/**
 	 * Process Payment
 	 *
-	 * @param  int  $order_id
+	 * @param  int $order_id
 	 *
 	 * @return array|false
 	 * @throws Exception
@@ -1078,7 +1078,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * @param array $params
+	 * @param array    $params
 	 * @param WC_Order $order
 	 *
 	 * @return array

@@ -27,11 +27,11 @@ class WC_Gateway_Reepay_Swish extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_swish';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Swish', 'reepay-checkout-gateway' );
-		$this->supports = array(
+		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos    = array( 'swish' );
+		$this->logos        = array( 'swish' );
 
 		parent::__construct();
 

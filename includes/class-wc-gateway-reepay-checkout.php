@@ -20,7 +20,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_checkout';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay Checkout', 'reepay-checkout-gateway' );
-		$this->supports = array(
+		$this->supports     = array(
 			'products',
 			'refunds',
 			'add_payment_method',
@@ -443,7 +443,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * Generate separator HTML
 	 *
 	 * @see WC_Settings_API::generate_settings_html
-     *
+	 *
 	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
@@ -457,7 +457,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * Generate WebHook Status HTML.
 	 *
 	 * @see WC_Settings_API::generate_settings_html
-     *
+	 *
 	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
@@ -506,7 +506,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * Generate WebHook Status HTML.
 	 *
 	 * @see WC_Settings_API::generate_settings_html
-     *
+	 *
 	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
@@ -552,8 +552,8 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	/**
 	 * Generate WebHook Status HTML.
 	 *
-     * @see WC_Settings_API::generate_settings_html
-     *
+	 * @see WC_Settings_API::generate_settings_html
+	 *
 	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
@@ -794,7 +794,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	public function thankyou_page( $order_id ) {
 		try {
 			$this->add_subscription_card_id( $order_id );
-		} catch (Exception $e) {
+		} catch ( Exception $e ) {
 			$this->log( sprintf( 'add_subscription_card_id error: %s', $e->getMessage() ) );
 		}
 	}
@@ -887,7 +887,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * @throws Exception
 	 */
 	public function reepay_finalize() {
-		$reepay_token    = wc_clean( $_GET['payment_method'] );
+		$reepay_token = wc_clean( $_GET['payment_method'] );
 
 		try {
 			if ( empty( $_GET['key'] ) ) {
@@ -962,7 +962,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 						);
 						break;
 					default:
-
 				}
 			}
 

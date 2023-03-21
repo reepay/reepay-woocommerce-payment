@@ -27,11 +27,11 @@ class WC_Gateway_Reepay_Resurs extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_resurs';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Resurs Bank', 'reepay-checkout-gateway' );
-		$this->supports = array(
+		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos    = array( 'resurs' );
+		$this->logos        = array( 'resurs' );
 
 		parent::__construct();
 
