@@ -152,6 +152,10 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		// Cancel actions
 		add_action( 'wp_ajax_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
 		add_action( 'wp_ajax_nopriv_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
+		add_action( 'woocommerce_checkout_create_order_line_item', array(
+			$this,
+			'action_checkout_create_order_line_item'
+		), 10, 4 );
 
 		static $handler_added = false;
 
@@ -164,6 +168,13 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 			$handler_added = true;
 		}
+	}
+
+	function action_checkout_create_order_line_item( $item, $cart_item_key, $values, $order ) {
+		$line_discount     = $values['line_subtotal'] - $values['line_total'];
+		$line_discount_tax = $values['line_subtotal_tax'] - $values['line_tax'];
+
+		$item->update_meta_data( '_line_discount', $line_discount + $line_discount_tax );
 	}
 
 	public function check_is_active() {
@@ -1431,8 +1442,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	public function get_order_items( $order, $not_settled = false ) {
 		$prices_incl_tax = wc_prices_include_tax();
 
-		$items      = [];
-		$setup_fees = [];
+		$items               = [];
+		$setup_fees          = [];
+		$sub_amount_discount = 0;
 		foreach ( $order->get_items() as $order_item ) {
 			/** @var WC_Order_Item_Product $order_item */
 
@@ -1441,6 +1453,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				if ( ! empty( $fee ) && ! empty( $fee['enabled'] ) && $fee['enabled'] == 'yes' ) {
 					$setup_fees[] = $order_item->get_product()->get_name() . ' - ' . $fee["text"];
 				}
+				$sub_amount_discount += floatval( $order_item->get_meta( '_line_discount' ) );
 				continue;
 			}
 
@@ -1524,7 +1537,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$items[] = array(
 				'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
 				'quantity'        => 1,
-				'amount'          => round( - 1 * rp_prepare_amount( $prices_incl_tax ? $discountWithTax : $discount, $order->get_currency() ) ),
+				'amount'          => round( - 1 * rp_prepare_amount( $prices_incl_tax ? $discountWithTax : $discount, $order->get_currency() ) ) + ( $sub_amount_discount * 100 ),
 				'vat'             => round( $taxPercent / 100, 2 ),
 				'amount_incl_vat' => $prices_incl_tax
 			);
