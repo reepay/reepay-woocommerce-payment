@@ -197,46 +197,21 @@ class WC_ReepayCheckout {
 		// Check if WooCommerce is missing
 		if ( ! class_exists( 'WooCommerce', false ) || ! defined( 'WC_ABSPATH' ) ) {
 			add_action( 'admin_notices', __CLASS__ . '::missing_woocommerce_notice' );
+			deactivate_plugins( plugin_basename( __FILE__ ), true );
 		}
 	}
+
 
 	/**
 	 * Check if WooCommerce is missing, and deactivate the plugin if needs
 	 */
 	public static function missing_woocommerce_notice() {
-		?>
-        <div id="message" class="error">
-            <p class="main">
-                <strong>
-					<?php echo esc_html__(
-						'WooCommerce is inactive or missing.',
-						'reepay-checkout-gateway'
-					);
-					?>
-                </strong>
-            </p>
-            <p>
-				<?php
-				echo esc_html__(
-					'WooCommerce plugin is inactive or missing. Please install and active it.',
-					'reepay-checkout-gateway'
-				);
-				echo '<br />';
-				echo sprintf(
-				/* translators: 1: plugin name */ esc_html__(
-					'%1$s will be deactivated.',
-					'reepay-checkout-gateway'
-				),
-					'WooCommerce Reepay Checkout Gateway'
-				);
-
-				?>
-            </p>
-        </div>
-		<?php
-
-		// Deactivate the plugin
-		deactivate_plugins( plugin_basename( __FILE__ ), true );
+		wc_get_template(
+			'admin/notices/woocommerce-missed.php',
+			array(),
+			'',
+			dirname( __FILE__ ) . '/../../templates/'
+		);
 	}
 
 	/**
