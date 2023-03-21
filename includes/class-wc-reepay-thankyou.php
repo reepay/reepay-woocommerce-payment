@@ -66,11 +66,7 @@ class WC_Reepay_Thankyou {
 	 * @param $order_id
 	 *
 	 * @return void
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
-	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
-	 * @SuppressWarnings(PHPMD.Superglobals)
-	 * @SuppressWarnings(PHPMD.ElseExpression)
+	 * @throws Exception
 	 */
 	public function thankyou_page( $order_id ) {
 		$order = wc_get_order( $order_id );
@@ -100,9 +96,9 @@ class WC_Reepay_Thankyou {
 	/**
 	 * Workaround to use actual order status in `woocommerce_before_thankyou`
 	 *
-	 * @param bool $has_status
+	 * @param bool     $has_status
 	 * @param WC_Order $order
-	 * @param string $status
+	 * @param string   $status
 	 *
 	 * @return bool
 	 */
@@ -153,7 +149,7 @@ class WC_Reepay_Thankyou {
 			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/dist/js/thankyou' . $suffix . '.js',
 			array(
 				'jquery',
-				'jquery-blockui'
+				'jquery-blockui',
 			),
 			false,
 			true
@@ -171,7 +167,7 @@ class WC_Reepay_Thankyou {
 				'check_message' => __(
 					'Please wait. We\'re checking the payment status.',
 					'reepay-checkout-gateway'
-				)
+				),
 			)
 		);
 
@@ -194,19 +190,21 @@ class WC_Reepay_Thankyou {
 			return;
 		}
 
-		foreach ( $order->get_items() as $item_id => $item ) {
+		foreach ( $order->get_items() as $item ) {
+			/**
+			 * @var WC_Order_Item_Product $item
+			 */
 			if ( class_exists( 'WC_Subscriptions_Product' ) && WC_Subscriptions_Product::is_subscription( $item->get_product() ) ) {
 				if ( $order->get_total() == 0 ) {
 					$ret = array(
 						'state'   => 'paid',
-						'message' => 'Subscription is activated in trial'
+						'message' => 'Subscription is activated in trial',
 					);
-					
+
 					wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', $ret, $order->get_id() ) );
 				}
 			}
 		}
-
 
 		$ret = array();
 
@@ -222,7 +220,6 @@ class WC_Reepay_Thankyou {
 			wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', $ret, $order->get_id() ) );
 		}
 
-
 		switch ( $result['state'] ) {
 			case 'pending':
 				$ret = array(
@@ -233,14 +230,14 @@ class WC_Reepay_Thankyou {
 			case 'settled':
 				$ret = array(
 					'state'   => 'paid',
-					'message' => 'Order has been paid'
+					'message' => 'Order has been paid',
 				);
 
 				break;
 			case 'cancelled':
 				$ret = array(
 					'state'   => 'failed',
-					'message' => 'Order has been cancelled'
+					'message' => 'Order has been cancelled',
 				);
 
 				break;
@@ -248,14 +245,14 @@ class WC_Reepay_Thankyou {
 				$message = 'Order has been failed';
 
 				if ( count( $result['transactions'] ) > 0 &&
-				     isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
+					 isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
 				) {
 					$message = $result['transactions'][0]['card_transaction']['acquirer_message'];
 				}
 
 				$ret = array(
 					'state'   => 'failed',
-					'message' => $message
+					'message' => $message,
 				);
 
 				break;
@@ -301,7 +298,7 @@ class WC_Reepay_Thankyou {
 					$order,
 					'pending',
 					sprintf(
-						__( 'Transaction is pending. Amount: %s. Transaction: %s', 'reepay-checkout-gateway' ),
+						__( 'Transaction is pending. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
 						wc_price( rp_make_initial_amount( $result['amount'], $result['currency'] ) ),
 						$result['transaction']
 					),
@@ -316,9 +313,6 @@ class WC_Reepay_Thankyou {
 					return;
 				}
 
-				// Lock the order
-				//self::lock_order( $order->get_id() );
-
 				WC_Reepay_Order_Statuses::set_authorized_status(
 					$order,
 					sprintf(
@@ -331,9 +325,6 @@ class WC_Reepay_Thankyou {
 				// Settle an authorized payment instantly if possible
 				do_action( 'reepay_instant_settle', $order );
 
-				// Unlock the order
-				//self::unlock_order( $order->get_id() );
-
 				$this->log( sprintf( 'accept_url: Order #%s has been marked as authorized', $order->get_id() ) );
 				break;
 			case 'settled':
@@ -344,9 +335,6 @@ class WC_Reepay_Thankyou {
 					return;
 				}
 
-				// Lock the order
-				//self::lock_order( $order->get_id() );
-
 				WC_Reepay_Order_Statuses::set_settled_status(
 					$order,
 					sprintf(
@@ -355,9 +343,6 @@ class WC_Reepay_Thankyou {
 					),
 					null
 				);
-
-				// Unlock the order
-				//self::unlock_order( $order->get_id() );
 
 				$this->log( sprintf( 'accept_url: Order #%s has been marked as settled', $order->get_id() ) );
 

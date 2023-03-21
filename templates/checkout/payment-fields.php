@@ -5,6 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 } // Exit if accessed directly
 ?>
 
-<?php if ( $description = $gateway->get_description() ): ?>
+<?php if ( $description = $gateway->get_description() ) : ?>
 	<?php echo wpautop( wptexturize( $description ) ); ?>
-<?php endif; ?>
+	<?php
+endif;

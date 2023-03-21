@@ -64,8 +64,12 @@ foreach ( $subscriptions as $subscription ) {
 	// Check subscription's token
 	$subscriptions_tokens = get_post_meta( $subscription->get_id(), '_payment_tokens', true );
 	if ( empty( $subscriptions_tokens ) ) {
-		WC_Gateway_Reepay_Checkout::assign_payment_token( $subscription, $token );
-		$log->add( $handler, sprintf( '[SUCCESS] Token #%s assigned to subscription #%s.', $token->get_id(), $subscription->get_id() ) );
+		try {
+			WC_Gateway_Reepay_Checkout::assign_payment_token( $subscription, $token );
+			$log->add( $handler, sprintf( '[SUCCESS] Token #%s assigned to subscription #%s.', $token->get_id(), $subscription->get_id() ) );
+		} catch ( Exception $e ) {
+			$log->add( $handler, sprintf( '[ERROR] Token #%s not assigned to subscription #%s.', $token->get_id(), $subscription->get_id() ) );
+		}
 	}
 
 	// Get renewal orders
@@ -74,8 +78,12 @@ foreach ( $subscriptions as $subscription ) {
 		/** WC_Order $order */
 		$order_tokens = get_post_meta( $order->get_id(), '_payment_tokens', true );
 		if ( empty( $order_tokens ) ) {
-			WC_Gateway_Reepay_Checkout::assign_payment_token( $order, $token );
-			$log->add( $handler, sprintf( '[SUCCESS] Token #%s assigned to order #%s.', $token->get_id(), $order->get_id() ) );
+			try {
+				WC_Gateway_Reepay_Checkout::assign_payment_token( $order, $token );
+				$log->add( $handler, sprintf( '[SUCCESS] Token #%s assigned to order #%s.', $token->get_id(), $order->get_id() ) );
+			} catch ( Exception $e ) {
+				$log->add( $handler, sprintf( '[ERROR] Token #%s not  assigned to order #%s.', $token->get_id(), $order->get_id() ) );
+			}
 		}
 	}
 }
