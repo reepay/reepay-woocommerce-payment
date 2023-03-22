@@ -96,7 +96,21 @@ class WC_ReepayCheckout {
 	 * @return WC_ReepayCheckout
 	 */
 	public static function get_instance() {
-		if ( self::$instance === null ) {
+	    static $instance_requested = false;
+
+		if ( true === $instance_requested && is_null( self::$instance ) ) {
+			$message = 'Function reepay called in time of initialization main plugin class. Recursion prevented';
+
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				$message .= "<br>Stack trace for debugging:<br><pre>" . print_r( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ), true ) . '</pre>';
+			}
+
+			wp_die( $message );
+		}
+
+		$instance_requested = true;
+
+		if ( is_null( self::$instance ) ) {
 			self::$instance = new self();
 		}
 
