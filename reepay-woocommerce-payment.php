@@ -98,12 +98,8 @@ class WC_ReepayCheckout {
 		add_filter( 'plugin_row_meta', array( $this, 'plugin_row_meta' ), 10, 2 );
 
 		// Add statuses for payment complete
-		add_filter(
-			'woocommerce_valid_order_statuses_for_payment_complete',
-			array(
-				$this,
-				'add_valid_order_statuses',
-			),
+		add_filter( 'woocommerce_valid_order_statuses_for_payment_complete',
+			array( $this, 'add_valid_order_statuses', ),
 			10,
 			2
 		);
@@ -166,15 +162,6 @@ class WC_ReepayCheckout {
 		);
 
 		return array_merge( $links, $row_meta );
-	}
-
-	/**
-	 * Install
-	 */
-	public static function install() {
-		if ( ! get_option( 'woocommerce_reepay_version' ) ) {
-			add_option( 'woocommerce_reepay_version', self::$db_version );
-		}
 	}
 
 	public function includes() {
