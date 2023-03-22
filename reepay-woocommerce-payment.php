@@ -38,11 +38,6 @@ class WC_ReepayCheckout {
 	public static $db_version = '1.4.54';
 
 	/**
-	 * @var WC_Background_Reepay_Queue
-	 */
-	public static $background_process;
-
-	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -53,7 +48,6 @@ class WC_ReepayCheckout {
 		// Actions
 		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
 		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
-		add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ) );
 		add_action( 'woocommerce_loaded', array( $this, 'woocommerce_loaded' ), 40 );
 		add_action( 'init', __CLASS__ . '::may_add_notices' );
 		add_action( 'wp_enqueue_scripts', array( $this, 'add_scripts' ) );
@@ -77,12 +71,6 @@ class WC_ReepayCheckout {
 
 		// Add admin menu
 		add_action( 'admin_menu', array( &$this, 'admin_menu' ), 99 );
-
-		// Process queue
-		if ( ! is_multisite() ) {
-			add_action( 'customize_save_after', array( $this, 'maybe_process_queue' ) );
-			add_action( 'after_switch_theme', array( $this, 'maybe_process_queue' ) );
-		}
 	}
 
 	/**
@@ -149,14 +137,6 @@ class WC_ReepayCheckout {
 		if ( version_compare( get_option( 'woocommerce_reepay_version', self::$db_version ), self::$db_version, '<' ) ) {
 			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
 		}
-	}
-
-	/**
-	 * WooCommerce Init
-	 */
-	public function woocommerce_init() {
-		include_once dirname( __FILE__ ) . '/includes/class-wc-background-reepay-queue.php';
-		self::$background_process = new WC_Background_Reepay_Queue();
 	}
 
 	/**
@@ -289,13 +269,6 @@ class WC_ReepayCheckout {
 
 			<?php
 		endif;
-	}
-
-	/**
-	 * Dispatch Background Process
-	 */
-	public function maybe_process_queue() {
-		self::$background_process->dispatch();
 	}
 
 	/**
