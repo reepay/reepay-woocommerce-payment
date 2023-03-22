@@ -1,14 +1,21 @@
 <?php
 
+namespace Reepay\Checkout\Integrations\WooBlocks;
+
 defined( 'ABSPATH' ) || exit();
 
 use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
+use Exception;
+use Reepay\Checkout\Tokens\TokenReepay;
+use WC_Gateway_Reepay;
+use WC_Payment_Gateway;
+use WC_Payment_Tokens;
 
 /**
  * Reepay payment methods integration
  *
  */
-final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
+final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	/**
 	 * Payment method name/id/slug.
 	 *
@@ -153,8 +160,8 @@ final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
 				$data['tokens'] = [];
 
 				foreach ( $this->gateway->get_tokens() as $token ) {
-					if ( $token instanceof WC_Payment_Token_Reepay ) {
-						/** @var WC_Payment_Token_Reepay $token */
+					if ( $token instanceof TokenReepay ) {
+						/** @var TokenReepay $token */
 						$data['tokens'][] = [
 							'id'           => $token->get_id(),
 							'expiry_month' => $token->get_expiry_month(),

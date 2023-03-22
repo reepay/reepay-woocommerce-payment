@@ -206,7 +206,8 @@ class WC_ReepayCheckout {
 		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-ms.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-slice-it.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-meta-boxes.php';
-		include_once dirname( __FILE__ ) . '/includes/integrations/register-integrations.php';
+
+		new Reepay\Checkout\Integrations\Main();
 	}
 
 	/**
