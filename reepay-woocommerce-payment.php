@@ -41,21 +41,28 @@ class WC_ReepayCheckout {
 	 *
 	 * @var string
 	 */
-	public string $plugin_file;
+	private string $plugin_file;
 
 	/**
 	 * Plugin url
 	 *
 	 * @var string
 	 */
-	public string $plugin_url;
+	private string $plugin_url;
 
 	/**
 	 * Plugin path
 	 *
 	 * @var string
 	 */
-	public string $plugin_path;
+	private $plugin_path;
+
+	/**
+	 * Settings array
+	 *
+	 * @var array|null
+	 */
+	private $settings;
 
 	/**
      * List of payment method ids
@@ -122,6 +129,27 @@ class WC_ReepayCheckout {
 		}
 
 		return self::$instance;
+	}
+
+	/**
+	 * Get plugin or reepay checkout gateway setting
+	 *
+	 * @param  string $name  Setting key.
+	 *
+	 * @return string|null
+     *
+     * @ToDo add gateway settings
+	 */
+	public function get_setting( $name ) {
+		if ( is_null( $this->settings ) ) {
+			$this->settings = array(
+				'plugin_file' => $this->plugin_file,
+				'plugin_url'  => $this->plugin_url,
+				'plugin_path' => $this->plugin_path,
+			);
+		}
+
+		return $this->settings[ $name ] ?? null;
 	}
 
 	/**
