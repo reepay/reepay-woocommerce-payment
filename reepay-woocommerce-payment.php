@@ -11,6 +11,8 @@
  * WC tested up to: 7.5.0
  */
 
+use Reepay\Checkout\PluginLifeCycle;
+
 defined( 'ABSPATH' ) || exit();
 
 define( 'REEPAY_CHECKOUT_PLUGIN_FILE', __FILE__ );
@@ -21,10 +23,45 @@ require_once dirname( __FILE__ ) . '/includes/class-wc-reepay-statistics.php';
 
 class WC_ReepayCheckout {
 	/**
+     * Class instance
+     *
 	 * @var WC_ReepayCheckout
 	 */
 	private static $instance;
 
+	/**
+     * The latest update that requires a database changes
+     *
+	 * @var string
+	 */
+	const DB_VERSION = '1.4.54';
+
+	/**
+	 * Main plugin file path
+	 *
+	 * @var string
+	 */
+	public string $plugin_file;
+
+	/**
+	 * Plugin url
+	 *
+	 * @var string
+	 */
+	public string $plugin_url;
+
+	/**
+	 * Plugin path
+	 *
+	 * @var string
+	 */
+	public string $plugin_path;
+
+	/**
+     * List of payment method ids
+     *
+	 * @var array
+	 */
 	const PAYMENT_METHODS = array(
 		'reepay_checkout',
 		'reepay_applepay',
@@ -40,12 +77,17 @@ class WC_ReepayCheckout {
 		'reepay_mobilepay_subscriptions',
 	);
 
-	public static $db_version = '1.4.54';
-
 	/**
 	 * Constructor
 	 */
 	private function __construct() {
+		include_once dirname( __FILE__ ) . '/vendor/autoload.php';
+
+		$this->plugin_file  = __FILE__;
+		$this->plugin_url  = plugin_dir_url( $this->plugin_file );
+		$this->plugin_path = plugin_dir_path( $this->plugin_file );
+
+		new PluginLifeCycle( $this->plugin_file );
 
 		// Activation
 		register_activation_hook( __FILE__, __CLASS__ . '::install' );
@@ -133,9 +175,7 @@ class WC_ReepayCheckout {
 	 * Install
 	 */
 	public static function install() {
-		if ( ! get_option( 'woocommerce_reepay_version' ) ) {
-			add_option( 'woocommerce_reepay_version', self::$db_version );
-		}
+
 	}
 
 	public function includes() {
@@ -168,7 +208,7 @@ class WC_ReepayCheckout {
 		load_plugin_textdomain( 'reepay-checkout-gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
 		// Show Upgrade notification
-		if ( version_compare( get_option( 'woocommerce_reepay_version', self::$db_version ), self::$db_version, '<' ) ) {
+		if ( version_compare( get_option( 'woocommerce_reepay_version', self::DB_VERSION ), self::DB_VERSION, '<' ) ) {
 			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
 		}
 	}
@@ -179,8 +219,6 @@ class WC_ReepayCheckout {
 	 * @return void
 	 */
 	public function woocommerce_loaded() {
-		include_once dirname( __FILE__ ) . '/vendor/autoload.php';
-
 		new Reepay\Checkout\Tokens\Main();
 
 		include_once dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-gateway-reepay.php';
