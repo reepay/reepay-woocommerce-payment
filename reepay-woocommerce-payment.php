@@ -12,6 +12,7 @@
  */
 
 use Reepay\Checkout\PluginLifeCycle;
+use Reepay\Checkout\WoocommerceExists;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -37,32 +38,11 @@ class WC_ReepayCheckout {
 	const DB_VERSION = '1.4.54';
 
 	/**
-	 * Main plugin file path
-	 *
-	 * @var string
-	 */
-	private string $plugin_file;
-
-	/**
-	 * Plugin url
-	 *
-	 * @var string
-	 */
-	private string $plugin_url;
-
-	/**
-	 * Plugin path
-	 *
-	 * @var string
-	 */
-	private $plugin_path;
-
-	/**
 	 * Settings array
 	 *
-	 * @var array|null
+	 * @var array
 	 */
-	private $settings;
+	private $settings = array();
 
 	/**
      * List of payment method ids
@@ -90,19 +70,11 @@ class WC_ReepayCheckout {
 	private function __construct() {
 		include_once dirname( __FILE__ ) . '/vendor/autoload.php';
 
-		$this->plugin_file  = __FILE__;
-		$this->plugin_url  = plugin_dir_url( $this->plugin_file );
-		$this->plugin_path = plugin_dir_path( $this->plugin_file );
+		new PluginLifeCycle( $this->get_setting( 'plugin_path' ) );
+		new WoocommerceExists();
 
-		new PluginLifeCycle( $this->plugin_file );
-
-		// Actions
-		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
-		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
-		add_action( 'woocommerce_loaded', array( $this, 'woocommerce_loaded' ), 40 );
-		add_action( 'init', __CLASS__ . '::may_add_notices' );
+		add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 0 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'add_scripts' ) );
-		add_filter( 'plugin_row_meta', array( $this, 'plugin_row_meta' ), 10, 2 );
 
 		// Add statuses for payment complete
 		add_filter( 'woocommerce_valid_order_statuses_for_payment_complete',
@@ -141,11 +113,12 @@ class WC_ReepayCheckout {
      * @ToDo add gateway settings
 	 */
 	public function get_setting( $name ) {
-		if ( is_null( $this->settings ) ) {
+		if ( empty( $this->settings ) ) {
 			$this->settings = array(
-				'plugin_file' => $this->plugin_file,
-				'plugin_url'  => $this->plugin_url,
-				'plugin_path' => $this->plugin_path,
+				'plugin_file'     => __FILE__,
+				'plugin_basename' => plugin_basename( __FILE__ ),
+				'plugin_url'      => plugin_dir_url( __FILE__ ),
+				'plugin_path'     => plugin_dir_path( __FILE__ ),
 			);
 		}
 
@@ -170,61 +143,26 @@ class WC_ReepayCheckout {
 		return in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS );
 	}
 
-	/**
-	 * Show row meta on the plugin screen.
-	 *
-	 * @param mixed $links Plugin Row Meta.
-	 * @param mixed $file Plugin Base file.
-	 *
-	 * @return array
-	 */
-	public function plugin_row_meta( $links, $file ) {
-
-		if ( plugin_basename( __FILE__ ) !== $file ) {
-			return $links;
-		}
-
-		$row_meta = array(
-			'account' => '<a target="_blank" href="https://signup.reepay.com/?_gl=1*1iccm28*_gcl_aw*R0NMLjE2NTY1ODI3MTQuQ2p3S0NBandrX1dWQmhCWkVpd0FVSFFDbVJaNDJmVmVQWFc4LUlpVDRndE83bWRmaW5NNG5wZDhkaG12dVJFOEZkbDR4eXVMNlZpMTRSb0N1b2NRQXZEX0J3RQ..*_ga*MjA3MDA3MTk4LjE2NTM2MzgwNjY.*_ga_F82PFFEF3F*MTY2Mjk2NTEwNS4xOS4xLjE2NjI5NjUxODkuMC4wLjA.&_ga=2.98685660.319325710.1662963483-207007198.1653638066#/en">' . esc_html__( 'Get free test account', 'reepay-checkout-gateway' ) . '</a>',
-			'pricing' => '<a target="_blank" href="https://reepay.com/pricing/">' . esc_html__( 'Pricing', 'reepay-checkout-gateway' ) . '</a>',
-		);
-
-		return array_merge( $links, $row_meta );
-	}
-
 	public function includes() {
 		include_once dirname( __FILE__ ) . '/includes/functions.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-order-statuses.php';
 	}
 
 	/**
-	 * Add relevant links to plugins page
-	 *
-	 * @param array $links
-	 *
-	 * @return array
-	 */
-	public function plugin_action_links( $links ) {
-		$plugin_links = array(
-			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=reepay_checkout' ) . '">' . __( 'Settings', 'reepay-checkout-gateway' ) . '</a>',
-		);
-
-		return array_merge( $plugin_links, $links );
-	}
-
-	/**
-	 * Init localisations and files
+	 * On plugins_loaded hook
 	 *
 	 * @return void
 	 */
-	public function init() {
+	public function plugins_loaded() {
 		// Localization
 		load_plugin_textdomain( 'reepay-checkout-gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
 		// Show Upgrade notification
 		if ( version_compare( get_option( 'woocommerce_reepay_version', self::DB_VERSION ), self::DB_VERSION, '<' ) ) {
-			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
+			add_action( 'admin_notices', array( $this, 'upgrade_notice' ) );
 		}
+
+		$this->include_classes();
 	}
 
 	/**
@@ -232,7 +170,9 @@ class WC_ReepayCheckout {
 	 *
 	 * @return void
 	 */
-	public function woocommerce_loaded() {
+	public function include_classes() {
+	    new Reepay\Checkout\Admin\Main();
+
 		new Reepay\Checkout\Tokens\Main();
 
 		include_once dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-gateway-reepay.php';
@@ -260,30 +200,6 @@ class WC_ReepayCheckout {
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-meta-boxes.php';
 
 		new Reepay\Checkout\Integrations\Main();
-	}
-
-	/**
-	 * Add notices
-	 */
-	public static function may_add_notices() {
-		// Check if WooCommerce is missing
-		if ( ! class_exists( 'WooCommerce', false ) || ! defined( 'WC_ABSPATH' ) ) {
-			add_action( 'admin_notices', __CLASS__ . '::missing_woocommerce_notice' );
-			deactivate_plugins( plugin_basename( __FILE__ ), true );
-		}
-	}
-
-
-	/**
-	 * Check if WooCommerce is missing, and deactivate the plugin if needs
-	 */
-	public static function missing_woocommerce_notice() {
-		wc_get_template(
-			'admin/notices/woocommerce-missed.php',
-			array(),
-			'',
-			dirname( __FILE__ ) . '/../../templates/'
-		);
 	}
 
 	/**
