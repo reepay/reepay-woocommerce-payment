@@ -2,9 +2,7 @@
 /** @var WC_Payment_Gateway $gateway */
 /** @var bool $webhook_installed */
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-} // Exit if accessed directly
+defined( 'ABSPATH' ) || exit();
 ?>
 
 <h2><?php esc_html( $gateway->get_method_title() ); ?></h2>

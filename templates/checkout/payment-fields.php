@@ -1,8 +1,9 @@
 <?php
-/** @var WC_Payment_Gateway $gateway */
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-} // Exit if accessed directly
+/**
+ * @var WC_Payment_Gateway $gateway
+ */
+
+defined( 'ABSPATH' ) || exit();
 ?>
 
 <?php if ( $description = $gateway->get_description() ) : ?>

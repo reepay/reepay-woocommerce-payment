@@ -1,8 +1,6 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-} // Exit if accessed directly
+defined( 'ABSPATH' ) || exit();
 
 class WC_Payment_Token_Reepay_MS extends WC_Payment_Token {
 	protected $type = 'Reepay_MS';

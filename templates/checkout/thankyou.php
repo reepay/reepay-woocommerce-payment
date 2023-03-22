@@ -16,9 +16,10 @@
  * @global WC_Order $order
  */
 
+defined( 'ABSPATH' ) || exit;
+
 $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_current_user_id();
 
-defined( 'ABSPATH' ) || exit;
 ?>
 <style type="text/css">
 	.transaction-error {

@@ -1,8 +1,6 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-} // Exit if accessed directly
+defined( 'ABSPATH' ) || exit();
 
 class WC_Gateway_Reepay_Viabill extends WC_Gateway_Reepay {
 	/**

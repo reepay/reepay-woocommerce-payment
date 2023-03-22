@@ -8,9 +8,7 @@
  * @var string                     $link
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-} // Exit if accessed directly
+defined( 'ABSPATH' ) || exit();
 
 if ( ! empty( $order_data['transactions'][0] ) ) {
 	$card_logo = $gateway->get_logo( $order_data['transactions'][0]['card_transaction']['card_type'] );

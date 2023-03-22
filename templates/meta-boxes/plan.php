@@ -2,6 +2,8 @@
 /**
  * @var array $args arguments sent to template.
  */
+
+defined( 'ABSPATH' ) || exit;
 ?>
 <ul class="order_action">
 	<li class="reepay-admin-section-li-header-small">

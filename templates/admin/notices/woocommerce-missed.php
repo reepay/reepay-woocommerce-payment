@@ -1,3 +1,7 @@
+<?php
+
+defined( 'ABSPATH' ) || exit();
+?>
 <div id="message" class="error">
 	<p class="main">
 		<strong>

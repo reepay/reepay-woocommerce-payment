@@ -1,5 +1,7 @@
 <?php
 
+defined( 'ABSPATH' ) || exit();
+
 if ( ! function_exists( 'rp_get_payment_method ' ) ) {
 	/**
 	 * Get Payment Method.

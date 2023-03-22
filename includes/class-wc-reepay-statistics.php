@@ -1,8 +1,6 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
+defined( 'ABSPATH' ) || exit();
 
 class WC_Reepay_Gateway_Statistics {
 	use WC_Reepay_Log;

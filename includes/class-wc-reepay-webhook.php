@@ -1,5 +1,7 @@
 <?php
 
+defined( 'ABSPATH' ) || exit();
+
 class WC_Reepay_Webhook {
 	use WC_Reepay_Log;
 

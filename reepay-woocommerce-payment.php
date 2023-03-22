@@ -11,9 +11,7 @@
  * WC tested up to: 7.5.0
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-} // Exit if accessed directly
+defined( 'ABSPATH' ) || exit();
 
 define( 'REEPAY_CHECKOUT_PLUGIN_FILE', __FILE__ );
 define( 'REEPAY_CHECKOUT_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );

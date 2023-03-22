@@ -1,5 +1,7 @@
 <?php
 
+defined( 'ABSPATH' ) || exit();
+
 class WC_Reepay_Order_Capture {
 	/**
 	 * Constructor

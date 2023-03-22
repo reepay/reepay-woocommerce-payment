@@ -1,8 +1,6 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-} // Exit if accessed directly
+defined( 'ABSPATH' ) || exit();
 
 abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	use WC_Reepay_Token;

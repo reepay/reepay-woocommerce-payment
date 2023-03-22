@@ -1,6 +1,6 @@
 <?php
 
-defined( 'ABSPATH' ) || exit;
+defined( 'ABSPATH' ) || exit();
 
 if ( ! class_exists( 'WC_Background_Process', false ) ) {
 	include_once WC_ABSPATH . '/includes/abstracts/class-wc-background-process.php';

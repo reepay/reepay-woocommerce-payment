@@ -1,6 +1,6 @@
 <?php
 
-defined( 'ABSPATH' ) || exit;
+defined( 'ABSPATH' ) || exit();
 
 class WC_Reepay_Subscriptions {
 	use WC_Reepay_Log;
