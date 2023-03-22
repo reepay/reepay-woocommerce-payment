@@ -122,7 +122,7 @@ class WC_Reepay_Meta_Boxes {
 
 		$payment_method = $order->get_payment_method();
 
-		if ( ! in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
+		if ( ! reepay()->is_reepay_payment_method( $payment_method ) ) {
 			return;
 		}
 

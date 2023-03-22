@@ -90,6 +90,13 @@ class WC_ReepayCheckout {
 	}
 
 	/**
+	 * @param string $payment_method
+	 */
+	public function is_reepay_payment_method( $payment_method ) {
+	    return in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS );
+    }
+
+	/**
 	 * Show row meta on the plugin screen.
 	 *
 	 * @param mixed $links Plugin Row Meta.
@@ -263,7 +270,6 @@ class WC_ReepayCheckout {
 			</style>
 
 			<script type="text/javascript">
-				console.log('checkout page is loaded');
 				jQuery('body').on('updated_checkout', function () {
 					var className = 'wc_payment_method payment_method_reepay_applepay';
 					if (true == Reepay.isApplePayAvailable()) {
@@ -327,7 +333,7 @@ class WC_ReepayCheckout {
 	 */
 	public function add_valid_order_statuses( $statuses, $order ) {
 		$payment_method = $order->get_payment_method();
-		if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
+		if ( reepay()->is_reepay_payment_method( $payment_method ) ) {
 			$statuses = array_merge(
 				$statuses,
 				array(

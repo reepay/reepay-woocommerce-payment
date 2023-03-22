@@ -35,7 +35,7 @@ class WC_Reepay_Instant_Settle {
 			$order = wc_get_order( $order );
 		}
 
-		if ( ! in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS, true ) ) {
+		if ( ! reepay()->is_reepay_payment_method( $order->get_payment_method() ) ) {
 			return;
 		}
 

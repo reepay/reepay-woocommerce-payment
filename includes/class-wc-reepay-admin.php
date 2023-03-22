@@ -76,8 +76,9 @@ class WC_Reepay_Admin {
 
 		if ( in_array( $screen->id, $post_types, true ) && in_array( $post->post_type, $post_types, true ) ) {
 			if ( $order = wc_get_order( $post->ID ) ) {
-				$payment_method = $order->get_payment_method();
-				if ( in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) && apply_filters( 'reepay_checkout_product_show_meta_box', true ) ) {
+				if ( reepay()->is_reepay_payment_method( $order->get_payment_method() )
+				     && apply_filters( 'reepay_checkout_product_show_meta_box', true )
+				) {
 					add_meta_box(
 						'reepay-payment-actions',
 						__( 'Reepay Payment', 'reepay-checkout-gateway' ),
@@ -105,7 +106,9 @@ class WC_Reepay_Admin {
 
 		if ( $order ) {
 			$payment_method = $order->get_payment_method();
-			if ( in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) && apply_filters( 'show_reepay_metabox', true, $order ) ) {
+			if ( reepay()->is_reepay_payment_method( $payment_method )
+			     && apply_filters( 'show_reepay_metabox', true, $order )
+			) {
 
 				do_action( 'woocommerce_reepay_meta_box_payment_before_content', $order );
 
@@ -320,9 +323,7 @@ class WC_Reepay_Admin {
 	 * @param WC_Order $order
 	 */
 	public static function order_status_changed( $order_id, $from, $to, $order ) {
-		$payment_method = $order->get_payment_method();
-
-		if ( ! in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
+		if ( ! reepay()->is_reepay_payment_method( $order->get_payment_method() ) ) {
 			return;
 		}
 

@@ -175,7 +175,7 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 		}
 
 		$token = new WC_Payment_Token_Reepay( $method['method']['id'] );
-		if ( in_array( $method['method']['gateway'], WC_ReepayCheckout::PAYMENT_METHODS ) ) {
+		if ( reepay()->is_reepay_payment_method( $method['method']['gateway'] ) ) {
 			echo $token->get_display_name();
 
 			return;
@@ -206,7 +206,7 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 	 * @return string
 	 */
 	public static function wc_get_saved_payment_method_option_html( $html, $token, $gateway ) {
-		if ( in_array( $token->get_gateway_id(), WC_ReepayCheckout::PAYMENT_METHODS ) ) {
+		if ( reepay()->is_reepay_payment_method( $token->get_gateway_id() ) ) {
 			// Revert esc_html()
 			$html = html_entity_decode( $html, ENT_COMPAT | ENT_XHTML, 'UTF-8' );
 		}
