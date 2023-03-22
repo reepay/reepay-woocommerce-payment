@@ -118,16 +118,14 @@ class WC_Reepay_Admin {
 					return;
 				}
 
-				wc_get_template(
+				reepay()->get_template(
 					'admin/metabox-order.php',
 					array(
 						'gateway'    => $gateway,
 						'order'      => $order,
 						'order_id'   => $order->get_order_number(),
 						'order_data' => $order_data,
-					),
-					'',
-					dirname( __FILE__ ) . '/../templates/'
+					)
 				);
 			}
 		}

@@ -158,13 +158,11 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 	 * @return void
 	 */
 	public function payment_fields() {
-		wc_get_template(
+		reepay()->get_template(
 			'checkout/payment-fields.php',
 			array(
 				'gateway' => $this,
-			),
-			'',
-			dirname( __FILE__ ) . '/../templates/'
+			)
 		);
 
 		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription

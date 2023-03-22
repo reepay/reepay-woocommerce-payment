@@ -31,11 +31,9 @@ class WoocommerceExists {
 	 * Show notice in admin
 	 */
 	public function missing_woocommerce_notice() {
-		wc_get_template(
+		reepay()->get_template(
 			'admin/notices/woocommerce-missed.php',
-			array(),
-			'',
-			dirname( __FILE__ ) . '/../templates/'
+			array()
 		);
 	}
 

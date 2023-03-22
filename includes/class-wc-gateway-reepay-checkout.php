@@ -625,14 +625,12 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 		// Check that WebHook was installed
 		$token = $this->test_mode ? md5( $this->private_key_test ) : md5( $this->private_key );
 
-		wc_get_template(
+		reepay()->get_template(
 			'admin/admin-options.php',
 			array(
 				'gateway'           => $this,
 				'webhook_installed' => get_option( 'woocommerce_reepay_webhook_' . $token ) === 'installed',
-			),
-			'',
-			dirname( __FILE__ ) . '/../templates/'
+			)
 		);
 	}
 
@@ -666,13 +664,11 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	 * @return void
 	 */
 	public function payment_fields() {
-		wc_get_template(
+		reepay()->get_template(
 			'checkout/payment-fields.php',
 			array(
 				'gateway' => $this,
-			),
-			'',
-			dirname( __FILE__ ) . '/../templates/'
+			)
 		);
 
 		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription

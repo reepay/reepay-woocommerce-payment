@@ -99,11 +99,9 @@ class WC_Reepay_Meta_Boxes {
 
 		$template_args['link'] = $this->dashboard_url . 'customers/customers/customer/' . $template_args['handle'];
 
-		wc_get_template(
+		reepay()->get_template(
 			'meta-boxes/customer.php',
 			$template_args,
-			'',
-			dirname( __FILE__ ) . '/../templates/'
 		);
 	}
 
@@ -136,7 +134,7 @@ class WC_Reepay_Meta_Boxes {
 			return;
 		}
 
-		wc_get_template(
+		reepay()->get_template(
 			'meta-boxes/invoice.php',
 			array(
 				'gateway'            => $gateway,
@@ -145,9 +143,7 @@ class WC_Reepay_Meta_Boxes {
 				'order_data'         => $order_data,
 				'order_is_cancelled' => $order->get_meta( '_reepay_order_cancelled' ) === '1' && 'cancelled' != $order_data['state'],
 				'link'               => $this->dashboard_url . 'payments/invoices/invoice/' . $order_data['handle'],
-			),
-			'',
-			dirname( __FILE__ ) . '/../templates/'
+			)
 		);
 	}
 
@@ -183,11 +179,9 @@ class WC_Reepay_Meta_Boxes {
 
 		$template_args['link'] = $this->dashboard_url . 'subscriptions/subscription/' . $template_args['handle'];
 
-		wc_get_template(
+		reepay()->get_template(
 			'meta-boxes/plan.php',
-			$template_args,
-			'',
-			dirname( __FILE__ ) . '/../templates/'
+			$template_args
 		);
 	}
 }

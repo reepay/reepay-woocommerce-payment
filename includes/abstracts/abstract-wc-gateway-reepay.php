@@ -667,13 +667,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function payment_fields() {
-		wc_get_template(
+		reepay()->get_template(
 			'checkout/payment-fields.php',
 			array(
 				'gateway' => $this,
-			),
-			'',
-			dirname( __FILE__ ) . '/../../templates/'
+			)
 		);
 	}
 

@@ -140,6 +140,21 @@ class WC_ReepayCheckout {
 	}
 
 	/**
+	 * Wrapper of wc_get_template function
+	 *
+	 * @param  string $template  Template name.
+	 * @param  array  $args      Arguments.
+	 */
+	public function get_template( $template, $args ) {
+		wc_get_template(
+			$template,
+			$args,
+			'',
+			$this->get_setting('plugin_path') . 'templates/'
+		);
+	}
+
+	/**
 	 * Check if payment method is reepay payment method
 	 *
 	 * @param string $payment_method

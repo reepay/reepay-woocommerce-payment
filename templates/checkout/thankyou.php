@@ -52,23 +52,19 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 			if ( ! empty( $another_orders ) ) {
 				foreach ( $another_orders as $order_id ) {
 					$order_another = wc_get_order( $order_id );
-					wc_get_template(
+					reepay()->get_template(
 						'/order-details.php',
 						array(
 							'order' => $order_another,
-						),
-						'',
-						dirname( __FILE__ )
+						)
 					);
 				}
 			} else {
-				wc_get_template(
+				reepay()->get_template(
 					'/order-details.php',
 					array(
 						'order' => $order,
-					),
-					'',
-					dirname( __FILE__ )
+					)
 				);
 			}
 			?>
