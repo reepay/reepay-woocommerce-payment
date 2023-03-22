@@ -62,14 +62,7 @@ class WC_Gateway_Reepay_Anyday extends WC_Gateway_Reepay {
 			$this->settle = array();
 		}
 
-		// Actions
-		add_action(
-			'woocommerce_update_options_payment_gateways_' . $this->id,
-			array(
-				$this,
-				'process_admin_options',
-			)
-		);
+
 
 		add_filter( 'woocommerce_available_payment_gateways', array( $this, 'filter_available_payment_gateways' ) );
 	}

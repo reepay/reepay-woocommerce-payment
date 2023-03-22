@@ -173,6 +173,14 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 			'action_checkout_create_order_line_item'
 		), 10, 4 );
 
+		add_action(
+			'woocommerce_update_options_payment_gateways_' . $this->id,
+			array(
+				$this,
+				'process_admin_options',
+			)
+		);
+
 		static $handler_added = false;
 
 		if ( ! $handler_added ) {
