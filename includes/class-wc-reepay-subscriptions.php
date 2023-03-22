@@ -1,5 +1,7 @@
 <?php
 
+use Reepay\Checkout\Tokens\TokenReepay;
+
 defined( 'ABSPATH' ) || exit();
 
 class WC_Reepay_Subscriptions {
@@ -113,7 +115,7 @@ class WC_Reepay_Subscriptions {
 	 *
 	 * @param int                     $order_id
 	 * @param int                     $token_id
-	 * @param WC_Payment_Token_Reepay $token
+	 * @param TokenReepay $token
 	 * @param array                   $token_ids
 	 *
 	 * @return void
@@ -452,7 +454,7 @@ class WC_Reepay_Subscriptions {
 
 			try {
 
-				$token = new WC_Payment_Token_Reepay( $token_id );
+				$token = new TokenReepay( $token_id );
 
 			} catch ( Exception $e ) {
 				continue;

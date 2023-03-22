@@ -1,5 +1,6 @@
 <?php
 
+use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayTrait;
 
 defined( 'ABSPATH' ) || exit();
@@ -741,7 +742,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 			$customer_handle = $this->api->get_customer_handle_order( $order_id );
 
 			if ( absint( $token_id ) > 0 ) {
-				$token = new WC_Payment_Token_Reepay( $token_id );
+				$token = new TokenReepay( $token_id );
 				if ( ! $token->get_id() ) {
 					wc_add_notice( __( 'Failed to load token.', 'reepay-checkout-gateway' ), 'error' );
 
@@ -937,7 +938,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 
 		// Try to charge with saved token
 		if ( absint( $token_id ) > 0 ) {
-			$token = new WC_Payment_Token_Reepay( $token_id );
+			$token = new TokenReepay( $token_id );
 			if ( ! $token->get_id() ) {
 				wc_add_notice( __( 'Failed to load token.', 'reepay-checkout-gateway' ), 'error' );
 

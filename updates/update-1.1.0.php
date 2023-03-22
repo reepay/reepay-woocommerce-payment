@@ -1,5 +1,7 @@
 <?php
 
+use Reepay\Checkout\Tokens\TokenReepay;
+
 defined( 'ABSPATH' ) || exit;
 
 // Set PHP Settings
@@ -48,7 +50,7 @@ foreach ( $subscriptions as $subscription ) {
 	}
 
 	// Get Token
-	$token = new WC_Payment_Token_Reepay( $token_id );
+	$token = new TokenReepay( $token_id );
 	if ( ! $token->get_id() ) {
 		$log->add( $handler, sprintf( '[INFO] Invalid Token ID #%s doesn\'t have token id.', $token_id ) );
 		continue;
