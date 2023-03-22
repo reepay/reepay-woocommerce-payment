@@ -1,13 +1,20 @@
 <?php
 
+namespace Reepay\Checkout\Tokens;
+
+use Exception;
+use WC_Order;
+use WC_Payment_Token;
+use WC_Payment_Tokens;
+
 defined( 'ABSPATH' ) || exit();
 
-trait WC_Reepay_Token {
+trait TokenReepayTrait {
 	/**
 	 * Assign payment token to order.
 	 *
-	 * @param WC_Order                    $order
-	 * @param WC_Payment_Token_Reepay|int $token
+	 * @param WC_Order         $order
+	 * @param TokenReepay|int  $token
 	 *
 	 * @return void
 	 *
@@ -15,8 +22,8 @@ trait WC_Reepay_Token {
 	 */
 	public static function assign_payment_token( $order, $token ) {
 		if ( is_numeric( $token ) ) {
-			$token = new WC_Payment_Token_Reepay( $token );
-		} elseif ( ! $token instanceof WC_Payment_Token_Reepay && ! $token instanceof WC_Payment_Token_Reepay_MS ) {
+			$token = new TokenReepay( $token );
+		} elseif ( ! $token instanceof TokenReepay && ! $token instanceof TokenReepayMS ) {
 			throw new Exception( 'Invalid token parameter' );
 		}
 
@@ -43,7 +50,7 @@ trait WC_Reepay_Token {
 	 * @param WC_Order $order
 	 * @param string   $reepay_token
 	 *
-	 * @return bool|WC_Payment_Token_Reepay
+	 * @return bool|TokenReepay
 	 *
 	 * @throws Exception
 	 */
@@ -68,7 +75,7 @@ trait WC_Reepay_Token {
 	 * @param WC_Order $order
 	 * @param string   $reepay_token
 	 *
-	 * @return WC_Payment_Token_Reepay
+	 * @return TokenReepay
 	 * @throws Exception
 	 */
 	public function add_payment_token( $order, $reepay_token ) {
@@ -81,15 +88,14 @@ trait WC_Reepay_Token {
 		}
 
 		if ( 'ms_' == substr( $source['id'], 0, 3 ) ) {
-			$token = new WC_Payment_Token_Reepay_MS();
+			$token = new TokenReepayMS();
 			$token->set_user_id( $order->get_customer_id() );
 			$token->set_token( $reepay_token );
 			$token->set_gateway_id( $this->id );
 		} else {
 			$expiry_date = explode( '-', $source['exp_date'] );
 
-			// Initialize Token
-			$token = new WC_Payment_Token_Reepay();
+			$token = new TokenReepay();
 			$token->set_gateway_id( $this->id );
 			$token->set_token( $reepay_token );
 			$token->set_last4( substr( $source['masked_card'], - 4 ) );
@@ -156,5 +162,4 @@ trait WC_Reepay_Token {
 
 		return WC_Payment_Tokens::get( $token_id );
 	}
-
 }

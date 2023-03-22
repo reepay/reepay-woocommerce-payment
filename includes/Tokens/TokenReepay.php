@@ -1,8 +1,15 @@
 <?php
 
+namespace Reepay\Checkout\Tokens;
+
+use WC_HTTPS;
+use WC_Payment_Gateway;
+use WC_Payment_Token;
+use WC_Payment_Token_CC;
+
 defined( 'ABSPATH' ) || exit();
 
-class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
+class TokenReepay extends WC_Payment_Token_CC {
 	/**
 	 * Token Type String.
 	 *
@@ -136,10 +143,19 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 	}
 
 	/**
+	 * Register actions for displaying token
+	 */
+	public static function register_view_actions() {
+		add_filter( 'woocommerce_payment_methods_list_item', array( __CLASS__, 'wc_get_account_saved_payment_methods_list_item' ), 10, 2 );
+		add_action( 'woocommerce_account_payment_methods_column_method', __CLASS__ . '::wc_account_payment_methods_column_method', 10, 1 );
+		add_filter( 'woocommerce_payment_gateway_get_saved_payment_method_option_html', __CLASS__ . '::wc_get_saved_payment_method_option_html', 10, 3 );
+	}
+
+	/**
 	 * Controls the output for credit cards on the my account page.
 	 *
-	 * @param  array                   $item           Individual list item from woocommerce_saved_payment_methods_list.
-	 * @param  WC_Payment_Token_Reepay $payment_token  The payment token associated with this method entry.
+	 * @param  array        $item           Individual list item from woocommerce_saved_payment_methods_list.
+	 * @param  TokenReepay  $payment_token  The payment token associated with this method entry.
 	 *
 	 * @return array                           Filtered item.
 	 */
@@ -174,8 +190,8 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 			return;
 		}
 
-		$token = new WC_Payment_Token_Reepay( $method['method']['id'] );
 		if ( reepay()->is_reepay_payment_method( $method['method']['gateway'] ) ) {
+			$token = new TokenReepay( $method['method']['id'] );
 			echo $token->get_display_name();
 
 			return;
@@ -214,8 +230,3 @@ class WC_Payment_Token_Reepay extends WC_Payment_Token_CC {
 		return $html;
 	}
 }
-
-// Improve Payment Method output
-add_filter( 'woocommerce_payment_methods_list_item', 'WC_Payment_Token_Reepay::wc_get_account_saved_payment_methods_list_item', 10, 2 );
-add_action( 'woocommerce_account_payment_methods_column_method', 'WC_Payment_Token_Reepay::wc_account_payment_methods_column_method', 10, 1 );
-add_filter( 'woocommerce_payment_gateway_get_saved_payment_method_option_html', 'WC_Payment_Token_Reepay::wc_get_saved_payment_method_option_html', 10, 3 );

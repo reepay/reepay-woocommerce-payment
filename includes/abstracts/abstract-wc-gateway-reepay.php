@@ -1,9 +1,11 @@
 <?php
 
+use Reepay\Checkout\Tokens\TokenReepayTrait;
+
 defined( 'ABSPATH' ) || exit();
 
 abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
-	use WC_Reepay_Token;
+	use TokenReepayTrait;
 
 	const METHOD_WINDOW = 'WINDOW';
 

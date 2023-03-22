@@ -1,5 +1,8 @@
 <?php
 
+use Reepay\Checkout\Tokens\TokenReepay;
+use Reepay\Checkout\Tokens\TokenReepayMS;
+
 defined( 'ABSPATH' ) || exit();
 
 class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
@@ -840,14 +843,14 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			$source = $this->api->get_reepay_cards( $customer_handle, $reepay_token );
 
 			if ( 'ms_' == substr( $source['id'], 0, 3 ) ) {
-				$token = new WC_Payment_Token_Reepay_MS();
+				$token = new TokenReepayMS();
 				$token->set_gateway_id( $this->id );
 				$token->set_token( $reepay_token );
 				$token->set_user_id( get_current_user_id() );
 			} else {
 				$expiryDate = explode( '-', $source['exp_date'] );
 
-				$token = new WC_Payment_Token_Reepay();
+				$token = new TokenReepay();
 				$token->set_gateway_id( $this->id );
 				$token->set_token( $reepay_token );
 				$token->set_last4( substr( $source['masked_card'], - 4 ) );
