@@ -20,6 +20,11 @@ require_once dirname( __FILE__ ) . '/includes/trait-wc-reepay-log.php';
 require_once dirname( __FILE__ ) . '/includes/class-wc-reepay-statistics.php';
 
 class WC_ReepayCheckout {
+	/**
+	 * @var WC_ReepayCheckout
+	 */
+	private static $instance;
+
 	const PAYMENT_METHODS = array(
 		'reepay_checkout',
 		'reepay_applepay',
@@ -40,7 +45,7 @@ class WC_ReepayCheckout {
 	/**
 	 * Constructor
 	 */
-	public function __construct() {
+	private function __construct() {
 
 		// Activation
 		register_activation_hook( __FILE__, __CLASS__ . '::install' );
@@ -71,6 +76,17 @@ class WC_ReepayCheckout {
 
 		// Add admin menu
 		add_action( 'admin_menu', array( &$this, 'admin_menu' ), 99 );
+	}
+
+	/**
+	 * @return WC_ReepayCheckout
+	 */
+	public static function get_instance() {
+		if ( self::$instance === null ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
 	}
 
 	/**
@@ -373,5 +389,13 @@ class WC_ReepayCheckout {
 	}
 }
 
-new WC_ReepayCheckout();
+/**
+ * Get reepay checkout instance
+ *
+ * @return WC_ReepayCheckout
+ */
+function reepay() {
+	return WC_ReepayCheckout::get_instance();
+}
 
+reepay();
