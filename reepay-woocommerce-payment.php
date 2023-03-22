@@ -168,6 +168,15 @@ class WC_ReepayCheckout {
 		return array_merge( $links, $row_meta );
 	}
 
+	/**
+	 * Install
+	 */
+	public static function install() {
+		if ( ! get_option( 'woocommerce_reepay_version' ) ) {
+			add_option( 'woocommerce_reepay_version', self::$db_version );
+		}
+	}
+
 	public function includes() {
 		include_once dirname( __FILE__ ) . '/includes/functions.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-order-statuses.php';
