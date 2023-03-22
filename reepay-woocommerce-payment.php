@@ -185,7 +185,7 @@ class WC_ReepayCheckout {
 
 		include_once dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-gateway-reepay.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-api.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-capture.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-capture.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-instant-settle.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-webhook.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-thankyou.php';
