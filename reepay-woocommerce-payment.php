@@ -90,11 +90,22 @@ class WC_ReepayCheckout {
 	}
 
 	/**
+	 * Check if payment method is reepay payment method
+	 *
 	 * @param string $payment_method
 	 */
 	public function is_reepay_payment_method( $payment_method ) {
-	    return in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS );
-    }
+		return in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS );
+	}
+
+	/**
+	 * Check if payment method is reepay payment method
+	 *
+	 * @param WC_Order $order
+	 */
+	public function is_order_paid_via_reepay( $order ) {
+		return in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS );
+	}
 
 	/**
 	 * Show row meta on the plugin screen.
@@ -332,8 +343,7 @@ class WC_ReepayCheckout {
 	 * @return array
 	 */
 	public function add_valid_order_statuses( $statuses, $order ) {
-		$payment_method = $order->get_payment_method();
-		if ( reepay()->is_reepay_payment_method( $payment_method ) ) {
+		if ( reepay()->is_order_paid_via_reepay( $order ) ) {
 			$statuses = array_merge(
 				$statuses,
 				array(

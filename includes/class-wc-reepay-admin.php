@@ -76,7 +76,7 @@ class WC_Reepay_Admin {
 
 		if ( in_array( $screen->id, $post_types, true ) && in_array( $post->post_type, $post_types, true ) ) {
 			if ( $order = wc_get_order( $post->ID ) ) {
-				if ( reepay()->is_reepay_payment_method( $order->get_payment_method() )
+				if ( reepay()->is_order_paid_via_reepay( $order  )
 				     && apply_filters( 'reepay_checkout_product_show_meta_box', true )
 				) {
 					add_meta_box(
@@ -105,8 +105,7 @@ class WC_Reepay_Admin {
 		$order = wc_get_order( $post->ID );
 
 		if ( $order ) {
-			$payment_method = $order->get_payment_method();
-			if ( reepay()->is_reepay_payment_method( $payment_method )
+			if ( reepay()->is_order_paid_via_reepay( $order )
 			     && apply_filters( 'show_reepay_metabox', true, $order )
 			) {
 
@@ -323,7 +322,7 @@ class WC_Reepay_Admin {
 	 * @param WC_Order $order
 	 */
 	public static function order_status_changed( $order_id, $from, $to, $order ) {
-		if ( ! reepay()->is_reepay_payment_method( $order->get_payment_method() ) ) {
+		if ( ! reepay()->is_order_paid_via_reepay( $order  ) ) {
 			return;
 		}
 

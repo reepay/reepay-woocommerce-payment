@@ -48,7 +48,7 @@ class WC_Reepay_Thankyou {
 				return $located;
 			}
 
-			if ( ! reepay()->is_reepay_payment_method( $order->get_payment_method() ) ) {
+			if ( ! reepay()->is_order_paid_via_reepay( $order  ) ) {
 				return $located;
 			}
 
@@ -76,7 +76,7 @@ class WC_Reepay_Thankyou {
 			return;
 		}
 
-		if ( ! reepay()->is_reepay_payment_method( $order->get_payment_method() ) ) {
+		if ( ! reepay()->is_order_paid_via_reepay( $order  ) ) {
 			return;
 		}
 
@@ -140,7 +140,7 @@ class WC_Reepay_Thankyou {
 			return;
 		}
 
-		if ( ! reepay()->is_reepay_payment_method( $order->get_payment_method() ) ) {
+		if ( ! reepay()->is_order_paid_via_reepay( $order  ) ) {
 			return;
 		}
 

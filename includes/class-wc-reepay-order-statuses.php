@@ -212,7 +212,7 @@ class WC_Reepay_Order_Statuses {
 	 * @return array
 	 */
 	public function add_valid_order_statuses( $statuses, $order ) {
-		if ( reepay()->is_reepay_payment_method( $order->get_payment_method() ) ) {
+		if ( reepay()->is_order_paid_via_reepay( $order  ) ) {
 			$statuses = array_merge( $statuses, array( REEPAY_STATUS_AUTHORIZED, REEPAY_STATUS_SETTLED ) );
 		}
 
@@ -229,7 +229,7 @@ class WC_Reepay_Order_Statuses {
 	 * @return mixed|string
 	 */
 	public function payment_complete_order_status( $status, $order_id, $order ) {
-		if ( reepay()->is_reepay_payment_method( $order->get_payment_method() ) ) {
+		if ( reepay()->is_order_paid_via_reepay( $order  ) ) {
 			$status = apply_filters(
 				'reepay_settled_order_status',
 				$order->needs_processing() ? 'processing' : 'completed',
@@ -249,7 +249,7 @@ class WC_Reepay_Order_Statuses {
 
 		$order = wc_get_order( $order_id );
 
-		if ( reepay()->is_reepay_payment_method( $order->get_payment_method() ) ) {
+		if ( reepay()->is_order_paid_via_reepay( $order  ) ) {
 			$status = apply_filters(
 				'reepay_settled_order_status',
 				REEPAY_STATUS_SETTLED,
@@ -272,7 +272,7 @@ class WC_Reepay_Order_Statuses {
 	 * @return string
 	 */
 	public function reepay_authorized_order_status( $status, $order ) {
-		if ( reepay()->is_reepay_payment_method( $order->get_payment_method() ) ) {
+		if ( reepay()->is_order_paid_via_reepay( $order  ) ) {
 			if ( order_contains_subscription( $order ) ) {
 				$status = 'on-hold';
 			} elseif ( REEPAY_STATUS_SYNC ) {
@@ -292,7 +292,7 @@ class WC_Reepay_Order_Statuses {
 	 * @return string
 	 */
 	public function reepay_settled_order_status( $status, $order ) {
-		if ( reepay()->is_reepay_payment_method( $order->get_payment_method() ) && REEPAY_STATUS_SYNC ) {
+		if ( reepay()->is_order_paid_via_reepay( $order  ) && REEPAY_STATUS_SYNC ) {
 
 			$status = REEPAY_STATUS_SETTLED;
 		}
@@ -424,7 +424,7 @@ class WC_Reepay_Order_Statuses {
 	 * @return bool
 	 */
 	public function is_editable( $is_editable, $order ) {
-		if ( reepay()->is_reepay_payment_method( $order->get_payment_method() ) ) {
+		if ( reepay()->is_order_paid_via_reepay( $order  ) ) {
 			if ( in_array( $order->get_status(), array( REEPAY_STATUS_CREATED, REEPAY_STATUS_AUTHORIZED ) ) ) {
 				$is_editable = true;
 			}
@@ -442,7 +442,7 @@ class WC_Reepay_Order_Statuses {
 	 * @return bool
 	 */
 	public function is_paid( $is_paid, $order ) {
-		if ( reepay()->is_reepay_payment_method( $order->get_payment_method() ) ) {
+		if ( reepay()->is_order_paid_via_reepay( $order  ) ) {
 			if ( in_array( $order->get_status(), array( REEPAY_STATUS_SETTLED ) ) ) {
 				$is_paid = true;
 			}
@@ -461,7 +461,7 @@ class WC_Reepay_Order_Statuses {
 	 * @see wc_cancel_unpaid_orders()
 	 */
 	public function cancel_unpaid_order( $maybe_cancel, $order ) {
-		if ( reepay()->is_reepay_payment_method( $order->get_payment_method() ) ) {
+		if ( reepay()->is_order_paid_via_reepay( $order  ) ) {
 			$gateways       = WC()->payment_gateways()->get_available_payment_gateways();
 			$payment_method = $order->get_payment_method();
 			if ( isset( $gateways[ $payment_method ] ) ) {
