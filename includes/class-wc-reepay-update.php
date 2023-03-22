@@ -4,7 +4,7 @@ defined( 'ABSPATH' ) || exit();
 class WC_Reepay_Update {
 
 	/** @var array DB updates that need to be run */
-	private static $db_updates = array(
+	const DB_VERSION = array(
 		'1.1.0'  => 'updates/update-1.1.0.php',
 		'1.2.0'  => 'updates/update-1.2.0.php',
 		'1.2.1'  => 'updates/update-1.2.0.php',
@@ -19,7 +19,7 @@ class WC_Reepay_Update {
 	 */
 	public static function update() {
 		$current_version = get_option( 'woocommerce_reepay_version' );
-		foreach ( self::$db_updates as $version => $updater ) {
+		foreach ( self::DB_VERSION as $version => $updater ) {
 			if ( version_compare( $current_version, $version, '<' ) ) {
 				include dirname( __FILE__ ) . '/../' . $updater;
 				self::update_db_version( $version );
