@@ -12,17 +12,20 @@ class Gateways {
 	 */
 	const PAYMENT_METHODS = array(
 		'reepay_checkout',
+
+		'reepay_anyday',
 		'reepay_applepay',
+		'reepay_googlepay',
 		'reepay_klarna_pay_later',
 		'reepay_klarna_pay_now',
+		'reepay_klarna_slice_it',
 		'reepay_mobilepay',
+		'reepay_mobilepay_subscriptions',
 		'reepay_paypal',
 		'reepay_resurs',
 		'reepay_swish',
 		'reepay_viabill',
-		'reepay_googlepay',
 		'reepay_vipps',
-		'reepay_mobilepay_subscriptions',
 	);
 
 	/**
@@ -32,17 +35,20 @@ class Gateways {
 	 */
 	const PAYMENT_CLASSES = array(
 		Gateways\ReepayCheckout::class,
+
+		Gateways\Anyday::class,
 		Gateways\ApplePay::class,
+		Gateways\Googlepay::class,
 		Gateways\KlarnaPayLater::class,
 		Gateways\KlarnaPayNow::class,
+		Gateways\KlarnaSliceIt::class,
 		Gateways\Mobilepay::class,
+		Gateways\MobilepaySubscriptions::class,
 		Gateways\Paypal::class,
 		Gateways\Resurs::class,
 		Gateways\Swish::class,
 		Gateways\Viabill::class,
-		Gateways\Googlepay::class,
 		Gateways\Vipps::class,
-		Gateways\MobilepaySubscriptions::class,
 	);
 
 	public function __construct() {
