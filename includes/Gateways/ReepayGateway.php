@@ -11,9 +11,9 @@ use WC_Order;
 use WC_Order_Item_Fee;
 use WC_Order_Item_Product;
 use WC_Payment_Gateway;
-use WC_Reepay_Api;
 use WC_Reepay_Instant_Settle;
 use WC_Reepay_Order_Capture;
+use WC_Reepay_Renewals;
 use WC_Reepay_Webhook;
 use WP_Error;
 
@@ -25,11 +25,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	const METHOD_WINDOW = 'WINDOW';
 
 	const METHOD_OVERLAY = 'OVERLAY';
-
-	/**
-	 * @var WC_Reepay_Api
-	 */
-	public $api;
 
 	/**
 	 * Test Mode
@@ -176,8 +171,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$this->title       = $this->settings['title'] ?? 'no';
 		$this->description = $this->settings['description'] ?? 'no';
 
-		$this->api = new WC_Reepay_Api( $this );
-
 		add_action( 'admin_notices', array( $this, 'admin_notice_api_action' ) );
 
 		// JS Scrips
@@ -212,11 +205,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 	public function check_is_active() {
 		$gateway   = new ReepayCheckout();
-		$this->api = new WC_Reepay_Api( $gateway );
 
 		$gateways_reepay = get_transient( 'gateways_reepay' );
 		if ( empty( $gateways_reepay ) ) {
-			$gateways_reepay = $this->api->request( 'GET', 'https://api.reepay.com/v1/agreement?only_active=true' );
+			$gateways_reepay = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/agreement?only_active=true' );
 			set_transient( 'gateways_reepay', $gateways_reepay, 5 );
 		}
 
@@ -246,9 +238,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 	public function get_account_info( $gateway, $is_test = false ) {
 		if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'checkout' && ! empty( $_GET['section'] ) && $_GET['section'] == 'reepay_checkout' ) {
-
-			$this->api = new WC_Reepay_Api( $gateway );
-
 			$key = 'account_info';
 
 			if ( $is_test ) {
@@ -257,7 +246,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			$account_info = get_transient( $key );
 			if ( empty( $account_info ) ) {
-				$account_info = $this->api->request( 'GET', 'https://api.reepay.com/v1/account' );
+				$account_info = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account' );
 				set_transient( $key, $account_info, 5 );
 			}
 
@@ -298,7 +287,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 */
 	public function is_webhook_configured() {
 		try {
-			$request = $this->api->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
+			$request = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
 			if ( is_wp_error( $request ) ) {
 				/** @var WP_Error $request */
 				if ( ! empty( $request->get_error_code() ) ) {
@@ -360,7 +349,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'alert_emails' => array_unique( $alert_emails ),
 				);
 
-				$request = $this->api->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
+				$request = reepay()->api( $this )->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
 				if ( is_wp_error( $request ) ) {
 					/** @var WP_Error $request */
 					throw new Exception( $request->get_error_message(), $request->get_error_code() );
@@ -465,7 +454,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @api
 	 */
 	public function can_capture( $order, $amount = false ) {
-		return $this->api->can_capture( $order, $amount );
+		return reepay()->api( $this )->can_capture( $order, $amount );
 	}
 
 	/**
@@ -477,7 +466,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @api
 	 */
 	public function can_cancel( $order ) {
-		return $this->api->can_cancel( $order );
+		return reepay()->api( $this )->can_cancel( $order );
 	}
 
 	/**
@@ -488,7 +477,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @api
 	 */
 	public function can_refund( $order ) {
-		return $this->api->can_refund( $order );
+		return reepay()->api( $this )->can_refund( $order );
 	}
 
 	/**
@@ -507,7 +496,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			throw new Exception( 'Order is already canceled' );
 		}
 
-		$result = $this->api->capture_payment( $order, $amount );
+		$result = reepay()->api( $this )->capture_payment( $order, $amount );
 		if ( is_wp_error( $result ) ) {
 			throw new Exception( $result->get_error_message() );
 		}
@@ -527,7 +516,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			throw new Exception( 'Order is already canceled' );
 		}
 
-		$result = $this->api->cancel_payment( $order );
+		$result = reepay()->api( $this )->cancel_payment( $order );
 		if ( is_wp_error( $result ) ) {
 			throw new Exception( $result->get_error_message() );
 		}
@@ -562,7 +551,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			throw new Exception( 'Payment can\'t be refunded.' );
 		}
 
-		$result = $this->api->refund( $order, $amount, $reason );
+		$result = reepay()->api( $this )->refund( $order, $amount, $reason );
 		if ( is_wp_error( $result ) ) {
 			throw new Exception( $result->get_error_message() );
 		}
@@ -750,7 +739,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		// Switch of Payment Method
 		if ( wcs_is_payment_change() ) {
-			$customer_handle = $this->api->get_customer_handle_order( $order_id );
+			$customer_handle = reepay()->api( $this )->get_customer_handle_order( $order_id );
 
 			if ( absint( $token_id ) > 0 ) {
 				$token = new TokenReepay( $token_id );
@@ -828,7 +817,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					$params['payment_methods'] = $this->payment_methods;
 				}
 
-				$result = $this->api->request(
+				$result = reepay()->api( $this )->request(
 					'POST',
 					'https://checkout-api.reepay.com/v1/session/recurring',
 					$params
@@ -849,7 +838,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		// Get Customer reference
-		$customer_handle = $this->api->get_customer_handle_order( $order->get_id() );
+		$customer_handle = reepay()->api( $this )->get_customer_handle_order( $order->get_id() );
 
 		$data = array(
 			'country'         => $country,
@@ -971,7 +960,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			if ( abs( $order->get_total() ) < 0.01 ) {
 				// Don't charge payment if zero amount
 				if ( wcs_cart_only_subscriptions() ) {
-					$result = $this->api->recurring( $this->payment_methods, $order, $data, $token->get_token(), $params['button_text'] );
+					$result = reepay()->api( $this )->recurring( $this->payment_methods, $order, $data, $token->get_token(), $params['button_text'] );
 
 					if ( is_wp_error( $result ) ) {
 						/** @var WP_Error $result */
@@ -1004,7 +993,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				}
 
 				if ( wc_cart_only_reepay_subscriptions() ) {
-					$method = $this->api->request( 'GET', 'https://api.reepay.com/v1/payment_method/' . $token->get_token() );
+					$method = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/payment_method/' . $token->get_token() );
 					if ( is_wp_error( $method ) ) {
 						wc_add_notice( $method->get_error_message(), 'error' );
 
@@ -1024,7 +1013,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					$order_lines = $this->skip_order_lines === 'no' ? $this->get_order_items( $order ) : null;
 					$amount      = $this->skip_order_lines === 'yes' ? $order->get_total() : null;
 					// Charge payment
-					$result = $this->api->charge( $order, $token->get_token(), $amount, $order->get_currency(), $order_lines );
+					$result = reepay()->api( $this )->charge( $order, $token->get_token(), $amount, $order->get_currency(), $order_lines );
 
 					if ( is_wp_error( $result ) ) {
 						wc_add_notice( $result->get_error_message(), 'error' );
@@ -1055,14 +1044,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$order->save_meta_data();
 
 		if ( ! empty( $customer_handle ) && $order->get_customer_id() == 0 ) {
-			$this->api->request(
+			reepay()->api( $this )->request(
 				'PUT',
 				'https://api.reepay.com/v1/customer/' . $customer_handle,
 				$params['order']['customer']
 			);
 		}
 
-		if ( class_exists( 'WC_Reepay_Renewals' ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
+		if ( class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
 			$have_sub = true;
 		}
 
@@ -1079,7 +1068,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		// If here's Subscription or zero payment
 		if ( ( $have_sub ) && ( abs( $order->get_total() ) < 0.01 || empty( $only_items_lines ) ) ) {
 
-			$result = $this->api->recurring( $this->payment_methods, $order, $data, false, $params['button_text'] );
+			$result = reepay()->api( $this )->recurring( $this->payment_methods, $order, $data, false, $params['button_text'] );
 
 			if ( is_wp_error( $result ) ) {
 				/** @var WP_Error $result */
@@ -1121,7 +1110,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 */
 	public function process_session_charge( $params, $order ) {
 
-		$result = $this->api->request(
+		$result = reepay()->api( $this )->request(
 			'POST',
 			'https://checkout-api.reepay.com/v1/session/charge',
 			$params
@@ -1138,7 +1127,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 					update_post_meta( $order->get_id(), '_reepay_order', $handle );
 
-					$result = $this->api->request(
+					$result = reepay()->api( $this )->request(
 						'POST',
 						'https://checkout-api.reepay.com/v1/session/charge',
 						$params
@@ -1303,7 +1292,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			// Get Secret
 			if ( ! ( $secret = get_transient( 'reepay_webhook_settings_secret' ) ) ) {
-				$result = $this->api->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
+				$result = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
 				if ( is_wp_error( $result ) ) {
 					/** @var WP_Error $result */
 					throw new Exception( $result->get_error_message(), $result->get_error_code() );

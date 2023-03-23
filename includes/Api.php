@@ -1,21 +1,25 @@
 <?php
 
+namespace Reepay\Checkout;
+
+use Exception;
 use Reepay\Checkout\Gateways\ReepayGateway;
+use WC_Log_Levels;
+use WC_Order;
+use WC_Reepay_Instant_Settle;
+use WC_Reepay_Log;
+use WC_Reepay_Order_Statuses;
+use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
 
-class WC_Reepay_Api {
+class Api {
 	use WC_Reepay_Log;
 
 	/**
 	 * @var string
 	 */
 	private $logging_source;
-
-	/**
-	 * @var ReepayGateway
-	 */
-	private $gateway;
 
 	/**
 	 * @var bool
@@ -25,11 +29,19 @@ class WC_Reepay_Api {
 	/**
 	 * Constructor.
 	 *
-	 * @param ReepayGateway $gateway
+	 * @param ReepayGateway|string $source
 	 */
-	public function __construct( ReepayGateway $gateway ) {
-		$this->gateway        = $gateway;
-		$this->logging_source = $gateway->id;
+	public function __construct( $source ) {
+		$this->set_logging_source( $source );
+	}
+
+	/**
+	 * Set logging source.
+	 *
+	 * @param ReepayGateway|string $source
+	 */
+	public function set_logging_source( $source ) {
+		$this->logging_source = is_string( $source ) ? $source : $source->id;
 	}
 
 	/**
@@ -43,11 +55,11 @@ class WC_Reepay_Api {
 	 */
 	public function request( $method, $url, $params = array() ) {
 		$start = microtime( true );
-		if ( $this->gateway->debug === 'yes' ) {
+		if ( reepay()->get_setting( 'debug' ) === 'yes' ) {
 			$this->log( sprintf( 'Request: %s %s %s', $method, $url, json_encode( $params, JSON_PRETTY_PRINT ) ) );
 		}
 
-		$key = $this->gateway->test_mode === 'yes' ? $this->gateway->private_key_test : $this->gateway->private_key;
+		$key = reepay()->get_setting('test_mode') === 'yes' ? reepay()->get_setting('private_key_test') : reepay()->get_setting('private_key');
 
 		$args = array(
 			'headers' => array(
@@ -68,7 +80,7 @@ class WC_Reepay_Api {
 		$http_code = wp_remote_retrieve_response_code( $response );
 		$code      = (int) ( intval( $http_code ) / 100 );
 
-		if ( $this->gateway->debug === 'yes' ) {
+		if ( reepay()->get_setting( 'debug' ) === 'yes' ) {
 			$this->log(
 				print_r(
 					array(
@@ -427,10 +439,9 @@ class WC_Reepay_Api {
 
 			if ( is_wp_error( $result ) ) {
 
-				if ( 'yes' == $this->gateway->handle_failover &&
+				if ( 'yes' === reepay()->get_setting( 'handle_failover' ) &&
 					 ( in_array( $result->get_error_code(), array( 105, 79, 29, 99, 72 ) ) )
 				) {
-
 					// Workaround: handle already exists lets create another with unique handle
 					$params['handle'] = rp_get_order_handle( $order, true );
 					$result           = $this->request( 'POST', 'https://api.reepay.com/v1/charge', $params );

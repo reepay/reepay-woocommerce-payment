@@ -11,7 +11,9 @@
  * WC tested up to: 7.5.0
  */
 
+use Reepay\Checkout\Api;
 use Reepay\Checkout\Gateways;
+use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\PluginLifeCycle;
 use Reepay\Checkout\WoocommerceExists;
 
@@ -105,8 +107,6 @@ class WC_ReepayCheckout {
 	 * @param  string $name  Setting key.
 	 *
 	 * @return string|null
-	 *
-	 * @ToDo add gateway settings
 	 */
 	public function get_setting( $name ) {
 		if ( empty( $this->settings ) ) {
@@ -179,6 +179,26 @@ class WC_ReepayCheckout {
 	public function is_order_paid_via_reepay( $order ) {
 		return in_array( $order->get_payment_method(), Gateways::PAYMENT_METHODS );
 	}
+
+	/**
+	 * Set logging source.
+	 *
+	 * @param ReepayGateway|string $source
+     *
+     * @return Api;
+	 */
+	public function api( $source ) {
+	    /** @var Api|null $api */
+	    static $api = null;
+
+		if ( is_null( $api ) ) {
+		    $api = new Api( $source );
+		} else {
+		    $api->set_logging_source( $source );
+        }
+
+		return $api;
+    }
 
 	public function includes() {
 		include_once dirname( __FILE__ ) . '/includes/functions.php';
