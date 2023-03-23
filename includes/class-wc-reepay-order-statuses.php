@@ -20,90 +20,27 @@ class WC_Reepay_Order_Statuses {
 		define( 'REEPAY_STATUS_AUTHORIZED', isset( $settings['status_authorized'] ) ? str_replace( 'wc-', '', $settings['status_authorized'] ) : 'on-hold' );
 		define( 'REEPAY_STATUS_SETTLED', isset( $settings['status_settled'] ) ? str_replace( 'wc-', '', $settings['status_settled'] ) : 'processing' );
 
-		add_filter(
-			'woocommerce_settings_api_form_fields_reepay_checkout',
-			array(
-				$this,
-				'form_fields',
-			),
-			10,
-			2
-		);
+		add_filter( 'woocommerce_settings_api_form_fields_reepay_checkout', array( $this, 'form_fields', ), 10, 2 );
 
-		// Add statuses for payment complete
-		add_filter(
-			'woocommerce_valid_order_statuses_for_payment_complete',
-			array(
-				$this,
-				'add_valid_order_statuses',
-			),
-			10,
-			2
-		);
+		add_filter( 'woocommerce_valid_order_statuses_for_payment_complete', array( $this, 'add_valid_order_statuses', ), 10, 2 );
 
-		add_filter(
-			'woocommerce_payment_complete_order_status',
-			array(
-				$this,
-				'payment_complete_order_status',
-			),
-			10,
-			3
-		);
+		add_filter( 'woocommerce_payment_complete_order_status', array( $this, 'payment_complete_order_status', ), 10, 3 );
 
 		add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 10 );
 
 		add_action( 'woocommerce_payment_complete', array( $this, 'payment_complete' ), 10, 1 );
 
-		add_filter(
-			'reepay_authorized_order_status',
-			array(
-				$this,
-				'reepay_authorized_order_status',
-			),
-			10,
-			2
-		);
+		add_filter( 'reepay_authorized_order_status', array( $this, 'reepay_authorized_order_status', ), 10, 2 );
 
-		add_filter(
-			'reepay_settled_order_status',
-			array(
-				$this,
-				'reepay_settled_order_status',
-			),
-			10,
-			2
-		);
+		add_filter( 'reepay_settled_order_status', array( $this, 'reepay_settled_order_status', ), 10, 2 );
 
-		add_filter(
-			'wc_order_is_editable',
-			array(
-				$this,
-				'is_editable',
-			),
-			10,
-			2
-		);
+		add_filter( 'wc_order_is_editable', array( $this, 'is_editable', ), 10, 2 );
 
-		add_filter(
-			'woocommerce_order_is_paid',
-			array(
-				$this,
-				'is_paid',
-			),
-			10,
-			2
-		);
+		add_filter( 'woocommerce_order_is_paid', array( $this, 'is_paid', ), 10, 2 );
 
-		add_filter(
-			'woocommerce_cancel_unpaid_order',
-			array(
-				$this,
-				'cancel_unpaid_order',
-			),
-			10,
-			2
-		);
+		add_filter( 'woocommerce_cancel_unpaid_order', array( $this, 'cancel_unpaid_order', ), 10, 2 );
+
+		add_action( 'woocommerce_order_status_changed', array( $this, 'order_status_changed' ), 10, 4 );
 	}
 
 	/**
@@ -118,15 +55,7 @@ class WC_Reepay_Order_Statuses {
 		$statuses = wc_get_order_statuses();
 		foreach ( $statuses as $status => $label ) {
 			$status = str_replace( 'wc-', '', $status );
-			add_action(
-				'woocommerce_payment_complete_order_status_' . $status,
-				array(
-					$this,
-					'payment_complete',
-				),
-				10,
-				1
-			);
+			add_action( 'woocommerce_payment_complete_order_status_' . $status, array( $this, 'payment_complete', ), 10, 1 );
 		}
 	}
 
@@ -481,6 +410,81 @@ class WC_Reepay_Order_Statuses {
 		return $maybe_cancel;
 	}
 
+	/**
+	 * Order Status Change: Capture/Cancel
+	 *
+	 * @param $order_id
+	 * @param $from
+	 * @param $to
+	 * @param WC_Order $order
+	 */
+	public function order_status_changed( $order_id, $from, $to, $order ) {
+		if ( ! reepay()->is_order_paid_via_reepay( $order ) ) {
+			return;
+		}
+
+		if ( order_contains_subscription( $order ) ) {
+			return;
+		}
+
+		$gateway = rp_get_payment_method( $order );
+		if ( ! $gateway ) {
+			return;
+		}
+
+		switch ( $to ) {
+			case 'cancelled':
+				// Cancel payment
+				if ( $gateway->can_cancel( $order ) ) {
+					try {
+						$gateway->cancel_payment( $order );
+					} catch ( Exception $e ) {
+						$message = $e->getMessage();
+						WC_Admin_Meta_Boxes::add_error( $message );
+
+						// Rollback
+						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'reepay-checkout-gateway' ), $message ) );
+					}
+				}
+				break;
+			case REEPAY_STATUS_SETTLED:
+				// Capture payment
+				$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
+				if ( ( 1 == $value || false === $value ) && $gateway->can_capture( $order ) ) {
+					try {
+						$order_data = $gateway->api->get_invoice_data( $order );
+						if ( is_wp_error( $order_data ) ) {
+							throw new Exception( $order_data->get_error_message() );
+						}
+
+						$amount_to_capture = rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order->get_currency() );
+						$items_to_capture  = WC_Reepay_Instant_Settle::calculate_instant_settle( $order )->items;
+
+						if ( ! empty( $items_to_capture ) && $amount_to_capture > 0 ) {
+							$gateway->capture_payment( $order, $amount_to_capture );
+						}
+					} catch ( Exception $e ) {
+						$message = $e->getMessage();
+						WC_Admin_Meta_Boxes::add_error(
+							sprintf(
+								__( 'Error with order <a href="%1$s">#%2$u</a>. View order notes for more info', 'reepay-checkout-gateway' ),
+								$order->get_edit_order_url(),
+								$order_id
+							)
+						);
+
+						// Rollback
+						$order->update_status(
+							$from,
+							sprintf( __( 'Order status rollback. %s', 'reepay-checkout-gateway' ), $message )
+						);
+					}
+				}
+				break;
+			default:
+				// no break
+		}
+	}
 }
 
 new WC_Reepay_Order_Statuses();

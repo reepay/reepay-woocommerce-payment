@@ -16,12 +16,7 @@ class WC_Reepay_Subscriptions {
 		// Add payment token when subscription was created
 		add_action( 'woocommerce_payment_token_added_to_order', array( $this, 'add_payment_token_id' ), 10, 4 );
 		add_action( 'woocommerce_payment_complete', __CLASS__ . '::add_subscription_card_id', 10, 1 );
-		add_action(
-			'woocommerce_payment_complete_order_status_on-hold',
-			__CLASS__ . '::add_subscription_card_id',
-			10,
-			1
-		);
+		add_action( 'woocommerce_payment_complete_order_status_on-hold', __CLASS__ . '::add_subscription_card_id', 10, 1 );
 
 		// Subscriptions
 		add_filter( 'wcs_renewal_order_created', array( $this, 'renewal_order_created' ), 10, 2 );
@@ -30,28 +25,13 @@ class WC_Reepay_Subscriptions {
 			add_action( 'woocommerce_thankyou_' . $method, __CLASS__ . '::thankyou_page' );
 
 			// Update failing payment method
-			add_action(
-				'woocommerce_subscription_failing_payment_method_updated_' . $method,
-				__CLASS__ . '::update_failing_payment_method',
-				10,
-				1
-			);
+			add_action( 'woocommerce_subscription_failing_payment_method_updated_' . $method, __CLASS__ . '::update_failing_payment_method', 10, 1 );
 
 			// Charge the payment when a subscription payment is due
-			add_action(
-				'woocommerce_scheduled_subscription_payment_' . $method,
-				__CLASS__ . '::scheduled_subscription_payment',
-				10,
-				2
-			);
+			add_action( 'woocommerce_scheduled_subscription_payment_' . $method, __CLASS__ . '::scheduled_subscription_payment', 10, 2 );
 
 			// Charge the payment when a subscription payment is due
-			add_action(
-				'scheduled_subscription_payment_' . $method,
-				__CLASS__ . '::scheduled_subscription_payment',
-				10,
-				2
-			);
+			add_action( 'scheduled_subscription_payment_' . $method, __CLASS__ . '::scheduled_subscription_payment', 10, 2 );
 		}
 
 		// Don't transfer customer meta to resubscribe orders
@@ -61,12 +41,7 @@ class WC_Reepay_Subscriptions {
 		add_filter( 'woocommerce_subscription_payment_meta', __CLASS__ . '::add_subscription_payment_meta', 10, 2 );
 
 		// Validate the payment meta data
-		add_action(
-			'woocommerce_subscription_validate_payment_meta',
-			__CLASS__ . '::validate_subscription_payment_meta',
-			10,
-			3
-		);
+		add_action( 'woocommerce_subscription_validate_payment_meta', __CLASS__ . '::validate_subscription_payment_meta', 10, 3 );
 
 		// Save payment method meta data for the Subscription
 		add_action( 'wcs_save_other_payment_meta', __CLASS__ . '::save_subscription_payment_meta', 10, 4 );

@@ -8,59 +8,20 @@ class WC_Reepay_Admin {
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
 
 		// Add scripts and styles for admin
-		add_action( 'admin_enqueue_scripts', __CLASS__ . '::admin_enqueue_scripts' );
+		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts') );
 
 		// Add Admin Backend Actions
-		add_action(
-			'wp_ajax_reepay_capture',
-			array(
-				$this,
-				'ajax_reepay_capture',
-			)
-		);
+		add_action( 'wp_ajax_reepay_capture', array( $this, 'ajax_reepay_capture', ) );
 
-		add_action(
-			'wp_ajax_reepay_cancel',
-			array(
-				$this,
-				'ajax_reepay_cancel',
-			)
-		);
+		add_action( 'wp_ajax_reepay_cancel', array( $this, 'ajax_reepay_cancel', ) );
 
-		add_action(
-			'wp_ajax_reepay_refund',
-			array(
-				$this,
-				'ajax_reepay_refund',
-			)
-		);
+		add_action( 'wp_ajax_reepay_refund', array( $this, 'ajax_reepay_refund', ) );
 
-		add_action(
-			'wp_ajax_reepay_capture_partly',
-			array(
-				$this,
-				'ajax_reepay_capture_partly',
-			)
-		);
+		add_action( 'wp_ajax_reepay_capture_partly', array( $this, 'ajax_reepay_capture_partly', ) );
 
-		add_action(
-			'wp_ajax_reepay_refund_partly',
-			array(
-				$this,
-				'ajax_reepay_refund_partly',
-			)
-		);
+		add_action( 'wp_ajax_reepay_refund_partly', array( $this, 'ajax_reepay_refund_partly', ) );
 
-		add_action(
-			'wp_ajax_reepay_set_complete_settle_transient',
-			array(
-				$this,
-				'ajax_reepay_set_complete_settle_transient',
-			)
-		);
-
-		// Status Change Actions
-		add_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10, 4 );
+		add_action( 'wp_ajax_reepay_set_complete_settle_transient', array( $this, 'ajax_reepay_set_complete_settle_transient', ) );
 	}
 
 	/**
@@ -138,7 +99,7 @@ class WC_Reepay_Admin {
 	 *
 	 * @return void
 	 */
-	public static function admin_enqueue_scripts( $hook ) {
+	public function admin_enqueue_scripts( $hook ) {
 		if ( $hook === 'post.php' ) {
 			// Scripts
 			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
@@ -309,82 +270,6 @@ class WC_Reepay_Admin {
 
 		set_transient( 'reepay_order_complete_should_settle_' . $order_id, $settle_order, 60 );
 		wp_send_json_success( 'success' );
-	}
-
-	/**
-	 * Order Status Change: Capture/Cancel
-	 *
-	 * @param $order_id
-	 * @param $from
-	 * @param $to
-	 * @param WC_Order $order
-	 */
-	public static function order_status_changed( $order_id, $from, $to, $order ) {
-		if ( ! reepay()->is_order_paid_via_reepay( $order ) ) {
-			return;
-		}
-
-		if ( order_contains_subscription( $order ) ) {
-			return;
-		}
-
-		$gateway = rp_get_payment_method( $order );
-		if ( ! $gateway ) {
-			return;
-		}
-
-		switch ( $to ) {
-			case 'cancelled':
-				// Cancel payment
-				if ( $gateway->can_cancel( $order ) ) {
-					try {
-						$gateway->cancel_payment( $order );
-					} catch ( Exception $e ) {
-						$message = $e->getMessage();
-						WC_Admin_Meta_Boxes::add_error( $message );
-
-						// Rollback
-						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'reepay-checkout-gateway' ), $message ) );
-					}
-				}
-				break;
-			case REEPAY_STATUS_SETTLED:
-				// Capture payment
-				$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
-				if ( ( 1 == $value || false === $value ) && $gateway->can_capture( $order ) ) {
-					try {
-						$order_data = $gateway->api->get_invoice_data( $order );
-						if ( is_wp_error( $order_data ) ) {
-							throw new Exception( $order_data->get_error_message() );
-						}
-
-						$amount_to_capture = rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order->get_currency() );
-						$items_to_capture  = WC_Reepay_Instant_Settle::calculate_instant_settle( $order )->items;
-
-						if ( ! empty( $items_to_capture ) && $amount_to_capture > 0 ) {
-							$gateway->capture_payment( $order, $amount_to_capture );
-						}
-					} catch ( Exception $e ) {
-						$message = $e->getMessage();
-						WC_Admin_Meta_Boxes::add_error(
-							sprintf(
-								__( 'Error with order <a href="%1$s">#%2$u</a>. View order notes for more info', 'reepay-checkout-gateway' ),
-								$order->get_edit_order_url(),
-								$order_id
-							)
-						);
-
-						// Rollback
-						$order->update_status(
-							$from,
-							sprintf( __( 'Order status rollback. %s', 'reepay-checkout-gateway' ), $message )
-						);
-					}
-				}
-				break;
-			default:
-				// no break
-		}
 	}
 
 	/**

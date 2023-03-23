@@ -189,35 +189,15 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		// Cancel actions
 		add_action( 'wp_ajax_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
 		add_action( 'wp_ajax_nopriv_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
-		add_action(
-			'woocommerce_checkout_create_order_line_item',
-			array(
-				$this,
-				'action_checkout_create_order_line_item',
-			),
-			10,
-			4
-		);
+		add_action( 'woocommerce_checkout_create_order_line_item', array( $this, 'action_checkout_create_order_line_item', ), 10, 4 );
 
-		add_action(
-			'woocommerce_update_options_payment_gateways_' . $this->id,
-			array(
-				$this,
-				'process_admin_options',
-			)
-		);
+		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options', ) );
 
 		static $handler_added = false;
 
 		if ( ! $handler_added ) {
 			// Payment listener/API hook
-			add_action(
-				'woocommerce_api_' . strtolower( __CLASS__ ),
-				array(
-					$this,
-					'return_handler',
-				)
-			);
+			add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array( $this, 'return_handler', ) );
 
 			$handler_added = true;
 		}
