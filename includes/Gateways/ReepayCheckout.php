@@ -1,11 +1,19 @@
 <?php
 
+namespace Reepay\Checkout\Gateways;
+
+use Exception;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayMS;
+use WC_Gateway_Reepay;
+use WC_Reepay_Gateway_Statistics;
+use WC_Reepay_Instant_Settle;
+use WC_Reepay_Order_Statuses;
+use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
 
-class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
+class ReepayCheckout extends WC_Gateway_Reepay {
 
 	/**
 	 * Payment methods.
@@ -959,6 +967,3 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 	}
 
 }
-
-// Register Gateway
-WC_ReepayCheckout::register_gateway( 'WC_Gateway_Reepay_Checkout' );

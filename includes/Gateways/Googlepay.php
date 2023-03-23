@@ -1,8 +1,12 @@
 <?php
 
+namespace Reepay\Checkout\Gateways;
+
+use WC_Gateway_Reepay;
+
 defined( 'ABSPATH' ) || exit();
 
-class WC_Gateway_Reepay_Googlepay extends WC_Gateway_Reepay {
+class Googlepay extends WC_Gateway_Reepay {
 	/**
 	 * Logos
 	 *
@@ -25,7 +29,6 @@ class WC_Gateway_Reepay_Googlepay extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_googlepay';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Google Pay', 'reepay-checkout-gateway' );
-
 		$this->supports = array(
 			'products',
 			'refunds',
@@ -71,6 +74,3 @@ class WC_Gateway_Reepay_Googlepay extends WC_Gateway_Reepay {
 		);
 	}
 }
-
-// Register Gateway
-WC_ReepayCheckout::register_gateway( 'WC_Gateway_Reepay_Googlepay' );

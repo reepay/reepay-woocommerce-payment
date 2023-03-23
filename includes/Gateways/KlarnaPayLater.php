@@ -1,8 +1,12 @@
 <?php
 
+namespace Reepay\Checkout\Gateways;
+
+use WC_Gateway_Reepay;
+
 defined( 'ABSPATH' ) || exit();
 
-class WC_Gateway_Reepay_Klarna_Pay_Now extends WC_Gateway_Reepay {
+class KlarnaPayLater extends WC_Gateway_Reepay {
 	/**
 	 * Logos
 	 *
@@ -18,13 +22,13 @@ class WC_Gateway_Reepay_Klarna_Pay_Now extends WC_Gateway_Reepay {
 	 * @var array|null
 	 */
 	public $payment_methods = array(
-		'klarna_pay_now',
+		'klarna_pay_later',
 	);
 
 	public function __construct() {
-		$this->id           = 'reepay_klarna_pay_now';
+		$this->id           = 'reepay_klarna_pay_later';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Reepay - Klarna Pay Now', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Reepay - Klarna Pay Later', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',
@@ -59,17 +63,14 @@ class WC_Gateway_Reepay_Klarna_Pay_Now extends WC_Gateway_Reepay {
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Klarna Pay Now', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - Klarna Pay Later', 'reepay-checkout-gateway' ),
 			),
 			'description'          => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Klarna Pay Now', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - Klarna Pay Later', 'reepay-checkout-gateway' ),
 			),
 		);
 	}
 }
-
-// Register Gateway
-WC_ReepayCheckout::register_gateway( 'WC_Gateway_Reepay_Klarna_Pay_Now' );

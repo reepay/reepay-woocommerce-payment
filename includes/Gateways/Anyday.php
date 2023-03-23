@@ -1,15 +1,19 @@
 <?php
 
+namespace Reepay\Checkout\Gateways;
+
+use WC_Gateway_Reepay;
+
 defined( 'ABSPATH' ) || exit();
 
-class WC_Gateway_Reepay_Mobilepay extends WC_Gateway_Reepay {
+class Anyday extends WC_Gateway_Reepay {
 	/**
 	 * Logos
 	 *
 	 * @var array
 	 */
 	public $logos = array(
-		'mobilepay',
+		'anyday',
 	);
 
 	/**
@@ -18,23 +22,33 @@ class WC_Gateway_Reepay_Mobilepay extends WC_Gateway_Reepay {
 	 * @var array|null
 	 */
 	public $payment_methods = array(
-		'mobilepay',
+		'anyday',
 	);
 
 	public function __construct() {
-		$this->id           = 'reepay_mobilepay';
+		$this->id           = 'reepay_anyday';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Reepay - Mobilepay', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Reepay - Anyday', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'mobilepay' );
+		$this->logos        = array( 'anyday' );
 
 		parent::__construct();
 
 		// Load setting from parent method
 		$this->apply_parent_settings();
+	}
+
+	public function is_available() {
+		if ( ! empty( WC()->cart ) ) {
+			if ( WC()->cart->get_total( '' ) < 300 && get_option( 'woocommerce_currency' ) != 'DKK' ) {
+				return false;
+			}
+		}
+
+		return parent::is_available();
 	}
 
 	/**
@@ -43,7 +57,7 @@ class WC_Gateway_Reepay_Mobilepay extends WC_Gateway_Reepay {
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'is_reepay_configured' => array(
-				'title'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
+				'title'   => __( 'Status in reepay Admin', 'reepay-checkout-gateway' ),
 				'type'    => 'gateway_status',
 				'label'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
 				'default' => $this->test_mode,
@@ -59,17 +73,14 @@ class WC_Gateway_Reepay_Mobilepay extends WC_Gateway_Reepay {
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Mobilepay', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - Anyday', 'reepay-checkout-gateway' ),
 			),
 			'description'          => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Mobilepay', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - Anyday', 'reepay-checkout-gateway' ),
 			),
 		);
 	}
 }
-
-// Register Gateway
-WC_ReepayCheckout::register_gateway( 'WC_Gateway_Reepay_Mobilepay' );

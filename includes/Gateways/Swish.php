@@ -1,16 +1,19 @@
 <?php
 
+namespace Reepay\Checkout\Gateways;
+
+use WC_Gateway_Reepay;
+
 defined( 'ABSPATH' ) || exit();
 
-class WC_Gateway_Reepay_Vipps extends WC_Gateway_Reepay {
-
+class Swish extends WC_Gateway_Reepay {
 	/**
 	 * Logos
 	 *
 	 * @var array
 	 */
 	public $logos = array(
-		'vipps',
+		'swish',
 	);
 
 	/**
@@ -19,19 +22,18 @@ class WC_Gateway_Reepay_Vipps extends WC_Gateway_Reepay {
 	 * @var array|null
 	 */
 	public $payment_methods = array(
-		'vipps',
+		'swish',
 	);
 
 	public function __construct() {
-		$this->id           = 'reepay_vipps';
+		$this->id           = 'reepay_swish';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Reepay - Vipps', 'reepay-checkout-gateway' );
-
-		$this->supports = array(
+		$this->method_title = __( 'Reepay - Swish', 'reepay-checkout-gateway' );
+		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos    = array( 'vipps' );
+		$this->logos        = array( 'swish' );
 
 		parent::__construct();
 
@@ -61,18 +63,14 @@ class WC_Gateway_Reepay_Vipps extends WC_Gateway_Reepay {
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Vipps', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - Swish', 'reepay-checkout-gateway' ),
 			),
 			'description'          => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Vipps', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - Swish', 'reepay-checkout-gateway' ),
 			),
 		);
 	}
 }
-
-// Register Gateway
-WC_ReepayCheckout::register_gateway( 'WC_Gateway_Reepay_Vipps' );
-

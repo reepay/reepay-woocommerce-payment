@@ -1,5 +1,6 @@
 <?php
 
+use Reepay\Checkout\Gateways\ReepayCheckout;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayTrait;
 
@@ -205,7 +206,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	}
 
 	public function check_is_active() {
-		$gateway   = new WC_Gateway_Reepay_Checkout();
+		$gateway   = new ReepayCheckout();
 		$this->api = new WC_Reepay_Api( $gateway );
 
 		$gateways_reepay = get_transient( 'gateways_reepay' );

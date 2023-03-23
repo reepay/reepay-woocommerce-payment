@@ -1,15 +1,19 @@
 <?php
 
+namespace Reepay\Checkout\Gateways;
+
+use WC_Gateway_Reepay;
+
 defined( 'ABSPATH' ) || exit();
 
-class WC_Gateway_Reepay_Viabill extends WC_Gateway_Reepay {
+class Resurs extends WC_Gateway_Reepay {
 	/**
 	 * Logos
 	 *
 	 * @var array
 	 */
 	public $logos = array(
-		'viabill',
+		'resurs',
 	);
 
 	/**
@@ -18,18 +22,18 @@ class WC_Gateway_Reepay_Viabill extends WC_Gateway_Reepay {
 	 * @var array|null
 	 */
 	public $payment_methods = array(
-		'viabill',
+		'resurs',
 	);
 
 	public function __construct() {
-		$this->id           = 'reepay_viabill';
+		$this->id           = 'reepay_resurs';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Reepay - ViaBill', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Reepay - Resurs Bank', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'viabill' );
+		$this->logos        = array( 'resurs' );
 
 		parent::__construct();
 
@@ -59,17 +63,14 @@ class WC_Gateway_Reepay_Viabill extends WC_Gateway_Reepay {
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - ViaBill', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - Resurs Bank', 'reepay-checkout-gateway' ),
 			),
 			'description'          => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - ViaBill', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - Resurs Bank', 'reepay-checkout-gateway' ),
 			),
 		);
 	}
 }
-
-// Register Gateway
-WC_ReepayCheckout::register_gateway( 'WC_Gateway_Reepay_Viabill' );

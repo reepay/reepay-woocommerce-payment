@@ -1,8 +1,12 @@
 <?php
 
+namespace Reepay\Checkout\Gateways;
+
+use WC_Gateway_Reepay;
+
 defined( 'ABSPATH' ) || exit();
 
-class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
+class MobilepaySubscriptions extends WC_Gateway_Reepay {
 	/**
 	 * Logos
 	 *
@@ -137,6 +141,3 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 		}
 	}
 }
-
-// Register Gateway
-WC_ReepayCheckout::register_gateway( 'WC_Gateway_Reepay_Mobilepay_Subscriptions' );

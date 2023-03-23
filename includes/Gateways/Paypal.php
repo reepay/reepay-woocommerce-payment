@@ -1,8 +1,12 @@
 <?php
 
+namespace Reepay\Checkout\Gateways;
+
+use WC_Gateway_Reepay;
+
 defined( 'ABSPATH' ) || exit();
 
-class WC_Gateway_Reepay_Paypal extends WC_Gateway_Reepay {
+class Paypal extends WC_Gateway_Reepay {
 	/**
 	 * Logos
 	 *
@@ -70,6 +74,3 @@ class WC_Gateway_Reepay_Paypal extends WC_Gateway_Reepay {
 		);
 	}
 }
-
-// Register Gateway
-WC_ReepayCheckout::register_gateway( 'WC_Gateway_Reepay_Paypal' );

@@ -6,8 +6,8 @@ use Automattic\WooCommerce\Blocks\Package;
 use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
 use Automattic\WooCommerce\Blocks\Registry\Container;
 use Exception;
+use Reepay\Checkout\Gateways;
 use WC_Reepay_Log;
-use WC_ReepayCheckout;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -29,7 +29,7 @@ class WooBlocksIntegration {
 	 * @param PaymentMethodRegistry $payment_method_registry Payment method registry instance.
 	 */
 	public function register_payment_method_integrations( PaymentMethodRegistry $payment_method_registry ) {
-		foreach (WC_ReepayCheckout::PAYMENT_METHODS as $payment_method) {
+		foreach (Gateways::PAYMENT_METHODS as $payment_method) {
 			Package::container()->register(
 				$payment_method,
 				function( Container $container ) use ( $payment_method ){

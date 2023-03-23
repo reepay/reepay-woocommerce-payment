@@ -11,6 +11,7 @@
  * WC tested up to: 7.5.0
  */
 
+use Reepay\Checkout\Gateways;
 use Reepay\Checkout\PluginLifeCycle;
 use Reepay\Checkout\WoocommerceExists;
 
@@ -43,26 +44,6 @@ class WC_ReepayCheckout {
 	 * @var array
 	 */
 	private $settings = array();
-
-	/**
-     * List of payment method ids
-     *
-	 * @var array
-	 */
-	const PAYMENT_METHODS = array(
-		'reepay_checkout',
-		'reepay_applepay',
-		'reepay_klarna_pay_later',
-		'reepay_klarna_pay_now',
-		'reepay_mobilepay',
-		'reepay_paypal',
-		'reepay_resurs',
-		'reepay_swish',
-		'reepay_viabill',
-		'reepay_googlepay',
-		'reepay_vipps',
-		'reepay_mobilepay_subscriptions',
-	);
 
 	/**
 	 * Constructor
@@ -160,7 +141,7 @@ class WC_ReepayCheckout {
 	 * @param string $payment_method
 	 */
 	public function is_reepay_payment_method( $payment_method ) {
-		return in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS );
+		return in_array( $payment_method, Gateways::PAYMENT_METHODS );
 	}
 
 	/**
@@ -169,7 +150,7 @@ class WC_ReepayCheckout {
 	 * @param WC_Order $order
 	 */
 	public function is_order_paid_via_reepay( $order ) {
-		return in_array( $order->get_payment_method(), WC_ReepayCheckout::PAYMENT_METHODS );
+		return in_array( $order->get_payment_method(), Gateways::PAYMENT_METHODS );
 	}
 
 	public function includes() {
@@ -212,20 +193,9 @@ class WC_ReepayCheckout {
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-thankyou.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-subscriptions.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-admin.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-checkout.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-mobilepay.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-viabill.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-pay-later.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-pay-now.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-resurs.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-swish.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-paypal.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-apple-pay.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-anyday.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-googlepay.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-vipps.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-ms.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-slice-it.php';
+
+		new Reepay\Checkout\Gateways();
+
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-meta-boxes.php';
 
 		new Reepay\Checkout\Integrations\Main();
@@ -301,36 +271,6 @@ class WC_ReepayCheckout {
 
 			<?php
 		endif;
-	}
-
-	/**
-	 * Register payment gateway
-	 *
-	 * @param string $class_name
-	 */
-	public static function register_gateway( $class_name ) {
-		global $gateways;
-
-		if ( ! $gateways ) {
-			$gateways = array();
-		}
-
-		if ( ! isset( $gateways[ $class_name ] ) ) {
-			// Initialize instance
-			if ( $gateway = new $class_name() ) {
-				$gateways[] = $class_name;
-
-				// Register gateway instance
-				add_filter(
-					'woocommerce_payment_gateways',
-					function ( $methods ) use ( $gateway ) {
-						$methods[] = $gateway;
-
-						return $methods;
-					}
-				);
-			}
-		}
 	}
 
 	/**

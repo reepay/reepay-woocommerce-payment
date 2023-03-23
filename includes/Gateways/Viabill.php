@@ -1,15 +1,19 @@
 <?php
 
+namespace Reepay\Checkout\Gateways;
+
+use WC_Gateway_Reepay;
+
 defined( 'ABSPATH' ) || exit();
 
-class WC_Gateway_Reepay_Klarna_Pay_Later extends WC_Gateway_Reepay {
+class Viabill extends WC_Gateway_Reepay {
 	/**
 	 * Logos
 	 *
 	 * @var array
 	 */
 	public $logos = array(
-		'klarna',
+		'viabill',
 	);
 
 	/**
@@ -18,18 +22,18 @@ class WC_Gateway_Reepay_Klarna_Pay_Later extends WC_Gateway_Reepay {
 	 * @var array|null
 	 */
 	public $payment_methods = array(
-		'klarna_pay_later',
+		'viabill',
 	);
 
 	public function __construct() {
-		$this->id           = 'reepay_klarna_pay_later';
+		$this->id           = 'reepay_viabill';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Reepay - Klarna Pay Later', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Reepay - ViaBill', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'klarna' );
+		$this->logos        = array( 'viabill' );
 
 		parent::__construct();
 
@@ -59,17 +63,14 @@ class WC_Gateway_Reepay_Klarna_Pay_Later extends WC_Gateway_Reepay {
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Klarna Pay Later', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - ViaBill', 'reepay-checkout-gateway' ),
 			),
 			'description'          => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Klarna Pay Later', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - ViaBill', 'reepay-checkout-gateway' ),
 			),
 		);
 	}
 }
-
-// Register Gateway
-WC_ReepayCheckout::register_gateway( 'WC_Gateway_Reepay_Klarna_Pay_Later' );

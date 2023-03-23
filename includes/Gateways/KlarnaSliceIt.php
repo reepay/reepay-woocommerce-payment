@@ -1,15 +1,19 @@
 <?php
 
+namespace Reepay\Checkout\Gateways;
+
+use WC_Gateway_Reepay;
+
 defined( 'ABSPATH' ) || exit();
 
-class WC_Gateway_Reepay_Swish extends WC_Gateway_Reepay {
+class KlarnaSliceIt extends WC_Gateway_Reepay {
 	/**
 	 * Logos
 	 *
 	 * @var array
 	 */
 	public $logos = array(
-		'swish',
+		'klarna',
 	);
 
 	/**
@@ -18,18 +22,18 @@ class WC_Gateway_Reepay_Swish extends WC_Gateway_Reepay {
 	 * @var array|null
 	 */
 	public $payment_methods = array(
-		'swish',
+		'klarna_slice_it',
 	);
 
 	public function __construct() {
-		$this->id           = 'reepay_swish';
+		$this->id           = 'reepay_klarna_slice_it';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Reepay - Swish', 'reepay-checkout-gateway' );
-		$this->supports     = array(
+		$this->method_title = __( 'Reepay - Klarna Slice It', 'reepay-checkout-gateway' );
+		$this->supports = array(
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'swish' );
+		$this->logos    = array( 'klarna' );
 
 		parent::__construct();
 
@@ -59,17 +63,15 @@ class WC_Gateway_Reepay_Swish extends WC_Gateway_Reepay {
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Swish', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - Klarna Slice It', 'reepay-checkout-gateway' ),
 			),
 			'description'          => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Swish', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - Klarna Slice it', 'reepay-checkout-gateway' ),
 			),
 		);
 	}
-}
 
-// Register Gateway
-WC_ReepayCheckout::register_gateway( 'WC_Gateway_Reepay_Swish' );
+}

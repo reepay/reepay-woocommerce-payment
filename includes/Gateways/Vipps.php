@@ -1,15 +1,19 @@
 <?php
 
+namespace Reepay\Checkout\Gateways;
+
+use WC_Gateway_Reepay;
+
 defined( 'ABSPATH' ) || exit();
 
-class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
+class Vipps extends WC_Gateway_Reepay {
 	/**
 	 * Logos
 	 *
 	 * @var array
 	 */
 	public $logos = array(
-		'applepay',
+		'vipps',
 	);
 
 	/**
@@ -18,18 +22,18 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 	 * @var array|null
 	 */
 	public $payment_methods = array(
-		'applepay',
+		'vipps',
 	);
 
 	public function __construct() {
-		$this->id           = 'reepay_applepay';
+		$this->id           = 'reepay_vipps';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Reepay - Apple Pay', 'reepay-checkout-gateway' );
-		$this->supports     = array(
+		$this->method_title = __( 'Reepay - Vipps', 'reepay-checkout-gateway' );
+		$this->supports = array(
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'applepay' );
+		$this->logos    = array( 'vipps' );
 
 		parent::__construct();
 
@@ -43,7 +47,7 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'is_reepay_configured' => array(
-				'title'   => __( 'Status in reepay Admin', 'reepay-checkout-gateway' ),
+				'title'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
 				'type'    => 'gateway_status',
 				'label'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
 				'default' => $this->test_mode,
@@ -59,17 +63,14 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Apple Pay', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - Vipps', 'reepay-checkout-gateway' ),
 			),
 			'description'          => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Apple Pay', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Reepay - Vipps', 'reepay-checkout-gateway' ),
 			),
 		);
 	}
 }
-
-// Register Gateway
-WC_ReepayCheckout::register_gateway( 'WC_Gateway_Reepay_Apple_Pay' );
