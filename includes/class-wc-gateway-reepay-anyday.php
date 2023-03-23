@@ -46,18 +46,16 @@ class WC_Gateway_Reepay_Anyday extends WC_Gateway_Reepay {
 
 		// Load setting from parent method
 		$this->apply_parent_settings();
-
-		add_filter( 'woocommerce_available_payment_gateways', array( $this, 'filter_available_payment_gateways' ) );
 	}
 
-	public function filter_available_payment_gateways( $available_gateways ) {
+	public function is_available() {
 		if ( ! empty( WC()->cart ) ) {
 			if ( WC()->cart->get_total( '' ) < 300 && get_option( 'woocommerce_currency' ) != 'DKK' ) {
-				unset( $available_gateways[ $this->id ] );
+				return false;
 			}
 		}
 
-		return $available_gateways;
+		return parent::is_available();
 	}
 
 	/**
