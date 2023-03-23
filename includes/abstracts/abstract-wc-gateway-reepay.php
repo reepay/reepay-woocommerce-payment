@@ -4,8 +4,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Payment_Gateway_Reepay_Interface {
+abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	use WC_Reepay_Token;
+
+	const METHOD_WINDOW = 'WINDOW';
+
+	const METHOD_OVERLAY = 'OVERLAY';
 
 	/**
 	 * @var WC_Reepay_Api
@@ -14,6 +18,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 	/**
 	 * Test Mode
+	 *
 	 * @var string
 	 */
 	public $test_mode = 'yes';
@@ -36,29 +41,33 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 	/**
 	 * Settle
+	 *
 	 * @var string
 	 */
 	public $settle = array(
 		WC_Reepay_Instant_Settle::SETTLE_VIRTUAL,
 		WC_Reepay_Instant_Settle::SETTLE_PHYSICAL,
 		WC_Reepay_Instant_Settle::SETTLE_RECURRING,
-		WC_Reepay_Instant_Settle::SETTLE_FEE
+		WC_Reepay_Instant_Settle::SETTLE_FEE,
 	);
 
 	/**
 	 * Debug Mode
+	 *
 	 * @var string
 	 */
 	public $debug = 'yes';
 
 	/**
 	 * Language
+	 *
 	 * @var string
 	 */
 	public $language = 'en_US';
 
 	/**
 	 * Logos
+	 *
 	 * @var array
 	 */
 	public $logos = array(
@@ -74,23 +83,26 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		'klarna-pay-later',
 		'klarna-pay-now',
 		'klarna',
-		'resursbank'
+		'resursbank',
 	);
 
 	/**
 	 * Payment Type
+	 *
 	 * @var string
 	 */
 	public $payment_type = 'OVERLAY';
 
 	/**
 	 * Save CC
+	 *
 	 * @var string
 	 */
 	public $save_cc = 'yes';
 
 	/**
 	 * Logo Height
+	 *
 	 * @var string
 	 */
 	public $logo_height = '';
@@ -107,18 +119,21 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 	/**
 	 * Email address for notification about failed webhooks
+	 *
 	 * @var string
 	 */
 	public $failed_webhooks_email = '';
 
 	/**
 	 * If webhooks have been configured
+	 *
 	 * @var string
 	 */
 	public $is_webhook_configured = 'no';
 
 	/**
 	 * Order handle failover.
+	 *
 	 * @var string
 	 */
 	public $handle_failover = 'yes';
@@ -135,9 +150,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		$this->init_settings();
 
 		// Define user set variables
-		$this->enabled     = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title       = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->enabled     = $this->settings['enabled'] ?? 'no';
+		$this->title       = $this->settings['title'] ?? 'no';
+		$this->description = $this->settings['description'] ?? 'no';
 
 		$this->api = new WC_Reepay_Api( $this );
 
@@ -152,18 +167,32 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		// Cancel actions
 		add_action( 'wp_ajax_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
 		add_action( 'wp_ajax_nopriv_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
+		add_action( 'woocommerce_checkout_create_order_line_item', array(
+			$this,
+			'action_checkout_create_order_line_item'
+		), 10, 4 );
 
 		static $handler_added = false;
 
 		if ( ! $handler_added ) {
 			// Payment listener/API hook
-			add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array(
-				$this,
-				'return_handler'
-			) );
+			add_action(
+				'woocommerce_api_' . strtolower( __CLASS__ ),
+				array(
+					$this,
+					'return_handler',
+				)
+			);
 
 			$handler_added = true;
 		}
+	}
+
+	function action_checkout_create_order_line_item( $item, $cart_item_key, $values, $order ) {
+		$line_discount     = $values['line_subtotal'] - $values['line_total'];
+		$line_discount_tax = $values['line_subtotal_tax'] - $values['line_tax'];
+
+		$item->update_meta_data( '_line_discount', $line_discount + $line_discount_tax );
 	}
 
 	public function check_is_active() {
@@ -177,7 +206,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		}
 
 		$current_name = str_replace( 'reepay_', '', $this->id );
-
 
 		if ( ! empty( $gateways_reepay ) ) {
 			foreach ( $gateways_reepay as $app ) {
@@ -221,7 +249,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			return $account_info;
 		}
 
-		return [];
+		return array();
 
 	}
 
@@ -248,7 +276,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			}
 		}
 
-
 		return ! empty( $request ) ? $default_wc_api_url . $request . '/' : $default_wc_api_url;
 	}
 
@@ -273,19 +300,18 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$webhook_url = $default_wc_api_url . 'WC_Gateway_Reepay/';
 			$alert_email = '';
 			if ( ! empty( $this->settings['failed_webhooks_email'] ) &&
-			     is_email( $this->settings['failed_webhooks_email'] )
+				 is_email( $this->settings['failed_webhooks_email'] )
 			) {
 				$alert_email = $this->settings['failed_webhooks_email'];
 			}
 
-
 			$exist_waste_urls = false;
 
-			$urls = [];
+			$urls = array();
 
 			foreach ( $request['urls'] as $url ) {
 				if ( strpos( $url, $default_wc_api_url ) === false ||
-				     $url === $webhook_url ) {
+					 $url === $webhook_url ) {
 					$urls[] = $url;
 				} else {
 					$exist_waste_urls = true;
@@ -294,8 +320,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 			// Verify the webhook settings
 			if ( ! empty( $urls ) && in_array( $webhook_url, $urls )
-			     && ( empty( $alert_email ) || in_array( $alert_email, $alert_emails ) )
-			     && ! $exist_waste_urls
+				 && ( empty( $alert_email ) || in_array( $alert_email, $alert_emails ) )
+				 && ! $exist_waste_urls
 			) {
 				// Webhook has been configured before
 				$this->update_option( 'is_webhook_configured', 'yes' );
@@ -317,10 +343,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				$data = array(
 					'urls'         => array_unique( $urls ),
 					'disabled'     => false,
-					'alert_emails' => array_unique( $alert_emails )
+					'alert_emails' => array_unique( $alert_emails ),
 				);
-
-				//$this->test_mode = 'yes';
 
 				$request = $this->api->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
 				if ( is_wp_error( $request ) ) {
@@ -357,8 +381,10 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	/**
 	 * Generate Gateway Status HTML.
 	 *
+	 * @see WC_Settings_API::generate_settings_html
+	 *
 	 * @param string $key Field key.
-	 * @param array $data Field data.
+	 * @param array  $data Field data.
 	 *
 	 * @return string
 	 */
@@ -373,39 +399,43 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		$data = wp_parse_args( $data, $defaults );
 
-		$enabled = $this->get_option( 'enabled' ) == 'yes';
-
 		$configured = $this->is_configured();
 
 		ob_start();
 		?>
-        <tr valign="top">
-            <th scope="row" class="titledesc">
-                <label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?><?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok.
-					?></label>
-            </th>
-            <td class="forminp">
-                <fieldset>
-                    <legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span>
-                    </legend>
+		<tr valign="top">
+			<th scope="row" class="titledesc">
+				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?>
+									   <?php
+										echo $this->get_tooltip_html( $data ); // WPCS: XSS ok.
+										?>
+					</label>
+			</th>
+			<td class="forminp">
+				<fieldset>
+					<legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span>
+					</legend>
 
-					<?php if ( $configured ): ?>
-                        <span style="color: green;">
+					<?php if ( $configured ) : ?>
+						<span style="color: green;">
 							<?php esc_html_e( 'Active', 'reepay-checkout-gateway' ); ?>
 						</span>
 					<?php else : ?>
-                        <span style="color: red;">
+						<span style="color: red;">
 							<?php esc_html_e( 'Inactive', 'reepay-checkout-gateway' ); ?>
 						</span>
 					<?php endif; ?>
 
-                    <input type="hidden" name="<?php echo esc_attr( $field_key ); ?>"
-                           id="<?php echo esc_attr( $field_key ); ?>"
-                           value="<?php echo esc_attr( $this->get_option( $key ) ); // WPCS: XSS ok.
-					       ?>"/>
-                </fieldset>
-            </td>
-        </tr>
+					<input type="hidden" name="<?php echo esc_attr( $field_key ); ?>"
+						   id="<?php echo esc_attr( $field_key ); ?>"
+						   value="
+						   <?php
+							echo esc_attr( $this->get_option( $key ) ); // WPCS: XSS ok.
+							?>
+						   "/>
+				</fieldset>
+			</td>
+		</tr>
 		<?php
 
 		return ob_get_clean();
@@ -415,7 +445,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	 * Check is Capture possible
 	 *
 	 * @param WC_Order|int $order
-	 * @param bool $amount
+	 * @param bool         $amount
 	 *
 	 * @return bool
 	 * @api
@@ -437,21 +467,21 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	}
 
 	/**
-	 * @param \WC_Order $order
-	 * @param bool $amount
+	 * @param WC_Order $order
 	 *
 	 * @return bool
+	 * @throws Exception
 	 * @api
 	 */
-	public function can_refund( $order, $amount = false ) {
-		return $this->api->can_refund( $order, $amount );
+	public function can_refund( $order ) {
+		return $this->api->can_refund( $order );
 	}
 
 	/**
 	 * Capture.
 	 *
 	 * @param WC_Order|int $order
-	 * @param float|false $amount
+	 * @param float|false  $amount
 	 *
 	 * @return void
 	 * @throws Exception
@@ -483,7 +513,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			throw new Exception( 'Order is already canceled' );
 		}
 
-		$result = $this->api->cancel( $order );
+		$result = $this->api->cancel_payment( $order );
 		if ( is_wp_error( $result ) ) {
 			throw new Exception( $result->get_error_message() );
 		}
@@ -498,8 +528,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	 * Refund
 	 *
 	 * @param WC_Order|int $order
-	 * @param bool $amount
-	 * @param string $reason
+	 * @param bool         $amount
+	 * @param string       $reason
 	 *
 	 * @return void
 	 * @throws Exception
@@ -510,11 +540,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		}
 
 		// Check if the order is cancelled - if so - then return as nothing has happened
-		if ( '1' === $order->get_meta( '_reepay_order_cancelled', true ) ) {
+		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
 			throw new Exception( 'Order is already canceled' );
 		}
 
-		if ( ! $this->can_refund( $order, $amount ) ) {
+		if ( ! $this->can_refund( $order ) ) {
 			throw new Exception( 'Payment can\'t be refunded.' );
 		}
 
@@ -532,20 +562,20 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$error   = get_transient( 'reepay_api_action_error' );
 			$success = get_transient( 'reepay_api_action_success' );
 
-			if ( ! empty( $error ) ):
+			if ( ! empty( $error ) ) :
 				?>
-                <div class="error notice is-dismissible">
-                    <p><?php echo esc_html( $error ); ?></p>
-                </div>
+				<div class="error notice is-dismissible">
+					<p><?php echo esc_html( $error ); ?></p>
+				</div>
 				<?php
 				set_transient( 'reepay_api_action_error', null, 1 );
 			endif;
 
-			if ( ! empty( $success ) ):
+			if ( ! empty( $success ) ) :
 				?>
-                <div class="notice-success notice is-dismissible">
-                    <p><?php echo esc_html( $success ); ?></p>
-                </div>
+				<div class="notice-success notice is-dismissible">
+					<p><?php echo esc_html( $success ); ?></p>
+				</div>
 				<?php
 				set_transient( 'reepay_api_action_success', null, 1 );
 			endif;
@@ -602,12 +632,18 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	public function enqueue_payment_scripts() {
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
-		wp_enqueue_script( 'reepay-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/dist/js/checkout-cdn.js', array(), false, false );
-		wp_enqueue_script( 'wc-gateway-reepay-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/dist/js/checkout' . $suffix . '.js', array(
-			'jquery',
-			'wc-checkout',
-			'reepay-checkout',
-		), filemtime( REEPAY_CHECKOUT_PLUGIN_PATH . 'assets/dist/js/checkout' . $suffix . '.js' ), true );
+		wp_enqueue_script( 'reepay-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/dist/js/checkout-cdn.js', array() );
+		wp_enqueue_script(
+			'wc-gateway-reepay-checkout',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/dist/js/checkout' . $suffix . '.js',
+			array(
+				'jquery',
+				'wc-checkout',
+				'reepay-checkout',
+			),
+			filemtime( REEPAY_CHECKOUT_PLUGIN_PATH . 'assets/dist/js/checkout' . $suffix . '.js' ),
+			true
+		);
 
 		// Localize the script with new data
 		$translation_array = array(
@@ -626,6 +662,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 	/**
 	 * If There are no payment fields show the description if set.
+	 *
 	 * @return void
 	 */
 	public function payment_fields() {
@@ -640,49 +677,48 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	}
 
 	/**
-	 * Validate frontend fields.
-	 *
-	 * Validate payment fields on the frontend.
-	 *
-	 * @return bool
-	 */
-	public function validate_fields() {
-		return true;
-	}
-
-
-	/**
 	 * Process Payment
 	 *
-	 * @param int $order_id
+	 * @param  int $order_id
 	 *
 	 * @return array|false
+	 * @throws Exception
 	 */
 	public function process_payment( $order_id ) {
+		$is_woo_blocks_checkout_request = false;
+
 		if ( 'application/json' === $_SERVER['CONTENT_TYPE'] ) {
+			$is_woo_blocks_checkout_request = true;
+
 			try {
 				$_POST = json_decode( file_get_contents( 'php://input' ), true );
 
-				foreach ( $_POST['payment_data'] ?? [] as $data ) {
+				foreach ( $_POST['payment_data'] ?? array() as $data ) {
 					if ( empty( $_POST[ $data['key'] ] ) ) {
 						$_POST[ $data['key'] ] = $data['value'];
 					}
 				}
-
 			} catch ( Exception $e ) {
-				return [
+				return array(
 					'messages' => __( 'Wrong Request. Try again', 'reepay-checkout-gateway' ),
-					'result'   => 'failure'
-				];
+					'result'   => 'failure',
+				);
 			}
 		}
 
-
 		$order    = wc_get_order( $order_id );
+
+		if ( $is_woo_blocks_checkout_request ) {
+			/**
+			 * Fix for zero total amount in woo blocks checkout integration
+			 */
+			$order->calculate_totals();
+		}
+
 		$token_id = isset( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) ? wc_clean( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) : 'new';
 
-		if ( isset( $_POST[ 'wc-' . $this->id . '-new-payment-method' ] ) && $_POST[ 'wc-' . $this->id . '-new-payment-method' ] !== false ) {
-			$maybe_save_card = (bool) $_POST[ 'wc-' . $this->id . '-new-payment-method' ];
+		if ( $token_id === 'new' && isset( $_POST[ 'wc-' . $this->id . '-new-payment-method' ] ) && $_POST[ 'wc-' . $this->id . '-new-payment-method' ] !== false ) {
+			$maybe_save_card =  $_POST[ 'wc-' . $this->id . '-new-payment-method' ] === 'true';
 		} else {
 			$maybe_save_card = wcs_cart_have_subscription();
 		}
@@ -727,7 +763,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 					return array(
 						'result'  => 'failure',
-						'message' => $e->getMessage()
+						'message' => $e->getMessage(),
 					);
 				}
 
@@ -741,14 +777,14 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 				return array(
 					'result'   => 'success',
-					'redirect' => $this->get_return_url( $order )
+					'redirect' => $this->get_return_url( $order ),
 				);
 			} else {
 				// Add new Card
-				$params = [
+				$params = array(
 					'locale'          => $this->get_language(),
 					'button_text'     => __( 'Add card', 'reepay-checkout-gateway' ),
-					'create_customer' => [
+					'create_customer' => array(
 						'test'        => $this->test_mode === 'yes',
 						'handle'      => $customer_handle,
 						'email'       => $order->get_billing_email(),
@@ -760,17 +796,17 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 						'vat'         => '',
 						'first_name'  => $order->get_billing_first_name(),
 						'last_name'   => $order->get_billing_last_name(),
-						'postal_code' => $order->get_billing_postcode()
-					],
+						'postal_code' => $order->get_billing_postcode(),
+					),
 					'accept_url'      => add_query_arg(
 						array(
 							'action' => 'reepay_finalize',
-							'key'    => $order->get_order_key()
+							'key'    => $order->get_order_key(),
 						),
 						admin_url( 'admin-ajax.php' )
 					),
-					'cancel_url'      => $order->get_cancel_order_url()
-				];
+					'cancel_url'      => $order->get_cancel_order_url(),
+				);
 
 				if ( ! empty( $country ) ) {
 					$params['create_customer']['country'] = $country;
@@ -789,13 +825,13 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 					/** @var WP_Error $result */
 					return array(
 						'result'  => 'failure',
-						'message' => $result->get_error_message()
+						'message' => $result->get_error_message(),
 					);
 				}
 
 				return array(
 					'result'   => 'success',
-					'redirect' => $result['url']
+					'redirect' => $result['url'],
 				);
 			}
 		}
@@ -803,26 +839,26 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		// Get Customer reference
 		$customer_handle = $this->api->get_customer_handle_order( $order->get_id() );
 
-		$data = [
+		$data = array(
 			'country'         => $country,
 			'customer_handle' => $customer_handle,
 			'test_mode'       => $this->test_mode,
 			'return_url'      => $this->get_return_url( $order ),
 			'language'        => $this->get_language(),
-		];
+		);
 
 		$order_handle = rp_get_order_handle( $order );
 
 		// Initialize Payment
-		$params = [
+		$params = array(
 			'locale'     => $this->get_language(),
 			'recurring'  => apply_filters( 'order_contains_reepay_subscription', $maybe_save_card || order_contains_subscription( $order ) || wcs_is_payment_change(), $order ),
-			'order'      => [
+			'order'      => array(
 				'handle'          => $order_handle,
 				'amount'          => $this->skip_order_lines === 'yes' ? rp_prepare_amount( $order->get_total(), $order->get_currency() ) : null,
 				'order_lines'     => $this->skip_order_lines === 'no' ? $this->get_order_items( $order ) : null,
 				'currency'        => $order->get_currency(),
-				'customer'        => [
+				'customer'        => array(
 					'test'        => $this->test_mode === 'yes',
 					'handle'      => $customer_handle,
 					'email'       => $order->get_billing_email(),
@@ -834,9 +870,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 					'vat'         => '',
 					'first_name'  => $order->get_billing_first_name(),
 					'last_name'   => $order->get_billing_last_name(),
-					'postal_code' => $order->get_billing_postcode()
-				],
-				'billing_address' => [
+					'postal_code' => $order->get_billing_postcode(),
+				),
+				'billing_address' => array(
 					'attention'         => '',
 					'email'             => $order->get_billing_email(),
 					'address'           => $order->get_billing_address_1(),
@@ -848,12 +884,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 					'first_name'        => $order->get_billing_first_name(),
 					'last_name'         => $order->get_billing_last_name(),
 					'postal_code'       => $order->get_billing_postcode(),
-					'state_or_province' => $order->get_billing_state()
-				],
-			],
+					'state_or_province' => $order->get_billing_state(),
+				),
+			),
 			'accept_url' => $this->get_return_url( $order ),
 			'cancel_url' => $order->get_cancel_order_url(),
-		];
+		);
 
 		// Get setting from parent method
 		$settings = get_option( 'woocommerce_reepay_checkout_settings' );
@@ -869,19 +905,13 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$params['order']['billing_address']['country'] = $country;
 		}
 
-		// skip order lines if calculated amount not equal to total order amount
-		/*if ($this->get_calculated_amount($order) != rp_prepare_amount($order->get_total(), $order->get_currency())) {
-			$params['order']['amount'] = rp_prepare_amount($order->get_total(), $order->get_currency());
-			$params['order']['order_lines'] = null;
-		}*/
-
 		if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
 			$params['payment_methods'] = $this->payment_methods;
 		}
 
 		if ( $order->needs_shipping_address() ) {
 
-			$params['order']['shipping_address'] = [
+			$params['order']['shipping_address'] = array(
 				'attention'         => '',
 				'email'             => $order->get_billing_email(),
 				'address'           => $order->get_shipping_address_1(),
@@ -893,20 +923,16 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				'first_name'        => $order->get_shipping_first_name(),
 				'last_name'         => $order->get_shipping_last_name(),
 				'postal_code'       => $order->get_shipping_postcode(),
-				'state_or_province' => $order->get_shipping_state()
-			];
+				'state_or_province' => $order->get_shipping_state(),
+			);
 
 			if ( ! empty( $country ) ) {
 				$params['order']['shipping_address']['country'] = $country;
 			}
-
-//			if (!strlen($params['order']['shipping_address'])) {
-//				$params['order']['shipping_address'] = $params['order']['billing_address'];
-//			}
 		}
 
 		if ( $order->get_payment_method() == 'reepay_mobilepay_subscriptions' ) {
-			$params['parameters']['mps_ttl'] = "PT24H";
+			$params['parameters']['mps_ttl'] = 'PT24H';
 		}
 
 		// Try to charge with saved token
@@ -961,7 +987,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 					return array(
 						'result'  => 'failure',
-						'message' => $e->getMessage()
+						'message' => $e->getMessage(),
 					);
 				}
 
@@ -973,20 +999,15 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 						return false;
 					} elseif ( ! empty( $method ) && $method['state'] == 'active' ) {
 
-						$data = [
+						$data = array(
 							'payment_method' => $method['id'],
 							'customer'       => $method['customer'],
-						];
+						);
 
 						do_action( 'reepay_create_subscription', $data, $order );
 					}
 				} elseif ( wcs_cart_have_subscription() ) {
-					try {
-						return $this->process_session_charge( $params, $order );
-					} catch ( Exception $e ) {
-						throw new Exception( $e->get_error_message(), $e->get_error_code() );
-					}
-
+					return $this->process_session_charge( $params, $order );
 				} else {
 					$order_lines = $this->skip_order_lines === 'no' ? $this->get_order_items( $order ) : null;
 					$amount      = $this->skip_order_lines === 'yes' ? $order->get_total() : null;
@@ -1013,7 +1034,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 			return array(
 				'result'   => 'success',
-				'redirect' => $this->get_return_url( $order )
+				'redirect' => $this->get_return_url( $order ),
 			);
 		}
 
@@ -1029,13 +1050,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			);
 		}
 
-
 		if ( class_exists( 'WC_Reepay_Renewals' ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
 			$have_sub = true;
 		}
 
-
-		$only_items_lines = [];
+		$only_items_lines = array();
 
 		foreach ( $order->get_items() as $order_item ) {
 			/** @var WC_Order_Item_Product $order_item */
@@ -1074,18 +1093,20 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				'reepay'             => $result,
 				'reepay_id'          => $result['id'],
 				'accept_url'         => $this->get_return_url( $order ),
-				'cancel_url'         => $order->get_cancel_order_url()
+				'cancel_url'         => $order->get_cancel_order_url(),
 			);
 		}
 
-		try {
-			return $this->process_session_charge( $params, $order );
-		} catch ( Exception $e ) {
-			throw new Exception( $e->get_error_message(), $e->get_error_code() );
-		}
-
+		return $this->process_session_charge( $params, $order );
 	}
 
+	/**
+	 * @param array    $params
+	 * @param WC_Order $order
+	 *
+	 * @return array
+	 * @throws Exception
+	 */
 	public function process_session_charge( $params, $order ) {
 
 		$result = $this->api->request(
@@ -1099,7 +1120,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			if ( 'yes' === $this->handle_failover ) {
 				// invoice with handle $params['order']['handle'] already exists and authorized/settled
 				// try to create another invoice with unique handle in format order-id-time()
-				if ( in_array( $result->get_error_code(), [ 105, 79, 29, 99, 72 ] ) ) {
+				if ( in_array( $result->get_error_code(), array( 105, 79, 29, 99, 72 ) ) ) {
 					$handle                    = rp_get_order_handle( $order, true );
 					$params['order']['handle'] = $handle;
 
@@ -1114,19 +1135,19 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 						/** @var WP_Error $result */
 						return array(
 							'result'  => 'failure',
-							'message' => $result->get_error_message()
+							'message' => $result->get_error_message(),
 						);
 					}
 				} else {
 					return array(
 						'result'  => 'failure',
-						'message' => $result->get_error_message()
+						'message' => $result->get_error_message(),
 					);
 				}
 			} else {
 				return array(
 					'result'  => 'failure',
-					'message' => $result->get_error_message()
+					'message' => $result->get_error_message(),
 				);
 			}
 		}
@@ -1139,7 +1160,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			if ( $this->payment_type === self::METHOD_OVERLAY ) {
 				return array(
 					'result'   => 'success',
-					'redirect' => sprintf( '#!reepay-pay?rid=%s&accept_url=%s&cancel_url=%s',
+					'redirect' => sprintf(
+						'#!reepay-pay?rid=%s&accept_url=%s&cancel_url=%s',
 						$result['id'],
 						html_entity_decode( $this->get_return_url( $order ) ),
 						html_entity_decode( $order->get_cancel_order_url() )
@@ -1164,9 +1186,12 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				'reepay_id'          => $result['id'],
 				'accept_url'         => $this->get_return_url( $order ),
 				'cancel_url'         => add_query_arg(
-					array( 'action' => 'reepay_cancel', 'order_id' => $order->get_id() ),
+					array(
+						'action'   => 'reepay_cancel',
+						'order_id' => $order->get_id(),
+					),
 					admin_url( 'admin-ajax.php' )
-				)
+				),
 			);
 		}
 	}
@@ -1190,7 +1215,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 		if ( 'failed' == $result['state'] ) {
 			if ( count( $result['transactions'] ) > 0 &&
-			     isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
+				 isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
 			) {
 				$message = $result['transactions'][0]['card_transaction']['acquirer_message'];
 
@@ -1205,7 +1230,10 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 
 	/**
 	 * Payment confirm action
+	 *
 	 * @return void
+	 * @throws Exception
+	 * @see WC_Reepay_Thankyou::thankyou_page()
 	 */
 	public function payment_confirm() {
 		if ( ! ( is_wc_endpoint_url( 'order-received' ) ) ) {
@@ -1244,12 +1272,11 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 		if ( ! empty( $_GET['payment_method'] ) && ( $maybe_save_card || order_contains_subscription( $order ) ) ) {
 			$this->reepay_save_token( $order, wc_clean( $_GET['payment_method'] ) );
 		}
-
-		// @see WC_Reepay_Thankyou::thankyou_page()
 	}
 
 	/**
 	 * WebHook Callback
+	 *
 	 * @return void
 	 */
 	public function return_handler() {
@@ -1291,33 +1318,6 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	}
 
 	/**
-	 * Enqueue the webhook processing.
-	 *
-	 * @param $raw_body
-	 *
-	 * @return void
-	 */
-	public function enqueue_webhook_processing( $raw_body ) {
-		$data = @json_decode( $raw_body, true );
-
-		// Create Background Process Task
-		$background_process = new WC_Background_Reepay_Queue();
-		$background_process->push_to_queue(
-			array(
-				'payment_method_id' => $this->id,
-				'webhook_data'      => $raw_body,
-			)
-		);
-		$background_process->save();
-
-		$this->log(
-			sprintf( 'WebHook: Task enqueued. ID: %s',
-				$data['id']
-			)
-		);
-	}
-
-	/**
 	 * Get parent settings
 	 *
 	 * @return array
@@ -1337,24 +1337,26 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$settings['private_key_test'] = apply_filters( 'woocommerce_reepay_private_key_test', $settings['private_key_test'] );
 		}
 
-		return array_merge( array(
-			'enabled'                 => 'no',
-			'private_key'             => $this->private_key,
-			'private_key_test'        => $this->private_key_test,
-			'test_mode'               => $this->test_mode,
-			'payment_type'            => $this->payment_type,
-			'payment_methods'         => $this->payment_methods,
-			'settle'                  => $this->settle,
-			'language'                => $this->language,
-			'save_cc'                 => $this->save_cc,
-			'debug'                   => $this->debug,
-			'logos'                   => $this->logos,
-			'logo_height'             => $this->logo_height,
-			'skip_order_lines'        => $this->skip_order_lines,
-			'enable_order_autocancel' => $this->enable_order_autocancel,
-			'is_webhook_configured'   => isset( $settings['is_webhook_configured'] ) ?
-				$settings['is_webhook_configured'] : $this->is_webhook_configured
-		), $settings );
+		return array_merge(
+			array(
+				'enabled'                 => 'no',
+				'private_key'             => $this->private_key,
+				'private_key_test'        => $this->private_key_test,
+				'test_mode'               => $this->test_mode,
+				'payment_type'            => $this->payment_type,
+				'payment_methods'         => $this->payment_methods,
+				'settle'                  => $this->settle,
+				'language'                => $this->language,
+				'save_cc'                 => $this->save_cc,
+				'debug'                   => $this->debug,
+				'logos'                   => $this->logos,
+				'logo_height'             => $this->logo_height,
+				'skip_order_lines'        => $this->skip_order_lines,
+				'enable_order_autocancel' => $this->enable_order_autocancel,
+				'is_webhook_configured'   => $settings['is_webhook_configured'] ?? $this->is_webhook_configured,
+			),
+			$settings
+		);
 	}
 
 	/**
@@ -1364,10 +1366,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	 * @param string $level Optional. Default 'info'.
 	 *     emergency|alert|critical|error|warning|notice|info|debug
 	 *
-	 * @return array
 	 * @see WC_Log_Levels
 	 * Get parent settings
-	 *
 	 */
 	public function log( $message, $level = 'info' ) {
 		// Is Enabled
@@ -1383,10 +1383,14 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$message = var_export( $message, true );
 		}
 
-		$logger->log( $level, $message, array(
-			'source'  => $this->id,
-			'_legacy' => true
-		) );
+		$logger->log(
+			$level,
+			$message,
+			array(
+				'source'  => $this->id,
+				'_legacy' => true,
+			)
+		);
 	}
 
 	/**
@@ -1395,8 +1399,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	 * If the gateway declares 'refunds' support, this will allow it to refund
 	 * a passed in amount.
 	 *
-	 * @param int $order_id
-	 * @param float $amount
+	 * @param int    $order_id
+	 * @param float  $amount
 	 * @param string $reason
 	 *
 	 * @return  bool|wp_error True or false based on success, or a WP_Error object
@@ -1431,16 +1435,18 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	public function get_order_items( $order, $not_settled = false ) {
 		$prices_incl_tax = wc_prices_include_tax();
 
-		$items      = [];
-		$setup_fees = [];
+		$items               = [];
+		$setup_fees          = [];
+		$sub_amount_discount = 0;
 		foreach ( $order->get_items() as $order_item ) {
 			/** @var WC_Order_Item_Product $order_item */
 
 			if ( wcr_is_subscription_product( $order_item->get_product() ) ) {
 				$fee = $order_item->get_product()->get_meta( '_reepay_subscription_fee' );
 				if ( ! empty( $fee ) && ! empty( $fee['enabled'] ) && $fee['enabled'] == 'yes' ) {
-					$setup_fees[] = $order_item->get_product()->get_name() . ' - ' . $fee["text"];
+					$setup_fees[] = $order_item->get_product()->get_name() . ' - ' . $fee['text'];
 				}
+				$sub_amount_discount += floatval( $order_item->get_meta( '_line_discount' ) );
 				continue;
 			}
 
@@ -1459,7 +1465,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				'quantity'        => $order_item->get_quantity(),
 				'amount'          => rp_prepare_amount( $unitPrice, $order->get_currency() ),
 				'vat'             => round( $taxPercent / 100, 2 ),
-				'amount_incl_vat' => $prices_incl_tax
+				'amount_incl_vat' => $prices_incl_tax,
 			);
 		}
 
@@ -1478,13 +1484,13 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 					continue;
 				}
 
-				$items[] = [
+				$items[] = array(
 					'ordertext'       => $item_shipping->get_name(),
 					'quantity'        => $item_shipping->get_quantity(),
 					'amount'          => rp_prepare_amount( $unitPrice, $order->get_currency() ),
 					'vat'             => round( $taxPercent / 100, 2 ),
-					'amount_incl_vat' => $prices_incl_tax
-				];
+					'amount_incl_vat' => $prices_incl_tax,
+				);
 			}
 		}
 
@@ -1496,8 +1502,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				continue;
 			}
 
-			$fee        = $order_fee->get_total();
-			$tax        = $order_fee->get_total_tax();
+			$fee        = (float) $order_fee->get_total();
+			$tax        = (float) $order_fee->get_total_tax();
 			$feeWithTax = $fee + $tax;
 			$taxPercent = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
 
@@ -1510,13 +1516,13 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				'quantity'        => 1,
 				'amount'          => rp_prepare_amount( $prices_incl_tax ? $feeWithTax : $fee, $order->get_currency() ),
 				'vat'             => round( $taxPercent / 100, 2 ),
-				'amount_incl_vat' => $prices_incl_tax
+				'amount_incl_vat' => $prices_incl_tax,
 			);
 		}
 
 		// Add discount line
 		if ( $order->get_total_discount( false ) > 0 ) {
-			$discount        = $order->get_total_discount( true );
+			$discount        = $order->get_total_discount();
 			$discountWithTax = $order->get_total_discount( false );
 			$tax             = $discountWithTax - $discount;
 			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
@@ -1524,15 +1530,15 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 			$items[] = array(
 				'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
 				'quantity'        => 1,
-				'amount'          => round( - 1 * rp_prepare_amount( $prices_incl_tax ? $discountWithTax : $discount, $order->get_currency() ) ),
+				'amount'          => round( - 1 * rp_prepare_amount( $prices_incl_tax ? $discountWithTax : $discount, $order->get_currency() ) ) + ( $sub_amount_discount * 100 ),
 				'vat'             => round( $taxPercent / 100, 2 ),
-				'amount_incl_vat' => $prices_incl_tax
+				'amount_incl_vat' => $prices_incl_tax,
 			);
 		}
 
 		// Add "Gift Up!" discount
 		if ( defined( 'GIFTUP_ORDER_META_CODE_KEY' ) &&
-		     defined( 'GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY' )
+			 defined( 'GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY' )
 		) {
 			if ( $order->meta_exists( GIFTUP_ORDER_META_CODE_KEY ) ) {
 				$code              = $order->get_meta( GIFTUP_ORDER_META_CODE_KEY );
@@ -1544,7 +1550,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 						'quantity'        => 1,
 						'amount'          => rp_prepare_amount( - 1 * $requested_balance, $order->get_currency() ),
 						'vat'             => 0,
-						'amount_incl_vat' => $prices_incl_tax
+						'amount_incl_vat' => $prices_incl_tax,
 					);
 				}
 			}
@@ -1554,26 +1560,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 	}
 
 	/**
-	 * calculate amount from order rows that
-	 * can be compared with amount from order
-	 *
-	 * @param $order
-	 *
-	 * @return float|int
-	 */
-	private function get_calculated_amount( $order ) {
-		$order_items = $this->get_order_items( $order );
-		$order_total = 0;
-
-		foreach ( $order_items as $item ) {
-			$order_total += $item['amount'] * $item['quantity'];
-		}
-
-		return $order_total;
-	}
-
-	/**
 	 * Get Language
+	 *
 	 * @return string
 	 */
 	protected function get_language() {
@@ -1662,7 +1650,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway implements WC_Paymen
 				$image = 'vipps';
 				break;
 			default:
-				//$image = 'reepay.png';
+				// $image = 'reepay.png';
 				// Use an image of payment method
 				$logos = $this->logos;
 				$logo  = array_shift( $logos );

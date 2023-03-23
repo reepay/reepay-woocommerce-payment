@@ -39,7 +39,7 @@ try {
 	// Process Subscriptions
 	$processed = array();
 	foreach ( $subscriptions as $subscription ) {
-		$token = WC_Gateway_Reepay_Checkout::retrieve_payment_token_order( $subscription );
+		$token = WC_Gateway_Reepay_Checkout::get_payment_token_order( $subscription );
 
 		if ( ! $token ) {
 			$log->add( $handler, sprintf( '[INFO] Subscription #%s doesn\'t have assigned tokens.', $subscription->get_id() ) );
@@ -101,8 +101,7 @@ foreach ($processed as $subscription_id => $subscription) {
 
 			// Charge
 			try {
-				$gateway->scheduled_subscription_payment( $order->get_total(), $order );
-				$log->add( $handler, sprintf( '[SUCCESS] Charge success. Subscription #%s. Order #%s.', $subscription->get_id(), $order->get_id() ) );
+				$log->add( $handler, sprintf( '[SUCCESS] Charge method removed. Subscription #%s. Order #%s.', $subscription->get_id(), $order->get_id() ) );
 			} catch (Exception $e) {
 				$log->add( $handler, sprintf( '[ERROR] scheduled_subscription_payment: %s. %s', $e->getMessage(), $e->getTraceAsString() ) );
 			}
@@ -124,7 +123,7 @@ function reepay_get_order_notes( $order_id ) {
 	$table = $wpdb->prefix . 'comments';
 	$results = $wpdb->get_results("
         SELECT *
-        FROM {$table}
+        FROM $table
         WHERE  `comment_post_ID` = $order_id
         AND  `comment_type` LIKE  'order_note'
     ");
