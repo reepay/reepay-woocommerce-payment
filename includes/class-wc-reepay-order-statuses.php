@@ -1,5 +1,7 @@
 <?php
 
+use Reepay\Checkout\Gateways\ReepayCheckout;
+
 defined( 'ABSPATH' ) || exit();
 
 class WC_Reepay_Order_Statuses {
@@ -359,7 +361,7 @@ class WC_Reepay_Order_Statuses {
 		// Get Payment Gateway
 		$gateways = WC()->payment_gateways()->payment_gateways();
 
-		/** @var WC_Gateway_Reepay_Checkout $gateway */
+		/** @var ReepayCheckout $gateway */
 		$gateway = $gateways[ $payment_method ];
 
 		$invoice = $gateway->api->get_invoice_data( $order );

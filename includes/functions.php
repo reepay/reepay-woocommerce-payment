@@ -1,5 +1,7 @@
 <?php
 
+use Reepay\Checkout\Gateways\ReepayCheckout;
+
 defined( 'ABSPATH' ) || exit();
 
 if ( ! function_exists( 'rp_get_payment_method ' ) ) {
@@ -8,7 +10,7 @@ if ( ! function_exists( 'rp_get_payment_method ' ) ) {
 	 *
 	 * @param WC_Order $order
 	 *
-	 * @return false|WC_Gateway_Reepay_Checkout
+	 * @return false|ReepayCheckout
 	 */
 	function rp_get_payment_method( WC_Order $order ) {
 		$gateways = WC()->payment_gateways()->payment_gateways();

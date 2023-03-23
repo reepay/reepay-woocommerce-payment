@@ -1,12 +1,14 @@
 <?php
 /**
- * @var WC_Gateway_Reepay_Checkout $gateway
+ * @var ReepayCheckout $gateway
  * @var WC_Order                   $order
  * @var int                        $order_id
  * @var array                      $order_data
  * @var bool                       $order_is_cancelled
  * @var string                     $link
  */
+
+use Reepay\Checkout\Gateways\ReepayCheckout;
 
 defined( 'ABSPATH' ) || exit();
 
