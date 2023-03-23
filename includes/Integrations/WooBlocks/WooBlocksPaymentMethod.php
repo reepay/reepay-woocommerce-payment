@@ -7,7 +7,7 @@ defined( 'ABSPATH' ) || exit();
 use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
 use Exception;
 use Reepay\Checkout\Tokens\TokenReepay;
-use WC_Gateway_Reepay;
+use Reepay\Checkout\Gateways\ReepayGateway;
 use WC_Payment_Gateway;
 use WC_Payment_Tokens;
 
@@ -77,7 +77,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 		static $gateway_scripts_initialized = false;
 
 		if ( ! $gateway_scripts_initialized ) {
-			/** @var WC_Gateway_Reepay $gateway */
+			/** @var ReepayGateway $gateway */
 			$gateway = WC()->payment_gateways()->get_available_payment_gateways()[ $this->name ] ?? null;
 
 			if ( empty( $gateway ) ) {
@@ -124,7 +124,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	 * @return string[]
 	 */
 	public function get_supported_features() {
-		/** @var WC_Gateway_Reepay $gateway */
+		/** @var ReepayGateway $gateway */
 		$gateway = WC()->payment_gateways()->get_available_payment_gateways()[ $this->name ] ?? null;
 
 		if ( !empty( $gateway ) ) {

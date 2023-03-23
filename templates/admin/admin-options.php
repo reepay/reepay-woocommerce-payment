@@ -2,6 +2,8 @@
 /** @var WC_Payment_Gateway $gateway */
 /** @var bool $webhook_installed */
 
+use Reepay\Checkout\Gateways\ReepayGateway;
+
 defined( 'ABSPATH' ) || exit();
 ?>
 
@@ -20,8 +22,8 @@ defined( 'ABSPATH' ) || exit();
 		<?php
 		echo sprintf(
 			__( 'WebHook URL: <a href="%1$s" target="_blank">%2$s</a>', 'reepay-checkout-gateway' ),
-			WC_Gateway_Reepay::get_default_api_url( 'WC_Gateway_Reepay' ),
-			WC_Gateway_Reepay::get_default_api_url( 'WC_Gateway_Reepay' )
+			ReepayGateway::get_default_api_url( 'WC_Gateway_Reepay' ),
+			ReepayGateway::get_default_api_url( 'WC_Gateway_Reepay' )
 		);
 		?>
 	</p>

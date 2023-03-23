@@ -1,12 +1,25 @@
 <?php
 
-use Reepay\Checkout\Gateways\ReepayCheckout;
+namespace Reepay\Checkout\Gateways;
+
+use Exception;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayTrait;
+use WC_Admin_Settings;
+use WC_Countries;
+use WC_Order;
+use WC_Order_Item_Fee;
+use WC_Order_Item_Product;
+use WC_Payment_Gateway;
+use WC_Reepay_Api;
+use WC_Reepay_Instant_Settle;
+use WC_Reepay_Order_Capture;
+use WC_Reepay_Webhook;
+use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
 
-abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
+abstract class ReepayGateway extends WC_Payment_Gateway {
 	use TokenReepayTrait;
 
 	const METHOD_WINDOW = 'WINDOW';
@@ -139,6 +152,13 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	 * @var string
 	 */
 	public $handle_failover = 'yes';
+
+	/**
+	 * Payment methods.
+	 *
+	 * @var array|null
+	 */
+	public $payment_methods = array();
 
 	/**
 	 * Init

@@ -2,11 +2,10 @@
 
 namespace Reepay\Checkout\Gateways;
 
-use WC_Gateway_Reepay;
 
 defined( 'ABSPATH' ) || exit();
 
-class ApplePay extends WC_Gateway_Reepay {
+class ApplePay extends ReepayGateway {
 	/**
 	 * Logos
 	 *

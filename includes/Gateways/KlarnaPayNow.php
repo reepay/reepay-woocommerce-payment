@@ -2,11 +2,10 @@
 
 namespace Reepay\Checkout\Gateways;
 
-use WC_Gateway_Reepay;
 
 defined( 'ABSPATH' ) || exit();
 
-class KlarnaPayNow extends WC_Gateway_Reepay {
+class KlarnaPayNow extends ReepayGateway {
 	/**
 	 * Logos
 	 *

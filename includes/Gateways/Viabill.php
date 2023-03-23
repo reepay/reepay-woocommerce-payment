@@ -2,11 +2,10 @@
 
 namespace Reepay\Checkout\Gateways;
 
-use WC_Gateway_Reepay;
 
 defined( 'ABSPATH' ) || exit();
 
-class Viabill extends WC_Gateway_Reepay {
+class Viabill extends ReepayGateway {
 	/**
 	 * Logos
 	 *

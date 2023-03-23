@@ -1,5 +1,7 @@
 <?php
 
+use Reepay\Checkout\Gateways\ReepayGateway;
+
 defined( 'ABSPATH' ) || exit();
 
 class WC_Reepay_Api {
@@ -11,7 +13,7 @@ class WC_Reepay_Api {
 	private $logging_source;
 
 	/**
-	 * @var WC_Gateway_Reepay
+	 * @var ReepayGateway
 	 */
 	private $gateway;
 
@@ -23,9 +25,9 @@ class WC_Reepay_Api {
 	/**
 	 * Constructor.
 	 *
-	 * @param WC_Gateway_Reepay $gateway
+	 * @param ReepayGateway $gateway
 	 */
-	public function __construct( WC_Gateway_Reepay $gateway ) {
+	public function __construct( ReepayGateway $gateway ) {
 		$this->gateway        = $gateway;
 		$this->logging_source = $gateway->id;
 	}

@@ -1,6 +1,7 @@
 <?php
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
+use Reepay\Checkout\Gateways\ReepayGateway;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -467,7 +468,7 @@ class WC_Reepay_Order_Statuses {
 			$gateways       = WC()->payment_gateways()->get_available_payment_gateways();
 			$payment_method = $order->get_payment_method();
 			if ( isset( $gateways[ $payment_method ] ) ) {
-				/** @var WC_Gateway_Reepay $gateway */
+				/** @var ReepayGateway $gateway */
 				$gateway = $gateways[ $payment_method ];
 
 				// Now set the flag if auto-cancel is enabled or not

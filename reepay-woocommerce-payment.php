@@ -186,7 +186,6 @@ class WC_ReepayCheckout {
 
 		new Reepay\Checkout\Tokens\Main();
 
-		include_once dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-gateway-reepay.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-api.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-capture.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-instant-settle.php';

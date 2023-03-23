@@ -2,11 +2,10 @@
 
 namespace Reepay\Checkout\Gateways;
 
-use WC_Gateway_Reepay;
 
 defined( 'ABSPATH' ) || exit();
 
-class Googlepay extends WC_Gateway_Reepay {
+class Googlepay extends ReepayGateway {
 	/**
 	 * Logos
 	 *
