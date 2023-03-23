@@ -80,8 +80,8 @@ trait TokenReepayTrait {
 	 */
 	public function add_payment_token( $order, $reepay_token ) {
 		// Create Payment Token
-		$customer_handle = $this->api->get_customer_handle_order( $order->get_id() );
-		$source          = $this->api->get_reepay_cards( $customer_handle, $reepay_token );
+		$customer_handle = reepay()->api( $this->id )->get_customer_handle_order( $order->get_id() );
+		$source          = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
 
 		if ( ! $source ) {
 			throw new Exception( 'Unable to retrieve customer payment methods' );

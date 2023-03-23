@@ -70,7 +70,7 @@ class WC_Reepay_Subscriptions {
 		$renewal_sub   = get_post_meta( $order_id, '_subscription_renewal', true );
 		$gateway       = rp_get_payment_method( $renewal_order );
 		if ( ! empty( $renewal_sub ) && ! empty( $gateway ) ) {
-			$order_data = $gateway->api->get_invoice_data( $renewal_order );
+			$order_data = reepay()->api( $gateway )->get_invoice_data( $renewal_order );
 			if ( is_wp_error( $order_data ) && $renewal_order->get_total() > 0 ) {
 
 				if ( $this_status_transition_from == 'pending' && $this_status_transition_to == REEPAY_STATUS_AUTHORIZED ) {
@@ -380,7 +380,7 @@ class WC_Reepay_Subscriptions {
 			}
 
 			// Charge payment
-			$result = $gateway->api->charge(
+			$result = reepay()->api( $gateway )->charge(
 				$renewal_order,
 				$token->get_token(),
 				$amount_to_charge,

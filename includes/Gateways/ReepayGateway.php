@@ -1209,7 +1209,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$order   = wc_get_order( wc_clean( $_GET['order_id'] ) );
 		$gateway = rp_get_payment_method( $order );
-		$result  = $gateway->api->get_invoice_data( $order );
+		$result  = reepay()->api( $gateway )->get_invoice_data( $order );
 		if ( is_wp_error( $result ) ) {
 			return;
 		}

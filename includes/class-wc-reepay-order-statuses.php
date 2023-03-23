@@ -294,7 +294,7 @@ class WC_Reepay_Order_Statuses {
 		/** @var ReepayCheckout $gateway */
 		$gateway = $gateways[ $payment_method ];
 
-		$invoice = $gateway->api->get_invoice_data( $order );
+		$invoice = reepay()->api( $gateway )->get_invoice_data( $order );
 		if ( $invoice['settled_amount'] < $invoice['authorized_amount'] ) {
 			// Use the authorized status if order has been settled partially
 			self::set_authorized_status( $order, $note, $transaction_id );
@@ -452,7 +452,7 @@ class WC_Reepay_Order_Statuses {
 				$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
 				if ( ( 1 == $value || false === $value ) && $gateway->can_capture( $order ) ) {
 					try {
-						$order_data = $gateway->api->get_invoice_data( $order );
+						$order_data = reepay()->api( $gateway )->get_invoice_data( $order );
 						if ( is_wp_error( $order_data ) ) {
 							throw new Exception( $order_data->get_error_message() );
 						}

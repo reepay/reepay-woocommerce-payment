@@ -78,7 +78,7 @@ class WC_Reepay_Webhook {
 
 				// Fetch the Invoice data at the moment
 				$gateway      = rp_get_payment_method( $order );
-				$invoice_data = $gateway->api->get_invoice_by_handle( $data['invoice'] );
+				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
 					/** @var WP_Error $result */
 					$invoice_data = array();
@@ -175,7 +175,7 @@ class WC_Reepay_Webhook {
 
 				// Fetch the Invoice data at the moment
 				$gateway      = rp_get_payment_method( $order );
-				$invoice_data = $gateway->api->get_invoice_by_handle( $data['invoice'] );
+				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
 					/** @var WP_Error $result */
 					$invoice_data = array();
@@ -184,7 +184,7 @@ class WC_Reepay_Webhook {
 				$this->log( sprintf( 'WebHook: Invoice data: %s', var_export( $invoice_data, true ) ) );
 
 				if ( ! empty( $invoice_data['id'] ) && ! empty( $data['transaction'] ) ) {
-					$transaction = $gateway->api->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice_data['id'] . '/transaction/' . $data['transaction'] );
+					$transaction = reepay()->api( $gateway )->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice_data['id'] . '/transaction/' . $data['transaction'] );
 					$this->log( sprintf( 'WebHook: Transaction data: %s', var_export( $transaction, true ) ) );
 
 					if ( ! empty( $transaction['card_transaction']['card'] ) ) {
@@ -277,7 +277,7 @@ class WC_Reepay_Webhook {
 
 				// Get Invoice data
 				$gateway      = rp_get_payment_method( $order );
-				$invoice_data = $gateway->api->get_invoice_by_handle( $data['invoice'] );
+				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
 					/** @var WP_Error $result */
 					$invoice_data = array();

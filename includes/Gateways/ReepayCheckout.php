@@ -730,7 +730,7 @@ class ReepayCheckout extends ReepayGateway {
 			$params['payment_methods'] = $this->payment_methods;
 		}
 
-		$result = $this->api->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
+		$result = reepay()->api( $this )->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
 		if ( is_wp_error( $result ) ) {
 			/** @var WP_Error $result */
 
@@ -757,7 +757,7 @@ class ReepayCheckout extends ReepayGateway {
 					'cancel_url'      => $cancel_url,
 				);
 
-				$result = $this->api->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
+				$result = reepay()->api( $this )->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
 
 				if ( is_wp_error( $result ) ) {
 					/** @var WP_Error $result */
@@ -830,7 +830,7 @@ class ReepayCheckout extends ReepayGateway {
 
 		try {
 			// Create Payment Token
-			$source = $this->api->get_reepay_cards( $customer_handle, $reepay_token );
+			$source = reepay()->api( $this )->get_reepay_cards( $customer_handle, $reepay_token );
 
 			if ( 'ms_' == substr( $source['id'], 0, 3 ) ) {
 				$token = new TokenReepayMS();
@@ -916,13 +916,13 @@ class ReepayCheckout extends ReepayGateway {
 					throw new Exception( 'Invoice ID doesn\'t match the order.' );
 				}
 
-				$result = $this->api->get_invoice_by_handle( wc_clean( $_GET['invoice'] ) );
+				$result = reepay()->api( $this )->get_invoice_by_handle( wc_clean( $_GET['invoice'] ) );
 				if ( is_wp_error( $result ) ) {
 					/** @var WP_Error $result */
 					throw new Exception( $result->get_error_message() );
 				}
 
-				$result = $this->api->get_invoice_by_handle( wc_clean( $_GET['invoice'] ) );
+				$result = reepay()->api( $this )->get_invoice_by_handle( wc_clean( $_GET['invoice'] ) );
 				if ( is_wp_error( $result ) ) {
 					/** @var WP_Error $result */
 					throw new Exception( $result->get_error_message() );

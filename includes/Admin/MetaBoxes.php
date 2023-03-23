@@ -130,7 +130,7 @@ class MetaBoxes {
 			return;
 		}
 
-		$order_data = $gateway->api->get_invoice_data( $order );
+		$order_data = reepay()->api( $gateway )->get_invoice_data( $order );
 
 		if ( is_wp_error( $order_data ) ) {
 			return;

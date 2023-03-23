@@ -15,7 +15,7 @@ if ( empty( $is_webhook_configured ) &&
 ) {
 	// Check the webhooks settings
 	try {
-		$result = $gateway->api->request('GET', 'https://api.reepay.com/v1/account/webhook_settings' );
+		$result = reepay()->api( $gateway )->request('GET', 'https://api.reepay.com/v1/account/webhook_settings' );
 		if ( is_wp_error( $result ) ) {
 			/** @var WP_Error $result */
 			throw new Exception( $result->get_error_message(), $result->get_error_code() );
@@ -55,7 +55,7 @@ if ( empty( $is_webhook_configured ) &&
 					'alert_emails' => array_unique( $alert_emails )
 				);
 
-				$result = $gateway->api->request('PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data);
+				$result = reepay()->api( $gateway )->request('PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data);
 				if ( is_wp_error( $result ) ) {
 					/** @var WP_Error $result */
 					throw new Exception( $result->get_error_message(), $result->get_error_code() );

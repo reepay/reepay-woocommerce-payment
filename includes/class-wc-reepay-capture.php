@@ -80,7 +80,7 @@ class WC_Reepay_Order_Capture {
 		unset( $_POST['post_status'] );
 
 		$gateway = rp_get_payment_method( $order );
-		$result  = $gateway->api->settle( $order, $total_all, $items_data, $line_items );
+		$result  = reepay()->api( $gateway )->settle( $order, $total_all, $items_data, $line_items );
 
 		if ( is_wp_error( $result ) ) {
 			$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
@@ -186,7 +186,7 @@ class WC_Reepay_Order_Capture {
 			if ( $total == 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
 				WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 			} elseif ( $total > 0 && $this->check_allow_capture( $order ) ) {
-				$result = $gateway->api->settle( $order, $total, $line_item_data, $item );
+				$result = reepay()->api( $gateway )->settle( $order, $total, $line_item_data, $item );
 
 				if ( is_wp_error( $result ) ) {
 					$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
@@ -224,9 +224,7 @@ class WC_Reepay_Order_Capture {
 
 		$gateway = rp_get_payment_method( $order );
 
-		if ( ! empty( $gateway ) && ! empty( $gateway->api ) ) {
-			$invoice_data = $gateway->api->get_invoice_data( $order );
-		}
+		$invoice_data = reepay()->api( $gateway )->get_invoice_data( $order );
 
 		if ( is_wp_error( $invoice_data ) ) {
 			echo __( 'Invoice not found', 'reepay-checkout-gateway' );
