@@ -29,11 +29,11 @@ class Googlepay extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_googlepay';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Google Pay', 'reepay-checkout-gateway' );
-		$this->supports = array(
+		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos    = array( 'googlepay' );
+		$this->logos        = array( 'googlepay' );
 
 		parent::__construct();
 

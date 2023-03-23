@@ -13,8 +13,8 @@ trait TokenReepayTrait {
 	/**
 	 * Assign payment token to order.
 	 *
-	 * @param WC_Order         $order
-	 * @param TokenReepay|int  $token
+	 * @param WC_Order        $order
+	 * @param TokenReepay|int $token
 	 *
 	 * @return void
 	 *

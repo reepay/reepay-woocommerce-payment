@@ -12,7 +12,7 @@ class Main {
 
 	public function set_token_class_name( $token_class_name ) {
 		static $tokens = array(
-			'WC_Payment_Token_Reepay' => TokenReepay::class,
+			'WC_Payment_Token_Reepay'    => TokenReepay::class,
 			'WC_Payment_Token_Reepay_MS' => TokenReepayMS::class,
 		);
 

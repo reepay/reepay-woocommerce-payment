@@ -29,11 +29,11 @@ class KlarnaSliceIt extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_klarna_slice_it';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Klarna Slice It', 'reepay-checkout-gateway' );
-		$this->supports = array(
+		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos    = array( 'klarna' );
+		$this->logos        = array( 'klarna' );
 
 		parent::__construct();
 

@@ -113,10 +113,10 @@ class WC_Reepay_Subscriptions {
 	/**
 	 * Add Token ID.
 	 *
-	 * @param int                     $order_id
-	 * @param int                     $token_id
+	 * @param int         $order_id
+	 * @param int         $token_id
 	 * @param TokenReepay $token
-	 * @param array                   $token_ids
+	 * @param array       $token_ids
 	 *
 	 * @return void
 	 */

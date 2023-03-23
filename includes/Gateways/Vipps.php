@@ -29,11 +29,11 @@ class Vipps extends WC_Gateway_Reepay {
 		$this->id           = 'reepay_vipps';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Vipps', 'reepay-checkout-gateway' );
-		$this->supports = array(
+		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos    = array( 'vipps' );
+		$this->logos        = array( 'vipps' );
 
 		parent::__construct();
 

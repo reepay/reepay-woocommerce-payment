@@ -25,15 +25,15 @@ require_once dirname( __FILE__ ) . '/includes/class-wc-reepay-statistics.php';
 
 class WC_ReepayCheckout {
 	/**
-     * Class instance
-     *
+	 * Class instance
+	 *
 	 * @var WC_ReepayCheckout
 	 */
 	private static $instance;
 
 	/**
-     * The latest update that requires a database changes
-     *
+	 * The latest update that requires a database changes
+	 *
 	 * @var string
 	 */
 	const DB_VERSION = '1.4.54';
@@ -58,8 +58,9 @@ class WC_ReepayCheckout {
 		add_action( 'wp_enqueue_scripts', array( $this, 'add_scripts' ) );
 
 		// Add statuses for payment complete
-		add_filter( 'woocommerce_valid_order_statuses_for_payment_complete',
-			array( $this, 'add_valid_order_statuses', ),
+		add_filter(
+			'woocommerce_valid_order_statuses_for_payment_complete',
+			array( $this, 'add_valid_order_statuses' ),
 			10,
 			2
 		);
@@ -77,13 +78,13 @@ class WC_ReepayCheckout {
 	 * @return WC_ReepayCheckout
 	 */
 	public static function get_instance() {
-	    static $instance_requested = false;
+		static $instance_requested = false;
 
 		if ( true === $instance_requested && is_null( self::$instance ) ) {
 			$message = 'Function reepay called in time of initialization main plugin class. Recursion prevented';
 
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				$message .= "<br>Stack trace for debugging:<br><pre>" . print_r( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ), true ) . '</pre>';
+				$message .= '<br>Stack trace for debugging:<br><pre>' . print_r( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ), true ) . '</pre>';
 			}
 
 			wp_die( $message );
@@ -104,8 +105,8 @@ class WC_ReepayCheckout {
 	 * @param  string $name  Setting key.
 	 *
 	 * @return string|null
-     *
-     * @ToDo add gateway settings
+	 *
+	 * @ToDo add gateway settings
 	 */
 	public function get_setting( $name ) {
 		if ( empty( $this->settings ) ) {
@@ -131,7 +132,7 @@ class WC_ReepayCheckout {
 			$template,
 			$args,
 			'',
-			$this->get_setting('plugin_path') . 'templates/'
+			$this->get_setting( 'plugin_path' ) . 'templates/'
 		);
 	}
 
@@ -181,7 +182,7 @@ class WC_ReepayCheckout {
 	 * @return void
 	 */
 	public function include_classes() {
-	    new Reepay\Checkout\Admin\Main();
+		new Reepay\Checkout\Admin\Main();
 
 		new Reepay\Checkout\Tokens\Main();
 

@@ -35,7 +35,7 @@ class WC_Reepay_Instant_Settle {
 			$order = wc_get_order( $order );
 		}
 
-		if ( ! reepay()->is_order_paid_via_reepay( $order  ) ) {
+		if ( ! reepay()->is_order_paid_via_reepay( $order ) ) {
 			return;
 		}
 
