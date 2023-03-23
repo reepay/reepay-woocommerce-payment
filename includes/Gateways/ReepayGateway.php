@@ -1333,30 +1333,17 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Apply settings from Reepay Checkout Gateway to other gateways. Use it in constructor
 	 */
 	protected function apply_parent_settings() {
-		$settings = get_option( 'woocommerce_reepay_checkout_settings' );
-
-		if ( ! is_array( $settings ) ) {
-			$settings = array();
-		}
-
-		if ( isset( $settings['private_key'] ) ) {
-			$settings['private_key'] = apply_filters( 'woocommerce_reepay_private_key', $settings['private_key'] ?? '' );
-		}
-
-		if ( isset( $settings['private_key_test'] ) ) {
-			$settings['private_key_test'] = apply_filters( 'woocommerce_reepay_private_key_test', $settings['private_key_test'] ?? '' );
-		}
-
-		$this->private_key             = $settings['private_key'] ?? '';
-		$this->private_key_test        = $settings['private_key_test'] ?? '';
-		$this->test_mode               = $settings['test_mode'] ?? '';
-		$this->settle                  = $settings['settle'] ?? '';
-		$this->language                = $settings['language'] ?? '';
-		$this->debug                   = $settings['debug'] ?? '';
-		$this->payment_type            = $settings['payment_type'] ?? '';
-		$this->skip_order_lines        = $settings['skip_order_lines'] ?? '';
-		$this->enable_order_autocancel = $settings['enable_order_autocancel'] ?? '';
-		$this->is_webhook_configured   = $settings['is_webhook_configured'] ?? '';
+		$this->private_key             = reepay()->get_setting( 'private_key' );
+		$this->private_key_test        = reepay()->get_setting( 'private_key_test' );
+		$this->test_mode               = reepay()->get_setting( 'test_mode' );
+		$this->settle                  = reepay()->get_setting( 'settle' );
+		$this->language                = reepay()->get_setting( 'language' );
+		$this->debug                   = reepay()->get_setting( 'debug' );
+		$this->payment_type            = reepay()->get_setting( 'payment_type' );
+		$this->skip_order_lines        = reepay()->get_setting( 'skip_order_lines' );
+		$this->enable_order_autocancel = reepay()->get_setting( 'enable_order_autocancel' );
+		$this->is_webhook_configured   = reepay()->get_setting( 'is_webhook_configured' );
+		$this->handle_failover         = reepay()->get_setting( 'handle_failover' );
 	}
 
 	/**
