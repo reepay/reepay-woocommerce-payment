@@ -1,0 +1,192 @@
+<?php
+
+namespace Reepay\Checkout\Admin;
+
+use Exception;
+use WC_AJAX;
+
+defined( 'ABSPATH' ) || exit();
+
+class Ajax {
+	/**
+	 * @var string
+	 */
+	CONST PREFIX = 'reepay';
+
+	/**
+	 * @var array
+	 */
+	const ACTIONS = array(
+		'capture',
+		'cancel',
+		'refund',
+		'capture_partly',
+		'refund_partly',
+		'set_complete_settle_transient',
+	);
+
+	/**
+	 * Ajax constructor.
+	 */
+	public function __construct() {
+		foreach ( static::ACTIONS as $action ) {
+			add_action( 'wp_ajax_' . static::PREFIX . '_' . $action, array( $this, $action ), 10, 0 );
+		}
+	}
+
+	/**
+	 * Exit if wrong nonce
+	 *
+	 * @param string $action action to verify
+	 *
+	 * @return bool
+	 */
+	private function verify_nonce( $action = 'nonce' ) {
+		if ( ! wp_verify_nonce( $_REQUEST['nonce'], $action ) ) {
+			exit( 'No naughty business' );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Action for Capture
+	 */
+	public function capture() {
+		$this->verify_nonce();
+
+		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
+		$order    = wc_get_order( $order_id );
+
+		try {
+			$gateway = rp_get_payment_method( $order );
+			$gateway->capture_payment( $order, $order->get_total() );
+			wp_send_json_success( __( 'Capture success.', 'reepay-checkout-gateway' ) );
+		} catch ( Exception $e ) {
+			$message = $e->getMessage();
+			wp_send_json_error( $message );
+		}
+	}
+
+	/**
+	 * Action for Cancel
+	 */
+	public function cancel() {
+		$this->verify_nonce();
+
+		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
+		$order    = wc_get_order( $order_id );
+
+		// Check if the order is already cancelled
+		// ensure no more actions are made
+		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
+			wp_send_json_success( __( 'Order already cancelled.', 'reepay-checkout-gateway' ) );
+
+			return;
+		}
+
+		try {
+			$gateway = rp_get_payment_method( $order );
+
+			// Check if the payment can be cancelled
+			if ( $gateway->can_cancel( $order ) ) {
+				$gateway->cancel_payment( $order );
+			}
+
+			// Mark the order as cancelled - no more communication to reepay is done!
+			$order->update_meta_data( '_reepay_order_cancelled', 1 );
+			$order->save_meta_data();
+
+			// Return success
+			wp_send_json_success( __( 'Cancel success.', 'reepay-checkout-gateway' ) );
+		} catch ( Exception $e ) {
+			wp_send_json_error( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Action for Cancel
+	 */
+	public function refund() {
+		$this->verify_nonce();
+
+		$amount   = (int) wc_clean( $_REQUEST['amount'] );
+		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
+		$order    = wc_get_order( $order_id );
+
+		try {
+			$gateway = rp_get_payment_method( $order );
+			$gateway->refund_payment( $order, $amount );
+
+			wp_send_json_success( __( 'Refund success.', 'reepay-checkout-gateway' ) );
+		} catch ( Exception $e ) {
+			wp_send_json_error( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Action for Cancel
+	 */
+	public function capture_partly() {
+		$this->verify_nonce();
+
+		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
+		$order    = wc_get_order( $order_id );
+		$amount   = str_replace( array( ',', '.' ), '', wc_clean( $_REQUEST['amount'] ) );
+
+		try {
+			$gateway = rp_get_payment_method( $order );
+			$gateway->capture_payment( $order, (float) ( $amount / 100 ) );
+
+			wp_send_json_success( __( 'Capture partly success.', 'reepay-checkout-gateway' ) );
+		} catch ( Exception $e ) {
+			$message = $e->getMessage();
+			wp_send_json_error( $message );
+		}
+	}
+
+	/**
+	 * Action for Cancel
+	 */
+	public function refund_partly() {
+		$this->verify_nonce();
+
+		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
+		$order    = wc_get_order( $order_id );
+		$amount   = str_replace( array( ',', '.' ), '', wc_clean( $_REQUEST['amount'] ) );
+
+		try {
+			$gateway = rp_get_payment_method( $order );
+			$gateway->refund_payment( $order, (float) ( $amount / 100 ) );
+
+			$_POST['order_id']               = $order->get_id();
+			$_POST['refund_amount']          = $_REQUEST['amount'];
+			$_POST['refunded_amount']        = $order->get_total_refunded();
+			$_POST['line_item_qtys']         = array();
+			$_POST['line_item_totals']       = array();
+			$_POST['line_item_tax_totals']   = array();
+			$_POST['api_refund']             = 'true';
+			$_POST['restock_refunded_items'] = 'true';
+			$_REQUEST['security']            = wp_create_nonce( 'order-item' );
+
+			WC_AJAX::refund_line_items();
+
+			wp_send_json_success( __( 'Refund partly success.', 'reepay-checkout-gateway' ) );
+		} catch ( Exception $e ) {
+			wp_send_json_error( $e->getMessage() );
+		}
+	}
+
+	/**
+	 *
+	 */
+	public function set_complete_settle_transient() {
+		$this->verify_nonce();
+
+		$order_id     = wc_clean( $_POST['order_id'] );
+		$settle_order = wc_clean( $_POST['settle_order'] );
+
+		set_transient( 'reepay_order_complete_should_settle_' . $order_id, $settle_order, 60 );
+		wp_send_json_success( 'success' );
+	}
+}

@@ -1,11 +1,15 @@
 <?php
 
+namespace Reepay\Checkout\Admin;
+
+use WP_Post;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
  * Class WC_Reepay_Meta_Boxes
  */
-class WC_Reepay_Meta_Boxes {
+class MetaBoxes {
 
 	/**
 	 * @var string
@@ -16,8 +20,6 @@ class WC_Reepay_Meta_Boxes {
 	 * WC_Reepay_Meta_Boxes constructor.
 	 */
 	public function __construct() {
-		add_action( 'reepay_checkout_product_show_meta_box', '__return_false' );
-
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
 	}
 
@@ -185,5 +187,3 @@ class WC_Reepay_Meta_Boxes {
 		);
 	}
 }
-
-new WC_Reepay_Meta_Boxes();

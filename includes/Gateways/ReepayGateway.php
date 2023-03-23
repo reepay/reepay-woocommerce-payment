@@ -265,7 +265,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		return array();
-
 	}
 
 

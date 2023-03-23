@@ -192,11 +192,8 @@ class WC_ReepayCheckout {
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-webhook.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-thankyou.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-subscriptions.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-admin.php';
 
 		new Reepay\Checkout\Gateways();
-
-		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-meta-boxes.php';
 
 		new Reepay\Checkout\Integrations\Main();
 	}
