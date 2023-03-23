@@ -167,34 +167,34 @@ class WC_ReepayCheckout {
 	 * @return void
 	 */
 	public function woocommerce_loaded() {
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-payment-token-reepay.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-payment-ms-token-reepay.php' );
-		include_once( dirname( __FILE__ ) . '/includes/interfaces/class-wc-payment-gateway-reepay-interface.php' );
-		include_once( dirname( __FILE__ ) . '/includes/trait-wc-reepay-token.php' );
-		include_once( dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-gateway-reepay.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-api.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-capture.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-instant-settle.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-webhook.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-thankyou.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-subscriptions.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-admin.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-checkout.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-mobilepay.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-viabill.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-pay-later.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-pay-now.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-resurs.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-swish.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-paypal.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-apple-pay.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-anyday.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-googlepay.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-vipps.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-ms.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-slice-it.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-reepay-meta-boxes.php' );
-		include_once( dirname( __FILE__ ) . '/includes/integrations/register-integrations.php' );
+		include_once dirname( __FILE__ ) . '/includes/class-wc-payment-token-reepay.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-payment-ms-token-reepay.php';
+		include_once dirname( __FILE__ ) . '/includes/interfaces/class-wc-payment-gateway-reepay-interface.php';
+		include_once dirname( __FILE__ ) . '/includes/trait-wc-reepay-token.php';
+		include_once dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-gateway-reepay.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-api.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-capture.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-instant-settle.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-webhook.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-thankyou.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-subscriptions.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-admin.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-checkout.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-mobilepay.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-viabill.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-pay-later.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-pay-now.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-resurs.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-swish.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-paypal.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-apple-pay.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-anyday.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-googlepay.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-vipps.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-ms.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-gateway-reepay-klarna-slice-it.php';
+		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-meta-boxes.php';
+		include_once dirname( __FILE__ ) . '/includes/integrations/register-integrations.php';
 	}
 
 	/**

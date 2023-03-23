@@ -15,10 +15,15 @@ class WC_Reepay_Order_Statuses {
 		define( 'REEPAY_STATUS_AUTHORIZED', isset( $settings['status_authorized'] ) ? str_replace( 'wc-', '', $settings['status_authorized'] ) : 'on-hold' );
 		define( 'REEPAY_STATUS_SETTLED', isset( $settings['status_settled'] ) ? str_replace( 'wc-', '', $settings['status_settled'] ) : 'processing' );
 
-		add_filter( 'reepay_checkout_form_fields', array(
-			$this,
-			'form_fields'
-		), 10, 2 );
+		add_filter(
+			'reepay_checkout_form_fields',
+			array(
+				$this,
+				'form_fields',
+			),
+			10,
+			2
+		);
 
 		// Add statuses for payment complete
 		add_filter(
