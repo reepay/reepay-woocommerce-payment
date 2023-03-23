@@ -25,8 +25,6 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 	 * Constructor
 	 */
 	public function __construct() {
-		parent::__construct();
-
 		$this->id           = 'reepay_mobilepay_subscriptions';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Mobilepay Subscriptions', 'reepay-checkout-gateway' );
@@ -50,20 +48,7 @@ class WC_Gateway_Reepay_Mobilepay_Subscriptions extends WC_Gateway_Reepay {
 
 		$this->logos = array( 'mobilepay' );
 
-		// Load the form fields.
-		$this->init_form_fields();
-
-		// Load the settings.
-		$this->init_settings();
-
-		// Define user set variables
-		$this->enabled     = $this->settings['enabled'] ?? 'no';
-		$this->title       = $this->settings['title'] ?? 'no';
-		$this->description = $this->settings['description'] ?? 'no';
-
-		$this->payment_methods = array(
-			'mobilepay_subscriptions',
-		);
+		parent::__construct();
 
 		// Load setting from parent method
 		$this->apply_parent_settings();

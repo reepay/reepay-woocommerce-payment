@@ -35,17 +35,6 @@ class WC_Gateway_Reepay_Vipps extends WC_Gateway_Reepay {
 
 		parent::__construct();
 
-		// Load the form fields.
-		$this->init_form_fields();
-
-		// Load the settings.
-		$this->init_settings();
-
-		// Define user set variables
-		$this->enabled     = $this->settings['enabled'] ?? 'no';
-		$this->title       = $this->settings['title'] ?? 'no';
-		$this->description = $this->settings['description'] ?? 'no';
-
 		// Load setting from parent method
 		$this->apply_parent_settings();
 	}
