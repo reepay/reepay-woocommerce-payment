@@ -63,12 +63,6 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			unset( $this->supports[ $key ] );
 		}
 
-		if ( ! is_array( $this->settle ) ) {
-			$this->settle = array();
-		}
-
-
-
 		// Action for "Add Payment Method"
 		add_action( 'wp_ajax_reepay_card_store', array( $this, 'reepay_card_store' ) );
 		add_action( 'wp_ajax_nopriv_reepay_card_store', array( $this, 'reepay_card_store' ) );

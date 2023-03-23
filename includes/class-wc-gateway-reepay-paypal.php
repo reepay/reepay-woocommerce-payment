@@ -45,24 +45,7 @@ class WC_Gateway_Reepay_Paypal extends WC_Gateway_Reepay {
 		$this->description = $this->settings['description'] ?? 'no';
 
 		// Load setting from parent method
-		$settings = $this->get_parent_settings();
-
-		$this->private_key             = $settings['private_key'];
-		$this->private_key_test        = $settings['private_key_test'];
-		$this->test_mode               = $settings['test_mode'];
-		$this->settle                  = $settings['settle'];
-		$this->language                = $settings['language'];
-		$this->debug                   = $settings['debug'];
-		$this->payment_type            = $settings['payment_type'];
-		$this->skip_order_lines        = $settings['skip_order_lines'];
-		$this->enable_order_autocancel = $settings['enable_order_autocancel'];
-		$this->is_webhook_configured   = $settings['is_webhook_configured'];
-
-		if ( ! is_array( $this->settle ) ) {
-			$this->settle = array();
-		}
-
-
+		$this->apply_parent_settings();
 	}
 
 	/**

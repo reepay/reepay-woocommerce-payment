@@ -439,7 +439,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 						   id="<?php echo esc_attr( $field_key ); ?>"
 						   value="
 						   <?php
-							echo esc_attr( $this->get_option( $key ) ); // WPCS: XSS ok.
+							echo esc_attr( $configured ); // WPCS: XSS ok.
 							?>
 						   "/>
 				</fieldset>
@@ -1325,11 +1325,9 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Get parent settings
-	 *
-	 * @return array
+     * Apply settings from Reepay Checkout Gateway to other gateways. Use it in constructor
 	 */
-	protected function get_parent_settings() {
+	protected function apply_parent_settings() {
 		// Get setting from parent method
 		$settings = get_option( 'woocommerce_reepay_checkout_settings' );
 		if ( ! is_array( $settings ) ) {
@@ -1344,26 +1342,16 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 			$settings['private_key_test'] = apply_filters( 'woocommerce_reepay_private_key_test', $settings['private_key_test'] );
 		}
 
-		return array_merge(
-			array(
-				'enabled'                 => 'no',
-				'private_key'             => $this->private_key,
-				'private_key_test'        => $this->private_key_test,
-				'test_mode'               => $this->test_mode,
-				'payment_type'            => $this->payment_type,
-				'payment_methods'         => $this->payment_methods,
-				'settle'                  => $this->settle,
-				'language'                => $this->language,
-				'save_cc'                 => $this->save_cc,
-				'debug'                   => $this->debug,
-				'logos'                   => $this->logos,
-				'logo_height'             => $this->logo_height,
-				'skip_order_lines'        => $this->skip_order_lines,
-				'enable_order_autocancel' => $this->enable_order_autocancel,
-				'is_webhook_configured'   => $settings['is_webhook_configured'] ?? $this->is_webhook_configured,
-			),
-			$settings
-		);
+		$this->private_key             = $settings['private_key'];
+		$this->private_key_test        = $settings['private_key_test'];
+		$this->test_mode               = $settings['test_mode'];
+		$this->settle                  = $settings['settle'];
+		$this->language                = $settings['language'];
+		$this->debug                   = $settings['debug'];
+		$this->payment_type            = $settings['payment_type'];
+		$this->skip_order_lines        = $settings['skip_order_lines'];
+		$this->enable_order_autocancel = $settings['enable_order_autocancel'];
+		$this->is_webhook_configured   = $settings['is_webhook_configured'];
 	}
 
 	/**
