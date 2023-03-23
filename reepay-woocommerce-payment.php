@@ -110,11 +110,37 @@ class WC_ReepayCheckout {
 	 */
 	public function get_setting( $name ) {
 		if ( empty( $this->settings ) ) {
+			$gateway_settings = get_option( 'woocommerce_reepay_checkout_settings' );
+
+			if ( ! is_array( $gateway_settings ) ) {
+				$gateway_settings = array();
+			}
+
+			if ( isset( $gateway_settings['private_key'] ) ) {
+				$gateway_settings['private_key'] = apply_filters( 'woocommerce_reepay_private_key', $gateway_settings['private_key'] ?? '' );
+			}
+
+			if ( isset( $gateway_settings['private_key_test'] ) ) {
+				$gateway_settings['private_key_test'] = apply_filters( 'woocommerce_reepay_private_key_test', $gateway_settings['private_key_test'] ?? '' );
+			}
+
 			$this->settings = array(
 				'plugin_file'     => __FILE__,
 				'plugin_basename' => plugin_basename( __FILE__ ),
 				'plugin_url'      => plugin_dir_url( __FILE__ ),
 				'plugin_path'     => plugin_dir_path( __FILE__ ),
+
+				'private_key'             => $gateway_settings['private_key'] ?? '',
+				'private_key_test'        => $gateway_settings['private_key_test'] ?? '',
+				'test_mode'               => $gateway_settings['test_mode'] ?? '',
+				'settle'                  => $gateway_settings['settle'] ?? '',
+				'language'                => $gateway_settings['language'] ?? '',
+				'debug'                   => $gateway_settings['debug'] ?? '',
+				'payment_type'            => $gateway_settings['payment_type'] ?? '',
+				'skip_order_lines'        => $gateway_settings['skip_order_lines'] ?? '',
+				'enable_order_autocancel' => $gateway_settings['enable_order_autocancel'] ?? '',
+				'is_webhook_configured'   => $gateway_settings['is_webhook_configured'] ?? '',
+				'handle_failover'         => $gateway_settings['handle_failover'] ?? '',
 			);
 		}
 
