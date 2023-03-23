@@ -23,7 +23,6 @@ if ( ! function_exists( 'order_contains_subscription ' ) ) {
 	 *
 	 * @return bool
 	 * @see wcs_order_contains_subscription()
-	 *
 	 */
 	function order_contains_subscription( $order ) {
 		if ( ! function_exists( 'wcs_order_contains_subscription' ) ) {
@@ -44,7 +43,7 @@ if ( ! function_exists( 'wcs_is_subscription_product' ) ) {
 	 */
 	function wcs_is_subscription_product( $product ) {
 		return class_exists( 'WC_Subscriptions_Product', false ) &&
-		       WC_Subscriptions_Product::is_subscription( $product );
+			   WC_Subscriptions_Product::is_subscription( $product );
 	}
 }
 
@@ -58,7 +57,7 @@ if ( ! function_exists( 'wcr_is_subscription_product' ) ) {
 	 */
 	function wcr_is_subscription_product( $product ) {
 		return class_exists( 'WC_Reepay_Checkout', false ) &&
-		       WC_Reepay_Checkout::is_reepay_product( $product );
+			   WC_Reepay_Checkout::is_reepay_product( $product );
 	}
 }
 
@@ -70,7 +69,7 @@ if ( ! function_exists( 'wcs_is_payment_change' ) ) {
 	 */
 	function wcs_is_payment_change() {
 		return class_exists( 'WC_Subscriptions_Change_Payment_Gateway', false ) &&
-		       WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
+			   WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
 	}
 }
 
@@ -85,7 +84,7 @@ if ( ! function_exists( 'wcs_cart_have_subscription' ) ) {
 			// Check is Recurring Payment
 			if ( ! is_null( WC()->cart ) ) {
 				$cart = WC()->cart->get_cart();
-				foreach ( $cart as $key => $item ) {
+				foreach ( $cart as $item ) {
 					if ( is_object( $item['data'] ) && WC_Subscriptions_Product::is_subscription( $item['data'] ) ) {
 						return true;
 					}
@@ -109,7 +108,7 @@ if ( ! function_exists( 'wcs_cart_only_subscriptions' ) ) {
 			// Check is Recurring Payment
 			$cart = WC()->cart->get_cart();
 			if ( wcs_cart_have_subscription() ) {
-				foreach ( $cart as $key => $item ) {
+				foreach ( $cart as $item ) {
 					if ( ! WC_Subscriptions_Product::is_subscription( $item['data'] ) ) {
 						$have_product = true;
 						break;
@@ -141,10 +140,10 @@ if ( ! function_exists( 'rp_prepare_amount' ) ) {
 	/**
 	 * Prepare amount.
 	 *
-	 * @param float $amount
+	 * @param float  $amount
 	 * @param string $currency
 	 *
-	 * @return int
+	 * @return float
 	 */
 	function rp_prepare_amount( $amount, $currency ) {
 		return round( $amount * rp_get_currency_multiplier( $currency ) );
@@ -186,7 +185,7 @@ if ( ! function_exists( 'rp_get_currency_multiplier' ) ) {
 		 *
 		 * @var string[]
 		 */
-		$currency_minor_units = [ 'ISK' => 1 ];
+		$currency_minor_units = array( 'ISK' => 1 );
 
 		return array_key_exists( $currency, $currency_minor_units ) ?
 			$currency_minor_units[ $currency ] : 100;
@@ -198,7 +197,7 @@ if ( ! function_exists( 'rp_get_order_handle' ) ) {
 	 * Get Reepay Order Handle.
 	 *
 	 * @param WC_Order $order
-	 * @param bool $unique
+	 * @param bool     $unique
 	 *
 	 * @return string
 	 */
@@ -258,9 +257,10 @@ if ( ! function_exists( 'rp_get_order_by_session' ) ) {
 	/**
 	 * Get Order By Reepay Order Session.
 	 *
-	 * @param string $handle
+	 * @param  string $session_id
 	 *
 	 * @return false|WC_Order
+	 * @throws Exception
 	 */
 	function rp_get_order_by_session( $session_id ) {
 		global $wpdb;
@@ -332,12 +332,14 @@ if ( ! function_exists( 'rp_get_userid_by_handle' ) ) {
 			return 0;
 		}
 
-		$users = get_users( array(
-			'meta_key'    => 'reepay_customer_id',
-			'meta_value'  => $handle,
-			'number'      => 1,
-			'count_total' => false
-		) );
+		$users = get_users(
+			array(
+				'meta_key'    => 'reepay_customer_id',
+				'meta_value'  => $handle,
+				'number'      => 1,
+				'count_total' => false,
+			)
+		);
 		if ( count( $users ) > 0 ) {
 			$user = array_shift( $users );
 

@@ -14,18 +14,16 @@ jQuery(function ($) {
 
     jQuery('form.checkout').on('checkout_place_order_success', function (e, result) {
 
-        try {
-            // Check is response from payment gateway
-            if (!result.hasOwnProperty('is_reepay_checkout')) {
+        if (result.hasOwnProperty('is_reepay_checkout')) {
+            try {
+                wc_reepay.buildModalCheckout(result.reepay.id, result.accept_url);
+            } catch (e) {
+                console.warn(e);
+
                 return false;
             }
-
-            wc_reepay.buildModalCheckout(result.reepay.id, result.accept_url);
-        } catch (e) {
-            console.warn(e);
-
-            return false;
         }
+
 
         return true;
     });
@@ -76,13 +74,12 @@ wc_reepay = {
      * @param accept_url
      */
     buildModalCheckout: function (reepay_id, accept_url) {
-        if (WC_Gateway_Reepay_Checkout.payment_type === 'OVERLAY') {
-            // Show modal
-            window.rp.show(reepay_id);
-            //rp = new Reepay.ModalCheckout( reepay_id );
-        } else {
-            window.rp = new Reepay.WindowCheckout(reepay_id);
+        if (WC_Gateway_Reepay_Checkout.payment_type === 'WINDOW') {
+            new Reepay.WindowCheckout(reepay_id); // redirect to payment page
+            return;
         }
+
+        window.rp.show(reepay_id);
 
         window.rp.addEventHandler(Reepay.Event.Accept, function (data) {
             console.log('Accept', data);

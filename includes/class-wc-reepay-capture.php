@@ -10,18 +10,22 @@ class WC_Reepay_Order_Capture {
 		add_action( 'woocommerce_order_status_changed', array( $this, 'capture_full_order' ), 10, 4 );
 		add_action( 'admin_init', array( $this, 'process_item_capture' ) );
 		add_action( 'woocommerce_order_item_add_action_buttons', array( $this, 'capture_full_order_button' ), 10, 1 );
-		add_filter( 'woocommerce_order_item_get_formatted_meta_data', array(
-			$this,
-			'unset_specific_order_item_meta_data'
-		), 10, 2 );
+		add_filter(
+			'woocommerce_order_item_get_formatted_meta_data',
+			array(
+				$this,
+				'unset_specific_order_item_meta_data',
+			),
+			10,
+			2
+		);
 	}
 
 	public function unset_specific_order_item_meta_data( $formatted_meta, $item ) {
 		// Only on emails notifications
 
-
 		if ( is_admin() && isset( $_GET['post'] ) ) {
-			foreach ( $formatted_meta as $key => $meta ) {
+			foreach ( $formatted_meta as $meta ) {
 				if ( in_array( $meta->key, array( 'settled' ) ) ) {
 					$meta->display_key = 'Settle';
 				}
@@ -39,9 +43,15 @@ class WC_Reepay_Order_Capture {
 		return $formatted_meta;
 	}
 
-
-	public function capture_full_order( $order_id, $this_status_transition_from, $this_status_transition_to, $instance ) {
-		$order          = wc_get_order( $order_id );
+	/**
+	 * @param  int      $order_id
+	 * @param  string   $this_status_transition_from
+	 * @param  string   $this_status_transition_to
+	 * @param  WC_Order $order
+	 *
+	 * @throws Exception If settle error
+	 */
+	public function capture_full_order( $order_id, $this_status_transition_from, $this_status_transition_to, $order ) {
 		$payment_method = $order->get_payment_method();
 
 		if ( strpos( $payment_method, 'reepay' ) === false ) {
@@ -55,6 +65,15 @@ class WC_Reepay_Order_Capture {
 		}
 	}
 
+	/**
+	 * @param WC_Order   $order order to settle.
+	 * @param $items_data
+	 * @param $total_all
+	 * @param $line_items
+	 *
+	 * @return bool
+	 * @throws Exception
+	 */
 	public function settle_items( $order, $items_data, $total_all, $line_items ) {
 		unset( $_POST['post_status'] );
 
@@ -82,11 +101,18 @@ class WC_Reepay_Order_Capture {
 				$this->complete_settle( $item, $order, $total );
 			}
 		}
+
+		return true;
 	}
 
+	/**
+	 * @param WC_Order $order order to settle.
+	 *
+	 * @throws Exception
+	 */
 	public function multi_settle( $order ) {
-		$items_data = [];
-		$line_items = [];
+		$items_data = array();
+		$line_items = array();
 		$total_all  = 0;
 
 		foreach ( $order->get_items() as $item ) {
@@ -98,9 +124,8 @@ class WC_Reepay_Order_Capture {
 				} elseif ( $total > 0 && $this->check_allow_capture( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
-					$total_all    += $total;
+					$total_all   += $total;
 				}
-
 			}
 		}
 
@@ -111,7 +136,7 @@ class WC_Reepay_Order_Capture {
 				if ( $total > 0 && $this->check_allow_capture( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
-					$total_all    += $total;
+					$total_all   += $total;
 				}
 			}
 		}
@@ -123,11 +148,10 @@ class WC_Reepay_Order_Capture {
 				if ( $total > 0 && $this->check_allow_capture( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
-					$total_all    += $total;
+					$total_all   += $total;
 				}
 			}
 		}
-
 
 		if ( ! empty( $items_data ) ) {
 			$this->settle_items( $order, $items_data, $total_all, $line_items );
@@ -142,14 +166,18 @@ class WC_Reepay_Order_Capture {
 		$item->save(); // Save item
 	}
 
+	/**
+	 * @param WC_Order_Item $item order item to settle.
+	 * @param WC_Order      $order current order.
+	 *
+	 * @return bool
+	 */
 	public function settle_item( $item, $order ) {
-
 		$settled = $item->get_meta( 'settled' );
 
 		if ( empty( $settled ) ) {
-
 			$item_data      = $this->get_item_data( $item, $order );
-			$line_item_data = [ $item_data ];
+			$line_item_data = array( $item_data );
 			$total          = $item_data['amount'] * $item_data['quantity'];
 			unset( $_POST['post_status'] );
 			$gateway = rp_get_payment_method( $order );
@@ -157,6 +185,7 @@ class WC_Reepay_Order_Capture {
 				WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 			} elseif ( $total > 0 && $this->check_allow_capture( $order ) ) {
 				$result = $gateway->api->settle( $order, $total, $line_item_data, $item );
+
 				if ( is_wp_error( $result ) ) {
 					$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
 					set_transient( 'reepay_api_action_error', __( $result->get_error_message(), 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
@@ -176,6 +205,8 @@ class WC_Reepay_Order_Capture {
 				}
 			}
 		}
+
+		return true;
 	}
 
 	public function check_allow_capture( $order ) {
@@ -191,7 +222,10 @@ class WC_Reepay_Order_Capture {
 
 		$gateway = rp_get_payment_method( $order );
 
-		$invoice_data = $gateway->api->get_invoice_data( $order );
+		if ( ! empty( $gateway ) && ! empty( $gateway->api ) ) {
+			$invoice_data = $gateway->api->get_invoice_data( $order );
+		}
+
 
 		if ( is_wp_error( $invoice_data ) ) {
 			echo __( 'Invoice not found', 'reepay-checkout-gateway' );
@@ -208,7 +242,7 @@ class WC_Reepay_Order_Capture {
 
 	public function get_no_settled_amount( $order ) {
 		$amount = 0;
-		foreach ( $order->get_items() as $item_key => $item ) {
+		foreach ( $order->get_items() as $item ) {
 			$settled = $item->get_meta( 'settled' );
 			if ( empty( $settled ) ) {
 				$price = self::get_item_price( $item, $order );
@@ -218,7 +252,7 @@ class WC_Reepay_Order_Capture {
 			}
 		}
 
-		foreach ( $order->get_items( 'shipping' ) as $item_id => $item ) {
+		foreach ( $order->get_items( 'shipping' ) as $item ) {
 			$settled = $item->get_meta( 'settled' );
 			if ( empty( $settled ) ) {
 				$price = self::get_item_price( $item, $order );
@@ -228,7 +262,7 @@ class WC_Reepay_Order_Capture {
 			}
 		}
 
-		foreach ( $order->get_items( 'fee' ) as $item_id => $item ) {
+		foreach ( $order->get_items( 'fee' ) as $item ) {
 			$settled = $item->get_meta( 'settled' );
 			if ( empty( $settled ) ) {
 				$price = self::get_item_price( $item, $order );
@@ -248,15 +282,6 @@ class WC_Reepay_Order_Capture {
 			return;
 		}
 
-		/*$gateway = rp_get_payment_method( $order );
-
-		if ( ! empty( $gateway ) && ! empty( $gateway->api ) ) {
-			$order_data = $gateway->api->get_invoice_data( $order );
-			if ( ! is_wp_error( $order_data ) ) {
-				echo '<a href="https://app.reepay.com/#/rp/payments/invoices/invoice/' . $order_data['id'] . '" target="_blank" class="button refund-items">' . __( 'See invoice', 'reepay-checkout-gateway' ) . '</a>';
-			}
-		}*/
-
 		if ( $this->check_allow_capture( $order ) ) {
 			$amount = $this->get_no_settled_amount( $order );
 			if ( $amount > 0 ) {
@@ -268,6 +293,13 @@ class WC_Reepay_Order_Capture {
 		}
 	}
 
+	/**
+	 * @param int        $item_id the id of the item being displayed.
+	 * @param object     $item the item being displayed.
+	 * @param WC_Product $product product of item.
+	 *
+	 * @throws Exception
+	 */
 	public function add_item_capture_button( $item_id, $item, $product ) {
 		$order_id = wc_get_order_id_by_order_item_id( $item_id );
 		$order    = wc_get_order( $order_id );
@@ -299,6 +331,11 @@ class WC_Reepay_Order_Capture {
 		}
 	}
 
+	/**
+	 * Capture items from request
+	 *
+	 * @throws Exception
+	 */
 	public function process_item_capture() {
 		if ( isset( $_POST['line_item_capture'] ) && isset( $_POST['post_type'] ) && isset( $_POST['post_ID'] ) ) {
 			if ( $_POST['post_type'] == 'shop_order' ) {
@@ -325,6 +362,12 @@ class WC_Reepay_Order_Capture {
 		}
 	}
 
+	/**
+	 * @param WC_Order_Item $order_item order item to get data.
+	 * @param WC_Order      $order current order.
+	 *
+	 * @return array
+	 */
 	public function get_item_data( $order_item, $order ) {
 		$prices_incl_tax = wc_prices_include_tax();
 
@@ -333,15 +376,14 @@ class WC_Reepay_Order_Capture {
 		$tax        = $price['with_tax'] - $price['original'];
 		$taxPercent = ( $tax > 0 ) ? 100 / ( $price['original'] / $tax ) : 0;
 		$unitPrice  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
-		$item_data  = [
+
+		return array(
 			'ordertext'       => $order_item->get_name(),
 			'quantity'        => $order_item->get_quantity(),
 			'amount'          => rp_prepare_amount( $unitPrice, $order->get_currency() ),
 			'vat'             => round( $taxPercent / 100, 2 ),
-			'amount_incl_vat' => $prices_incl_tax
-		];
-
-		return $item_data;
+			'amount_incl_vat' => $prices_incl_tax,
+		);
 	}
 
 
@@ -356,7 +398,6 @@ class WC_Reepay_Order_Capture {
 			$price['original'] = floatval( $order->get_line_total( $order_item, false, false ) );
 		}
 
-
 		$tax_data = wc_tax_enabled() ? $order_item->get_taxes() : false;
 		$taxes    = $order->get_taxes();
 
@@ -364,7 +405,7 @@ class WC_Reepay_Order_Capture {
 		if ( ! empty( $taxes ) ) {
 			foreach ( $taxes as $tax ) {
 				$tax_item_id    = $tax->get_rate_id();
-				$tax_item_total = isset( $tax_data['total'][ $tax_item_id ] ) ? $tax_data['total'][ $tax_item_id ] : '';
+				$tax_item_total = $tax_data['total'][ $tax_item_id ] ?? '';
 				if ( ! empty( $tax_item_total ) ) {
 					$res_tax += floatval( $tax_item_total );
 				}

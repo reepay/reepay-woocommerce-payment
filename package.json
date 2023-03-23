@@ -22,7 +22,10 @@
     "start": "gulp watch",
     "build:dev": "gulp build",
     "build": "gulp build --production",
-    "zip": "bash zip.sh"
+    "zip": "bash bin/zip.sh",
+    "phpcs": "bash ./bin/phpcs.sh",
+    "phpcs:full": "bash ./bin/phpcs.sh -full",
+    "phpcs:fix": "bash ./bin/phpcs.sh -fix"
   },
   "repository": {
     "type": "git",

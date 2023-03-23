@@ -7,6 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 	/**
 	 * Logos
+	 *
 	 * @var array
 	 */
 	public $logos = array(
@@ -19,19 +20,18 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 	 * @var array|null
 	 */
 	public $payment_methods = array(
-		'applepay'
+		'applepay',
 	);
 
 	public function __construct() {
 		$this->id           = 'reepay_applepay';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Reepay - Apple Pay', 'reepay-checkout-gateway' );
-		//$this->icon         = apply_filters( 'woocommerce_reepay_applepay_icon', plugins_url( '/assets/images/applepay.png', dirname( __FILE__ ) ) );
-		$this->supports = array(
+		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos    = array( 'applepay' );
+		$this->logos        = array( 'applepay' );
 
 		parent::__construct();
 
@@ -42,9 +42,9 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 		$this->init_settings();
 
 		// Define user set variables
-		$this->enabled     = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title       = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->enabled     = $this->settings['enabled'] ?? 'no';
+		$this->title       = $this->settings['title'] ?? 'no';
+		$this->description = $this->settings['description'] ?? 'no';
 
 		// Load setting from parent method
 		$settings = $this->get_parent_settings();
@@ -65,15 +65,17 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 		}
 
 		// Actions
-		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
-			$this,
-			'process_admin_options'
-		) );
+		add_action(
+			'woocommerce_update_options_payment_gateways_' . $this->id,
+			array(
+				$this,
+				'process_admin_options',
+			)
+		);
 	}
 
 	/**
 	 * Initialise Settings Form Fields
-	 * @return string|void
 	 */
 	public function init_form_fields() {
 		$this->form_fields = array(
@@ -81,20 +83,20 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 				'title'   => __( 'Status in reepay Admin', 'reepay-checkout-gateway' ),
 				'type'    => 'gateway_status',
 				'label'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
-				'default' => $this->test_mode
+				'default' => $this->test_mode,
 			),
 			'enabled'              => array(
 				'title'    => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
 				'type'     => 'checkbox',
 				'label'    => __( 'Enable plugin', 'reepay-checkout-gateway' ),
 				'default'  => 'no',
-				'disabled' => ! $this->is_configured()
+				'disabled' => ! $this->is_configured(),
 			),
 			'title'                => array(
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay - Apple Pay', 'reepay-checkout-gateway' )
+				'default'     => __( 'Reepay - Apple Pay', 'reepay-checkout-gateway' ),
 			),
 			'description'          => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
@@ -103,17 +105,6 @@ class WC_Gateway_Reepay_Apple_Pay extends WC_Gateway_Reepay {
 				'default'     => __( 'Reepay - Apple Pay', 'reepay-checkout-gateway' ),
 			),
 		);
-	}
-
-	/**
-	 * Check if the gateway is available for use.
-	 *
-	 * @return bool
-	 */
-	public function is_available() {
-		if ( parent::is_available() ) {
-			return true;
-		}
 	}
 }
 

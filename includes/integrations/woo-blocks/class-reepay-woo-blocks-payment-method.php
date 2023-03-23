@@ -35,7 +35,7 @@ final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
 		$this->gateway = WC()->payment_gateways()->get_available_payment_gateways()[ $this->name ] ?? null;
 
 		if ( is_null( $this->gateway ) ) {
-			throw new Exception( "Gateway '{$this->name}' not found" );
+			throw new Exception( "Gateway '$this->name' not found" );
 		}
 	}
 
@@ -86,7 +86,7 @@ final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
 		}
 
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-		$handle = "wc-reepay-blocks-payment-method-{$this->name}";
+		$handle = "wc-reepay-blocks-payment-method-$this->name";
 
 		/**
 		 * Filters the list of script dependencies.
@@ -100,7 +100,7 @@ final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
 
 		wp_register_script(
 			$handle,
-			plugin_dir_url( __FILE__ ) . "../../../assets/dist/js/woo-blocks$suffix.js?name={$this->name}",
+			plugin_dir_url( __FILE__ ) . "../../../assets/dist/js/woo-blocks$suffix.js?name=$this->name",
 			$script_dependencies,
 			false,
 			true
@@ -170,7 +170,7 @@ final class Reepay_Woo_Blocks_Payment_Method extends AbstractPaymentMethodType {
 
 				if(!empty($default_token)) {
 					$data['default_token'] = $default_token->get_id();
-				} else {
+				} elseif ( ! empty( $data['tokens'] ) ) {
 					$data['default_token'] = $data['tokens'][0]['id'];
 				}
 			} else {

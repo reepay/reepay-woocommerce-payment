@@ -38,13 +38,11 @@ class WC_Reepay_Meta_Boxes {
 			return;
 		}
 
-
 		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && $post->post_parent != 0 ) {
 			$subscription = get_post_meta( $post->post_parent, '_reepay_subscription_handle', true );
 		} else {
 			$subscription = get_post_meta( $post->ID, '_reepay_subscription_handle', true );
 		}
-
 
 		add_meta_box(
 			'reepay_checkout_customer',
@@ -66,7 +64,6 @@ class WC_Reepay_Meta_Boxes {
 			);
 		}
 
-
 		if ( ! empty( $subscription ) ) {
 			add_meta_box(
 				'reepay_checkout_subscription',
@@ -83,7 +80,7 @@ class WC_Reepay_Meta_Boxes {
 	 * function to show customer meta box content
 	 *
 	 * @param WP_Post $post current post object
-	 * @param array $args additional arguments sent to add_meta_box function
+	 * @param array   $args additional arguments sent to add_meta_box function
 	 */
 	public function generate_meta_box_content_customer( $post, $args ) {
 
@@ -93,11 +90,10 @@ class WC_Reepay_Meta_Boxes {
 			$handle = get_post_meta( $post->ID, '_reepay_customer', true );
 		}
 
-
-		$template_args = [
+		$template_args = array(
 			'email'  => get_post_meta( $post->ID, '_billing_email', true ),
-			'handle' => $handle
-		];
+			'handle' => $handle,
+		);
 
 		$template_args['link'] = $this->dashboard_url . 'customers/customers/customer/' . $template_args['handle'];
 
@@ -113,50 +109,43 @@ class WC_Reepay_Meta_Boxes {
 	 * function to show customer meta box content
 	 *
 	 * @param WP_Post $post current post object
-	 * @param array $args additional arguments sent to add_meta_box function
+	 * @param array   $args additional arguments sent to add_meta_box function
 	 */
 	public function generate_meta_box_content_invoice( $post, $args ) {
 		$order = wc_get_order( $post );
 
 		if ( ! $order ) {
-//			echo 'Error: Order not found';
 			return;
 		}
 
 		$payment_method = $order->get_payment_method();
 
 		if ( ! in_array( $payment_method, WC_ReepayCheckout::PAYMENT_METHODS ) ) {
-//			echo 'Error: Wrong payment gateway';
 			return;
 		}
 
 		$gateway = rp_get_payment_method( $order );
 
 		if ( empty( $gateway ) ) {
-//			echo 'Error: Wrong payment gateway';
 			return;
 		}
 
 		$order_data = $gateway->api->get_invoice_data( $order );
 
 		if ( is_wp_error( $order_data ) ) {
-//			if ( $order_data->get_error_data() !== 'empty_handle' ) {
-//				echo 'Api error: ' . $order_data->get_error_message();
-//			}
-
 			return;
 		}
 
 		wc_get_template(
 			'meta-boxes/invoice.php',
-			[
+			array(
 				'gateway'            => $gateway,
 				'order'              => $order,
 				'order_id'           => $order->get_order_number(),
 				'order_data'         => $order_data,
 				'order_is_cancelled' => $order->get_meta( '_reepay_order_cancelled' ) === '1' && 'cancelled' != $order_data['state'],
-				'link'               => $this->dashboard_url . 'payments/invoices/invoice/' . $order_data['handle']
-			],
+				'link'               => $this->dashboard_url . 'payments/invoices/invoice/' . $order_data['handle'],
+			),
 			'',
 			dirname( __FILE__ ) . '/../templates/'
 		);
@@ -166,7 +155,7 @@ class WC_Reepay_Meta_Boxes {
 	 * function to show customer meta box content
 	 *
 	 * @param WP_Post $post current post object
-	 * @param array $args additional arguments sent to add_meta_box function
+	 * @param array   $args additional arguments sent to add_meta_box function
 	 */
 	public function generate_meta_box_content_subscription( $post, $args ) {
 
@@ -178,11 +167,10 @@ class WC_Reepay_Meta_Boxes {
 			$plan   = get_post_meta( $post->ID, '_reepay_subscription_plan', true );
 		}
 
-
-		$template_args = [
+		$template_args = array(
 			'handle' => $handle,
-			'plan'   => $plan
-		];
+			'plan'   => $plan,
+		);
 
 		if ( empty( $template_args['plan'] ) && function_exists( 'reepay_s' ) ) {
 			try {
