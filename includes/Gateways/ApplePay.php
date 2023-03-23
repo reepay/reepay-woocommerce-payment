@@ -2,7 +2,6 @@
 
 namespace Reepay\Checkout\Gateways;
 
-
 defined( 'ABSPATH' ) || exit();
 
 class ApplePay extends ReepayGateway {

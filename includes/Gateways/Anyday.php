@@ -2,7 +2,6 @@
 
 namespace Reepay\Checkout\Gateways;
 
-
 defined( 'ABSPATH' ) || exit();
 
 class Anyday extends ReepayGateway {

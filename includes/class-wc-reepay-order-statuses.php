@@ -20,25 +20,25 @@ class WC_Reepay_Order_Statuses {
 		define( 'REEPAY_STATUS_AUTHORIZED', isset( $settings['status_authorized'] ) ? str_replace( 'wc-', '', $settings['status_authorized'] ) : 'on-hold' );
 		define( 'REEPAY_STATUS_SETTLED', isset( $settings['status_settled'] ) ? str_replace( 'wc-', '', $settings['status_settled'] ) : 'processing' );
 
-		add_filter( 'woocommerce_settings_api_form_fields_reepay_checkout', array( $this, 'form_fields', ), 10, 2 );
+		add_filter( 'woocommerce_settings_api_form_fields_reepay_checkout', array( $this, 'form_fields' ), 10, 2 );
 
-		add_filter( 'woocommerce_valid_order_statuses_for_payment_complete', array( $this, 'add_valid_order_statuses', ), 10, 2 );
+		add_filter( 'woocommerce_valid_order_statuses_for_payment_complete', array( $this, 'add_valid_order_statuses' ), 10, 2 );
 
-		add_filter( 'woocommerce_payment_complete_order_status', array( $this, 'payment_complete_order_status', ), 10, 3 );
+		add_filter( 'woocommerce_payment_complete_order_status', array( $this, 'payment_complete_order_status' ), 10, 3 );
 
 		add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 10 );
 
 		add_action( 'woocommerce_payment_complete', array( $this, 'payment_complete' ), 10, 1 );
 
-		add_filter( 'reepay_authorized_order_status', array( $this, 'reepay_authorized_order_status', ), 10, 2 );
+		add_filter( 'reepay_authorized_order_status', array( $this, 'reepay_authorized_order_status' ), 10, 2 );
 
-		add_filter( 'reepay_settled_order_status', array( $this, 'reepay_settled_order_status', ), 10, 2 );
+		add_filter( 'reepay_settled_order_status', array( $this, 'reepay_settled_order_status' ), 10, 2 );
 
-		add_filter( 'wc_order_is_editable', array( $this, 'is_editable', ), 10, 2 );
+		add_filter( 'wc_order_is_editable', array( $this, 'is_editable' ), 10, 2 );
 
-		add_filter( 'woocommerce_order_is_paid', array( $this, 'is_paid', ), 10, 2 );
+		add_filter( 'woocommerce_order_is_paid', array( $this, 'is_paid' ), 10, 2 );
 
-		add_filter( 'woocommerce_cancel_unpaid_order', array( $this, 'cancel_unpaid_order', ), 10, 2 );
+		add_filter( 'woocommerce_cancel_unpaid_order', array( $this, 'cancel_unpaid_order' ), 10, 2 );
 
 		add_action( 'woocommerce_order_status_changed', array( $this, 'order_status_changed' ), 10, 4 );
 	}
@@ -55,7 +55,7 @@ class WC_Reepay_Order_Statuses {
 		$statuses = wc_get_order_statuses();
 		foreach ( $statuses as $status => $label ) {
 			$status = str_replace( 'wc-', '', $status );
-			add_action( 'woocommerce_payment_complete_order_status_' . $status, array( $this, 'payment_complete', ), 10, 1 );
+			add_action( 'woocommerce_payment_complete_order_status_' . $status, array( $this, 'payment_complete' ), 10, 1 );
 		}
 	}
 

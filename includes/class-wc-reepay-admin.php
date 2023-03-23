@@ -8,20 +8,20 @@ class WC_Reepay_Admin {
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
 
 		// Add scripts and styles for admin
-		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts') );
+		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 
 		// Add Admin Backend Actions
-		add_action( 'wp_ajax_reepay_capture', array( $this, 'ajax_reepay_capture', ) );
+		add_action( 'wp_ajax_reepay_capture', array( $this, 'ajax_reepay_capture' ) );
 
-		add_action( 'wp_ajax_reepay_cancel', array( $this, 'ajax_reepay_cancel', ) );
+		add_action( 'wp_ajax_reepay_cancel', array( $this, 'ajax_reepay_cancel' ) );
 
-		add_action( 'wp_ajax_reepay_refund', array( $this, 'ajax_reepay_refund', ) );
+		add_action( 'wp_ajax_reepay_refund', array( $this, 'ajax_reepay_refund' ) );
 
-		add_action( 'wp_ajax_reepay_capture_partly', array( $this, 'ajax_reepay_capture_partly', ) );
+		add_action( 'wp_ajax_reepay_capture_partly', array( $this, 'ajax_reepay_capture_partly' ) );
 
-		add_action( 'wp_ajax_reepay_refund_partly', array( $this, 'ajax_reepay_refund_partly', ) );
+		add_action( 'wp_ajax_reepay_refund_partly', array( $this, 'ajax_reepay_refund_partly' ) );
 
-		add_action( 'wp_ajax_reepay_set_complete_settle_transient', array( $this, 'ajax_reepay_set_complete_settle_transient', ) );
+		add_action( 'wp_ajax_reepay_set_complete_settle_transient', array( $this, 'ajax_reepay_set_complete_settle_transient' ) );
 	}
 
 	/**
