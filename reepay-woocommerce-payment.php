@@ -201,7 +201,6 @@ class WC_ReepayCheckout {
     }
 
 	public function includes() {
-		include_once dirname( __FILE__ ) . '/includes/functions.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-order-statuses.php';
 	}
 
