@@ -14,7 +14,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	/**
 	 * @var WC_Reepay_Api
 	 */
-	public $api;
+	public $api = null;
 
 	/**
 	 * Test Mode
@@ -26,18 +26,18 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	/**
 	 * @var string
 	 */
-	public $private_key;
+	public $private_key = '';
 
 	/**
 	 * @var
 	 */
-	public $private_key_test;
+	public $private_key_test = '';
 
 	/**
 	 * @var string
 	 */
 
-	public $public_key;
+	public $public_key = '';
 
 	/**
 	 * Settle
@@ -167,10 +167,15 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 		// Cancel actions
 		add_action( 'wp_ajax_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
 		add_action( 'wp_ajax_nopriv_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
-		add_action( 'woocommerce_checkout_create_order_line_item', array(
-			$this,
-			'action_checkout_create_order_line_item'
-		), 10, 4 );
+		add_action(
+			'woocommerce_checkout_create_order_line_item',
+			array(
+				$this,
+				'action_checkout_create_order_line_item',
+			),
+			10,
+			4
+		);
 
 		static $handler_added = false;
 
@@ -228,9 +233,17 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 		return $configured;
 	}
 
-
+	/**
+	 * @param  WC_Payment_Gateway_Reepay_Interface $gateway
+	 * @param  bool                                $is_test
+	 *
+	 * @return array|mixed|object|WP_Error
+	 */
 	public function get_account_info( $gateway, $is_test = false ) {
 		if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'checkout' && ! empty( $_GET['section'] ) && $_GET['section'] == 'reepay_checkout' ) {
+
+			$default_test_mode = $this->test_mode;
+			$this->test_mode   = $is_test ? 'yes' : 'false';
 
 			$this->api = new WC_Reepay_Api( $gateway );
 
@@ -243,8 +256,15 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 			$account_info = get_transient( $key );
 			if ( empty( $account_info ) ) {
 				$account_info = $this->api->request( 'GET', 'https://api.reepay.com/v1/account' );
+
+				if ( is_wp_error( $account_info ) ) {
+					return $account_info;
+				}
+
 				set_transient( $key, $account_info, 5 );
 			}
+
+			$this->test_mode = $default_test_mode;
 
 			return $account_info;
 		}
@@ -706,7 +726,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 			}
 		}
 
-		$order    = wc_get_order( $order_id );
+		$order = wc_get_order( $order_id );
 
 		if ( $is_woo_blocks_checkout_request ) {
 			/**
@@ -718,7 +738,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 		$token_id = isset( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) ? wc_clean( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) : 'new';
 
 		if ( $token_id === 'new' && isset( $_POST[ 'wc-' . $this->id . '-new-payment-method' ] ) && $_POST[ 'wc-' . $this->id . '-new-payment-method' ] !== false ) {
-			$maybe_save_card =  $_POST[ 'wc-' . $this->id . '-new-payment-method' ] === 'true';
+			$maybe_save_card = $_POST[ 'wc-' . $this->id . '-new-payment-method' ] === 'true';
 		} else {
 			$maybe_save_card = wcs_cart_have_subscription();
 		}
@@ -1435,8 +1455,8 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 	public function get_order_items( $order, $not_settled = false ) {
 		$prices_incl_tax = wc_prices_include_tax();
 
-		$items               = [];
-		$setup_fees          = [];
+		$items               = array();
+		$setup_fees          = array();
 		$sub_amount_discount = 0;
 		foreach ( $order->get_items() as $order_item ) {
 			/** @var WC_Order_Item_Product $order_item */
