@@ -110,10 +110,21 @@ class WC_ReepayCheckout {
 			$this->settings = array(
 				'plugin_file'     => __FILE__,
 				'plugin_basename' => plugin_basename( __FILE__ ),
-				'plugin_url'      => plugin_dir_url( __FILE__ ),
-				'plugin_path'     => plugin_dir_path( __FILE__ ),
-				'assets_url'      => plugin_dir_url( __FILE__ ) . 'assets/dist/',
-				'assets_path'     => plugin_dir_path( __FILE__ ) . 'assets/dist/',
+
+				'plugin_url'  => plugin_dir_url( __FILE__ ),
+				'plugin_path' => plugin_dir_path( __FILE__ ),
+
+				'templates_url'  => plugin_dir_url( __FILE__ ) . 'templates/',
+				'templates_path' => plugin_dir_path( __FILE__ ) . 'templates/',
+
+				'css_url'  => plugin_dir_url( __FILE__ ) . 'assets/dist/css/',
+				'css_path' => plugin_dir_path( __FILE__ ) . 'assets/dist/css/',
+
+				'js_url'  => plugin_dir_url( __FILE__ ) . 'assets/dist/js/',
+				'js_path' => plugin_dir_path( __FILE__ ) . 'assets/dist/js/',
+
+				'images_url'  => plugin_dir_url( __FILE__ ) . 'assets/images/',
+				'images_path' => plugin_dir_path( __FILE__ ) . 'assets/images/',
 
 				'private_key'             => $gateway_settings['private_key'] ?? '',
 				'private_key_test'        => $gateway_settings['private_key_test'] ?? '',
@@ -144,7 +155,7 @@ class WC_ReepayCheckout {
 			$template,
 			$args,
 			'',
-			$this->get_setting( 'plugin_path' ) . 'templates/'
+			$this->get_setting( 'templates_path' )
 		);
 	}
 
