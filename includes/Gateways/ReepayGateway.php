@@ -594,7 +594,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$html = '<ul class="reepay-logos">';
 			foreach ( $logos as $logo ) {
 				$html .= '<li class="reepay-logo">';
-				$html .= '<img src="' . esc_url( plugins_url( '/assets/images/' . $logo . '.png', dirname( __FILE__ ) . '/../../../' ) ) . '" alt="' . esc_attr( sprintf( __( 'Pay with %s on Reepay', 'reepay-checkout-gateway' ), $this->get_title() ) ) . '" />';
+				$html .= '<img src="' . esc_url(  reepay()->get_setting('images_url') . $logo . '.png'  ) . '" alt="' . esc_attr( sprintf( __( 'Pay with %s on Reepay', 'reepay-checkout-gateway' ), $this->get_title() ) ) . '" />';
 				$html .= '</li>';
 			}
 			$html .= '</ul>';
@@ -1571,9 +1571,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				$logos = $this->logos;
 				$logo  = array_shift( $logos );
 
-				return untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/images/' . $logo . '.png';
+				return reepay()->get_setting( 'logo_url' ) . $logo . '.png';
 		}
 
-		return untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/images/svg/' . $image . '.logo.svg';
+		return reepay()->get_setting( 'logo_url' ) . 'svg/' . $image . '.logo.svg';
 	}
 }

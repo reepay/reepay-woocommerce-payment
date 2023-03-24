@@ -79,7 +79,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 		if ( ! $gateway_scripts_initialized ) {
 			wp_enqueue_style(
 				'wc-reepay-blocks',
-				plugin_dir_url( __FILE__ ) . "../../../assets/dist/css/woo_blocks.css",
+				reepay()->get_setting( 'css_url' ) . 'woo_blocks.css',
 			);
 		}
 
@@ -98,7 +98,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 
 		wp_register_script(
 			$handle,
-			plugin_dir_url( __FILE__ ) . "../../../assets/dist/js/woo-blocks$suffix.js?name=$this->name",
+			reepay()->get_setting('js_url'). "woo-blocks$suffix.js?name=$this->name",
 			$script_dependencies,
 			false,
 			true

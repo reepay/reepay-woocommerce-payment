@@ -51,19 +51,19 @@ class Assets {
 
 		wp_register_script(
 			self::SLUG_REEPAY_CDN_JS,
-			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/dist/js/checkout-cdn.js',
+			reepay()->get_setting('js_url') . 'checkout-cdn.js',
 			array()
 		);
 
 		wp_register_script(
 			self::SLUG_CHECKOUT_JS,
-			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/dist/js/checkout' . $suffix . '.js',
+			reepay()->get_setting('js_url') . 'checkout' . $suffix . '.js',
 			array(
 				'jquery',
 				'wc-checkout',
 				'reepay-checkout',
 			),
-			filemtime( REEPAY_CHECKOUT_PLUGIN_PATH . 'assets/dist/js/checkout' . $suffix . '.js' ),
+			filemtime( reepay()->get_setting('js_path') . 'checkout' . $suffix . '.js' ),
 			true
 		);
 

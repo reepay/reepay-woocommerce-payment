@@ -66,7 +66,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 */
 	public function get_card_image_url() {
 		if ( $this->get_card_type() == 'visa_dk' ) {
-			return plugins_url( '/assets/images/dankort.png', dirname( __FILE__ ) );
+			return reepay()->get_setting( 'images_url' ) . 'dankort.png';
 		} else {
 			return WC_HTTPS::force_https_url( WC()->plugin_url() . '/assets/images/icons/credit-cards/' . $this->get_card_type() . '.png' );
 		}

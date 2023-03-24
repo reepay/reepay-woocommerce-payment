@@ -27,21 +27,25 @@ class Main {
 
 			wp_register_script(
 				'reepay-js-input-mask',
-				plugin_dir_url( __FILE__ ) . '../assets/dist/js/jquery.inputmask' . $suffix . '.js',
+				reepay()->get_setting('js_url') . 'jquery.inputmask' . $suffix . '.js',
 				array( 'jquery' ),
 				'5.0.3'
 			);
 
 			wp_register_script(
 				'reepay-admin-js',
-				plugin_dir_url( __FILE__ ) . '../assets/dist/js/admin' . $suffix . '.js',
+				reepay()->get_setting('js_url') . 'admin' . $suffix . '.js',
 				array(
 					'jquery',
 					'reepay-js-input-mask',
 				)
 			);
 
-			wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/../assets/dist/css/style' . $suffix . '.css', __FILE__ ), array() );
+			wp_enqueue_style(
+				'wc-gateway-reepay-checkout',
+				reepay()->get_setting('css_url') . 'style' . $suffix . '.css',
+				array()
+			);
 
 			// Localize the script
 			$translation_array = array(

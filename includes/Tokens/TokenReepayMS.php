@@ -12,7 +12,7 @@ class TokenReepayMS extends WC_Payment_Token {
 	public function get_display_name( $deprecated = '' ) {
 		ob_start();
 		?>
-		<img src="<?php echo esc_url( plugins_url( '/assets/images/' . 'mobilepay' . '.png', dirname( __FILE__ ) ) ); ?>" width="46" height="24" />
+		<img src="<?php echo esc_url( reepay()->get_setting( 'images_url' ) . 'mobilepay.png' ); ?>" width="46" height="24" />
 
 		<?php if ( is_checkout() ) : ?>
 			<?php echo '&nbsp;' . $this->get_token(); ?>

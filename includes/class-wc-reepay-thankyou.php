@@ -55,7 +55,7 @@ class WC_Reepay_Thankyou {
 			$located = wc_locate_template(
 				'checkout/thankyou.php',
 				$template_path,
-				dirname( __FILE__ ) . '/../templates/'
+				reepay()->get_setting( 'templates_path' )
 			);
 		}
 
@@ -148,7 +148,7 @@ class WC_Reepay_Thankyou {
 
 		wp_register_script(
 			'wc-gateway-reepay-thankyou',
-			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/dist/js/thankyou' . $suffix . '.js',
+			reepay()->get_setting('js_url') . 'thankyou' . $suffix . '.js',
 			array(
 				'jquery',
 				'jquery-blockui',
