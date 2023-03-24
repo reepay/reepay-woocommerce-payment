@@ -52,18 +52,8 @@ class WC_ReepayCheckout {
 		add_action( 'plugins_loaded', array( $this, 'include_classes' ), 0 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'add_scripts' ) );
 
-		// Add statuses for payment complete
-		add_filter(
-			'woocommerce_valid_order_statuses_for_payment_complete',
-			array( $this, 'add_valid_order_statuses' ),
-			10,
-			2
-		);
-
 		// Add Footer HTML
 		add_action( 'wp_footer', __CLASS__ . '::add_footer' );
-
-		$this->includes();
 
 		load_plugin_textdomain( 'reepay-checkout-gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
@@ -192,16 +182,14 @@ class WC_ReepayCheckout {
 		return $api;
     }
 
-	public function includes() {
-		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-order-statuses.php';
-	}
-
 	/**
 	 * WooCommerce Loaded: load classes
 	 *
 	 * @return void
 	 */
 	public function include_classes() {
+		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-order-statuses.php';
+
 		new Reepay\Checkout\Admin\Main();
 
 		new Reepay\Checkout\Tokens\Main();
@@ -289,28 +277,6 @@ class WC_ReepayCheckout {
 
 			<?php
 		endif;
-	}
-
-	/**
-	 * Allow processing/completed statuses for capture
-	 *
-	 * @param array    $statuses
-	 * @param WC_Order $order
-	 *
-	 * @return array
-	 */
-	public function add_valid_order_statuses( $statuses, $order ) {
-		if ( reepay()->is_order_paid_via_reepay( $order ) ) {
-			$statuses = array_merge(
-				$statuses,
-				array(
-					'processing',
-					'completed',
-				)
-			);
-		}
-
-		return $statuses;
 	}
 }
 
