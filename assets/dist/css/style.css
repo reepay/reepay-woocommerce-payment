@@ -103,10 +103,6 @@
   min-height: 1px !important;
   text-align: center; }
 
-#payment .reepay-logos li {
-  list-style: none;
-}
-
 #payment .wc_payment_methods li label {
   display: flex !important;
   align-items: center; }

@@ -55,10 +55,6 @@ class WC_ReepayCheckout {
 		new WoocommerceExists();
 
 		add_action( 'plugins_loaded', array( $this, 'include_classes' ), 0 );
-		add_action( 'wp_enqueue_scripts', array( $this, 'add_scripts' ) );
-
-		// Add Footer HTML
-		add_action( 'wp_footer', __CLASS__ . '::add_footer' );
 
 		load_plugin_textdomain( 'reepay-checkout-gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
@@ -203,49 +199,6 @@ class WC_ReepayCheckout {
 		new Reepay\Checkout\Integrations\Main();
 
 		new Reepay\Checkout\Frontend\Main();
-	}
-
-	/**
-	 * Add Footer HTML
-	 */
-	public static function add_footer() {
-
-
-		if ( is_checkout() ) :
-			?>
-			<style type="text/css">
-				#payment li.payment_method_reepay_applepay {
-					display: none;
-				}
-
-				#payment li.payment_method_reepay_googlepay {
-					display: none;
-				}
-
-			</style>
-
-			<script type="text/javascript">
-				jQuery('body').on('updated_checkout', function () {
-					var className = 'wc_payment_method payment_method_reepay_applepay';
-					if (true == Reepay.isApplePayAvailable()) {
-						for (let element of document.getElementsByClassName(className)) {
-							element.style.display = 'block';
-						}
-					}
-
-					var className = 'wc_payment_method payment_method_reepay_googlepay';
-					Reepay.isGooglePayAvailable().then(isAvailable => {
-						if (true == isAvailable) {
-							for (let element of document.getElementsByClassName(className)) {
-								element.style.display = 'block';
-							}
-						}
-					});
-				});
-			</script>
-
-			<?php
-		endif;
 	}
 }
 

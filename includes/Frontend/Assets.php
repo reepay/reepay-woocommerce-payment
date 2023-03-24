@@ -5,6 +5,12 @@ namespace Reepay\Checkout\Frontend;
 defined( 'ABSPATH' ) || exit();
 
 class Assets {
+	const SLUG_CHECKOUT_JS = 'wc-gateway-reepay-checkout';
+
+	const SLUG_REEPAY_CDN_JS = 'reepay-checkout';
+
+	const SLUG_GLOBAL_CSS = 'wc-gateway-reepay-checkout';
+
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_payment_assets' ) );
 	}
@@ -20,7 +26,7 @@ class Assets {
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
 		wp_enqueue_style(
-			'wc-gateway-reepay-checkout',
+			self::SLUG_GLOBAL_CSS,
 			reepay()->get_setting( 'assets_url' ) . 'css/style' . $suffix . '.css',
 			array()
 		);
@@ -32,7 +38,7 @@ class Assets {
 				$logo_height .= 'px';
 			}
 			wp_add_inline_style(
-				'wc-gateway-reepay-checkout',
+				self::SLUG_GLOBAL_CSS,
 				"
                     #payment .wc_payment_method > label:first-of-type img {
                         height: $logo_height;
@@ -44,13 +50,13 @@ class Assets {
 		}
 
 		wp_register_script(
-			'reepay-checkout',
+			self::SLUG_REEPAY_CDN_JS,
 			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/dist/js/checkout-cdn.js',
 			array()
 		);
 
 		wp_register_script(
-			'wc-gateway-reepay-checkout',
+			self::SLUG_CHECKOUT_JS,
 			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/dist/js/checkout' . $suffix . '.js',
 			array(
 				'jquery',
@@ -62,7 +68,7 @@ class Assets {
 		);
 
 		wp_localize_script(
-			'wc-gateway-reepay-checkout',
+			self::SLUG_CHECKOUT_JS,
 			'WC_Gateway_Reepay_Checkout',
 			reepay()->gateways()->checkout()->get_localize_script_data()
 		);
@@ -70,8 +76,8 @@ class Assets {
 		if ( ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() )
 		     && ! is_order_received_page()
 		) {
-			wp_enqueue_script( 'reepay-checkout' );
-			wp_enqueue_script( 'wc-gateway-reepay-checkout' );
+			wp_enqueue_script( self::SLUG_REEPAY_CDN_JS );
+			wp_enqueue_script( self::SLUG_CHECKOUT_JS );
 		}
 	}
 }
