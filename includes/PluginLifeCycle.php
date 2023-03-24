@@ -28,7 +28,7 @@ class PluginLifeCycle {
 	 */
 	public static function activation_hook() {
 		if ( ! get_option( 'woocommerce_reepay_version' ) ) {
-			add_option( 'woocommerce_reepay_version', WC_ReepayCheckout::DB_VERSION );
+			add_option( 'woocommerce_reepay_version', UpdateDB::DB_VERSION );
 		}
 	}
 
