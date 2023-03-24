@@ -145,24 +145,6 @@ class WC_ReepayCheckout {
 	}
 
 	/**
-	 * Check if payment method is reepay payment method
-	 *
-	 * @param string $payment_method
-	 */
-	public function is_reepay_payment_method( $payment_method ) {
-		return in_array( $payment_method, Gateways::PAYMENT_METHODS );
-	}
-
-	/**
-	 * Check if payment method is reepay payment method
-	 *
-	 * @param WC_Order $order
-	 */
-	public function is_order_paid_via_reepay( $order ) {
-		return in_array( $order->get_payment_method(), Gateways::PAYMENT_METHODS );
-	}
-
-	/**
 	 * Set logging source.
 	 *
 	 * @param ReepayGateway|string $source

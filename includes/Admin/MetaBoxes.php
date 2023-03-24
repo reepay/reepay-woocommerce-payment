@@ -120,7 +120,7 @@ class MetaBoxes {
 			return;
 		}
 
-		if ( ! reepay()->is_order_paid_via_reepay( $order ) ) {
+		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
 			return;
 		}
 

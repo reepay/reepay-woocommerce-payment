@@ -172,7 +172,7 @@ class Api {
 			$order = wc_get_order( $order );
 		}
 
-		if ( ! reepay()->is_order_paid_via_reepay( $order ) ) {
+		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
 			return new WP_Error( 0, 'Unable to get invoice data.' );
 		}
 

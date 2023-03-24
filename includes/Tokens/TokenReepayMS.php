@@ -58,7 +58,7 @@ class TokenReepayMS extends WC_Payment_Token {
 			return;
 		}
 
-		if ( reepay()->is_reepay_payment_method( $method['method']['gateway'] ) ) {
+		if ( rp_is_reepay_payment_method( $method['method']['gateway'] ) ) {
 			$token = new TokenReepayMS( $method['method']['id'] );
 			echo $token->get_display_name();
 		}
