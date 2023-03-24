@@ -863,7 +863,7 @@ class WC_Reepay_Api {
 			if ( $order->get_customer_id() > 0 ) {
 				$handle = 'customer-' . $order->get_customer_id();
 			} else {
-				$handle = 'customer-' . time();
+				$handle = 'cust-' . time();
 			}
 		}
 
