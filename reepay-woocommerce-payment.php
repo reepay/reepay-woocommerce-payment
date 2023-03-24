@@ -41,6 +41,11 @@ class WC_ReepayCheckout {
 	private $settings = array();
 
 	/**
+	 * @var Gateways
+	 */
+	private $gateways = null;
+
+	/**
 	 * Constructor
 	 */
 	private function __construct() {
@@ -125,6 +130,7 @@ class WC_ReepayCheckout {
 				'enable_order_autocancel' => $gateway_settings['enable_order_autocancel'] ?? '',
 				'is_webhook_configured'   => $gateway_settings['is_webhook_configured'] ?? '',
 				'handle_failover'         => $gateway_settings['handle_failover'] ?? '',
+				'logo_height'         => $gateway_settings['logo_height'] ?? '',
 			);
 		}
 
@@ -167,6 +173,12 @@ class WC_ReepayCheckout {
     }
 
 	/**
+	 * @return Gateways|null
+	 */
+    public function gateways() {
+	    return $this->gateways;
+    }
+	/**
 	 * WooCommerce Loaded: load classes
 	 *
 	 * @return void
@@ -186,35 +198,18 @@ class WC_ReepayCheckout {
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-thankyou.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-subscriptions.php';
 
-		new Reepay\Checkout\Gateways();
+		$this->gateways = new Reepay\Checkout\Gateways();
 
 		new Reepay\Checkout\Integrations\Main();
+
+		new Reepay\Checkout\Frontend\Main();
 	}
 
 	/**
 	 * Add Footer HTML
 	 */
 	public static function add_footer() {
-		$settings = get_option( 'woocommerce_reepay_checkout_settings' );
-		if ( is_array( $settings ) && ! empty( $settings['logo_height'] ) ) :
-			$logo_height = $settings['logo_height'];
-			if ( is_numeric( $logo_height ) ) {
-				$logo_height .= 'px';
-			}
-			?>
-			<style type="text/css">
-				#payment .wc_payment_method > label:first-of-type img {
-					height: <?php echo esc_html( $logo_height ); ?>;
-					max-height: <?php echo esc_html( $logo_height ); ?>;
-					list-style: none;
-				}
 
-				#payment .reepay-logos li {
-					list-style: none;
-				}
-			</style>
-			<?php
-		endif;
 
 		if ( is_checkout() ) :
 			?>

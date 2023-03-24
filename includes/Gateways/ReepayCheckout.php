@@ -965,4 +965,17 @@ class ReepayCheckout extends ReepayGateway {
 		exit();
 	}
 
+	public function get_localize_script_data() {
+		return array(
+			'payment_type' => $this->payment_type,
+			'public_key'   => $this->public_key,
+			'language'     => substr( $this->get_language(), 0, 2 ),
+			'buttonText'   => __( 'Pay', 'reepay-checkout-gateway' ),
+			'recurring'    => true,
+			'nonce'        => wp_create_nonce( 'reepay' ),
+			'ajax_url'     => admin_url( 'admin-ajax.php' ),
+			'cancel_text'  => __( 'Payment was canceled, please try again', 'reepay-checkout-gateway' ),
+			'error_text'   => __( 'Error with payment, please try again', 'reepay-checkout-gateway' ),
+		);
+	}
 }

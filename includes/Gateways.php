@@ -2,6 +2,9 @@
 
 namespace Reepay\Checkout;
 
+use Reepay\Checkout\Gateways\ReepayCheckout;
+use Reepay\Checkout\Gateways\ReepayGateway;
+
 defined( 'ABSPATH' ) || exit();
 
 class Gateways {
@@ -51,6 +54,13 @@ class Gateways {
 		Gateways\Vipps::class,
 	);
 
+	/**
+	 * Gateway instances
+	 *
+	 * @var array
+	 */
+	private $gateways = array();
+
 	public function __construct() {
 		foreach ( self::PAYMENT_CLASSES as $class ) {
 			$this->register_gateway( $class );
@@ -63,16 +73,10 @@ class Gateways {
 	 * @param string $class_name
 	 */
 	private function register_gateway( $class_name ) {
-		global $gateways;
-
-		if ( ! $gateways ) {
-			$gateways = array();
-		}
-
 		if ( ! isset( $gateways[ $class_name ] ) ) {
-			// Initialize instance
 			if ( $gateway = new $class_name() ) {
-				$gateways[] = $class_name;
+				/** @var ReepayGateway $gateway */
+				$this->gateways[ $gateway->id ] = $gateway;
 
 				// Register gateway instance
 				add_filter(
@@ -85,6 +89,26 @@ class Gateways {
 				);
 			}
 		}
+	}
+
+	/**
+	 * Get gateway instance by id
+	 *
+	 * @param  string  $id  gateway id.
+	 *
+	 * @return ReepayGateway|null
+	 */
+	public function get_gateway( $id ) {
+		return $this->gateways[ $id ] ?? null;
+	}
+
+	/**
+	 * Shortcut for reepay_checkout gateway
+	 *
+	 * @return ReepayCheckout
+	 */
+	public function checkout() {
+		return $this->gateways[ 'reepay_checkout' ] ?? null;
 	}
 }
 
