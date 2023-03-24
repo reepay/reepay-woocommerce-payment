@@ -8,7 +8,7 @@
             "Reepay\\Checkout\\": "includes/"
         },
         "files": [
-            "includes/functions/subscriptions.php",
+            "includes/functions/currency.php",
             "includes/functions/customer.php",
             "includes/functions/format.php",
             "includes/functions/gateways.php",

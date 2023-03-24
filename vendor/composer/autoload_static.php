@@ -7,11 +7,12 @@ namespace Composer\Autoload;
 class ComposerStaticInita6758271609b1b7b0025b80dea0412ce
 {
     public static $files = array (
-        '8b344f1194a5f7d661ac63b5242e2a38' => __DIR__ . '/../..' . '/includes/functions/subscriptions.php',
+        '2c706c545041225edf6b12ccf57b2caa' => __DIR__ . '/../..' . '/includes/functions/currency.php',
         '615d14f9645a3ae1f165105c7bd8e0ba' => __DIR__ . '/../..' . '/includes/functions/customer.php',
         '51f5215690c81758d5721a84d8dd3282' => __DIR__ . '/../..' . '/includes/functions/format.php',
         '1f252c5da081bd0727f65a40cb3855ee' => __DIR__ . '/../..' . '/includes/functions/gateways.php',
         '8108f4930fa25721ded46e751c28c242' => __DIR__ . '/../..' . '/includes/functions/order.php',
+        '8b344f1194a5f7d661ac63b5242e2a38' => __DIR__ . '/../..' . '/includes/functions/subscriptions.php',
     );
 
     public static $prefixLengthsPsr4 = array (
