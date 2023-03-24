@@ -169,7 +169,6 @@ class WC_ReepayCheckout {
 	public function woocommerce_loaded() {
 		include_once dirname( __FILE__ ) . '/includes/class-wc-payment-token-reepay.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-payment-ms-token-reepay.php';
-		include_once dirname( __FILE__ ) . '/includes/interfaces/class-wc-payment-gateway-reepay-interface.php';
 		include_once dirname( __FILE__ ) . '/includes/trait-wc-reepay-token.php';
 		include_once dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-gateway-reepay.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-api.php';
