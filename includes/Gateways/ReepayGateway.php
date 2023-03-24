@@ -173,8 +173,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		add_action( 'admin_notices', array( $this, 'admin_notice_api_action' ) );
 
-		// JS Scrips
-		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_payment_assets' ) );
 
 		// Payment confirmation
 		add_action( 'the_post', array( $this, 'payment_confirm' ) );
@@ -607,36 +606,28 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * payment_scripts function.
-	 *
-	 * Outputs scripts used for payment on checkout page
-	 *
-	 * @return void
-	 */
-	public function payment_scripts() {
-		if ( ! is_checkout() && ! isset( $_GET['pay_for_order'] ) && ! is_add_payment_method_page() ) {
-			return;
-		}
-
-		if ( is_order_received_page() ) {
-			return;
-		}
-
-		$this->enqueue_payment_scripts();
-	}
-
-	/**
-	 * enqueue_payment_scripts function.
+	 * enqueue_payment_assets function.
 	 *
 	 * Outputs scripts used for payment
 	 *
 	 * @return void
 	 */
-	public function enqueue_payment_scripts() {
+	public function enqueue_payment_assets() {
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
-		wp_enqueue_script( 'reepay-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/dist/js/checkout-cdn.js', array() );
-		wp_enqueue_script(
+		wp_enqueue_style(
+			'wc-gateway-reepay-checkout',
+			reepay()->get_setting( 'assets_url' ) . 'css/style' . $suffix . '.css',
+			array()
+		);
+
+		wp_register_script(
+			'reepay-checkout',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/dist/js/checkout-cdn.js',
+			array()
+		);
+
+		wp_register_script(
 			'wc-gateway-reepay-checkout',
 			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../../assets/dist/js/checkout' . $suffix . '.js',
 			array(
@@ -661,6 +652,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			'error_text'   => __( 'Error with payment, please try again', 'reepay-checkout-gateway' ),
 		);
 		wp_localize_script( 'wc-gateway-reepay-checkout', 'WC_Gateway_Reepay_Checkout', $translation_array );
+
+		if ( ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() )
+		     && ! is_order_received_page()
+		) {
+		    wp_enqueue_script( 'reepay-checkout' );
+		    wp_enqueue_script( 'wc-gateway-reepay-checkout' );
+		}
 	}
 
 	/**

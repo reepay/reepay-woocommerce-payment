@@ -111,6 +111,8 @@ class WC_ReepayCheckout {
 				'plugin_basename' => plugin_basename( __FILE__ ),
 				'plugin_url'      => plugin_dir_url( __FILE__ ),
 				'plugin_path'     => plugin_dir_path( __FILE__ ),
+				'assets_url'      => plugin_dir_url( __FILE__ ) . 'assets/dist/',
+				'assets_path'     => plugin_dir_path( __FILE__ ) . 'assets/dist/',
 
 				'private_key'             => $gateway_settings['private_key'] ?? '',
 				'private_key_test'        => $gateway_settings['private_key_test'] ?? '',
@@ -187,16 +189,6 @@ class WC_ReepayCheckout {
 		new Reepay\Checkout\Gateways();
 
 		new Reepay\Checkout\Integrations\Main();
-	}
-
-	/**
-	 * Add Scripts
-	 */
-	public function add_scripts() {
-		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-		if ( is_checkout() ) {
-			wp_enqueue_style( 'wc-gateway-reepay-checkout', plugins_url( '/assets/dist/css/style' . $suffix . '.css', __FILE__ ), array() );
-		}
 	}
 
 	/**

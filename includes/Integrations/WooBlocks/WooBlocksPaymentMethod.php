@@ -77,17 +77,6 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 		static $gateway_scripts_initialized = false;
 
 		if ( ! $gateway_scripts_initialized ) {
-			/** @var ReepayGateway $gateway */
-			$gateway = WC()->payment_gateways()->get_available_payment_gateways()[ $this->name ] ?? null;
-
-			if ( empty( $gateway ) ) {
-				return [];
-			}
-
-			$gateway->enqueue_payment_scripts();
-
-			$gateway_scripts_initialized = true;
-
 			wp_enqueue_style(
 				'wc-reepay-blocks',
 				plugin_dir_url( __FILE__ ) . "../../../assets/dist/css/woo_blocks.css",
