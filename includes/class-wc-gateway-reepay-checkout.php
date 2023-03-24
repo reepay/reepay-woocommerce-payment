@@ -841,6 +841,10 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 			// Create Payment Token
 			$source = $this->api->get_reepay_cards( $customer_handle, $reepay_token );
 
+			if ( is_wp_error( $source ) || empty( $source ) ) {
+				throw new Exception( __( 'Reepay error. Try again or contact us.', 'reepay-checkout-gateway' ) );
+			}
+
 			if ( 'ms_' == substr( $source['id'], 0, 3 ) ) {
 				$token = new WC_Payment_Token_Reepay_MS();
 				$token->set_gateway_id( $this->id );
