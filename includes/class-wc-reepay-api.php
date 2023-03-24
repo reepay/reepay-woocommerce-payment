@@ -37,7 +37,7 @@ class WC_Reepay_Api {
 	 *
 	 * @param $method
 	 * @param $url
-	 * @param array  $params
+	 * @param array $params
 	 *
 	 * @return array|mixed|object|WP_Error
 	 */
@@ -200,7 +200,7 @@ class WC_Reepay_Api {
 	 * Check is Capture possible
 	 *
 	 * @param WC_Order|int $order
-	 * @param bool         $amount
+	 * @param bool $amount
 	 *
 	 * @return bool
 	 */
@@ -307,7 +307,7 @@ class WC_Reepay_Api {
 	 * Capture
 	 *
 	 * @param WC_Order|int $order
-	 * @param float|false  $amount
+	 * @param float|false $amount
 	 *
 	 * @return array|WP_Error|Bool
 	 */
@@ -401,9 +401,9 @@ class WC_Reepay_Api {
 	 * Charge payment.
 	 *
 	 * @param WC_Order $order
-	 * @param string   $token
-	 * @param float    $amount
-	 * @param string   $currency
+	 * @param string $token
+	 * @param float $amount
+	 * @param string $currency
 	 *
 	 * @return array|WP_Error
 	 */
@@ -428,7 +428,7 @@ class WC_Reepay_Api {
 			if ( is_wp_error( $result ) ) {
 
 				if ( 'yes' == $this->gateway->handle_failover &&
-					 ( in_array( $result->get_error_code(), array( 105, 79, 29, 99, 72 ) ) )
+				     ( in_array( $result->get_error_code(), array( 105, 79, 29, 99, 72 ) ) )
 				) {
 
 					// Workaround: handle already exists lets create another with unique handle
@@ -470,10 +470,10 @@ class WC_Reepay_Api {
 	/**
 	 * Settle the payment online.
 	 *
-	 * @param  WC_Order       $order
-	 * @param  float|int|null $amount
-	 * @param  false|array    $item_data
-	 * @param  bool           $item
+	 * @param WC_Order $order
+	 * @param float|int|null $amount
+	 * @param false|array $item_data
+	 * @param bool $item
 	 *
 	 * @return array|WP_Error
 	 */
@@ -650,9 +650,9 @@ class WC_Reepay_Api {
 	/**
 	 * Refund the payment online.
 	 *
-	 * @param WC_Order       $order
+	 * @param WC_Order $order
 	 * @param float|int|null $amount
-	 * @param string|null    $reason
+	 * @param string|null $reason
 	 *
 	 * @return array|WP_Error
 	 */
@@ -714,7 +714,7 @@ class WC_Reepay_Api {
 	 * Process the result of Charge request.
 	 *
 	 * @param WC_Order $order
-	 * @param array    $result
+	 * @param array $result
 	 *
 	 * @throws Exception
 	 */
@@ -800,7 +800,7 @@ class WC_Reepay_Api {
 	/**
 	 * Get Customer Cards from Reepay
 	 *
-	 * @param string      $customer_handle
+	 * @param string $customer_handle
 	 * @param string|null $reepay_token
 	 *
 	 * @return array|WP_Error
@@ -863,7 +863,7 @@ class WC_Reepay_Api {
 			if ( $order->get_customer_id() > 0 ) {
 				$handle = 'customer-' . $order->get_customer_id();
 			} else {
-				$handle = 'cust-' . time();
+				$handle = 'customer-' . time();
 			}
 		}
 
