@@ -70,7 +70,6 @@ class WC_Reepay_Order_Statuses {
 
 		$form_fields['hr_sync'] = array(
 			'type' => 'separator',
-			'id'   => 'hr_sync',
 		);
 
 		$form_fields['enable_sync'] = array(
