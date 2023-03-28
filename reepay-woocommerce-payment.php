@@ -139,7 +139,12 @@ class WC_ReepayCheckout {
 				'enable_order_autocancel' => $gateway_settings['enable_order_autocancel'] ?? '',
 				'is_webhook_configured'   => $gateway_settings['is_webhook_configured'] ?? '',
 				'handle_failover'         => $gateway_settings['handle_failover'] ?? '',
-				'logo_height'         => $gateway_settings['logo_height'] ?? '',
+				'logo_height'             => $gateway_settings['logo_height'] ?? '',
+
+				'enable_sync'       => $gateway_settings['enable_sync'] ?? '',
+				'status_created'    => $gateway_settings['status_created'] ?? '',
+				'status_authorized' => $gateway_settings['status_authorized'] ?? '',
+				'status_settled'    => $gateway_settings['status_settled'] ?? '',
 			);
 		}
 

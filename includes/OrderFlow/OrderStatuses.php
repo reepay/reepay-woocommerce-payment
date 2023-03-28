@@ -16,15 +16,10 @@ class OrderStatuses {
 	 * Constructor
 	 */
 	public function __construct() {
-		$settings = get_option( 'woocommerce_reepay_checkout_settings' );
-		if ( ! is_array( $settings ) ) {
-			$settings = array();
-		}
-
-		define( 'REEPAY_STATUS_SYNC', ! isset( $settings['enable_sync'] ) || $settings['enable_sync'] == 'yes' );
-		define( 'REEPAY_STATUS_CREATED', isset( $settings['status_created'] ) ? str_replace( 'wc-', '', $settings['status_created'] ) : 'pending' );
-		define( 'REEPAY_STATUS_AUTHORIZED', isset( $settings['status_authorized'] ) ? str_replace( 'wc-', '', $settings['status_authorized'] ) : 'on-hold' );
-		define( 'REEPAY_STATUS_SETTLED', isset( $settings['status_settled'] ) ? str_replace( 'wc-', '', $settings['status_settled'] ) : 'processing' );
+		define( 'REEPAY_STATUS_SYNC', reepay()->get_setting( 'enable_sync' ) == 'yes' );
+		define( 'REEPAY_STATUS_CREATED', str_replace( 'wc-', '', reepay()->get_setting( 'status_created' ) ) ?: 'pending' );
+		define( 'REEPAY_STATUS_AUTHORIZED', str_replace( 'wc-', '', reepay()->get_setting( 'status_authorized' ) ) ?: 'on-hold' );
+		define( 'REEPAY_STATUS_SETTLED', str_replace( 'wc-', '', reepay()->get_setting( 'status_settled' ) ) ?: 'processing' );
 
 		add_filter( 'woocommerce_settings_api_form_fields_reepay_checkout', array( $this, 'form_fields' ), 10, 2 );
 
