@@ -51,6 +51,8 @@ class WC_ReepayCheckout {
 		new LifeCycle( $this->get_setting( 'plugin_path' ) );
 		new WoocommerceExists();
 
+		new Reepay\Checkout\Functions\Main();
+
 		add_action( 'plugins_loaded', array( $this, 'include_classes' ), 0 );
 
 		load_plugin_textdomain( 'reepay-checkout-gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );

@@ -3,7 +3,7 @@
         'name' => 'reepay/checkout',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'b129e072ef02203e3fcf3fd7c0d38104d2925dc6',
+        'reference' => 'b1f7bb91805c88bc7a0bb3ba2d32e3489c57c3f3',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -22,7 +22,7 @@
         'reepay/checkout' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'b129e072ef02203e3fcf3fd7c0d38104d2925dc6',
+            'reference' => 'b1f7bb91805c88bc7a0bb3ba2d32e3489c57c3f3',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

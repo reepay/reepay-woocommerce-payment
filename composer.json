@@ -6,15 +6,7 @@
     "autoload": {
         "psr-4": {
             "Reepay\\Checkout\\": "includes/"
-        },
-        "files": [
-            "includes/functions/currency.php",
-            "includes/functions/customer.php",
-            "includes/functions/format.php",
-            "includes/functions/gateways.php",
-            "includes/functions/order.php",
-            "includes/functions/subscriptions.php"
-        ]
+        }
     },
     "authors": [
         {
