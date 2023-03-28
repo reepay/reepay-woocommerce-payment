@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit();
 
 class ReepayCheckout extends ReepayGateway {
 	use LoggingTrait;
-	
+
 	/**
 	 * Payment methods.
 	 *
@@ -265,10 +265,10 @@ class ReepayCheckout extends ReepayGateway {
 					'type'           => 'multiselect',
 					'css'            => 'height: 150px',
 					'options'        => array(
-						InstantSettle::SETTLE_VIRTUAL => __( 'Instant Settle online / virtualproducts', 'reepay-checkout-gateway' ),
-						InstantSettle::SETTLE_PHYSICAL => __( 'Instant Settle physical  products', 'reepay-checkout-gateway' ),
+						InstantSettle::SETTLE_VIRTUAL   => __( 'Instant Settle online / virtualproducts', 'reepay-checkout-gateway' ),
+						InstantSettle::SETTLE_PHYSICAL  => __( 'Instant Settle physical  products', 'reepay-checkout-gateway' ),
 						InstantSettle::SETTLE_RECURRING => __( 'Instant Settle recurring (subscription) products', 'reepay-checkout-gateway' ),
-						InstantSettle::SETTLE_FEE => __( 'Instant Settle fees', 'reepay-checkout-gateway' ),
+						InstantSettle::SETTLE_FEE       => __( 'Instant Settle fees', 'reepay-checkout-gateway' ),
 					),
 					'select_buttons' => true,
 					'default'        => array(),

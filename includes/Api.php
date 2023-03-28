@@ -58,7 +58,7 @@ class Api {
 			$this->log( sprintf( 'Request: %s %s %s', $method, $url, json_encode( $params, JSON_PRETTY_PRINT ) ) );
 		}
 
-		$key = reepay()->get_setting('test_mode') === 'yes' ? reepay()->get_setting('private_key_test') : reepay()->get_setting('private_key');
+		$key = reepay()->get_setting( 'test_mode' ) === 'yes' ? reepay()->get_setting( 'private_key_test' ) : reepay()->get_setting( 'private_key' );
 
 		$args = array(
 			'headers' => array(

@@ -81,7 +81,7 @@ class Statistics {
 
 			return $response;
 		} else {
-			$this->log( 'Empty private key');
+			$this->log( 'Empty private key' );
 		}
 		return false;
 	}

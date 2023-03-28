@@ -11,7 +11,7 @@ class Ajax {
 	/**
 	 * @var string
 	 */
-	CONST PREFIX = 'reepay';
+	const PREFIX = 'reepay';
 
 	/**
 	 * @var array

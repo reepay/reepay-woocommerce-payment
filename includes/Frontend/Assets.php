@@ -51,19 +51,19 @@ class Assets {
 
 		wp_register_script(
 			self::SLUG_REEPAY_CDN_JS,
-			reepay()->get_setting('js_url') . 'checkout-cdn.js',
+			reepay()->get_setting( 'js_url' ) . 'checkout-cdn.js',
 			array()
 		);
 
 		wp_register_script(
 			self::SLUG_CHECKOUT_JS,
-			reepay()->get_setting('js_url') . 'checkout' . $suffix . '.js',
+			reepay()->get_setting( 'js_url' ) . 'checkout' . $suffix . '.js',
 			array(
 				'jquery',
 				'wc-checkout',
 				'reepay-checkout',
 			),
-			filemtime( reepay()->get_setting('js_path') . 'checkout' . $suffix . '.js' ),
+			filemtime( reepay()->get_setting( 'js_path' ) . 'checkout' . $suffix . '.js' ),
 			true
 		);
 
@@ -74,7 +74,7 @@ class Assets {
 		);
 
 		if ( ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() )
-		     && ! is_order_received_page()
+			 && ! is_order_received_page()
 		) {
 			wp_enqueue_script( self::SLUG_REEPAY_CDN_JS );
 			wp_enqueue_script( self::SLUG_CHECKOUT_JS );

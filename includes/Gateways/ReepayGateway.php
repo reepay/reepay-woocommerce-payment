@@ -165,7 +165,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Init
 	 */
 	public function __construct() {
-        $this->logging_source = $this->id;
+		$this->logging_source = $this->id;
 
 		// Load the form fields.
 		$this->init_form_fields();
@@ -208,7 +208,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	public function check_is_active() {
-		$gateway   = new ReepayCheckout();
+		$gateway = new ReepayCheckout();
 
 		$gateways_reepay = get_transient( 'gateways_reepay' );
 		if ( empty( $gateways_reepay ) ) {
@@ -601,7 +601,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$html = '<ul class="reepay-logos">';
 			foreach ( $logos as $logo ) {
 				$html .= '<li class="reepay-logo">';
-				$html .= '<img src="' . esc_url(  reepay()->get_setting('images_url') . $logo . '.png'  ) . '" alt="' . esc_attr( sprintf( __( 'Pay with %s on Reepay', 'reepay-checkout-gateway' ), $this->get_title() ) ) . '" />';
+				$html .= '<img src="' . esc_url( reepay()->get_setting( 'images_url' ) . $logo . '.png' ) . '" alt="' . esc_attr( sprintf( __( 'Pay with %s on Reepay', 'reepay-checkout-gateway' ), $this->get_title() ) ) . '" />';
 				$html .= '</li>';
 			}
 			$html .= '</ul>';

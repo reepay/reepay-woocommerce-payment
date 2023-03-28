@@ -102,7 +102,7 @@ if ( ! function_exists( 'rp_is_order_paid_via_reepay' ) ) {
 	/**
 	 * Check if payment method is reepay payment method
 	 *
-	 * @param  WC_Order  $order
+	 * @param  WC_Order $order
 	 */
 	function rp_is_order_paid_via_reepay( $order ) {
 		return in_array( $order->get_payment_method(), Gateways::PAYMENT_METHODS );

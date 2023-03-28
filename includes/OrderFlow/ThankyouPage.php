@@ -155,7 +155,7 @@ class ThankyouPage {
 
 		wp_register_script(
 			'wc-gateway-reepay-thankyou',
-			reepay()->get_setting('js_url') . 'thankyou' . $suffix . '.js',
+			reepay()->get_setting( 'js_url' ) . 'thankyou' . $suffix . '.js',
 			array(
 				'jquery',
 				'jquery-blockui',

@@ -29,7 +29,7 @@ class UpdateDB {
 
 	public function __construct() {
 		if ( version_compare( get_option( 'woocommerce_reepay_version', self::DB_VERSION ), self::DB_VERSION, '<' )
-		     && $this->user_can_update()
+			 && $this->user_can_update()
 		) {
 			add_action( 'admin_notices', array( $this, 'update_notice' ) );
 		}
@@ -67,19 +67,19 @@ class UpdateDB {
 		reepay()->get_template(
 			'admin/notices/update-db.php',
 			array(
-			        'update_page_url' => menu_page_url( self::UPDATE_PAGE_SLUG, false )
-            )
+				'update_page_url' => menu_page_url( self::UPDATE_PAGE_SLUG, false ),
+			)
 		);
 	}
 
 	/**
-	 * @param  null  $user_id
+	 * @param  null $user_id
 	 *
 	 * @return bool
 	 */
 	public function user_can_update( $user_id = null ) {
-        $user_id = $user_id ?? get_current_user_id();
-        return user_can( $user_id, self::USER_CAPABILITY );
+		$user_id = $user_id ?? get_current_user_id();
+		return user_can( $user_id, self::USER_CAPABILITY );
 	}
 
 	/**
@@ -89,7 +89,7 @@ class UpdateDB {
 		$current_version = get_option( 'woocommerce_reepay_version' );
 		foreach ( self::DB_UPDATES as $version => $updater ) {
 			if ( version_compare( $current_version, $version, '<' ) ) {
-				include reepay()->get_setting('plugin_path') . 'updates/' . $updater;
+				include reepay()->get_setting( 'plugin_path' ) . 'updates/' . $updater;
 				self::update_db_version( $version );
 			}
 		}

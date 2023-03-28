@@ -27,14 +27,14 @@ class Main {
 
 			wp_register_script(
 				'reepay-js-input-mask',
-				reepay()->get_setting('js_url') . 'jquery.inputmask' . $suffix . '.js',
+				reepay()->get_setting( 'js_url' ) . 'jquery.inputmask' . $suffix . '.js',
 				array( 'jquery' ),
 				'5.0.3'
 			);
 
 			wp_register_script(
 				'reepay-admin-js',
-				reepay()->get_setting('js_url') . 'admin' . $suffix . '.js',
+				reepay()->get_setting( 'js_url' ) . 'admin' . $suffix . '.js',
 				array(
 					'jquery',
 					'reepay-js-input-mask',
@@ -43,7 +43,7 @@ class Main {
 
 			wp_enqueue_style(
 				'wc-gateway-reepay-checkout',
-				reepay()->get_setting('css_url') . 'style' . $suffix . '.css',
+				reepay()->get_setting( 'css_url' ) . 'style' . $suffix . '.css',
 				array()
 			);
 

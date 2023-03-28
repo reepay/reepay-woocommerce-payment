@@ -110,25 +110,25 @@ class WC_ReepayCheckout {
 			$plugin_data = get_plugin_data( __FILE__ );
 
 			$this->settings = array(
-				'plugin_version' => $plugin_data['Version'],
+				'plugin_version'          => $plugin_data['Version'],
 
-				'plugin_file'     => __FILE__,
-				'plugin_basename' => plugin_basename( __FILE__ ),
+				'plugin_file'             => __FILE__,
+				'plugin_basename'         => plugin_basename( __FILE__ ),
 
-				'plugin_url'  => plugin_dir_url( __FILE__ ),
-				'plugin_path' => plugin_dir_path( __FILE__ ),
+				'plugin_url'              => plugin_dir_url( __FILE__ ),
+				'plugin_path'             => plugin_dir_path( __FILE__ ),
 
-				'templates_url'  => plugin_dir_url( __FILE__ ) . 'templates/',
-				'templates_path' => plugin_dir_path( __FILE__ ) . 'templates/',
+				'templates_url'           => plugin_dir_url( __FILE__ ) . 'templates/',
+				'templates_path'          => plugin_dir_path( __FILE__ ) . 'templates/',
 
-				'css_url'  => plugin_dir_url( __FILE__ ) . 'assets/dist/css/',
-				'css_path' => plugin_dir_path( __FILE__ ) . 'assets/dist/css/',
+				'css_url'                 => plugin_dir_url( __FILE__ ) . 'assets/dist/css/',
+				'css_path'                => plugin_dir_path( __FILE__ ) . 'assets/dist/css/',
 
-				'js_url'  => plugin_dir_url( __FILE__ ) . 'assets/dist/js/',
-				'js_path' => plugin_dir_path( __FILE__ ) . 'assets/dist/js/',
+				'js_url'                  => plugin_dir_url( __FILE__ ) . 'assets/dist/js/',
+				'js_path'                 => plugin_dir_path( __FILE__ ) . 'assets/dist/js/',
 
-				'images_url'  => plugin_dir_url( __FILE__ ) . 'assets/images/',
-				'images_path' => plugin_dir_path( __FILE__ ) . 'assets/images/',
+				'images_url'              => plugin_dir_url( __FILE__ ) . 'assets/images/',
+				'images_path'             => plugin_dir_path( __FILE__ ) . 'assets/images/',
 
 				'private_key'             => $gateway_settings['private_key'] ?? '',
 				'private_key_test'        => $gateway_settings['private_key_test'] ?? '',
@@ -143,10 +143,10 @@ class WC_ReepayCheckout {
 				'handle_failover'         => $gateway_settings['handle_failover'] ?? '',
 				'logo_height'             => $gateway_settings['logo_height'] ?? '',
 
-				'enable_sync'       => $gateway_settings['enable_sync'] ?? '',
-				'status_created'    => $gateway_settings['status_created'] ?? '',
-				'status_authorized' => $gateway_settings['status_authorized'] ?? '',
-				'status_settled'    => $gateway_settings['status_settled'] ?? '',
+				'enable_sync'             => $gateway_settings['enable_sync'] ?? '',
+				'status_created'          => $gateway_settings['status_created'] ?? '',
+				'status_authorized'       => $gateway_settings['status_authorized'] ?? '',
+				'status_settled'          => $gateway_settings['status_settled'] ?? '',
 			);
 		}
 
@@ -172,28 +172,28 @@ class WC_ReepayCheckout {
 	 * Set logging source.
 	 *
 	 * @param ReepayGateway|string $source
-     *
-     * @return Api;
+	 *
+	 * @return Api;
 	 */
 	public function api( $source ) {
-	    /** @var Api|null $api */
-	    static $api = null;
+		/** @var Api|null $api */
+		static $api = null;
 
 		if ( is_null( $api ) ) {
-		    $api = new Api( $source );
+			$api = new Api( $source );
 		} else {
-		    $api->set_logging_source( $source );
-        }
+			$api->set_logging_source( $source );
+		}
 
 		return $api;
-    }
+	}
 
 	/**
 	 * @return Gateways|null
 	 */
-    public function gateways() {
-	    return $this->gateways;
-    }
+	public function gateways() {
+		return $this->gateways;
+	}
 	/**
 	 * WooCommerce Loaded: load classes
 	 *

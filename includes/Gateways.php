@@ -94,7 +94,7 @@ class Gateways {
 	/**
 	 * Get gateway instance by id
 	 *
-	 * @param  string  $id  gateway id.
+	 * @param  string $id  gateway id.
 	 *
 	 * @return ReepayGateway|null
 	 */
@@ -108,7 +108,7 @@ class Gateways {
 	 * @return ReepayCheckout
 	 */
 	public function checkout() {
-		return $this->gateways[ 'reepay_checkout' ] ?? null;
+		return $this->gateways['reepay_checkout'] ?? null;
 	}
 }
 
