@@ -15,15 +15,10 @@ use Reepay\Checkout\Api;
 use Reepay\Checkout\Gateways;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\PluginLifeCycle;
+use Reepay\Checkout\Statistics;
 use Reepay\Checkout\WoocommerceExists;
 
 defined( 'ABSPATH' ) || exit();
-
-define( 'REEPAY_CHECKOUT_PLUGIN_FILE', __FILE__ );
-define( 'REEPAY_CHECKOUT_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
-
-require_once dirname( __FILE__ ) . '/includes/trait-wc-reepay-log.php';
-require_once dirname( __FILE__ ) . '/includes/class-wc-reepay-statistics.php';
 
 class WC_ReepayCheckout {
 	/**
@@ -50,6 +45,8 @@ class WC_ReepayCheckout {
 	 */
 	private function __construct() {
 		include_once dirname( __FILE__ ) . '/vendor/autoload.php';
+
+		Statistics::get_instance( $this->get_setting( 'plugin_file' ) );
 
 		new PluginLifeCycle( $this->get_setting( 'plugin_path' ) );
 		new WoocommerceExists();
@@ -107,7 +104,12 @@ class WC_ReepayCheckout {
 				$gateway_settings['private_key_test'] = apply_filters( 'woocommerce_reepay_private_key_test', $gateway_settings['private_key_test'] ?? '' );
 			}
 
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			$plugin_data = get_plugin_data( __FILE__ );
+
 			$this->settings = array(
+				'plugin_version' => $plugin_data['Version'],
+
 				'plugin_file'     => __FILE__,
 				'plugin_basename' => plugin_basename( __FILE__ ),
 

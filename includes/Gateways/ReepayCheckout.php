@@ -4,9 +4,9 @@ namespace Reepay\Checkout\Gateways;
 
 use Exception;
 use Reepay\Checkout\LoggingTrait;
+use Reepay\Checkout\Statistics;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayMS;
-use WC_Reepay_Gateway_Statistics;
 use WC_Reepay_Instant_Settle;
 use WC_Reepay_Order_Statuses;
 use WP_Error;
@@ -589,7 +589,7 @@ class ReepayCheckout extends ReepayGateway {
 
 		$current_key = isset( $this->private_key ) ? $this->private_key : '';
 		if ( $current_key != $_POST['woocommerce_reepay_checkout_private_key'] ) {
-			WC_Reepay_Gateway_Statistics::private_key_activated();
+			Statistics::private_key_activated();
 		}
 
 		$this->init_settings();

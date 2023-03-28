@@ -2,8 +2,6 @@
 
 namespace Reepay\Checkout;
 
-use WC_ReepayCheckout;
-
 defined( 'ABSPATH' ) || exit();
 
 /**
