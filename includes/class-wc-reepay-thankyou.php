@@ -1,9 +1,11 @@
 <?php
 
+use Reepay\Checkout\LoggingTrait;
+
 defined( 'ABSPATH' ) || exit();
 
 class WC_Reepay_Thankyou {
-	use WC_Reepay_Log;
+	use LoggingTrait;
 
 	/**
 	 * @var string

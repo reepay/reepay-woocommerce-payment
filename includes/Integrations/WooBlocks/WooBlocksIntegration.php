@@ -7,13 +7,10 @@ use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
 use Automattic\WooCommerce\Blocks\Registry\Container;
 use Exception;
 use Reepay\Checkout\Gateways;
-use WC_Reepay_Log;
 
 defined( 'ABSPATH' ) || exit;
 
 class WooBlocksIntegration {
-	use WC_Reepay_Log;
-
 	/**
 	 * @var string
 	 */
@@ -42,7 +39,7 @@ class WooBlocksIntegration {
 					Package::container()->get( $payment_method )
 				);
 			} catch (Exception $e) {
-				//$this->log( $e->getMessage(), 'error' );
+
 			}
 		}
 	}

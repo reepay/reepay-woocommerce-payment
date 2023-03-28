@@ -3,12 +3,6 @@
 defined( 'ABSPATH' ) || exit();
 
 class WC_Reepay_Instant_Settle {
-	use WC_Reepay_Log;
-
-	/**
-	 * @var string
-	 */
-	private $logging_source = 'reepay-instant-checkout';
 
 	/**
 	 * Settle Type options

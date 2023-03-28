@@ -3,6 +3,7 @@
 namespace Reepay\Checkout\Gateways;
 
 use Exception;
+use Reepay\Checkout\LoggingTrait;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayTrait;
 use WC_Admin_Settings;
@@ -20,7 +21,7 @@ use WP_Error;
 defined( 'ABSPATH' ) || exit();
 
 abstract class ReepayGateway extends WC_Payment_Gateway {
-	use TokenReepayTrait;
+	use TokenReepayTrait, LoggingTrait;
 
 	const METHOD_WINDOW = 'WINDOW';
 
@@ -156,9 +157,15 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public $payment_methods = array();
 
 	/**
+	 * @var string
+	 */
+	private $logging_source;
+
+	/**
 	 * Init
 	 */
 	public function __construct() {
+        $this->logging_source = $this->id;
 
 		// Load the form fields.
 		$this->init_form_fields();
@@ -1273,40 +1280,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$this->enable_order_autocancel = reepay()->get_setting( 'enable_order_autocancel' );
 		$this->is_webhook_configured   = reepay()->get_setting( 'is_webhook_configured' );
 		$this->handle_failover         = reepay()->get_setting( 'handle_failover' );
-	}
-
-	/**
-	 * Logging method.
-	 *
-	 * @param string $message Log message.
-	 * @param string $level Optional. Default 'info'.
-	 *     emergency|alert|critical|error|warning|notice|info|debug
-	 *
-	 * @see WC_Log_Levels
-	 * Get parent settings
-	 */
-	public function log( $message, $level = 'info' ) {
-		// Is Enabled
-		if ( 'yes' !== $this->debug ) {
-			return;
-		}
-
-		// Get Logger instance
-		$logger = wc_get_logger();
-
-		// Write message to log
-		if ( ! is_string( $message ) ) {
-			$message = var_export( $message, true );
-		}
-
-		$logger->log(
-			$level,
-			$message,
-			array(
-				'source'  => $this->id,
-				'_legacy' => true,
-			)
-		);
 	}
 
 	/**

@@ -1,11 +1,12 @@
 <?php
 
+use Reepay\Checkout\LoggingTrait;
 use Reepay\Checkout\Tokens\TokenReepay;
 
 defined( 'ABSPATH' ) || exit();
 
 class WC_Reepay_Subscriptions {
-	use WC_Reepay_Log;
+	use LoggingTrait;
 
 	const PAYMENT_METHODS = array(
 		'reepay_checkout',

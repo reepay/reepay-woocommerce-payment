@@ -4,17 +4,15 @@ namespace Reepay\Checkout;
 
 use Exception;
 use Reepay\Checkout\Gateways\ReepayGateway;
-use WC_Log_Levels;
 use WC_Order;
 use WC_Reepay_Instant_Settle;
-use WC_Reepay_Log;
 use WC_Reepay_Order_Statuses;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
 
 class Api {
-	use WC_Reepay_Log;
+	use LoggingTrait;
 
 	/**
 	 * @var string
@@ -461,7 +459,7 @@ class Api {
 
 			return $result;
 		} catch ( Exception $e ) {
-			$this->log( $e->getMessage(), WC_Log_Levels::ERROR );
+			$this->log( $e->getMessage() );
 
 			/** @var WP_Error $result */
 			$order->update_status( 'failed' );

@@ -3,6 +3,7 @@
 namespace Reepay\Checkout\Gateways;
 
 use Exception;
+use Reepay\Checkout\LoggingTrait;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayMS;
 use WC_Reepay_Gateway_Statistics;
@@ -13,7 +14,8 @@ use WP_Error;
 defined( 'ABSPATH' ) || exit();
 
 class ReepayCheckout extends ReepayGateway {
-
+	use LoggingTrait;
+	
 	/**
 	 * Payment methods.
 	 *

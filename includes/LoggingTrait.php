@@ -1,19 +1,19 @@
 <?php
 
+namespace Reepay\Checkout;
+
 defined( 'ABSPATH' ) || exit();
 
-trait WC_Reepay_Log {
+trait LoggingTrait {
 	/**
 	 * Logging method.
 	 *
 	 * @param string $message Log message.
-	 * @param string $level Optional. Default 'info'.
-	 *     emergency|alert|critical|error|warning|notice|info|debug
 	 *
 	 * @return void
 	 * @see WC_Log_Levels
 	 */
-	private function log( $message, $level = 'info' ) {
+	private function log( $message ) {
 		// Get Logger instance
 		$logger = wc_get_logger();
 
@@ -22,8 +22,7 @@ trait WC_Reepay_Log {
 			$message = var_export( $message, true );
 		}
 
-		$logger->log(
-			$level,
+		$logger->debug(
 			$message,
 			array(
 				'source'  => $this->logging_source,
