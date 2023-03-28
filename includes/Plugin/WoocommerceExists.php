@@ -1,6 +1,6 @@
 <?php
 
-namespace Reepay\Checkout;
+namespace Reepay\Checkout\Plugin;
 
 defined( 'ABSPATH' ) || exit();
 

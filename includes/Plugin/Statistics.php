@@ -1,6 +1,8 @@
 <?php
 
-namespace Reepay\Checkout;
+namespace Reepay\Checkout\Plugin;
+
+use Reepay\Checkout\LoggingTrait;
 
 defined( 'ABSPATH' ) || exit();
 

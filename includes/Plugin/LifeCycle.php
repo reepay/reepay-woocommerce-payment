@@ -1,6 +1,6 @@
 <?php
 
-namespace Reepay\Checkout;
+namespace Reepay\Checkout\Plugin;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -9,7 +9,7 @@ defined( 'ABSPATH' ) || exit();
  *
  * @package Reepay\Checkout
  */
-class PluginLifeCycle {
+class LifeCycle {
 	/**
 	 * PluginLifeCycle constructor.
 	 *

@@ -14,9 +14,9 @@
 use Reepay\Checkout\Api;
 use Reepay\Checkout\Gateways;
 use Reepay\Checkout\Gateways\ReepayGateway;
-use Reepay\Checkout\PluginLifeCycle;
-use Reepay\Checkout\Statistics;
-use Reepay\Checkout\WoocommerceExists;
+use Reepay\Checkout\Plugin\LifeCycle;
+use Reepay\Checkout\Plugin\Statistics;
+use Reepay\Checkout\Plugin\WoocommerceExists;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -48,7 +48,7 @@ class WC_ReepayCheckout {
 
 		Statistics::get_instance( $this->get_setting( 'plugin_file' ) );
 
-		new PluginLifeCycle( $this->get_setting( 'plugin_path' ) );
+		new LifeCycle( $this->get_setting( 'plugin_path' ) );
 		new WoocommerceExists();
 
 		add_action( 'plugins_loaded', array( $this, 'include_classes' ), 0 );
@@ -199,7 +199,7 @@ class WC_ReepayCheckout {
 
 		new Reepay\Checkout\Tokens\Main();
 
-		new Reepay\Checkout\UpdateDB();
+		new Reepay\Checkout\Plugin\UpdateDB();
 
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-capture.php';
 		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-instant-settle.php';
