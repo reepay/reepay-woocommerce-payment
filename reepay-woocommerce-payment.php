@@ -193,19 +193,15 @@ class WC_ReepayCheckout {
 	 * @return void
 	 */
 	public function include_classes() {
-		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-order-statuses.php';
-
 		new Reepay\Checkout\Admin\Main();
 
 		new Reepay\Checkout\Tokens\Main();
 
 		new Reepay\Checkout\Plugin\UpdateDB();
 
-		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-capture.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-instant-settle.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-webhook.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-thankyou.php';
-		include_once dirname( __FILE__ ) . '/includes/class-wc-reepay-subscriptions.php';
+		new Reepay\Checkout\OrderFlow\Main();
+
+		new Reepay\Checkout\Subscriptions();
 
 		$this->gateways = new Reepay\Checkout\Gateways();
 

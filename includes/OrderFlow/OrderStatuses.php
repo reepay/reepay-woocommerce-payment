@@ -1,11 +1,17 @@
 <?php
 
+namespace Reepay\Checkout\OrderFlow;
+
+use Exception;
 use Reepay\Checkout\Gateways\ReepayCheckout;
 use Reepay\Checkout\Gateways\ReepayGateway;
+use WC_Admin_Meta_Boxes;
+use WC_Data_Exception;
+use WC_Order;
 
 defined( 'ABSPATH' ) || exit();
 
-class WC_Reepay_Order_Statuses {
+class OrderStatuses {
 	/**
 	 * Constructor
 	 */
@@ -299,8 +305,8 @@ class WC_Reepay_Order_Statuses {
 			self::set_authorized_status( $order, $note, $transaction_id );
 		} else {
 			// Settled status should be assigned using the hook defined there
-			// @see WC_Reepay_Order_Statuses::payment_complete()
-			// @see WC_Reepay_Order_Statuses::payment_complete_order_status()
+			// @see OrderStatuses::payment_complete()
+			// @see OrderStatuses::payment_complete_order_status()
 			if ( ! empty( $order->get_meta( '_reepay_state_settled' ) ) ) {
 				return;
 			}
@@ -332,7 +338,7 @@ class WC_Reepay_Order_Statuses {
 		remove_action( 'woocommerce_process_shop_order_meta', 'WC_Meta_Box_Order_Data::save', 40 );
 
 		// Disable status change hook
-		remove_action( 'woocommerce_order_status_changed', 'WC_Reepay_Admin::order_status_changed' );
+		remove_action( 'woocommerce_order_status_changed', array( __CLASS__, 'order_status_changed' ) );
 
 		if ( ! empty( $transaction_id ) ) {
 			$order->set_transaction_id( $transaction_id );
@@ -343,7 +349,7 @@ class WC_Reepay_Order_Statuses {
 		$order->save();
 
 		// Enable status change hook
-		add_action( 'woocommerce_order_status_changed', 'WC_Reepay_Admin::order_status_changed', 10, 4 );
+		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'order_status_changed' ), 10, 4 );
 	}
 
 	/**
@@ -457,7 +463,7 @@ class WC_Reepay_Order_Statuses {
 						}
 
 						$amount_to_capture = rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order->get_currency() );
-						$items_to_capture  = WC_Reepay_Instant_Settle::calculate_instant_settle( $order )->items;
+						$items_to_capture  = InstantSettle::calculate_instant_settle( $order )->items;
 
 						if ( ! empty( $items_to_capture ) && $amount_to_capture > 0 ) {
 							$gateway->capture_payment( $order, $amount_to_capture );
@@ -485,5 +491,3 @@ class WC_Reepay_Order_Statuses {
 		}
 	}
 }
-
-new WC_Reepay_Order_Statuses();

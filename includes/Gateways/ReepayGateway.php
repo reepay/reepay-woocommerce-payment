@@ -12,10 +12,10 @@ use WC_Order;
 use WC_Order_Item_Fee;
 use WC_Order_Item_Product;
 use WC_Payment_Gateway;
-use WC_Reepay_Instant_Settle;
-use WC_Reepay_Order_Capture;
+use Reepay\Checkout\OrderFlow\InstantSettle;
+use Reepay\Checkout\OrderFlow\OrderCapture;
 use WC_Reepay_Renewals;
-use WC_Reepay_Webhook;
+use Reepay\Checkout\OrderFlow\Webhook;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
@@ -56,10 +56,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @var string
 	 */
 	public $settle = array(
-		WC_Reepay_Instant_Settle::SETTLE_VIRTUAL,
-		WC_Reepay_Instant_Settle::SETTLE_PHYSICAL,
-		WC_Reepay_Instant_Settle::SETTLE_RECURRING,
-		WC_Reepay_Instant_Settle::SETTLE_FEE,
+		InstantSettle::SETTLE_VIRTUAL,
+		InstantSettle::SETTLE_PHYSICAL,
+		InstantSettle::SETTLE_RECURRING,
+		InstantSettle::SETTLE_FEE,
 	);
 
 	/**
@@ -1181,7 +1181,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @return void
 	 * @throws Exception
-	 * @see WC_Reepay_Thankyou::thankyou_page()
+	 * @see ThankyouPage::thankyou_page()
 	 */
 	public function payment_confirm() {
 		if ( ! ( is_wc_endpoint_url( 'order-received' ) ) ) {
@@ -1256,7 +1256,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				throw new Exception( __( 'Signature verification failed', 'reepay-checkout-gateway' ) );
 			}
 
-			( new WC_Reepay_Webhook( $data ) )->process();
+			( new Webhook( $data ) )->process();
 
 			http_response_code( 200 );
 		} catch ( Exception $e ) {
@@ -1363,7 +1363,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			foreach ( $order->get_items( 'shipping' ) as $item_shipping ) {
 				$prices_incl_tax = wc_prices_include_tax();
 
-				$price = WC_Reepay_Order_Capture::get_item_price( $item_shipping, $order );
+				$price = OrderCapture::get_item_price( $item_shipping, $order );
 
 				$tax        = $price['with_tax'] - $price['original'];
 				$taxPercent = ( $tax > 0 ) ? 100 / ( $price['original'] / $tax ) : 0;

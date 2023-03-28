@@ -1,10 +1,15 @@
 <?php
 
+namespace Reepay\Checkout\OrderFlow;
+
+use Exception;
 use Reepay\Checkout\LoggingTrait;
+use WC_Order;
+use WC_Order_Item_Product;
 
 defined( 'ABSPATH' ) || exit();
 
-class WC_Reepay_Thankyou {
+class ThankyouPage {
 	use LoggingTrait;
 
 	/**
@@ -162,7 +167,7 @@ class WC_Reepay_Thankyou {
 		// Localize the script with new data
 		wp_localize_script(
 			'wc-gateway-reepay-thankyou',
-			'WC_Reepay_Thankyou',
+			'ThankyouPage',
 			array(
 				'order_id'      => $order_id,
 				'order_key'     => $order_key,
@@ -298,7 +303,7 @@ class WC_Reepay_Thankyou {
 
 		switch ( $result['state'] ) {
 			case 'pending':
-				WC_Reepay_Order_Statuses::update_order_status(
+				OrderStatuses::update_order_status(
 					$order,
 					'pending',
 					sprintf(
@@ -317,7 +322,7 @@ class WC_Reepay_Thankyou {
 					return;
 				}
 
-				WC_Reepay_Order_Statuses::set_authorized_status(
+				OrderStatuses::set_authorized_status(
 					$order,
 					sprintf(
 						__( 'Payment has been authorized. Amount: %s.', 'reepay-checkout-gateway' ),
@@ -339,7 +344,7 @@ class WC_Reepay_Thankyou {
 					return;
 				}
 
-				WC_Reepay_Order_Statuses::set_settled_status(
+				OrderStatuses::set_settled_status(
 					$order,
 					sprintf(
 						__( 'Payment has been settled. Amount: %s.', 'reepay-checkout-gateway' ),
@@ -368,5 +373,3 @@ class WC_Reepay_Thankyou {
 		}
 	}
 }
-
-new WC_Reepay_Thankyou();

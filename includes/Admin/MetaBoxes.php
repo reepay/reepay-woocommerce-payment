@@ -2,12 +2,13 @@
 
 namespace Reepay\Checkout\Admin;
 
+use Exception;
 use WP_Post;
 
 defined( 'ABSPATH' ) || exit();
 
 /**
- * Class WC_Reepay_Meta_Boxes
+ * Class MetaBoxes
  */
 class MetaBoxes {
 
@@ -17,7 +18,7 @@ class MetaBoxes {
 	private $dashboard_url = 'https://app.reepay.com/#/rp/';
 
 	/**
-	 * WC_Reepay_Meta_Boxes constructor.
+	 * MetaBoxes constructor.
 	 */
 	public function __construct() {
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );

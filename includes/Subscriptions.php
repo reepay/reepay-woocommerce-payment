@@ -1,11 +1,19 @@
 <?php
 
-use Reepay\Checkout\LoggingTrait;
+namespace Reepay\Checkout;
+
+use DOMDocument;
+use DOMElement;
+use Exception;
 use Reepay\Checkout\Tokens\TokenReepay;
+use WC_Order;
+use WC_Order_Refund;
+use WC_Payment_Gateway;
+use WC_Subscription;
 
 defined( 'ABSPATH' ) || exit();
 
-class WC_Reepay_Subscriptions {
+class Subscriptions {
 	use LoggingTrait;
 
 	const PAYMENT_METHODS = array(
@@ -485,5 +493,3 @@ class WC_Reepay_Subscriptions {
 		return $html;
 	}
 }
-
-new WC_Reepay_Subscriptions();

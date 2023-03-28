@@ -13,7 +13,7 @@ trait LoggingTrait {
 	 * @return void
 	 * @see WC_Log_Levels
 	 */
-	private function log( $message ) {
+	public function log( $message ) {
 		// Get Logger instance
 		$logger = wc_get_logger();
 

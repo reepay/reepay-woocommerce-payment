@@ -4,9 +4,10 @@ namespace Reepay\Checkout;
 
 use Exception;
 use Reepay\Checkout\Gateways\ReepayGateway;
+use Reepay\Checkout\OrderFlow\InstantSettle;
+use Reepay\Checkout\OrderFlow\OrderCapture;
 use WC_Order;
-use WC_Reepay_Instant_Settle;
-use WC_Reepay_Order_Statuses;
+use Reepay\Checkout\OrderFlow\OrderStatuses;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
@@ -82,7 +83,7 @@ class Api {
 			$this->log(
 				print_r(
 					array(
-						'source'    => 'WC_Reepay_Api::request',
+						'source'    => 'Api::request',
 						'url'       => $url,
 						'method'    => $method,
 						'request'   => $params,
@@ -345,7 +346,7 @@ class Api {
 		$gateway = rp_get_payment_method( $order );
 
 		$order_lines   = $gateway->get_order_items( $order, true );
-		$settled_lines = WC_Reepay_Instant_Settle::get_settled_items( $order );
+		$settled_lines = InstantSettle::get_settled_items( $order );
 
 		foreach ( $settled_lines as $settled_line ) {
 			foreach ( $order_lines as $order_line_key => $order_line ) {
@@ -495,7 +496,7 @@ class Api {
 		}
 
 		if ( ! $amount || ! $item_data ) {
-			$settle_data = WC_Reepay_Instant_Settle::calculate_instant_settle( $order );
+			$settle_data = InstantSettle::calculate_instant_settle( $order );
 
 			if ( ! $amount ) {
 				$amount = $settle_data->settle_amount;
@@ -537,7 +538,7 @@ class Api {
 						$request_data
 					);
 				} else {
-					$price = WC_Reepay_Order_Capture::get_item_price( $item, $order );
+					$price = OrderCapture::get_item_price( $item, $order );
 					if ( $remaining > 0 && round( $remaining / 100 ) == $price['with_tax'] && ! empty( $request_data['order_lines'][0] ) ) {
 						$full = $remaining / ( $request_data['order_lines'][0]['vat'] + 1 );
 						if ( $full > 0 ) {
@@ -734,7 +735,7 @@ class Api {
 		// Check results
 		switch ( $result['state'] ) {
 			case 'pending':
-				WC_Reepay_Order_Statuses::update_order_status(
+				OrderStatuses::update_order_status(
 					$order,
 					'pending',
 					sprintf(
@@ -747,7 +748,7 @@ class Api {
 
 				break;
 			case 'authorized':
-				WC_Reepay_Order_Statuses::set_authorized_status(
+				OrderStatuses::set_authorized_status(
 					$order,
 					sprintf(
 						__(
@@ -767,7 +768,7 @@ class Api {
 			case 'settled':
 				update_post_meta( $order->get_id(), '_reepay_capture_transaction', $result['transaction'] );
 
-				WC_Reepay_Order_Statuses::set_settled_status(
+				OrderStatuses::set_settled_status(
 					$order,
 					sprintf(
 						__(

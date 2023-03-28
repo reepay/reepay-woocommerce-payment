@@ -86,7 +86,7 @@ trait TokenReepayTrait {
 		$this->log(
 			print_r(
 				array(
-					'source'  => 'WC_Reepay_Token::add_payment_token',
+					'source'  => 'TokenReepayTrait::add_payment_token',
 					'$source' => $source,
 				),
 				true

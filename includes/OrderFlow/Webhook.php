@@ -1,10 +1,16 @@
 <?php
 
+namespace Reepay\Checkout\OrderFlow;
+
+use Exception;
 use Reepay\Checkout\LoggingTrait;
+use WC_Order_Item_Fee;
+use WC_Subscriptions_Manager;
+use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
 
-class WC_Reepay_Webhook {
+class Webhook {
 	use LoggingTrait;
 
 	/**
@@ -29,6 +35,8 @@ class WC_Reepay_Webhook {
 	 *
 	 * @return void
 	 * @throws Exception
+	 *
+	 * @todo split switch into methods
 	 */
 	public function process() {
 		$data = $this->data;
@@ -89,7 +97,7 @@ class WC_Reepay_Webhook {
 				$this->log( sprintf( 'WebHook: Invoice data: %s', json_encode( $invoice_data, JSON_PRETTY_PRINT ) ) );
 
 				// set order as authorized
-				WC_Reepay_Order_Statuses::set_authorized_status(
+				OrderStatuses::set_authorized_status(
 					$order,
 					sprintf(
 						__( 'Payment has been authorized. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
@@ -198,7 +206,7 @@ class WC_Reepay_Webhook {
 					}
 				}
 
-				WC_Reepay_Order_Statuses::set_settled_status(
+				OrderStatuses::set_settled_status(
 					$order,
 					false,
 					$data['transaction']

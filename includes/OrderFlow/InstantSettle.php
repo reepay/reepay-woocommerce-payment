@@ -1,8 +1,16 @@
 <?php
 
+namespace Reepay\Checkout\OrderFlow;
+
+use stdClass;
+use WC_Order;
+use WC_Order_Item_Fee;
+use WC_Order_Item_Product;
+use WC_Product;
+
 defined( 'ABSPATH' ) || exit();
 
-class WC_Reepay_Instant_Settle {
+class InstantSettle {
 
 	/**
 	 * Settle Type options
@@ -44,7 +52,7 @@ class WC_Reepay_Instant_Settle {
 	 * @return void
 	 */
 	public function process_instant_settle( $order ) {
-		$WC_Reepay_Order_Capture = self::get_order_capture();
+		$OrderCapture = self::get_order_capture();
 
 		if ( ! empty( $order->get_meta( '_is_instant_settled' ) ) ) {
 			return;
@@ -54,7 +62,7 @@ class WC_Reepay_Instant_Settle {
 
 		if ( ! empty( $settle_items ) ) {
 			foreach ( $settle_items as $item ) {
-				$WC_Reepay_Order_Capture->settle_item( $item, $order );
+				$OrderCapture->settle_item( $item, $order );
 			}
 			$order->add_meta_data( '_is_instant_settled', '1' );
 			$order->save_meta_data();
@@ -155,7 +163,7 @@ class WC_Reepay_Instant_Settle {
 	 * @return stdClass
 	 */
 	public static function calculate_instant_settle( $order ) {
-		$WC_Reepay_Order_Capture = self::get_order_capture();
+		$OrderCapture = self::get_order_capture();
 
 		$online_virtual = false;
 		$recurring      = false;
@@ -188,7 +196,7 @@ class WC_Reepay_Instant_Settle {
 
 				$physical     = true;
 				$total       += $price_incl_tax;
-				$items_data[] = $WC_Reepay_Order_Capture->get_item_data( $item, $order );
+				$items_data[] = $OrderCapture->get_item_data( $item, $order );
 
 				continue;
 			} elseif ( in_array( self::SETTLE_VIRTUAL, $settle, true ) &&
@@ -204,7 +212,7 @@ class WC_Reepay_Instant_Settle {
 
 				$online_virtual = true;
 				$total         += $price_incl_tax;
-				$items_data[]   = $WC_Reepay_Order_Capture->get_item_data( $item, $order );
+				$items_data[]   = $OrderCapture->get_item_data( $item, $order );
 
 				continue;
 			} elseif ( in_array( self::SETTLE_RECURRING, $settle, true ) &&
@@ -219,7 +227,7 @@ class WC_Reepay_Instant_Settle {
 
 				$recurring    = true;
 				$total       += $price_incl_tax;
-				$items_data[] = $WC_Reepay_Order_Capture->get_item_data( $item, $order );
+				$items_data[] = $OrderCapture->get_item_data( $item, $order );
 			}
 		}
 
@@ -288,13 +296,13 @@ class WC_Reepay_Instant_Settle {
 	 * @return array<array>
 	 */
 	public static function get_settled_items( $order ) {
-		$WC_Reepay_Order_Capture = self::get_order_capture();
+		$OrderCapture = self::get_order_capture();
 
 		$settled = array();
 
 		foreach ( $order->get_items() as $item ) {
 			if ( ! empty( $item->get_meta( 'settled' ) ) ) {
-				$settled[] = $WC_Reepay_Order_Capture->get_item_data( $item, $order );
+				$settled[] = $OrderCapture->get_item_data( $item, $order );
 			}
 		}
 
@@ -302,17 +310,15 @@ class WC_Reepay_Instant_Settle {
 	}
 
 	/**
-	 * @return WC_Reepay_Order_Capture
+	 * @return OrderCapture
 	 */
 	public static function get_order_capture() {
 		static $instance = null;
 
 		if ( is_null( $instance ) ) {
-			$instance = new WC_Reepay_Order_Capture();
+			$instance = new OrderCapture();
 		}
 
 		return $instance;
 	}
 }
-
-new WC_Reepay_Instant_Settle();

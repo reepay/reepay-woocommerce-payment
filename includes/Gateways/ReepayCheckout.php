@@ -4,11 +4,11 @@ namespace Reepay\Checkout\Gateways;
 
 use Exception;
 use Reepay\Checkout\LoggingTrait;
-use Reepay\Checkout\Statistics;
+use Reepay\Checkout\Plugin\Statistics;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayMS;
-use WC_Reepay_Instant_Settle;
-use WC_Reepay_Order_Statuses;
+use Reepay\Checkout\OrderFlow\InstantSettle;
+use Reepay\Checkout\OrderFlow\OrderStatuses;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
@@ -265,10 +265,10 @@ class ReepayCheckout extends ReepayGateway {
 					'type'           => 'multiselect',
 					'css'            => 'height: 150px',
 					'options'        => array(
-						WC_Reepay_Instant_Settle::SETTLE_VIRTUAL => __( 'Instant Settle online / virtualproducts', 'reepay-checkout-gateway' ),
-						WC_Reepay_Instant_Settle::SETTLE_PHYSICAL => __( 'Instant Settle physical  products', 'reepay-checkout-gateway' ),
-						WC_Reepay_Instant_Settle::SETTLE_RECURRING => __( 'Instant Settle recurring (subscription) products', 'reepay-checkout-gateway' ),
-						WC_Reepay_Instant_Settle::SETTLE_FEE => __( 'Instant Settle fees', 'reepay-checkout-gateway' ),
+						InstantSettle::SETTLE_VIRTUAL => __( 'Instant Settle online / virtualproducts', 'reepay-checkout-gateway' ),
+						InstantSettle::SETTLE_PHYSICAL => __( 'Instant Settle physical  products', 'reepay-checkout-gateway' ),
+						InstantSettle::SETTLE_RECURRING => __( 'Instant Settle recurring (subscription) products', 'reepay-checkout-gateway' ),
+						InstantSettle::SETTLE_FEE => __( 'Instant Settle fees', 'reepay-checkout-gateway' ),
 					),
 					'select_buttons' => true,
 					'default'        => array(),
@@ -884,7 +884,7 @@ class ReepayCheckout extends ReepayGateway {
 
 				switch ( $result['state'] ) {
 					case 'authorized':
-						WC_Reepay_Order_Statuses::set_authorized_status(
+						OrderStatuses::set_authorized_status(
 							$order,
 							sprintf(
 								__( 'Payment has been authorized. Amount: %s.', 'reepay-checkout-gateway' ),
@@ -897,7 +897,7 @@ class ReepayCheckout extends ReepayGateway {
 						do_action( 'reepay_instant_settle', $order );
 						break;
 					case 'settled':
-						WC_Reepay_Order_Statuses::set_settled_status(
+						OrderStatuses::set_settled_status(
 							$order,
 							sprintf(
 								__( 'Payment has been settled. Amount: %s.', 'reepay-checkout-gateway' ),

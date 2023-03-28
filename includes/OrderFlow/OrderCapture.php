@@ -1,8 +1,17 @@
 <?php
 
+namespace Reepay\Checkout\OrderFlow;
+
+use Exception;
+use WC_Order;
+use WC_Order_Factory;
+use WC_Order_Item;
+use WC_Product;
+use WC_Subscriptions_Manager;
+
 defined( 'ABSPATH' ) || exit();
 
-class WC_Reepay_Order_Capture {
+class OrderCapture {
 	/**
 	 * Constructor
 	 */
@@ -316,7 +325,7 @@ class WC_Reepay_Order_Capture {
 			$order_item    = WC_Order_Factory::get_order_item( $item_id );
 			$price         = self::get_item_price( $order_item, $order );
 			$unitPrice     = number_format( round( $price['with_tax'], 2 ), 2, '.', '' );
-			$instant_items = WC_Reepay_Instant_Settle::get_instant_items( $order );
+			$instant_items = InstantSettle::get_instant_items( $order );
 
 			if ( empty( $instant_items ) ) {
 				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="' . $item_id . '">
@@ -416,5 +425,3 @@ class WC_Reepay_Order_Capture {
 		return $price;
 	}
 }
-
-new WC_Reepay_Order_Capture();
