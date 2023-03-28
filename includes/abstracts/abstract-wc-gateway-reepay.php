@@ -737,7 +737,7 @@ abstract class WC_Gateway_Reepay extends WC_Payment_Gateway {
 
 		$token_id = isset( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) ? wc_clean( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) : 'new';
 
-		if ( 'yes' !== $this->save_cc
+		if ( 'yes' === $this->save_cc
 		     && $token_id === 'new'
 		     && isset( $_POST[ 'wc-' . $this->id . '-new-payment-method' ] )
 		     && $_POST[ 'wc-' . $this->id . '-new-payment-method' ] !== false
