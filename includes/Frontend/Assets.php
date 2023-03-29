@@ -27,7 +27,7 @@ class Assets {
 
 		wp_enqueue_style(
 			self::SLUG_GLOBAL_CSS,
-			reepay()->get_setting( 'assets_url' ) . 'css/style' . $suffix . '.css',
+			reepay()->get_setting( 'css_url' ) . 'style' . $suffix . '.css',
 			array()
 		);
 
