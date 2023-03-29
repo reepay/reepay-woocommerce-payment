@@ -124,7 +124,7 @@ class MobilepaySubscriptions extends ReepayGateway {
 		reepay()->get_template(
 			'checkout/payment-fields.php',
 			array(
-				'gateway' => $this,
+				'description' => $this->get_description(),
 			)
 		);
 

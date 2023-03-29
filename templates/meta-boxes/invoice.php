@@ -1,5 +1,7 @@
 <?php
 /**
+ * @package Reepay\Checkout
+ *
  * @var ReepayCheckout $gateway
  * @var WC_Order                   $order
  * @var int                        $order_id

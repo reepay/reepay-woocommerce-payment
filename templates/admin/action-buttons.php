@@ -1,6 +1,10 @@
 <?php
-/** @var ReepayCheckout $gateway */
-/** @var WC_Order $order */
+/**
+ * @package Reepay\Checkout
+ *
+ * @var ReepayCheckout $gateway
+ * @var WC_Order $order
+ */
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
 

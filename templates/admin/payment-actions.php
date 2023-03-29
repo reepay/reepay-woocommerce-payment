@@ -1,7 +1,11 @@
 <?php
-/** @var ReepayCheckout $gateway */
-/** @var WC_Order $order */
-/** @var int $order_id */
+/**
+ * @package Reepay\Checkout
+ *
+ * @var ReepayCheckout $gateway
+ * @var WC_Order $order
+ * @var int      $order_id
+ */
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
 

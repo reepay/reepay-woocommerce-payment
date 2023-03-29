@@ -1,5 +1,7 @@
 <?php
 /**
+ * @package Reepay\Checkout
+ *
  * @var WC_Order $order current order.
  */
 

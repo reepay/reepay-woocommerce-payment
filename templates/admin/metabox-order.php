@@ -1,8 +1,12 @@
 <?php
-/** @var ReepayCheckout $gateway */
-/** @var WC_Order $order */
-/** @var int $order_id */
-/** @var array $order_data */
+/**
+ * @package Reepay\Checkout
+ *
+ * @var ReepayCheckout $gateway
+ * @var WC_Order       $order
+ * @var int            $order_id
+ * @var array          $order_data
+ */
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
 
@@ -26,7 +30,7 @@ if ( $order_total <= $order_data['authorized_amount'] ) {
 	</li>
 
 	<?php $order_is_cancelled = ( $order->get_meta( '_reepay_order_cancelled' ) === '1' ); ?>
-	<?php if ( $order_is_cancelled && 'cancelled' != $order_data['state'] ) : ?>
+	<?php if ( $order_is_cancelled && 'cancelled' !== $order_data['state'] ) : ?>
 		<li class="reepay-admin-section-li-small">
 			<?php echo esc_html__( 'Order is cancelled', 'reepay-checkout-gateway' ); ?>
 		</li>
@@ -89,13 +93,10 @@ if ( $order_total <= $order_data['authorized_amount'] ) {
 	<li style='font-size: xx-small'>&nbsp;</li>
 
 	<?php
-	if ( $order_data['settled_amount'] == 0 && ! in_array(
-		$order_data['state'],
-		array(
-			'cancelled',
-			'created',
-		)
-	) && ! $order_is_cancelled ) :
+	if ( intval( $order_data['settled_amount'] ) === 0
+		 && ! in_array( $order_data['state'], array( 'cancelled', 'created' ), true )
+		 && ! $order_is_cancelled
+	) :
 		?>
 		<li class="reepay-full-width">
 			<a class="button" data-action="reepay_cancel" id="reepay_cancel"
