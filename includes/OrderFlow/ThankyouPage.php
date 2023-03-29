@@ -6,6 +6,7 @@ use Exception;
 use Reepay\Checkout\LoggingTrait;
 use WC_Order;
 use WC_Order_Item_Product;
+use WC_Subscriptions_Product;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -203,7 +204,7 @@ class ThankyouPage {
 			/**
 			 * @var WC_Order_Item_Product $item
 			 */
-			if ( class_exists( 'WC_Subscriptions_Product' ) && WC_Subscriptions_Product::is_subscription( $item->get_product() ) ) {
+			if ( class_exists( WC_Subscriptions_Product::class ) && WC_Subscriptions_Product::is_subscription( $item->get_product() ) ) {
 				if ( $order->get_total() == 0 ) {
 					$ret = array(
 						'state'   => 'paid',

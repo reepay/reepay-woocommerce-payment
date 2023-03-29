@@ -29,7 +29,7 @@ if ( ! function_exists( 'wcs_is_subscription_product' ) ) {
 	 * @return bool
 	 */
 	function wcs_is_subscription_product( $product ) {
-		return class_exists( 'WC_Subscriptions_Product', false ) &&
+		return class_exists( WC_Subscriptions_Product::class, false ) &&
 			   WC_Subscriptions_Product::is_subscription( $product );
 	}
 }
@@ -43,7 +43,7 @@ if ( ! function_exists( 'wcr_is_subscription_product' ) ) {
 	 * @return bool
 	 */
 	function wcr_is_subscription_product( $product ) {
-		return class_exists( 'WC_Reepay_Checkout', false ) &&
+		return class_exists( WC_Reepay_Checkout::class, false ) &&
 			   WC_Reepay_Checkout::is_reepay_product( $product );
 	}
 }
@@ -55,7 +55,7 @@ if ( ! function_exists( 'wcs_is_payment_change' ) ) {
 	 * @return bool
 	 */
 	function wcs_is_payment_change() {
-		return class_exists( 'WC_Subscriptions_Change_Payment_Gateway', false ) &&
+		return class_exists( WC_Subscriptions_Change_Payment_Gateway::class, false ) &&
 			   WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
 	}
 }
@@ -67,7 +67,7 @@ if ( ! function_exists( 'wcs_cart_have_subscription' ) ) {
 	 * @return bool
 	 */
 	function wcs_cart_have_subscription() {
-		if ( class_exists( 'WC_Subscriptions_Product' ) ) {
+		if ( class_exists( WC_Subscriptions_Product::class ) ) {
 			// Check is Recurring Payment
 			if ( ! is_null( WC()->cart ) ) {
 				$cart = WC()->cart->get_cart();
@@ -91,7 +91,7 @@ if ( ! function_exists( 'wcs_cart_only_subscriptions' ) ) {
 	 */
 	function wcs_cart_only_subscriptions() {
 		$have_product = false;
-		if ( class_exists( 'WC_Subscriptions_Product' ) ) {
+		if ( class_exists( WC_Subscriptions_Product::class ) ) {
 			// Check is Recurring Payment
 			$cart = WC()->cart->get_cart();
 			if ( wcs_cart_have_subscription() ) {

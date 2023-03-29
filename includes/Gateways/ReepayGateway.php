@@ -3,6 +3,7 @@
 namespace Reepay\Checkout\Gateways;
 
 use Exception;
+use SitePress;
 use Reepay\Checkout\LoggingTrait;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayTrait;
@@ -267,7 +268,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public static function get_default_api_url( $request = '' ) {
 		$default_wc_api_url = WC()->api_request_url( '' );
 
-		if ( class_exists( 'SitePress' ) ) {
+		if ( class_exists( SitePress::class ) ) {
 			$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
 			$languages = wp_list_pluck( $languages, 'default_locale' );
 		} else {

@@ -2,6 +2,8 @@
 
 namespace Reepay\Checkout\Plugin;
 
+use WooCommerce;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -43,6 +45,6 @@ class WoocommerceExists {
 	 * @return bool
 	 */
 	public static function woo_activated() {
-		return class_exists( 'WooCommerce', false ) && defined( 'WC_ABSPATH' );
+		return class_exists( WooCommerce::class, false ) && defined( 'WC_ABSPATH' );
 	}
 }

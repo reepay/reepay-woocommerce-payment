@@ -7,6 +7,7 @@ use WC_Order;
 use WC_Order_Factory;
 use WC_Order_Item;
 use WC_Product;
+use WC_Reepay_Renewals;
 use WC_Subscriptions_Manager;
 
 defined( 'ABSPATH' ) || exit();
@@ -223,7 +224,7 @@ class OrderCapture {
 	public function check_allow_capture( $order ) {
 		$payment_method = $order->get_payment_method();
 
-		if ( class_exists( 'WC_Reepay_Renewals' ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
+		if ( class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
 			return false;
 		}
 

@@ -14,8 +14,6 @@ use WC_Subscription;
 defined( 'ABSPATH' ) || exit();
 
 class Subscriptions {
-	use LoggingTrait;
-
 	const PAYMENT_METHODS = array(
 		'reepay_checkout',
 		'reepay_mobilepay_subscriptions',

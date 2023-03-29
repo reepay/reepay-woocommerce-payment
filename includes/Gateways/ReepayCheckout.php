@@ -17,6 +17,11 @@ class ReepayCheckout extends ReepayGateway {
 	use LoggingTrait;
 
 	/**
+	 * @var string
+	 */
+	private $logging_source;
+
+	/**
 	 * Payment methods.
 	 *
 	 * @var array|null
@@ -27,10 +32,11 @@ class ReepayCheckout extends ReepayGateway {
 	 * Init
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_checkout';
-		$this->has_fields   = true;
-		$this->method_title = __( 'Reepay Checkout', 'reepay-checkout-gateway' );
-		$this->supports     = array(
+		$this->id             = 'reepay_checkout';
+		$this->logging_source = $this->id;
+		$this->has_fields     = true;
+		$this->method_title   = __( 'Reepay Checkout', 'reepay-checkout-gateway' );
+		$this->supports       = array(
 			'products',
 			'refunds',
 			'add_payment_method',
