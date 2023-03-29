@@ -13,5 +13,7 @@
         <exclude name="WordPress.WhiteSpace.PrecisionAlignment"/>
 
         <exclude name="WordPress.Files.FileName"/>
+
+        <exclude name="Generic.Commenting.DocComment.MissingShort"/>
     </rule>
 </ruleset>
