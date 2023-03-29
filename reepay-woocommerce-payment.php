@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Plugin Name: Reepay Checkout for WooCommerce
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: reepay
@@ -9,6 +9,8 @@
  * Domain Path: /languages
  * WC requires at least: 3.0.0
  * WC tested up to: 7.5.0
+ *
+ * @package Reepay\Checkout
  */
 
 use Reepay\Checkout\Api;
@@ -20,6 +22,9 @@ use Reepay\Checkout\Plugin\WoocommerceExists;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Main plugin class
+ */
 class WC_ReepayCheckout {
 	/**
 	 * Class instance
@@ -36,6 +41,8 @@ class WC_ReepayCheckout {
 	private $settings = array();
 
 	/**
+	 * Gateways class instance
+	 *
 	 * @var Gateways
 	 */
 	private $gateways = null;
@@ -59,6 +66,8 @@ class WC_ReepayCheckout {
 	}
 
 	/**
+	 * Get main class instance.
+	 *
 	 * @return WC_ReepayCheckout
 	 */
 	public static function get_instance() {
@@ -68,7 +77,10 @@ class WC_ReepayCheckout {
 			$message = 'Function reepay called in time of initialization main plugin class. Recursion prevented';
 
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				$message .= '<br>Stack trace for debugging:<br><pre>' . print_r( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ), true ) . '</pre>';
+				$message .= '<br>Stack trace for debugging:<br><pre>' . print_r( //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+					debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ), //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+					true
+				) . '</pre>';
 			}
 
 			wp_die( $message );
@@ -171,17 +183,19 @@ class WC_ReepayCheckout {
 	/**
 	 * Set logging source.
 	 *
-	 * @param ReepayGateway|string $source
+	 * @param ReepayGateway|string $source Source for logging.
 	 *
 	 * @return Api;
 	 */
 	public function api( $source ) {
-		/** @var Api|null $api */
 		static $api = null;
 
 		if ( is_null( $api ) ) {
 			$api = new Api( $source );
 		} else {
+			/**
+			 * @var Api $api Api instance
+			 */
 			$api->set_logging_source( $source );
 		}
 
@@ -189,6 +203,8 @@ class WC_ReepayCheckout {
 	}
 
 	/**
+	 * Get gateways class instance
+	 *
 	 * @return Gateways|null
 	 */
 	public function gateways() {
