@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\Admin
+ */
 
 namespace Reepay\Checkout\Admin;
 
@@ -9,6 +12,8 @@ defined( 'ABSPATH' ) || exit();
 
 /**
  * Class MetaBoxes
+ *
+ * @package Reepay\Checkout\Admin
  */
 class MetaBoxes {
 

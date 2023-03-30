@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\OrderFlow
+ */
 
 namespace Reepay\Checkout\OrderFlow;
 
@@ -10,6 +13,11 @@ use WC_Subscriptions_Product;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class ThankyouPage
+ *
+ * @package Reepay\Checkout\OrderFlow
+ */
 class ThankyouPage {
 	use LoggingTrait;
 
@@ -24,12 +32,9 @@ class ThankyouPage {
 	public function __construct() {
 		add_filter( 'wc_get_template', array( $this, 'override_template' ), 5, 20 );
 		add_action( 'woocommerce_before_thankyou', array( $this, 'thankyou_page' ) );
-		add_filter( 'woocommerce_order_has_status', array( $this, 'order_has_status' ), 10, 3 );
 
-		// JS Scrips
 		add_action( 'wp_enqueue_scripts', array( $this, 'thankyou_scripts' ) );
 
-		// Actions for "Check payment"
 		add_action( 'wp_ajax_reepay_check_payment', array( $this, 'ajax_check_payment' ) );
 		add_action( 'wp_ajax_nopriv_reepay_check_payment', array( $this, 'ajax_check_payment' ) );
 	}
@@ -37,11 +42,11 @@ class ThankyouPage {
 	/**
 	 * Override "checkout/thankyou.php" template
 	 *
-	 * @param $located
-	 * @param $template_name
-	 * @param $args
-	 * @param $template_path
-	 * @param $default_path
+	 * @param string $located path for inclusion.
+	 * @param string $template_name Template name.
+	 * @param array  $args Arguments.
+	 * @param string $template_path Template path.
+	 * @param string $default_path Default path.
 	 *
 	 * @return string
 	 */
@@ -73,10 +78,10 @@ class ThankyouPage {
 	/**
 	 * Thank you page
 	 *
-	 * @param $order_id
+	 * @param int $order_id current order id.
 	 *
 	 * @return void
-	 * @throws Exception
+	 * @throws Exception If error with order confirmation.
 	 */
 	public function thankyou_page( $order_id ) {
 		$order = wc_get_order( $order_id );
@@ -90,45 +95,19 @@ class ThankyouPage {
 
 		$gateway = rp_get_payment_method( $order );
 
-		// Complete payment if zero amount
 		if ( abs( $order->get_total() ) < 0.01 ) {
 			$order->payment_complete();
 		}
 
-		// Update the order status if webhook wasn't configured
-		if ( 'no' === $gateway->is_webhook_configured ) {
-			if ( ! empty( $_GET['invoice'] ) ) {
-				$this->process_order_confirmation( wc_clean( $_GET['invoice'] ) );
-			}
+		// Update the order status if webhook wasn't configured.
+		if ( 'no' === $gateway->is_webhook_configured
+			 && ! empty( $_GET['invoice'] )
+		) {
+			$this->process_order_confirmation( wc_clean( $_GET['invoice'] ) );
 		}
 	}
 
 	/**
-	 * Workaround to use actual order status in `woocommerce_before_thankyou`
-	 *
-	 * @param bool     $has_status
-	 * @param WC_Order $order
-	 * @param string   $status
-	 *
-	 * @return bool
-	 */
-	public function order_has_status( $has_status, $order, $status ) {
-		if ( ! is_wc_endpoint_url( 'order-received' ) ) {
-			return $has_status;
-		}
-
-		if ( 'failed' === $status ) {
-			$order = wc_get_order( $order->get_id() );
-
-			return $status === $order->get_status();
-		}
-
-		return $has_status;
-	}
-
-	/**
-	 * thankyou_scripts function.
-	 *
 	 * Outputs scripts used for "thankyou" page
 	 *
 	 * @return void
@@ -140,15 +119,14 @@ class ThankyouPage {
 
 		global $wp;
 
-		$order_id  = absint( $wp->query_vars['order-received'] );
-		$order_key = isset( $_GET['key'] ) ? wc_clean( wp_unslash( $_GET['key'] ) ) : ''; // WPCS: input var ok, CSRF ok.
+		$order_key = isset( $_GET['key'] ) ? wc_clean( wp_unslash( $_GET['key'] ) ) : '';
 
-		$order = wc_get_order( $order_id );
-		if ( ! $order->get_id() || ! $order->key_is_valid( $order_key ) ) {
-			return;
-		}
+		$order = wc_get_order( absint( $wp->query_vars['order-received'] ) );
 
-		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
+		if ( empty( $order )
+			 || ! $order->key_is_valid( $order_key )
+			 || ! rp_is_order_paid_via_reepay( $order )
+		) {
 			return;
 		}
 
@@ -161,16 +139,15 @@ class ThankyouPage {
 				'jquery',
 				'jquery-blockui',
 			),
-			false,
+			filemtime( reepay()->get_setting( 'js_url' ) . 'thankyou' . $suffix . '.js' ),
 			true
 		);
 
-		// Localize the script with new data
 		wp_localize_script(
 			'wc-gateway-reepay-thankyou',
 			'WC_Reepay_Thankyou',
 			array(
-				'order_id'      => $order_id,
+				'order_id'      => $order->get_id(),
 				'order_key'     => $order_key,
 				'nonce'         => wp_create_nonce( 'reepay' ),
 				'ajax_url'      => admin_url( 'admin-ajax.php' ),
@@ -205,7 +182,7 @@ class ThankyouPage {
 			 * @var WC_Order_Item_Product $item
 			 */
 			if ( class_exists( WC_Subscriptions_Product::class ) && WC_Subscriptions_Product::is_subscription( $item->get_product() ) ) {
-				if ( $order->get_total() == 0 ) {
+				if ( .0 === $order->get_total() ) {
 					$ret = array(
 						'state'   => 'paid',
 						'message' => 'Subscription is activated in trial',
@@ -222,7 +199,7 @@ class ThankyouPage {
 
 		$result = reepay()->api( $gateway )->get_invoice_data( $order );
 		if ( is_wp_error( $result ) ) {
-			// No any information
+			// No information.
 			$ret = array(
 				'state' => 'unknown',
 			);
@@ -274,16 +251,14 @@ class ThankyouPage {
 	/**
 	 * Process the order confirmation using accept_url.
 	 *
-	 * @param string $invoice_id
+	 * @param string $invoice_id invoice id.
 	 *
 	 * @return void
-	 * @throws Exception
+	 * @throws Exception If status update failed.
 	 */
 	private function process_order_confirmation( $invoice_id ) {
-		// Update order status
 		$this->log( sprintf( 'accept_url: Processing status update %s', $invoice_id ) );
 
-		// Get order
 		$order = rp_get_order_by_handle( $invoice_id );
 		if ( ! $order ) {
 			$this->log( sprintf( 'accept_url: Order is not found. Invoice: %s', $invoice_id ) );
@@ -291,10 +266,8 @@ class ThankyouPage {
 			return;
 		}
 
-		// Get Payment Method
 		$gateway = rp_get_payment_method( $order );
 
-		// Get Invoice
 		$result = reepay()->api( $gateway )->get_invoice_by_handle( $invoice_id );
 		if ( is_wp_error( $result ) ) {
 			return;
@@ -308,6 +281,7 @@ class ThankyouPage {
 					$order,
 					'pending',
 					sprintf(
+						// translators: %1$s order amount, %2$s transaction id.
 						__( 'Transaction is pending. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
 						wc_price( rp_make_initial_amount( $result['amount'], $result['currency'] ) ),
 						$result['transaction']
@@ -316,7 +290,6 @@ class ThankyouPage {
 				);
 				break;
 			case 'authorized':
-				// Check if the order has been marked as authorized before
 				if ( $order->get_status() === REEPAY_STATUS_AUTHORIZED ) {
 					$this->log( sprintf( 'accept_url: Order #%s has been authorized before', $order->get_id() ) );
 
@@ -326,19 +299,18 @@ class ThankyouPage {
 				OrderStatuses::set_authorized_status(
 					$order,
 					sprintf(
+						// translators: %s order amount.
 						__( 'Payment has been authorized. Amount: %s.', 'reepay-checkout-gateway' ),
 						wc_price( rp_make_initial_amount( $result['amount'], $result['currency'] ) )
 					),
 					null
 				);
 
-				// Settle an authorized payment instantly if possible
 				do_action( 'reepay_instant_settle', $order );
 
 				$this->log( sprintf( 'accept_url: Order #%s has been marked as authorized', $order->get_id() ) );
 				break;
 			case 'settled':
-				// Check if the order has been marked as settled before
 				if ( $order->get_status() === REEPAY_STATUS_SETTLED ) {
 					$this->log( sprintf( 'accept_url: Order #%s has been settled before', $order->get_id() ) );
 
@@ -348,6 +320,7 @@ class ThankyouPage {
 				OrderStatuses::set_settled_status(
 					$order,
 					sprintf(
+						// translators: %s order amount.
 						__( 'Payment has been settled. Amount: %s.', 'reepay-checkout-gateway' ),
 						wc_price( rp_make_initial_amount( $result['amount'], $result['currency'] ) )
 					),
@@ -369,8 +342,6 @@ class ThankyouPage {
 				$this->log( sprintf( 'accept_url: Order #%s has been marked as failed', $order->get_id() ) );
 
 				break;
-			default:
-				// no break
 		}
 	}
 }

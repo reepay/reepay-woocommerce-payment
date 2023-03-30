@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\Integrations\WooBlocks
+ */
 
 namespace Reepay\Checkout\Integrations\WooBlocks;
 
@@ -10,6 +13,11 @@ use Reepay\Checkout\Gateways;
 
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * Class WooBlocksIntegration
+ *
+ * @package Reepay\Checkout\Integrations\WooBlocks
+ */
 class WooBlocksIntegration {
 	/**
 	 * @var string

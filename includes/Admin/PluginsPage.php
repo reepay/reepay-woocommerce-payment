@@ -1,9 +1,17 @@
 <?php
+/**
+ * @package Reepay\Checkout\Admin
+ */
 
 namespace Reepay\Checkout\Admin;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class PluginsPage
+ *
+ * @package Reepay\Checkout\Admin
+ */
 class PluginsPage {
 	public function __construct() {
 		add_filter( 'plugin_action_links_' . reepay()->get_setting( 'plugin_basename' ), array( $this, 'add_action_links' ) );

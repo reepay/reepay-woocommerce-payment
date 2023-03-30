@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\Integrations\WooBlocks
+ */
 
 namespace Reepay\Checkout\Integrations\WooBlocks;
 

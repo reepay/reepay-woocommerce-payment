@@ -1,11 +1,21 @@
 <?php
+/**
+ * @package Reepay\Checkout\Plugin
+ */
 
 namespace Reepay\Checkout\Plugin;
 
 use Reepay\Checkout\LoggingTrait;
+use WP_Error;
+use WP_Upgrader;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class Statistics
+ *
+ * @package Reepay\Checkout\Plugin
+ */
 class Statistics {
 	use LoggingTrait;
 
@@ -35,6 +45,10 @@ class Statistics {
 	}
 
 	/**
+	 * Get class instance. Use it instead of new
+	 *
+	 * @param string $plugin_file path to main plugin file.
+	 *
 	 * @return Statistics
 	 */
 	public static function get_instance( $plugin_file = null ) {
@@ -42,13 +56,20 @@ class Statistics {
 			self::$plugin_file = $plugin_file;
 		}
 
-		if ( self::$instance === null ) {
+		if ( is_null( self::$instance ) ) {
 			self::$instance = new self();
 		}
 
 		return self::$instance;
 	}
 
+	/**
+	 * Send event to Reepay api
+	 *
+	 * @param string $event event to send via api.
+	 *
+	 * @return array|false|WP_Error
+	 */
 	public function send_event( $event ) {
 		$this->log( sprintf( 'Event init: %s', $event ) );
 
@@ -63,7 +84,7 @@ class Statistics {
 				'event'      => $event,
 			);
 
-			$this->log( sprintf( 'Request: %s', json_encode( $params, JSON_PRETTY_PRINT ) ) );
+			$this->log( sprintf( 'Request: %s', wp_json_encode( $params, JSON_PRETTY_PRINT ) ) );
 
 			$url = 'https://hook.reepay.integromat.celonis.com/1dndgwx6cwsvl3shsee29yyqf4d648xf';
 
@@ -73,7 +94,7 @@ class Statistics {
 					'headers' => array(
 						'Content-Type' => 'application/json',
 					),
-					'body'    => json_encode( $params, JSON_PRETTY_PRINT ),
+					'body'    => wp_json_encode( $params, JSON_PRETTY_PRINT ),
 				)
 			);
 
@@ -86,18 +107,33 @@ class Statistics {
 		return false;
 	}
 
+	/**
+	 * Send deactivated event
+	 */
 	public static function plugin_deactivated() {
 		self::get_instance()->send_event( 'deactivated' );
 	}
 
+	/**
+	 * Send deleted event
+	 */
 	public static function plugin_deleted() {
 		self::get_instance()->send_event( 'deleted' );
 	}
 
+	/**
+	 * Send activated event
+	 */
 	public static function private_key_activated() {
 		self::get_instance()->send_event( 'activated' );
 	}
 
+	/**
+	 * Send deactivated event
+	 *
+	 * @param WP_Upgrader $upgrader_object instance of WP_Upgrader.
+	 * @param array       $options upgrade options.
+	 */
 	public static function upgrade_completed( $upgrader_object, $options ) {
 		if ( ! empty( $options['plugins'] ) && is_array( $options['plugins'] ) ) {
 			foreach ( $options['plugins'] as $plugin ) {

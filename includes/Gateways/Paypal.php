@@ -1,9 +1,17 @@
 <?php
+/**
+ * @package Reepay\Checkout\Gateways
+ */
 
 namespace Reepay\Checkout\Gateways;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class Paypal
+ *
+ * @package Reepay\Checkout\Gateways
+ */
 class Paypal extends ReepayGateway {
 	/**
 	 * Logos

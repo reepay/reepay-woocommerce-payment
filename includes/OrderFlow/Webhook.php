@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\OrderFlow
+ */
 
 namespace Reepay\Checkout\OrderFlow;
 
@@ -10,6 +13,11 @@ use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class Webhook
+ *
+ * @package Reepay\Checkout\OrderFlow
+ */
 class Webhook {
 	use LoggingTrait;
 
@@ -36,62 +44,78 @@ class Webhook {
 	 * @return void
 	 */
 	public function return_handler() {
-		try {
-			$raw_body = file_get_contents( 'php://input' );
-			$this->log( sprintf( 'WebHook: Initialized %s from %s', $_SERVER['REQUEST_URI'], $_SERVER['REMOTE_ADDR'] ) );
-			$this->log( sprintf( 'WebHook: Post data: %s', var_export( $raw_body, true ) ) );
-			$data = @json_decode( $raw_body, true );
-			if ( ! $data ) {
-				throw new Exception( __( 'Missing parameters', 'reepay-checkout-gateway' ) );
-			}
+		http_response_code( 200 );
 
-			// Get Secret
-			if ( ! ( $secret = get_transient( 'reepay_webhook_settings_secret' ) ) ) {
-				$result = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
-				if ( is_wp_error( $result ) ) {
-					/** @var WP_Error $result */
-					throw new Exception( $result->get_error_message(), $result->get_error_code() );
-				}
+		$raw_body = file_get_contents( 'php://input' );
+		$this->log( sprintf( 'WebHook: Initialized %s from %s', $_SERVER['REQUEST_URI'] ?? '', $_SERVER['REMOTE_ADDR'] ?? '' ) );
+		$this->log( sprintf( 'WebHook: Post data: %s', var_export( $raw_body, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
+		$data = json_decode( $raw_body, true );
+		if ( ! $data ) {
+			$this->log( 'WebHook: Error: Missing parameters' );
 
-				$secret = $result['secret'];
-
-				set_transient( 'reepay_webhook_settings_secret', $secret, HOUR_IN_SECONDS );
-			}
-
-			// Verify secret
-			$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
-			if ( $check !== $data['signature'] ) {
-				throw new Exception( __( 'Signature verification failed', 'reepay-checkout-gateway' ) );
-			}
-
-			$this->process( $data );
-
-			http_response_code( 200 );
-		} catch ( Exception $e ) {
-			$this->log( sprintf( 'WebHook: Error: %s', $e->getMessage() ) );
-			http_response_code( 200 );
+			return;
 		}
+
+		$secret = get_transient( 'reepay_webhook_settings_secret' );
+
+		if ( empty( $secret ) ) {
+			$result = reepay()->api( $this->logging_source )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
+			if ( is_wp_error( $result ) ) {
+				/** @var WP_Error $result */
+				$this->log( 'WebHook: Error: ' . $result->get_error_message() );
+
+				return;
+			}
+
+			$secret = $result['secret'];
+
+			set_transient( 'reepay_webhook_settings_secret', $secret, HOUR_IN_SECONDS );
+		}
+
+		$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
+		if ( $check !== $data['signature'] ) {
+			$this->log( 'WebHook: Error: Signature verification failed' );
+
+			return;
+		}
+
+		try {
+			$this->process( $data );
+		} catch ( Exception $e ) {
+			$this->log( 'WebHook: Error:' . $e->getMessage() );
+		}
+
+		http_response_code( 200 );
 	}
 
 	/**
 	 * Process WebHook.
 	 *
+	 * @param array $data data from Reepay.
+	 *
 	 * @return void
-	 * @throws Exception
+	 * @throws Exception If invalid data.
 	 *
 	 * @todo split switch into methods
+	 * @todo remove code duplication
 	 */
-	public function process($data) {
+	public function process( $data ) {
 		do_action( 'reepay_webhook', $data );
 
-		// Check invoice state
+		$this->log(
+			sprintf(
+				'WebHook %1$s: Invoice settled: %2$s',
+				$data['event_type'],
+				var_export( $data, true ) //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
+			)
+		);
+
 		switch ( $data['event_type'] ) {
 			case 'invoice_authorized':
 				if ( ! isset( $data['invoice'] ) ) {
 					throw new Exception( 'Missing Invoice parameter' );
 				}
 
-				// Get Order by handle
 				$order = rp_get_order_by_handle( $data['invoice'] );
 				if ( ! $order ) {
 					$this->log( sprintf( 'WebHook: Order is not found. Invoice: %s', $data['invoice'] ) );
@@ -99,13 +123,11 @@ class Webhook {
 					return;
 				}
 
-				// Wait to be unlocked
 				$needs_reload = self::wait_for_unlock( $order->get_id() );
 				if ( $needs_reload ) {
 					$order = wc_get_order( $order->get_id() );
 				}
 
-				// Check if the order has been marked as authorized before
 				if ( $order->has_status( REEPAY_STATUS_AUTHORIZED ) ) {
 					$this->log(
 						sprintf(
@@ -120,14 +142,11 @@ class Webhook {
 					return;
 				}
 
-				// Lock the order
 				self::lock_order( $order->get_id() );
 
-				// Add transaction ID
 				$order->set_transaction_id( $data['transaction'] );
 				$order->save();
 
-				// Fetch the Invoice data at the moment
 				$gateway      = rp_get_payment_method( $order );
 				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
@@ -135,12 +154,12 @@ class Webhook {
 					$invoice_data = array();
 				}
 
-				$this->log( sprintf( 'WebHook: Invoice data: %s', json_encode( $invoice_data, JSON_PRETTY_PRINT ) ) );
+				$this->log( sprintf( 'WebHook: Invoice data: %s', wp_json_encode( $invoice_data, JSON_PRETTY_PRINT ) ) );
 
-				// set order as authorized
 				OrderStatuses::set_authorized_status(
 					$order,
 					sprintf(
+						// translators: %1$s - order amount, %2$s - transaction id.
 						__( 'Payment has been authorized. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
 						wc_price( rp_make_initial_amount( $invoice_data['amount'], $order->get_currency() ) ),
 						$data['transaction']
@@ -148,10 +167,8 @@ class Webhook {
 					$data['transaction']
 				);
 
-				// Settle an authorized payment instantly if possible
 				do_action( 'reepay_instant_settle', $order );
 
-				// Unlock the order
 				self::unlock_order( $order->get_id() );
 
 				$data['order_id'] = $order->get_id();
@@ -163,13 +180,13 @@ class Webhook {
 					foreach ( $invoice_data['order_lines'] as $invoice_lines ) {
 						$is_exist = false;
 						foreach ( $order->get_items( 'fee' ) as $item ) {
-							if ( $item['name'] == $invoice_lines['ordertext'] ) {
+							if ( $item['name'] === $invoice_lines['ordertext'] ) {
 								$is_exist = true;
 							}
 						}
 
 						if ( ! $is_exist ) {
-							if ( $invoice_lines['origin'] == 'surcharge_fee' ) {
+							if ( 'surcharge_fee' === $invoice_lines['origin'] ) {
 								$fees_item = new WC_Order_Item_Fee();
 								$fees_item->set_name( $invoice_lines['ordertext'] );
 								$fees_item->set_amount( floatval( $invoice_lines['unit_amount'] ) / 100 );
@@ -190,9 +207,6 @@ class Webhook {
 					throw new Exception( 'Missing Invoice parameter' );
 				}
 
-				$this->log( sprintf( 'WebHook: Invoice settled: %s', var_export( $data['invoice'], true ) ) );
-
-				// Get Order by handle
 				$order = rp_get_order_by_handle( $data['invoice'] );
 				if ( ! $order ) {
 					$this->log( sprintf( 'WebHook: Order is not found. Invoice: %s', $data['invoice'] ) );
@@ -200,13 +214,11 @@ class Webhook {
 					return;
 				}
 
-				// Wait to be unlocked
 				$needs_reload = self::wait_for_unlock( $order->get_id() );
 				if ( $needs_reload ) {
 					$order = wc_get_order( $order->get_id() );
 				}
 
-				// Check if the order has been marked as settled before
 				if ( $order->has_status( REEPAY_STATUS_SETTLED ) ) {
 					$this->log(
 						sprintf(
@@ -221,10 +233,8 @@ class Webhook {
 					return;
 				}
 
-				// Lock the order
 				self::lock_order( $order->get_id() );
 
-				// Fetch the Invoice data at the moment
 				$gateway      = rp_get_payment_method( $order );
 				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
@@ -232,11 +242,11 @@ class Webhook {
 					$invoice_data = array();
 				}
 
-				$this->log( sprintf( 'WebHook: Invoice data: %s', var_export( $invoice_data, true ) ) );
+				$this->log( sprintf( 'WebHook: Invoice data: %s', var_export( $invoice_data, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 
 				if ( ! empty( $invoice_data['id'] ) && ! empty( $data['transaction'] ) ) {
 					$transaction = reepay()->api( $gateway )->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice_data['id'] . '/transaction/' . $data['transaction'] );
-					$this->log( sprintf( 'WebHook: Transaction data: %s', var_export( $transaction, true ) ) );
+					$this->log( sprintf( 'WebHook: Transaction data: %s', var_export( $transaction, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 
 					if ( ! empty( $transaction['card_transaction']['card'] ) ) {
 						if ( ! empty( $transaction['card_transaction']['error'] ) && ! empty( $transaction['card_transaction']['acquirer_message'] ) ) {
@@ -255,7 +265,6 @@ class Webhook {
 
 				update_post_meta( $order->get_id(), '_reepay_capture_transaction', $data['transaction'] );
 
-				// Unlock the order
 				self::unlock_order( $order->get_id() );
 
 				$data['order_id'] = $order->get_id();
@@ -268,7 +277,6 @@ class Webhook {
 					throw new Exception( 'Missing Invoice parameter' );
 				}
 
-				// Get Order by handle
 				$order = rp_get_order_by_handle( $data['invoice'] );
 				if ( ! $order ) {
 					$this->log( sprintf( 'WebHook: Order is not found. Invoice: %s', $data['invoice'] ) );
@@ -276,7 +284,6 @@ class Webhook {
 					return;
 				}
 
-				// Add transaction ID
 				$order->set_transaction_id( $data['transaction'] );
 				$order->save();
 
@@ -312,7 +319,6 @@ class Webhook {
 					throw new Exception( 'Missing Invoice parameter' );
 				}
 
-				// Get Order by handle
 				$order = rp_get_order_by_handle( $data['invoice'] );
 
 				if ( ! $order ) {
@@ -326,7 +332,6 @@ class Webhook {
 					return;
 				}
 
-				// Get Invoice data
 				$gateway      = rp_get_payment_method( $order );
 				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
@@ -336,41 +341,41 @@ class Webhook {
 
 				$credit_notes = $invoice_data['credit_notes'];
 				foreach ( $credit_notes as $credit_note ) {
-					// Get registered credit notes
+					// Get registered credit notes.
 					$credit_note_ids = $order->get_meta( '_reepay_credit_note_ids' );
 					if ( ! is_array( $credit_note_ids ) ) {
 						$credit_note_ids = array();
 					}
 
-					// Check is refund already registered
-					if ( in_array( $credit_note['id'], $credit_note_ids ) ) {
+					// Check is refund already registered.
+					if ( in_array( $credit_note['id'], $credit_note_ids, true ) ) {
 						continue;
 					}
 
 					$credit_note_id = $credit_note['id'];
 					$amount         = rp_make_initial_amount( $credit_note['amount'], $order->get_currency() );
 					$reason         = sprintf(
+						// translators: #%s credit note id.
 						__( 'Credit Note Id #%s.', 'reepay-checkout-gateway' ),
 						$credit_note_id
 					);
 
-					// Create Refund
 					$refund = wc_create_refund(
 						array(
 							'amount'   => $amount,
-							'reason'   => '', // don't add Credit note to refund line
+							'reason'   => '', // don't add Credit note to refund line.
 							'order_id' => $order->get_id(),
 						)
 					);
 
 					if ( $refund ) {
-						// Save Credit Note ID
 						$credit_note_ids = array_merge( $credit_note_ids, $credit_note_id );
 						$order->update_meta_data( '_reepay_credit_note_ids', $credit_note_ids );
 						$order->save_meta_data();
 
 						$order->add_order_note(
 							sprintf(
+								// translators: %1$s refund amount, %2$s refund reason.
 								__( 'Refunded: %1$s. Reason: %2$s', 'reepay-checkout-gateway' ),
 								wc_price( $amount ),
 								$reason
@@ -389,9 +394,6 @@ class Webhook {
 					throw new Exception( 'Missing Invoice parameter' );
 				}
 
-				$this->log( sprintf( 'WebHook: Invoice created: %s', var_export( $data, true ) ) );
-
-				// Get Order by handle
 				$order = rp_get_order_by_handle( $data['invoice'] );
 				if ( ! $order ) {
 					$this->log( sprintf( 'WebHook: Order is not found. Invoice: %s', $data['invoice'] ) );
@@ -415,12 +417,12 @@ class Webhook {
 						$user_id = (int) str_replace( 'customer-', '', $customer );
 						if ( $user_id > 0 ) {
 							update_user_meta( $user_id, 'reepay_customer_id', $customer );
-							$this->log( sprintf( 'WebHook: Customer created: %s', var_export( $customer, true ) ) );
+							$this->log( sprintf( 'WebHook: Customer created: %s', var_export( $customer, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 						}
 					}
 
 					if ( ! $user_id ) {
-						$this->log( sprintf( 'WebHook: Customer doesn\'t exists: %s', var_export( $customer, true ) ) );
+						$this->log( sprintf( 'WebHook: Customer doesn\'t exists: %s', var_export( $customer, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 					}
 				}
 
@@ -430,9 +432,6 @@ class Webhook {
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			case 'customer_payment_method_added':
-				$this->log( sprintf( 'WebHook: TODO: customer_payment_method_added: %s', var_export( $data, true ) ) );
-				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
-
 				if ( ! empty( $data['payment_method_reference'] ) ) {
 					$order = rp_get_order_by_session( $data['payment_method_reference'] );
 					if ( order_contains_subscription( $order ) ) {
@@ -464,7 +463,7 @@ class Webhook {
 	/**
 	 * Lock the order.
 	 *
-	 * @param mixed $order_id
+	 * @param int $order_id order id to lock.
 	 *
 	 * @return void
 	 * @see wait_for_unlock()
@@ -476,7 +475,7 @@ class Webhook {
 	/**
 	 * Unlock the order.
 	 *
-	 * @param mixed $order_id
+	 * @param mixed $order_id order id to unlock.
 	 *
 	 * @return void
 	 * @see wait_for_unlock()
@@ -488,13 +487,12 @@ class Webhook {
 	/**
 	 * Wait for unlock.
 	 *
-	 * @param $order_id
+	 * @param int $order_id order id to wait.
 	 *
 	 * @return bool
 	 */
 	private static function wait_for_unlock( $order_id ) {
-		@set_time_limit( 0 );
-		@ini_set( 'max_execution_time', '0' );
+		set_time_limit( 0 );
 
 		$is_locked    = (bool) get_post_meta( $order_id, '_reepay_locked', true );
 		$needs_reload = false;

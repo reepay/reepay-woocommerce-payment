@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\OrderFlow
+ */
 
 namespace Reepay\Checkout\OrderFlow;
 
@@ -10,6 +13,11 @@ use WC_Product;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class InstantSettle
+ *
+ * @package Reepay\Checkout\OrderFlow
+ */
 class InstantSettle {
 
 	/**

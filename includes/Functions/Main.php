@@ -1,9 +1,17 @@
 <?php
+/**
+ * @package Reepay\Checkout\Functions
+ */
 
 namespace Reepay\Checkout\Functions;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class Main
+ *
+ * @package Reepay\Checkout\Functions
+ */
 class Main {
 	public function __construct() {
 		include_once dirname( __FILE__ ) . '/currency.php';

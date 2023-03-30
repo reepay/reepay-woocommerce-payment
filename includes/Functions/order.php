@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\Functions
+ */
 
 use Reepay\Checkout\Gateways;
 

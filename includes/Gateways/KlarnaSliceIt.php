@@ -1,9 +1,17 @@
 <?php
+/**
+ * @package Reepay\Checkout\Gateways
+ */
 
 namespace Reepay\Checkout\Gateways;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class KlarnaSliceIt
+ *
+ * @package Reepay\Checkout\Gateways
+ */
 class KlarnaSliceIt extends ReepayGateway {
 	/**
 	 * Logos

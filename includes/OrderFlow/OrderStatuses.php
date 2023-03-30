@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\OrderFlow
+ */
 
 namespace Reepay\Checkout\OrderFlow;
 
@@ -11,12 +14,17 @@ use WC_Order;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class OrderStatuses
+ *
+ * @package Reepay\Checkout\OrderFlow
+ */
 class OrderStatuses {
 	/**
 	 * Constructor
 	 */
 	public function __construct() {
-		define( 'REEPAY_STATUS_SYNC', reepay()->get_setting( 'enable_sync' ) == 'yes' );
+		define( 'REEPAY_STATUS_SYNC', reepay()->get_setting( 'enable_sync' ) === 'yes' );
 		define( 'REEPAY_STATUS_CREATED', str_replace( 'wc-', '', reepay()->get_setting( 'status_created' ) ) ?: 'pending' );
 		define( 'REEPAY_STATUS_AUTHORIZED', str_replace( 'wc-', '', reepay()->get_setting( 'status_authorized' ) ) ?: 'on-hold' );
 		define( 'REEPAY_STATUS_SETTLED', str_replace( 'wc-', '', reepay()->get_setting( 'status_settled' ) ) ?: 'processing' );
@@ -45,16 +53,14 @@ class OrderStatuses {
 	}
 
 	/**
-	 *
+	 * Add complete payment hook for all statuses
 	 */
 	public function plugins_loaded() {
 		if ( ! function_exists( 'wc_get_order_statuses' ) ) {
 			return;
 		}
 
-		// Add actions for complete statuses
-		$statuses = wc_get_order_statuses();
-		foreach ( $statuses as $status => $label ) {
+		foreach ( wc_get_order_statuses() as $status => $label ) {
 			$status = str_replace( 'wc-', '', $status );
 			add_action( 'woocommerce_payment_complete_order_status_' . $status, array( $this, 'payment_complete' ), 10, 1 );
 		}
@@ -63,12 +69,11 @@ class OrderStatuses {
 	/**
 	 * Add Settings
 	 *
-	 * @param $form_fields
+	 * @param array $form_fields default form fields.
 	 *
-	 * @return mixed
+	 * @return array
 	 */
 	public function form_fields( $form_fields ) {
-
 		$form_fields['hr_sync'] = array(
 			'type' => 'separator',
 		);
@@ -97,10 +102,6 @@ class OrderStatuses {
 			'options' => $pending_statuses,
 			'default' => 'wc-pending',
 		);
-
-		/**
-		 * wc-cancelled, wc-refunded, wc-failed
-		 */
 
 		$authorized_statuses = wc_get_order_statuses();
 		unset(
@@ -138,8 +139,8 @@ class OrderStatuses {
 	/**
 	 * Allow processing/completed statuses for capture
 	 *
-	 * @param array    $statuses
-	 * @param WC_Order $order
+	 * @param array    $statuses default statuses.
+	 * @param WC_Order $order current order.
 	 *
 	 * @return array
 	 */
@@ -154,9 +155,9 @@ class OrderStatuses {
 	/**
 	 * Get Status For Payment Complete.
 	 *
-	 * @param string   $status
-	 * @param int      $order_id
-	 * @param WC_Order $order
+	 * @param string   $status current status.
+	 * @param int      $order_id order id.
+	 * @param WC_Order $order order.
 	 *
 	 * @return mixed|string
 	 */
@@ -178,7 +179,6 @@ class OrderStatuses {
 	 * @param $order_id
 	 */
 	public function payment_complete( $order_id ) {
-
 		$order = wc_get_order( $order_id );
 
 		if ( rp_is_order_paid_via_reepay( $order ) ) {

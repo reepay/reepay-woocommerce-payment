@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\OrderFlow
+ */
 
 namespace Reepay\Checkout\OrderFlow;
 
@@ -12,6 +15,11 @@ use WC_Subscriptions_Manager;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class OrderCapture
+ *
+ * @package Reepay\Checkout\OrderFlow
+ */
 class OrderCapture {
 	/**
 	 * Constructor

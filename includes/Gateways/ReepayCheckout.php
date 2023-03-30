@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\Gateways
+ */
 
 namespace Reepay\Checkout\Gateways;
 
@@ -13,6 +16,11 @@ use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class ReepayCheckout
+ *
+ * @package Reepay\Checkout\Gateways
+ */
 class ReepayCheckout extends ReepayGateway {
 	use LoggingTrait;
 

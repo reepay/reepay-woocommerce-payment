@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\Gateways
+ */
 
 namespace Reepay\Checkout\Gateways;
 
@@ -6,6 +9,11 @@ use Reepay\Checkout\Frontend\Assets;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class ApplePay
+ *
+ * @package Reepay\Checkout\Gateways
+ */
 class ApplePay extends ReepayGateway {
 	/**
 	 * Logos

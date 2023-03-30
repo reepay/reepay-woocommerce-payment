@@ -1,9 +1,15 @@
 <?php
-
-namespace Reepay\Checkout\Plugin;
+/**
+ * @package Reepay\Checkout\Plugin
+ */
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class UpdateDB
+ *
+ * @package Reepay\Checkout\Plugin
+ */
 class UpdateDB {
 	/**
 	 * The latest update that requires a database changes
@@ -27,6 +33,9 @@ class UpdateDB {
 
 	const UPDATE_PAGE_SLUG = 'reepay_update_db';
 
+	/**
+	 * UpdateDB constructor.
+	 */
 	public function __construct() {
 		if ( version_compare( get_option( 'woocommerce_reepay_version', self::DB_VERSION ), self::DB_VERSION, '<' )
 			 && $this->user_can_update()
@@ -72,8 +81,11 @@ class UpdateDB {
 		);
 	}
 
+
 	/**
-	 * @param  null $user_id
+	 * Check if the user has the ability to update database
+	 *
+	 * @param  null $user_id user id to check.
 	 *
 	 * @return bool
 	 */
@@ -98,7 +110,7 @@ class UpdateDB {
 	/**
 	 * Update DB version.
 	 *
-	 * @param string $version
+	 * @param string $version version to set.
 	 */
 	private function update_db_version( $version ) {
 		update_option( 'woocommerce_reepay_version', $version );

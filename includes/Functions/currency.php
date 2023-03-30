@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\Functions
+ */
 
 defined( 'ABSPATH' ) || exit();
 

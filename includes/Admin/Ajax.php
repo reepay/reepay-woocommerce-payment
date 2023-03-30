@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\Admin
+ */
 
 namespace Reepay\Checkout\Admin;
 
@@ -7,6 +10,11 @@ use WC_AJAX;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class Ajax
+ *
+ * @package Reepay\Checkout\Admin
+ */
 class Ajax {
 	/**
 	 * @var string

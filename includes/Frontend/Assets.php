@@ -1,9 +1,17 @@
 <?php
+/**
+ * @package Reepay\Checkout\Frontend
+ */
 
 namespace Reepay\Checkout\Frontend;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class Assets
+ *
+ * @package Reepay\Checkout\Frontend
+ */
 class Assets {
 	const SLUG_CHECKOUT_JS = 'wc-gateway-reepay-checkout';
 
