@@ -13,5 +13,3 @@ elif [ "$1" == '-fix' ]; then
 else
   php ./vendor/bin/phpcs --report=summary $standard $path $extra
 fi
-
-read
