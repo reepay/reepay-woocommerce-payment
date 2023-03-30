@@ -168,7 +168,7 @@ class ThankyouPage {
 		// Localize the script with new data
 		wp_localize_script(
 			'wc-gateway-reepay-thankyou',
-			'ThankyouPage',
+			'WC_Reepay_Thankyou',
 			array(
 				'order_id'      => $order_id,
 				'order_key'     => $order_key,
