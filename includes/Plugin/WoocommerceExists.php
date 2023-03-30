@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\Plugin
+ */
 
 namespace Reepay\Checkout\Plugin;
 
@@ -7,9 +10,9 @@ use WooCommerce;
 defined( 'ABSPATH' ) || exit();
 
 /**
- * Class PluginLifeCycle
+ * Class WoocommerceExists
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Plugin
  */
 class WoocommerceExists {
 	/**

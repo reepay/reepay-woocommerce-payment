@@ -132,14 +132,14 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 * @return boolean True if the token is default
 	 */
 	public function is_default() {
+		$change_payment_method = isset( $_GET['change_payment_method'] ) ? wc_clean( $_GET['change_payment_method'] ) : '';
+
 		// Mark Method as Checked on "Payment Change" page.
-		if ( wcs_is_payment_change() &&
-			 isset( $_GET['change_payment_method'] ) &&
-			 abs( $_GET['change_payment_method'] ) > 0 ) {
-			$subscription = wcs_get_subscription( $_GET['change_payment_method'] );
+		if ( abs( $change_payment_method ) > 0 && wcs_is_payment_change() ) {
+			$subscription = wcs_get_subscription( $change_payment_method );
 			$tokens       = $subscription->get_payment_tokens();
 			foreach ( $tokens as $token_id ) {
-				if ( $this->get_id() == $token_id ) {
+				if ( $this->get_id() === (int) $token_id ) {
 					return true;
 				}
 			}
@@ -189,9 +189,10 @@ class TokenReepay extends WC_Payment_Token_CC {
 	/**
 	 * Controls the output for credit cards on the my account page.
 	 *
-	 * @param $method
+	 * @param array $method payment method from wc_get_customer_saved_methods_list.
 	 *
 	 * @return void
+	 * @see wc_get_customer_saved_methods_list
 	 */
 	public static function wc_account_payment_methods_column_method( $method ) {
 		if ( 'reepay_checkout' !== $method['method']['gateway'] ) {
@@ -205,8 +206,10 @@ class TokenReepay extends WC_Payment_Token_CC {
 			return;
 		}
 
-		// Default output
-		// @see woocommerce/myaccount/payment-methods.php
+		/*
+		 * Default output
+		 * @see woocommerce/myaccount/payment-methods.php
+		 */
 		if ( ! empty( $method['method']['last4'] ) ) {
 			/* translators: 1: credit card type 2: last 4 digits */
 			echo sprintf( __( '%1$s ending in %2$s', 'woocommerce' ), esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) ), esc_html( $method['method']['last4'] ) );
@@ -223,15 +226,14 @@ class TokenReepay extends WC_Payment_Token_CC {
 	/**
 	 * Fix html on Payment methods list
 	 *
-	 * @param string             $html
-	 * @param WC_Payment_Token   $token
-	 * @param WC_Payment_Gateway $gateway
+	 * @param string             $html option's html.
+	 * @param WC_Payment_Token   $token payment token.
+	 * @param WC_Payment_Gateway $gateway token's gateway.
 	 *
 	 * @return string
 	 */
 	public static function wc_get_saved_payment_method_option_html( $html, $token, $gateway ) {
 		if ( rp_is_reepay_payment_method( $token->get_gateway_id() ) ) {
-			// Revert esc_html()
 			$html = html_entity_decode( $html, ENT_COMPAT | ENT_XHTML, 'UTF-8' );
 		}
 

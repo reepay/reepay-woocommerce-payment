@@ -15,5 +15,9 @@
         <exclude name="WordPress.Files.FileName"/>
 
         <exclude name="Generic.Commenting.DocComment.MissingShort"/>
+
+        <exclude name="WordPress.Security.NonceVerification.Recommended"/>
+
+        <exclude name="WordPress.Security.ValidatedSanitizedInput.InputNotSanitized"/> <!-- @ToDo add support of WooCommerce cleaning functions such as wc_clean-->
     </rule>
 </ruleset>
