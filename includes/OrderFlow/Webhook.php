@@ -26,8 +26,51 @@ class Webhook {
 	/**
 	 * Constructor.
 	 */
-	public function __construct( array $data ) {
-		$this->data = $data;
+	public function __construct() {
+		add_action( 'woocommerce_api_' . strtolower( 'WC_Gateway_Reepay' ), array( $this, 'return_handler' ) );
+	}
+
+	/**
+	 * WebHook Callback
+	 *
+	 * @return void
+	 */
+	public function return_handler() {
+		try {
+			$raw_body = file_get_contents( 'php://input' );
+			$this->log( sprintf( 'WebHook: Initialized %s from %s', $_SERVER['REQUEST_URI'], $_SERVER['REMOTE_ADDR'] ) );
+			$this->log( sprintf( 'WebHook: Post data: %s', var_export( $raw_body, true ) ) );
+			$data = @json_decode( $raw_body, true );
+			if ( ! $data ) {
+				throw new Exception( __( 'Missing parameters', 'reepay-checkout-gateway' ) );
+			}
+
+			// Get Secret
+			if ( ! ( $secret = get_transient( 'reepay_webhook_settings_secret' ) ) ) {
+				$result = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
+				if ( is_wp_error( $result ) ) {
+					/** @var WP_Error $result */
+					throw new Exception( $result->get_error_message(), $result->get_error_code() );
+				}
+
+				$secret = $result['secret'];
+
+				set_transient( 'reepay_webhook_settings_secret', $secret, HOUR_IN_SECONDS );
+			}
+
+			// Verify secret
+			$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
+			if ( $check !== $data['signature'] ) {
+				throw new Exception( __( 'Signature verification failed', 'reepay-checkout-gateway' ) );
+			}
+
+			$this->process( $data );
+
+			http_response_code( 200 );
+		} catch ( Exception $e ) {
+			$this->log( sprintf( 'WebHook: Error: %s', $e->getMessage() ) );
+			http_response_code( 200 );
+		}
 	}
 
 	/**
@@ -38,9 +81,7 @@ class Webhook {
 	 *
 	 * @todo split switch into methods
 	 */
-	public function process() {
-		$data = $this->data;
-
+	public function process($data) {
 		do_action( 'reepay_webhook', $data );
 
 		// Check invoice state

@@ -10,6 +10,7 @@ class Main {
 		new OrderCapture();
 		new InstantSettle();
 		new ThankyouPage();
+		new Webhook();
 	}
 }
 
