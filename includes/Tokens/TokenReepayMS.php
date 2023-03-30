@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\Tokens
+ */
 
 namespace Reepay\Checkout\Tokens;
 
@@ -6,9 +9,26 @@ use WC_Payment_Token;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class TokenReepayMS
+ *
+ * @package Reepay\Checkout\Tokens
+ */
 class TokenReepayMS extends WC_Payment_Token {
+	/**
+	 * Token type
+	 *
+	 * @var string
+	 */
 	protected $type = 'Reepay_MS';
 
+	/**
+	 * Get type to display to user.
+	 *
+	 * @param  string $deprecated Deprecated since WooCommerce 3.0.
+	 *
+	 * @return false|string
+	 */
 	public function get_display_name( $deprecated = '' ) {
 		ob_start();
 		?>
@@ -17,7 +37,10 @@ class TokenReepayMS extends WC_Payment_Token {
 		<?php if ( is_checkout() ) : ?>
 			<?php echo '&nbsp;' . $this->get_token(); ?>
 		<?php else : ?>
-			<?php echo sprintf( __( 'Reepay - Mobilepay Subscriptions [%s]', 'reepay-checkout-gateway' ), $this->get_token() ); ?>
+			<?php
+			// translators: %s token.
+			echo sprintf( __( 'Reepay - Mobilepay Subscriptions [%s]', 'reepay-checkout-gateway' ), $this->get_token() );
+			?>
 		<?php endif; ?>
 
 		<?php
@@ -53,6 +76,13 @@ class TokenReepayMS extends WC_Payment_Token {
 		return $item;
 	}
 
+	/**
+	 * Print content in column method in account payment methods table
+	 *
+	 * @param array $method payment method from wc_get_customer_saved_methods_list.
+	 *
+	 * @see wc_get_customer_saved_methods_list
+	 */
 	public static function wc_account_payment_methods_column_method( $method ) {
 		if ( 'reepay_mobilepay_subscriptions' !== $method['method']['gateway'] ) {
 			return;

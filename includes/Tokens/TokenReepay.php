@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\Tokens
+ */
 
 namespace Reepay\Checkout\Tokens;
 
@@ -9,6 +12,11 @@ use WC_Payment_Token_CC;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class TokenReepay
+ *
+ * @package Reepay\Checkout\Tokens
+ */
 class TokenReepay extends WC_Payment_Token_CC {
 	/**
 	 * Token Type String.
@@ -41,7 +49,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 		$img   = $this->get_card_image_url();
 		$style = '';
 
-		if ( $this->get_card_type() == 'visa_dk' ) {
+		if ( $this->get_card_type() === 'visa_dk' ) {
 			$style = 'style="width: 46px; height: 24px;"';
 		}
 
@@ -65,7 +73,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 * @return string
 	 */
 	public function get_card_image_url() {
-		if ( $this->get_card_type() == 'visa_dk' ) {
+		if ( $this->get_card_type() === 'visa_dk' ) {
 			return reepay()->get_setting( 'images_url' ) . 'dankort.png';
 		} else {
 			return WC_HTTPS::force_https_url( WC()->plugin_url() . '/assets/images/icons/credit-cards/' . $this->get_card_type() . '.png' );
@@ -112,7 +120,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	/**
 	 * Set the last four digits.
 	 *
-	 * @param string $masked_card Masked Card
+	 * @param string $masked_card Masked Card.
 	 */
 	public function set_masked_card( $masked_card ) {
 		$this->set_prop( 'masked_card', $masked_card );
@@ -124,7 +132,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 * @return boolean True if the token is default
 	 */
 	public function is_default() {
-		// Mark Method as Checked on "Payment Change" page
+		// Mark Method as Checked on "Payment Change" page.
 		if ( wcs_is_payment_change() &&
 			 isset( $_GET['change_payment_method'] ) &&
 			 abs( $_GET['change_payment_method'] ) > 0 ) {

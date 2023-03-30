@@ -8,18 +8,18 @@ trait LoggingTrait {
 	/**
 	 * Logging method.
 	 *
-	 * @param string $message Log message.
+	 * @param mixed $message Log message.
 	 *
 	 * @return void
 	 * @see WC_Log_Levels
 	 */
 	public function log( $message ) {
-		// Get Logger instance
+		// Get Logger instance.
 		$logger = wc_get_logger();
 
-		// Write message to log
+		// Write message to log.
 		if ( ! is_string( $message ) ) {
-			$message = var_export( $message, true );
+			$message = print_r( $message, true );
 		}
 
 		$logger->debug(

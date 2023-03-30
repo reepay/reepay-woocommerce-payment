@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout\Tokens
+ */
 
 namespace Reepay\Checkout\Tokens;
 
@@ -9,16 +12,21 @@ use WC_Payment_Tokens;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Trait TokenReepayTrait
+ *
+ * @package Reepay\Checkout\Tokens
+ */
 trait TokenReepayTrait {
 	/**
 	 * Assign payment token to order.
 	 *
-	 * @param WC_Order        $order
-	 * @param TokenReepay|int $token
+	 * @param WC_Order        $order order to assign.
+	 * @param TokenReepay|int $token token to assign.
 	 *
 	 * @return void
 	 *
-	 * @throws Exception If invalid token.
+	 * @throws Exception If invalid token or order.
 	 */
 	public static function assign_payment_token( $order, $token ) {
 		if ( is_numeric( $token ) ) {
@@ -28,13 +36,13 @@ trait TokenReepayTrait {
 		}
 
 		if ( $token->get_id() ) {
-			// Delete tokens if exist
+			// Delete tokens if exist.
 			delete_post_meta( $order->get_id(), '_payment_tokens' );
 
-			// Reload order
+			// Reload order.
 			$order = wc_get_order( $order->get_id() );
 
-			// Add payment token
+			// Add payment token.
 			$order->add_payment_token( $token );
 
 			$order->update_meta_data( '_reepay_token_id', $token->get_id() );
@@ -47,23 +55,23 @@ trait TokenReepayTrait {
 	/**
 	 * Save Payment Token
 	 *
-	 * @param WC_Order $order
-	 * @param string   $reepay_token
+	 * @param WC_Order $order order to save.
+	 * @param string   $reepay_token token to save.
 	 *
 	 * @return bool|TokenReepay
 	 *
-	 * @throws Exception
+	 * @throws Exception If invalid token or order.
 	 */
 	protected function reepay_save_token( $order, $reepay_token ) {
-		// Check if token is exists in WooCommerce
+		// Check if token is exists in WooCommerce.
 		$token = self::get_payment_token( $reepay_token );
 
 		if ( ! $token ) {
-			// Create Payment Token
+			// Create Payment Token.
 			$token = $this->add_payment_token( $order, $reepay_token );
 		}
 
-		// Assign token to order
+		// Assign token to order.
 		self::assign_payment_token( $order, $token );
 
 		return $token;
@@ -72,32 +80,29 @@ trait TokenReepayTrait {
 	/**
 	 * Add Payment Token.
 	 *
-	 * @param WC_Order $order
-	 * @param string   $reepay_token
+	 * @param WC_Order $order order to add token.
+	 * @param string   $reepay_token token to add.
 	 *
 	 * @return TokenReepay
-	 * @throws Exception
+	 * @throws Exception If invalid token or order.
 	 */
 	public function add_payment_token( $order, $reepay_token ) {
-		// Create Payment Token
+		// Create Payment Token.
 		$customer_handle = reepay()->api( $this->id )->get_customer_handle_order( $order->get_id() );
 		$source          = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
 
 		$this->log(
-			print_r(
-				array(
-					'source'  => 'TokenReepayTrait::add_payment_token',
-					'$source' => $source,
-				),
-				true
-			)
+			array(
+				'source'  => 'TokenReepayTrait::add_payment_token',
+				'$source' => $source,
+			),
 		);
 
 		if ( is_wp_error( $source ) || empty( $source ) ) {
 			throw new Exception( __( 'Reepay error. Try again or contact us.', 'reepay-checkout-gateway' ) );
 		}
 
-		if ( 'ms_' == substr( $source['id'], 0, 3 ) ) {
+		if ( 'ms_' === substr( $source['id'], 0, 3 ) ) {
 			$token = new TokenReepayMS();
 			$token->set_user_id( $order->get_customer_id() );
 			$token->set_token( $reepay_token );
@@ -119,7 +124,7 @@ trait TokenReepayTrait {
 			update_post_meta( $order->get_id(), 'reepay_card_type', $source['card_type'] );
 		}
 
-		// Save Credit Card
+		// Save Credit Card.
 		if ( ! $token->save() ) {
 			throw new Exception( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ) );
 		}
@@ -141,7 +146,7 @@ trait TokenReepayTrait {
 	/**
 	 * Get payment token.
 	 *
-	 * @param WC_Order $order
+	 * @param WC_Order $order order to get token.
 	 *
 	 * @return bool|WC_Payment_Token|null
 	 */
@@ -157,18 +162,31 @@ trait TokenReepayTrait {
 	/**
 	 * Get Payment Token by Token string.
 	 *
-	 * @param string $token
+	 * @param string $token token string.
 	 *
 	 * @return null|bool|WC_Payment_Token
 	 */
 	public static function get_payment_token( $token ) {
 		global $wpdb;
 
-		$query    = "SELECT token_id FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE token = '%s';";
-		$token_id = $wpdb->get_var( $wpdb->prepare( $query, $token ) );
+		$token_id = wp_cache_get( $token, 'reepay_tokens' );
+
+		if ( ! empty( $token_id ) ) {
+			return $token_id;
+		}
+
+		$token_id = $wpdb->get_var( //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			$wpdb->prepare(
+				"SELECT token_id FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE token = %s;",
+				$token
+			)
+		);
+
 		if ( ! $token_id ) {
 			return false;
 		}
+
+		wp_cache_set( $token, 'reepay_tokens' );
 
 		return WC_Payment_Tokens::get( $token_id );
 	}
