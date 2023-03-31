@@ -425,7 +425,11 @@ class OrderCapture {
 			}
 		}
 
-		$price['with_tax'] = $price['original'] + $res_tax;
+		if ( ! empty( $order_item->get_meta( '_is_card_fee' ) ) ) {
+			$price['with_tax'] = $price['original'];
+		} else {
+			$price['with_tax'] = $price['original'] + $res_tax;
+		}
 
 		return $price;
 	}
