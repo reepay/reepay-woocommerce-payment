@@ -28,28 +28,6 @@ jQuery(function ($) {
         return true;
     });
 
-    /*$(document).ajaxComplete(function (event, xhr, settings) {
-        if ((settings.url === wc_checkout_params.checkout_url) || (settings.url.indexOf('wc-ajax=complete_order') > -1)) {
-            const data = xhr.responseText;
-
-            // Parse
-            try {
-                const result = $.parseJSON(data);
-
-                // Check is response from payment gateway
-                if (!result.hasOwnProperty('is_reepay_checkout')) {
-                    return false;
-                }
-
-                wc_reepay.buildModalCheckout(result.reepay.id, result.accept_url);
-            } catch (e) {
-                console.warn(e);
-
-                return false;
-            }
-        }
-    });*/
-
     $(document).ready(function () {
         if (window.location.hash.indexOf('#!reepay-pay') > -1) {
             const url = document.location.hash.replace('#!reepay-pay', ''),
