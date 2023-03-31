@@ -191,6 +191,7 @@ class Webhook {
 								$fees_item->set_name( $invoice_lines['ordertext'] );
 								$fees_item->set_amount( floatval( $invoice_lines['unit_amount'] ) / 100 );
 								$fees_item->set_total( floatval( $invoice_lines['amount'] ) / 100 );
+								$fees_item->add_meta_data( '_is_card_fee', true );
 								$order->add_item( $fees_item );
 							}
 
