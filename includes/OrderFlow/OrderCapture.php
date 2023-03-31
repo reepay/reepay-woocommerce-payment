@@ -26,24 +26,20 @@ class OrderCapture {
 	 */
 	public function __construct() {
 		add_action( 'woocommerce_after_order_itemmeta', array( $this, 'add_item_capture_button' ), 10, 3 );
+
 		add_action( 'woocommerce_after_order_fee_item_name', array( $this, 'add_item_capture_button' ), 10, 3 );
+
 		add_action( 'woocommerce_order_status_changed', array( $this, 'capture_full_order' ), 10, 4 );
+
 		add_action( 'admin_init', array( $this, 'process_item_capture' ) );
+
 		add_action( 'woocommerce_order_item_add_action_buttons', array( $this, 'capture_full_order_button' ), 10, 1 );
-		add_filter(
-			'woocommerce_order_item_get_formatted_meta_data',
-			array(
-				$this,
-				'unset_specific_order_item_meta_data',
-			),
-			10,
-			2
-		);
+
+		add_filter( 'woocommerce_order_item_get_formatted_meta_data', array( $this, 'unset_specific_order_item_meta_data' ), 10, 2 );
 	}
 
 	public function unset_specific_order_item_meta_data( $formatted_meta, $item ) {
-		// Only on emails notifications
-
+		// Only on emails notifications.
 		if ( is_admin() && isset( $_GET['post'] ) ) {
 			foreach ( $formatted_meta as $meta ) {
 				if ( in_array( $meta->key, array( 'settled' ) ) ) {

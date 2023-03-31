@@ -3,6 +3,8 @@
  * @package Reepay\Checkout\Plugin
  */
 
+namespace Reepay\Checkout\Plugin;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
