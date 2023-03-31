@@ -139,7 +139,7 @@ class ThankyouPage {
 				'jquery',
 				'jquery-blockui',
 			),
-			filemtime( reepay()->get_setting( 'js_url' ) . 'thankyou' . $suffix . '.js' ),
+			filemtime( reepay()->get_setting( 'js_path' ) . 'thankyou' . $suffix . '.js' ),
 			true
 		);
 
