@@ -664,16 +664,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$token_id = isset( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) ? wc_clean( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) : 'new';
 
-		if ( $token_id === 'new' && isset( $_POST[ 'wc-' . $this->id . '-new-payment-method' ] ) && $_POST[ 'wc-' . $this->id . '-new-payment-method' ] !== false ) {
+		if ( 'yes' === $this->save_cc
+		     && $token_id === 'new'
+		     && isset( $_POST[ 'wc-' . $this->id . '-new-payment-method' ] )
+		     && $_POST[ 'wc-' . $this->id . '-new-payment-method' ] !== false
+		) {
 			$maybe_save_card = $_POST[ 'wc-' . $this->id . '-new-payment-method' ] === 'true';
 		} else {
 			$maybe_save_card = wcs_cart_have_subscription();
 		}
 
-		if ( 'yes' !== $this->save_cc ) {
-			$token_id        = 'new';
-			$maybe_save_card = false;
-		}
 		$WC_Countries = new WC_Countries();
 		$country      = '';
 		if ( method_exists( $WC_Countries, 'country_exists' ) ) {

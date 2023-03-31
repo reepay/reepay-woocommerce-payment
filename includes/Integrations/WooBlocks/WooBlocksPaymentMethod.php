@@ -167,7 +167,9 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 					}
 				}
 
-				$default_token = WC_Payment_Tokens::get_customer_default_token( WC()->cart->get_customer()->get_id() );
+				if ( ! empty( WC()->cart ) && ! empty( WC()->cart->get_customer() ) ) {
+					$default_token = WC_Payment_Tokens::get_customer_default_token( WC()->cart->get_customer()->get_id() );
+				}
 
 				if(!empty($default_token)) {
 					$data['default_token'] = $default_token->get_id();
