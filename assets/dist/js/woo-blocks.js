@@ -1,4 +1,7 @@
-if (wc && wc.wcBlocksRegistry && React && wc_reepay) {
+if (window.wc
+    && window.wc.wcBlocksRegistry
+    && window.React
+    && window.wc_reepay) {
     const PAYMENT_METHOD_NAME = (new URL(document.currentScript.src)).searchParams.get('name');
 
     if (!PAYMENT_METHOD_NAME) {

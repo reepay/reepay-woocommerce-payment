@@ -21,6 +21,7 @@ class Assets {
 
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_payment_assets' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_payment_assets' ) );
 	}
 
 	/**
@@ -68,8 +69,8 @@ class Assets {
 			reepay()->get_setting( 'js_url' ) . 'checkout' . $suffix . '.js',
 			array(
 				'jquery',
-				'wc-checkout',
-				'reepay-checkout',
+//				'wc-checkout',
+				self::SLUG_REEPAY_CDN_JS,
 			),
 			filemtime( reepay()->get_setting( 'js_path' ) . 'checkout' . $suffix . '.js' ),
 			true

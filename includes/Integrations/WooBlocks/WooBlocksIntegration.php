@@ -19,11 +19,6 @@ defined( 'ABSPATH' ) || exit;
  * @package Reepay\Checkout\Integrations\WooBlocks
  */
 class WooBlocksIntegration {
-	/**
-	 * @var string
-	 */
-	private $logging_source = 'WooBlocksIntegration';
-
 	public function __construct() {
 		add_action( 'woocommerce_blocks_payment_method_type_registration', array( $this, 'register_payment_method_integrations' ) );
 	}

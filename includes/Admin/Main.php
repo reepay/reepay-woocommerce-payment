@@ -49,12 +49,6 @@ class Main {
 				)
 			);
 
-			wp_enqueue_style(
-				'wc-gateway-reepay-checkout',
-				reepay()->get_setting( 'css_url' ) . 'style' . $suffix . '.css',
-				array()
-			);
-
 			// Localize the script
 			$translation_array = array(
 				'ajax_url'  => admin_url( 'admin-ajax.php' ),

@@ -9,6 +9,7 @@ defined( 'ABSPATH' ) || exit();
 
 use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
 use Exception;
+use Reepay\Checkout\Frontend\Assets;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use WC_Payment_Gateway;
@@ -73,10 +74,6 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	 * @return array
 	 */
 	public function get_payment_method_script_handles() {
-		if ( ! $this->is_active() || is_admin() ) {
-			return [];
-		}
-
 		static $gateway_scripts_initialized = false;
 
 		if ( ! $gateway_scripts_initialized ) {
@@ -97,7 +94,12 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 		 *
 		 * @return array
 		 */
-		$script_dependencies = apply_filters( 'woocommerce_blocks_register_script_dependencies', [ 'wc-gateway-reepay-checkout' ], $handle );
+		$script_dependencies = apply_filters( 'woocommerce_blocks_register_script_dependencies', [ Assets::SLUG_CHECKOUT_JS ], $handle );
+//		$script_dependencies = [
+//			'jquery',
+//			'wc-checkout',
+//			Assets::SLUG_REEPAY_CDN_JS,
+//		];
 
 		wp_register_script(
 			$handle,
