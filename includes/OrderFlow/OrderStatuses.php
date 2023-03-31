@@ -140,7 +140,7 @@ class OrderStatuses {
 	 * Allow processing/completed statuses for capture
 	 *
 	 * @param array    $statuses default statuses.
-	 * @param WC_Order $order current order.
+	 * @param WC_Order $order    current order.
 	 *
 	 * @return array
 	 */
@@ -155,9 +155,9 @@ class OrderStatuses {
 	/**
 	 * Get Status For Payment Complete.
 	 *
-	 * @param string   $status current status.
+	 * @param string   $status   current status.
 	 * @param int      $order_id current order id.
-	 * @param WC_Order $order current order.
+	 * @param WC_Order $order    current order.
 	 *
 	 * @return mixed|string
 	 */
@@ -199,7 +199,7 @@ class OrderStatuses {
 	 * Get a status for Authorized payments.
 	 *
 	 * @param string   $status default status.
-	 * @param WC_Order $order current order.
+	 * @param WC_Order $order  current order.
 	 *
 	 * @return string
 	 */
@@ -219,7 +219,7 @@ class OrderStatuses {
 	 * Get a status for Settled payments.
 	 *
 	 * @param string   $status default status.
-	 * @param WC_Order $order current order.
+	 * @param WC_Order $order  current order.
 	 *
 	 * @return string
 	 */
@@ -235,9 +235,9 @@ class OrderStatuses {
 	/**
 	 * Set Authorized Status.
 	 *
-	 * @param  WC_Order    $order order to set.
-	 * @param  string|null $note order note.
-	 * @param  string|null $transaction_id transaction id to set.
+	 * @param WC_Order    $order          order to set.
+	 * @param string|null $note           order note.
+	 * @param string|null $transaction_id transaction id to set.
 	 *
 	 * @return void
 	 * @throws WC_Data_Exception Throws exception when invalid data sent to update_order_status.
@@ -267,9 +267,9 @@ class OrderStatuses {
 	/**
 	 * Set Settled Status.
 	 *
-	 * @param  WC_Order    $order order to set.
-	 * @param  string|null $note order note.
-	 * @param  string|null $transaction_id transaction id to set.
+	 * @param WC_Order    $order          order to set.
+	 * @param string|null $note           order note.
+	 * @param string|null $transaction_id transaction id to set.
 	 *
 	 * @return void
 	 * @throws WC_Data_Exception If cannot change order status.
@@ -304,11 +304,11 @@ class OrderStatuses {
 	/**
 	 * Update Order Status.
 	 *
-	 * @param  WC_Order    $order           order to update.
-	 * @param  string      $new_status      status to set.
-	 * @param  string      $note            order note.
-	 * @param  string|null $transaction_id  transaction to set.
-	 * @param  bool        $manual          Is this a manual order status change.
+	 * @param WC_Order    $order          order to update.
+	 * @param string      $new_status     status to set.
+	 * @param string      $note           order note.
+	 * @param string|null $transaction_id transaction to set.
+	 * @param bool        $manual         Is this a manual order status change.
 	 *
 	 * @return void
 	 * @throws WC_Data_Exception Throws exception when invalid data sent to set_transaction_id.
@@ -333,8 +333,8 @@ class OrderStatuses {
 	/**
 	 * Checks if an order can be edited, specifically for use on the Edit Order screen.
 	 *
-	 * @param  bool     $is_editable  default value.
-	 * @param  WC_Order $order        order to check.
+	 * @param bool     $is_editable default value.
+	 * @param WC_Order $order       order to check.
 	 *
 	 * @return bool
 	 */
@@ -352,13 +352,13 @@ class OrderStatuses {
 	 * Returns if an order has been paid for based on the order status.
 	 *
 	 * @param bool     $is_paid default value.
-	 * @param WC_Order $order order to check.
+	 * @param WC_Order $order   order to check.
 	 *
 	 * @return bool
 	 */
 	public function is_paid( $is_paid, $order ) {
 		if ( rp_is_order_paid_via_reepay( $order )
-			 && in_array( $order->get_status(), array( REEPAY_STATUS_SETTLED ), true )
+		     && in_array( $order->get_status(), array( REEPAY_STATUS_SETTLED ), true )
 		) {
 			$is_paid = true;
 		}
@@ -369,8 +369,8 @@ class OrderStatuses {
 	/**
 	 * Prevent the pending cancellation for Reepay Orders if allowed
 	 *
-	 * @param  bool     $maybe_cancel  default value.
-	 * @param  WC_Order $order         order to check.
+	 * @param bool     $maybe_cancel default value.
+	 * @param WC_Order $order        order to check.
 	 *
 	 * @return bool
 	 * @see wc_cancel_unpaid_orders()
@@ -391,9 +391,9 @@ class OrderStatuses {
 	 * Order Status Change: Capture/Cancel
 	 *
 	 * @param int      $order_id current order id.
-	 * @param string   $from old status.
-	 * @param string   $to current status.
-	 * @param WC_Order $order current order.
+	 * @param string   $from     old status.
+	 * @param string   $to       current status.
+	 * @param WC_Order $order    current order.
 	 *
 	 * @throws Exception If error with payment capture.
 	 */
@@ -447,7 +447,7 @@ class OrderStatuses {
 						$message = $e->getMessage();
 						WC_Admin_Meta_Boxes::add_error(
 							sprintf(
-								// translators: %1$s order edit url, #%2$u order id.
+							// translators: %1$s order edit url, #%2$u order id.
 								__( 'Error with order <a href="%1$s">#%2$u</a>. View order notes for more info', 'reepay-checkout-gateway' ),
 								$order->get_edit_order_url(),
 								$order_id

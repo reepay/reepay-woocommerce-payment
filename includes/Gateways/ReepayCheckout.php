@@ -132,14 +132,14 @@ class ReepayCheckout extends ReepayGateway {
 				),
 				'verify_key'                 => array(
 					'type' => 'verify_key',
-					'show' => function() {
+					'show' => function () {
 						return empty( $this->get_option( 'private_key' ) );
 					},
 				),
 				'account'                    => array(
 					'title'     => __( 'Account', 'reepay-checkout-gateway' ),
 					'type'      => 'account_info',
-					'show'      => function() {
+					'show'      => function () {
 						return ! empty( $this->get_option( 'private_key' ) );
 					},
 					'info_type' => 'name',
@@ -148,7 +148,7 @@ class ReepayCheckout extends ReepayGateway {
 				'state'                      => array(
 					'title'     => __( 'State', 'reepay-checkout-gateway' ),
 					'type'      => 'account_info',
-					'show'      => function() {
+					'show'      => function () {
 						return ! empty( $this->get_option( 'private_key' ) );
 					},
 					'info_type' => 'state',
@@ -156,7 +156,7 @@ class ReepayCheckout extends ReepayGateway {
 				),
 				'is_webhook_configured_live' => array(
 					'type'    => 'webhook_status',
-					'show'    => function() {
+					'show'    => function () {
 						return ! empty( $this->get_option( 'private_key' ) );
 					},
 					'is_test' => false,
@@ -172,14 +172,14 @@ class ReepayCheckout extends ReepayGateway {
 				),
 				'verify_key_test'            => array(
 					'type' => 'verify_key',
-					'show' => function() {
+					'show' => function () {
 						return empty( $this->get_option( 'private_key_test' ) );
 					},
 				),
 				'account_test'               => array(
 					'title'     => __( 'Account', 'reepay-checkout-gateway' ),
 					'type'      => 'account_info',
-					'show'      => function() {
+					'show'      => function () {
 						return ! empty( $this->get_option( 'private_key_test' ) );
 					},
 					'info_type' => 'name',
@@ -188,7 +188,7 @@ class ReepayCheckout extends ReepayGateway {
 				'state_test'                 => array(
 					'title'     => __( 'State', 'reepay-checkout-gateway' ),
 					'type'      => 'account_info',
-					'show'      => function() {
+					'show'      => function () {
 						return ! empty( $this->get_option( 'private_key_test' ) );
 					},
 					'info_type' => 'state',
@@ -196,7 +196,7 @@ class ReepayCheckout extends ReepayGateway {
 				),
 				'is_webhook_configured_test' => array(
 					'type'    => 'webhook_status',
-					'show'    => function() {
+					'show'    => function () {
 						return ! empty( $this->get_option( 'private_key_test' ) );
 					},
 					'is_test' => true,
@@ -226,7 +226,7 @@ class ReepayCheckout extends ReepayGateway {
 							}
 						}
 
-						   return $value;
+						return $value;
 					},
 				),
 				'payment_type'               => array(
@@ -404,12 +404,11 @@ class ReepayCheckout extends ReepayGateway {
 	/**
 	 * Generate separator HTML
 	 *
-	 * @see WC_Settings_API::generate_settings_html
-	 *
-	 * @param string $key Field key.
+	 * @param string $key  Field key.
 	 * @param array  $data Field data.
 	 *
 	 * @return string
+	 * @see WC_Settings_API::generate_settings_html
 	 */
 	public function generate_separator_html( $key, $data ) {
 		return '<tr valign="top" style="border-top: 1px solid #c3c4c7"></tr>';
@@ -418,12 +417,11 @@ class ReepayCheckout extends ReepayGateway {
 	/**
 	 * Generate WebHook Status HTML.
 	 *
-	 * @see WC_Settings_API::generate_settings_html
-	 *
-	 * @param string $key Field key.
+	 * @param string $key  Field key.
 	 * @param array  $data Field data.
 	 *
 	 * @return string
+	 * @see WC_Settings_API::generate_settings_html
 	 */
 	public function generate_account_info_html( $key, $data ) {
 		$data = wp_parse_args(
@@ -468,12 +466,11 @@ class ReepayCheckout extends ReepayGateway {
 	/**
 	 * Generate WebHook Status HTML.
 	 *
-	 * @see WC_Settings_API::generate_settings_html
-	 *
-	 * @param string $key Field key.
+	 * @param string $key  Field key.
 	 * @param array  $data Field data.
 	 *
 	 * @return string
+	 * @see WC_Settings_API::generate_settings_html
 	 */
 	public function generate_verify_key_html( $key, $data ) {
 		$data = wp_parse_args(
@@ -496,9 +493,9 @@ class ReepayCheckout extends ReepayGateway {
 			<td class="forminp">
 				<fieldset>
 					<button name="save"
-							class="button-primary woocommerce-save-button"
-							type="submit"
-							value="Save changes">
+					        class="button-primary woocommerce-save-button"
+					        type="submit"
+					        value="Save changes">
 						<?php _e( 'Save and verify', 'reepay-checkout-gateway' ); ?>
 					</button>
 				</fieldset>
@@ -511,12 +508,11 @@ class ReepayCheckout extends ReepayGateway {
 	/**
 	 * Generate WebHook Status HTML.
 	 *
-	 * @see WC_Settings_API::generate_settings_html
-	 *
-	 * @param string $key Field key.
+	 * @param string $key  Field key.
 	 * @param array  $data Field data.
 	 *
 	 * @return string
+	 * @see WC_Settings_API::generate_settings_html
 	 */
 	public function generate_webhook_status_html( $key, $data ) {
 		$data = wp_parse_args(
@@ -562,8 +558,8 @@ class ReepayCheckout extends ReepayGateway {
 					<?php endif; ?>
 
 					<input type="hidden"
-						   name="<?php echo esc_attr( $this->get_field_key( $key ) ); ?>"
-						   value="<?php echo esc_attr( $is_webhook_configured ); ?>"/>
+					       name="<?php echo esc_attr( $this->get_field_key( $key ) ); ?>"
+					       value="<?php echo esc_attr( $is_webhook_configured ); ?>"/>
 				</fieldset>
 			</td>
 		</tr>
@@ -631,7 +627,7 @@ class ReepayCheckout extends ReepayGateway {
 
 		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription
 		if ( ( $this->save_cc === 'yes' && ! is_add_payment_method_page() ) ||
-			 ( wcs_cart_have_subscription() || wcs_is_payment_change() )
+		     ( wcs_cart_have_subscription() || wcs_is_payment_change() )
 		) {
 			$this->tokenization_script();
 			if ( $this->save_cc === 'yes' ) {

@@ -185,7 +185,7 @@ class Subscriptions {
 	 *
 	 * @access public
 	 *
-	 * @param WC_Subscription $subscription The subscription for which the failing payment method relates.
+	 * @param WC_Subscription $subscription  The subscription for which the failing payment method relates.
 	 * @param WC_Order        $renewal_order The order which recorded the successful payment (to make up for the failed automatic payment).
 	 *
 	 * @return void
@@ -252,7 +252,7 @@ class Subscriptions {
 	 * manually set up automatic recurring payments for a customer via the Edit Subscription screen in Subscriptions 2.0+.
 	 *
 	 * @param string          $payment_method_id The ID of the payment method to validate
-	 * @param array           $payment_meta associative array of meta data required for automatic payments
+	 * @param array           $payment_meta      associative array of meta data required for automatic payments
 	 * @param WC_Subscription $subscription
 	 *
 	 * @throws Exception
@@ -283,10 +283,10 @@ class Subscriptions {
 	/**
 	 * Save payment method meta data for the Subscription
 	 *
-	 * @param  WC_Subscription $subscription
-	 * @param  string          $meta_table
-	 * @param  string          $meta_key
-	 * @param  string          $meta_value
+	 * @param WC_Subscription $subscription
+	 * @param string          $meta_table
+	 * @param string          $meta_key
+	 * @param string          $meta_value
 	 *
 	 * @throws Exception
 	 */
@@ -314,7 +314,7 @@ class Subscriptions {
 	 * When a subscription payment is due.
 	 *
 	 * @param          $amount_to_charge
-	 * @param WC_Order         $renewal_order
+	 * @param WC_Order $renewal_order
 	 */
 	public static function scheduled_subscription_payment( $amount_to_charge, $renewal_order, $settle = false ) {
 		$gateway = rp_get_payment_method( $renewal_order );
@@ -420,13 +420,13 @@ class Subscriptions {
 	 * Render the payment method used for a subscription in the "My Subscriptions" table
 	 *
 	 * @param string          $payment_method_to_display the default payment method text to display
-	 * @param WC_Subscription $subscription the subscription details
+	 * @param WC_Subscription $subscription              the subscription details
 	 *
 	 * @return string the subscription payment method
 	 */
 	public static function maybe_render_subscription_payment_method( $payment_method_to_display, $subscription ) {
 		if ( ! in_array( $subscription->get_payment_method(), self::PAYMENT_METHODS ) ||
-			 ! $subscription->get_user_id()
+		     ! $subscription->get_user_id()
 		) {
 			return $payment_method_to_display;
 		}
@@ -447,7 +447,7 @@ class Subscriptions {
 			}
 
 			return sprintf(
-			/* translators: 1: pan 2: month 3: year */                __( 'Via %1$s card ending in %2$s/%3$s', 'reepay-checkout-gateway' ),
+			/* translators: 1: pan 2: month 3: year */ __( 'Via %1$s card ending in %2$s/%3$s', 'reepay-checkout-gateway' ),
 				$token->get_masked_card(),
 				$token->get_expiry_month(),
 				$token->get_expiry_year()

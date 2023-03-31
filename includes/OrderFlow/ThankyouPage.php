@@ -42,11 +42,11 @@ class ThankyouPage {
 	/**
 	 * Override "checkout/thankyou.php" template
 	 *
-	 * @param string $located path for inclusion.
+	 * @param string $located       path for inclusion.
 	 * @param string $template_name Template name.
-	 * @param array  $args Arguments.
+	 * @param array  $args          Arguments.
 	 * @param string $template_path Template path.
-	 * @param string $default_path Default path.
+	 * @param string $default_path  Default path.
 	 *
 	 * @return string
 	 */
@@ -101,7 +101,7 @@ class ThankyouPage {
 
 		// Update the order status if webhook wasn't configured.
 		if ( 'no' === $gateway->is_webhook_configured
-			 && ! empty( $_GET['invoice'] )
+		     && ! empty( $_GET['invoice'] )
 		) {
 			$this->process_order_confirmation( wc_clean( $_GET['invoice'] ) );
 		}
@@ -124,8 +124,8 @@ class ThankyouPage {
 		$order = wc_get_order( absint( $wp->query_vars['order-received'] ) );
 
 		if ( empty( $order )
-			 || ! $order->key_is_valid( $order_key )
-			 || ! rp_is_order_paid_via_reepay( $order )
+		     || ! $order->key_is_valid( $order_key )
+		     || ! rp_is_order_paid_via_reepay( $order )
 		) {
 			return;
 		}
@@ -232,7 +232,7 @@ class ThankyouPage {
 				$message = 'Order has been failed';
 
 				if ( count( $result['transactions'] ) > 0 &&
-					 isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
+				     isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
 				) {
 					$message = $result['transactions'][0]['card_transaction']['acquirer_message'];
 				}
@@ -281,7 +281,7 @@ class ThankyouPage {
 					$order,
 					'pending',
 					sprintf(
-						// translators: %1$s order amount, %2$s transaction id.
+					// translators: %1$s order amount, %2$s transaction id.
 						__( 'Transaction is pending. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
 						wc_price( rp_make_initial_amount( $result['amount'], $result['currency'] ) ),
 						$result['transaction']
@@ -299,7 +299,7 @@ class ThankyouPage {
 				OrderStatuses::set_authorized_status(
 					$order,
 					sprintf(
-						// translators: %s order amount.
+					// translators: %s order amount.
 						__( 'Payment has been authorized. Amount: %s.', 'reepay-checkout-gateway' ),
 						wc_price( rp_make_initial_amount( $result['amount'], $result['currency'] ) )
 					),
@@ -320,7 +320,7 @@ class ThankyouPage {
 				OrderStatuses::set_settled_status(
 					$order,
 					sprintf(
-						// translators: %s order amount.
+					// translators: %s order amount.
 						__( 'Payment has been settled. Amount: %s.', 'reepay-checkout-gateway' ),
 						wc_price( rp_make_initial_amount( $result['amount'], $result['currency'] ) )
 					),

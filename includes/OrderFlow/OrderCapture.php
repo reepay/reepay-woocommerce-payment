@@ -60,10 +60,10 @@ class OrderCapture {
 	}
 
 	/**
-	 * @param  int      $order_id
-	 * @param  string   $this_status_transition_from
-	 * @param  string   $this_status_transition_to
-	 * @param  WC_Order $order
+	 * @param int      $order_id
+	 * @param string   $this_status_transition_from
+	 * @param string   $this_status_transition_to
+	 * @param WC_Order $order
 	 *
 	 * @throws Exception If settle error
 	 */
@@ -82,10 +82,10 @@ class OrderCapture {
 	}
 
 	/**
-	 * @param WC_Order   $order order to settle.
-	 * @param $items_data
-	 * @param $total_all
-	 * @param $line_items
+	 * @param WC_Order $order order to settle.
+	 * @param          $items_data
+	 * @param          $total_all
+	 * @param          $line_items
 	 *
 	 * @return bool
 	 * @throws Exception
@@ -140,7 +140,7 @@ class OrderCapture {
 				} elseif ( $total > 0 && $this->check_allow_capture( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
-					$total_all   += $total;
+					$total_all    += $total;
 				}
 			}
 		}
@@ -152,7 +152,7 @@ class OrderCapture {
 				if ( $total > 0 && $this->check_allow_capture( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
-					$total_all   += $total;
+					$total_all    += $total;
 				}
 			}
 		}
@@ -164,7 +164,7 @@ class OrderCapture {
 				if ( $total > 0 && $this->check_allow_capture( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
-					$total_all   += $total;
+					$total_all    += $total;
 				}
 			}
 		}
@@ -183,7 +183,7 @@ class OrderCapture {
 	}
 
 	/**
-	 * @param WC_Order_Item $item order item to settle.
+	 * @param WC_Order_Item $item  order item to settle.
 	 * @param WC_Order      $order current order.
 	 *
 	 * @return bool
@@ -308,7 +308,7 @@ class OrderCapture {
 
 	/**
 	 * @param int        $item_id the id of the item being displayed.
-	 * @param object     $item the item being displayed.
+	 * @param object     $item    the item being displayed.
 	 * @param WC_Product $product product of item.
 	 *
 	 * @throws Exception
@@ -377,7 +377,7 @@ class OrderCapture {
 
 	/**
 	 * @param WC_Order_Item $order_item order item to get data.
-	 * @param WC_Order      $order current order.
+	 * @param WC_Order      $order      current order.
 	 *
 	 * @return array
 	 */

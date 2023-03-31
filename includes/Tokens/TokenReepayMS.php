@@ -25,14 +25,14 @@ class TokenReepayMS extends WC_Payment_Token {
 	/**
 	 * Get type to display to user.
 	 *
-	 * @param  string $deprecated Deprecated since WooCommerce 3.0.
+	 * @param string $deprecated Deprecated since WooCommerce 3.0.
 	 *
 	 * @return false|string
 	 */
 	public function get_display_name( $deprecated = '' ) {
 		ob_start();
 		?>
-		<img src="<?php echo esc_url( reepay()->get_setting( 'images_url' ) . 'mobilepay.png' ); ?>" width="46" height="24" />
+		<img src="<?php echo esc_url( reepay()->get_setting( 'images_url' ) . 'mobilepay.png' ); ?>" width="46" height="24"/>
 
 		<?php if ( is_checkout() ) : ?>
 			<?php echo '&nbsp;' . $this->get_token(); ?>
@@ -61,8 +61,9 @@ class TokenReepayMS extends WC_Payment_Token {
 	/**
 	 * Controls the output for credit cards on the my account page.
 	 *
-	 * @param  array            $item         Individual list item from woocommerce_saved_payment_methods_list.
-	 * @param  WC_Payment_Token $payment_token The payment token associated with this method entry.
+	 * @param array            $item          Individual list item from woocommerce_saved_payment_methods_list.
+	 * @param WC_Payment_Token $payment_token The payment token associated with this method entry.
+	 *
 	 * @return array                           Filtered item.
 	 */
 	public static function wc_get_account_saved_payment_methods_list_item( $item, $payment_token ) {

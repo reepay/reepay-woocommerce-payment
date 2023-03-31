@@ -104,6 +104,7 @@ class Statistics {
 		} else {
 			$this->log( 'Empty private key' );
 		}
+
 		return false;
 	}
 
@@ -132,7 +133,7 @@ class Statistics {
 	 * Send deactivated event
 	 *
 	 * @param WP_Upgrader $upgrader_object instance of WP_Upgrader.
-	 * @param array       $options upgrade options.
+	 * @param array       $options         upgrade options.
 	 */
 	public static function upgrade_completed( $upgrader_object, $options ) {
 		if ( ! empty( $options['plugins'] ) && is_array( $options['plugins'] ) ) {

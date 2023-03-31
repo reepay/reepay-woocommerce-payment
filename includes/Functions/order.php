@@ -72,7 +72,7 @@ if ( ! function_exists( 'rp_get_order_by_session' ) ) {
 	/**
 	 * Get Order By Reepay Order Session.
 	 *
-	 * @param  string $session_id
+	 * @param string $session_id
 	 *
 	 * @return false|WC_Order
 	 * @throws Exception
@@ -105,7 +105,7 @@ if ( ! function_exists( 'rp_is_order_paid_via_reepay' ) ) {
 	/**
 	 * Check if payment method is reepay payment method
 	 *
-	 * @param  WC_Order $order
+	 * @param WC_Order $order
 	 */
 	function rp_is_order_paid_via_reepay( $order ) {
 		return in_array( $order->get_payment_method(), Gateways::PAYMENT_METHODS );

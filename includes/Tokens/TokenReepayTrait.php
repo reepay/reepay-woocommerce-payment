@@ -55,7 +55,7 @@ trait TokenReepayTrait {
 	/**
 	 * Save Payment Token
 	 *
-	 * @param WC_Order $order order to save.
+	 * @param WC_Order $order        order to save.
 	 * @param string   $reepay_token token to save.
 	 *
 	 * @return bool|TokenReepay
@@ -80,7 +80,7 @@ trait TokenReepayTrait {
 	/**
 	 * Add Payment Token.
 	 *
-	 * @param WC_Order $order order to add token.
+	 * @param WC_Order $order        order to add token.
 	 * @param string   $reepay_token token to add.
 	 *
 	 * @return TokenReepay

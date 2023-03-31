@@ -37,7 +37,7 @@ class PluginsPage {
 	 * Show row meta on the plugin screen.
 	 *
 	 * @param mixed $links Plugin Row Meta.
-	 * @param mixed $file Plugin Base file.
+	 * @param mixed $file  Plugin Base file.
 	 *
 	 * @return array
 	 */

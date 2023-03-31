@@ -306,7 +306,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$webhook_url = $default_wc_api_url . 'WC_Gateway_Reepay/';
 			$alert_email = '';
 			if ( ! empty( $this->settings['failed_webhooks_email'] ) &&
-				 is_email( $this->settings['failed_webhooks_email'] )
+			     is_email( $this->settings['failed_webhooks_email'] )
 			) {
 				$alert_email = $this->settings['failed_webhooks_email'];
 			}
@@ -317,7 +317,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			foreach ( $request['urls'] as $url ) {
 				if ( strpos( $url, $default_wc_api_url ) === false ||
-					 $url === $webhook_url ) {
+				     $url === $webhook_url ) {
 					$urls[] = $url;
 				} else {
 					$exist_waste_urls = true;
@@ -326,8 +326,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			// Verify the webhook settings
 			if ( ! empty( $urls ) && in_array( $webhook_url, $urls )
-				 && ( empty( $alert_email ) || in_array( $alert_email, $alert_emails ) )
-				 && ! $exist_waste_urls
+			     && ( empty( $alert_email ) || in_array( $alert_email, $alert_emails ) )
+			     && ! $exist_waste_urls
 			) {
 				// Webhook has been configured before
 				$this->update_option( 'is_webhook_configured', 'yes' );
@@ -387,12 +387,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Generate Gateway Status HTML.
 	 *
-	 * @see WC_Settings_API::generate_settings_html
-	 *
-	 * @param string $key Field key.
+	 * @param string $key  Field key.
 	 * @param array  $data Field data.
 	 *
 	 * @return string
+	 * @see WC_Settings_API::generate_settings_html
 	 */
 	public function generate_gateway_status_html( $key, $data ) {
 		$field_key = $this->get_field_key( $key );
@@ -412,10 +411,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		<tr valign="top">
 			<th scope="row" class="titledesc">
 				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?>
-									   <?php
-										echo $this->get_tooltip_html( $data ); // WPCS: XSS ok.
-										?>
-					</label>
+					<?php
+					echo $this->get_tooltip_html( $data ); // WPCS: XSS ok.
+					?>
+				</label>
 			</th>
 			<td class="forminp">
 				<fieldset>
@@ -433,11 +432,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					<?php endif; ?>
 
 					<input type="hidden" name="<?php echo esc_attr( $field_key ); ?>"
-						   id="<?php echo esc_attr( $field_key ); ?>"
-						   value="
+					       id="<?php echo esc_attr( $field_key ); ?>"
+					       value="
 						   <?php
-							echo esc_attr( $configured ); // WPCS: XSS ok.
-							?>
+					       echo esc_attr( $configured ); // WPCS: XSS ok.
+					       ?>
 						   "/>
 				</fieldset>
 			</td>
@@ -626,7 +625,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Process Payment
 	 *
-	 * @param  int $order_id
+	 * @param int $order_id
 	 *
 	 * @return array|false
 	 * @throws Exception
@@ -1157,7 +1156,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		if ( 'failed' == $result['state'] ) {
 			if ( count( $result['transactions'] ) > 0 &&
-				 isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
+			     isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
 			) {
 				$message = $result['transactions'][0]['card_transaction']['acquirer_message'];
 
@@ -1378,7 +1377,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		// Add "Gift Up!" discount
 		if ( defined( 'GIFTUP_ORDER_META_CODE_KEY' ) &&
-			 defined( 'GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY' )
+		     defined( 'GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY' )
 		) {
 			if ( $order->meta_exists( GIFTUP_ORDER_META_CODE_KEY ) ) {
 				$code              = $order->get_meta( GIFTUP_ORDER_META_CODE_KEY );

@@ -29,10 +29,10 @@ class WooBlocksIntegration {
 	 * @param PaymentMethodRegistry $payment_method_registry Payment method registry instance.
 	 */
 	public function register_payment_method_integrations( PaymentMethodRegistry $payment_method_registry ) {
-		foreach (Gateways::PAYMENT_METHODS as $payment_method) {
+		foreach ( Gateways::PAYMENT_METHODS as $payment_method ) {
 			Package::container()->register(
 				$payment_method,
-				function( Container $container ) use ( $payment_method ){
+				function ( Container $container ) use ( $payment_method ) {
 					return new WooBlocksPaymentMethod( $payment_method );
 				}
 			);
@@ -41,7 +41,7 @@ class WooBlocksIntegration {
 				$payment_method_registry->register(
 					Package::container()->get( $payment_method )
 				);
-			} catch (Exception $e) {
+			} catch ( Exception $e ) {
 
 			}
 		}

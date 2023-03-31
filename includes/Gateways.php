@@ -94,7 +94,7 @@ class Gateways {
 	/**
 	 * Get gateway instance by id
 	 *
-	 * @param  string $id  gateway id.
+	 * @param string $id gateway id.
 	 *
 	 * @return ReepayGateway|null
 	 */

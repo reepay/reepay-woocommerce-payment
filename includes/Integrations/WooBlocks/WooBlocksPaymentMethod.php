@@ -39,7 +39,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	/**
 	 * Constructor
 	 *
-	 * @param  string  $name  Payment method name/id/slug.
+	 * @param string $name Payment method name/id/slug.
 	 *
 	 * @throws Exception
 	 */
@@ -89,8 +89,8 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 		/**
 		 * Filters the list of script dependencies.
 		 *
-		 * @param  array   $dependencies  The list of script dependencies.
-		 * @param  string  $handle        The script's handle.
+		 * @param array  $dependencies The list of script dependencies.
+		 * @param string $handle       The script's handle.
 		 *
 		 * @return array
 		 */
@@ -103,7 +103,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 
 		wp_register_script(
 			$handle,
-			reepay()->get_setting('js_url'). "woo-blocks$suffix.js?name=$this->name",
+			reepay()->get_setting( 'js_url' ) . "woo-blocks$suffix.js?name=$this->name",
 			$script_dependencies,
 			false,
 			true
@@ -121,8 +121,8 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 		/** @var ReepayGateway $gateway */
 		$gateway = WC()->payment_gateways()->get_available_payment_gateways()[ $this->name ] ?? null;
 
-		if ( !empty( $gateway ) ) {
-			$features= $gateway->supports;
+		if ( ! empty( $gateway ) ) {
+			$features = $gateway->supports;
 		} else {
 			$features = [ 'products' ];
 		}
@@ -173,7 +173,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 					$default_token = WC_Payment_Tokens::get_customer_default_token( WC()->cart->get_customer()->get_id() );
 				}
 
-				if(!empty($default_token)) {
+				if ( ! empty( $default_token ) ) {
 					$data['default_token'] = $default_token->get_id();
 				} elseif ( ! empty( $data['tokens'] ) ) {
 					$data['default_token'] = $data['tokens'][0]['id'];
@@ -184,6 +184,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 		}
 
 		$data = apply_filters( 'reepay_blocks_payment_method_data', $data, $this );
+
 		return apply_filters( 'reepay_blocks_payment_method_data_' . $this->name, $data, $this );
 	}
 }

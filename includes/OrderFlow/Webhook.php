@@ -159,7 +159,7 @@ class Webhook {
 				OrderStatuses::set_authorized_status(
 					$order,
 					sprintf(
-						// translators: %1$s - order amount, %2$s - transaction id.
+					// translators: %1$s - order amount, %2$s - transaction id.
 						__( 'Payment has been authorized. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
 						wc_price( rp_make_initial_amount( $invoice_data['amount'], $order->get_currency() ) ),
 						$data['transaction']
@@ -356,7 +356,7 @@ class Webhook {
 					$credit_note_id = $credit_note['id'];
 					$amount         = rp_make_initial_amount( $credit_note['amount'], $order->get_currency() );
 					$reason         = sprintf(
-						// translators: #%s credit note id.
+					// translators: #%s credit note id.
 						__( 'Credit Note Id #%s.', 'reepay-checkout-gateway' ),
 						$credit_note_id
 					);
@@ -376,7 +376,7 @@ class Webhook {
 
 						$order->add_order_note(
 							sprintf(
-								// translators: %1$s refund amount, %2$s refund reason.
+							// translators: %1$s refund amount, %2$s refund reason.
 								__( 'Refunded: %1$s. Reason: %2$s', 'reepay-checkout-gateway' ),
 								wc_price( $amount ),
 								$reason

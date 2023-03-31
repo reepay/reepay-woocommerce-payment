@@ -40,7 +40,7 @@ class UpdateDB {
 	 */
 	public function __construct() {
 		if ( version_compare( get_option( 'woocommerce_reepay_version', self::DB_VERSION ), self::DB_VERSION, '<' )
-			 && $this->user_can_update()
+		     && $this->user_can_update()
 		) {
 			add_action( 'admin_notices', array( $this, 'update_notice' ) );
 		}
@@ -87,12 +87,13 @@ class UpdateDB {
 	/**
 	 * Check if the user has the ability to update database
 	 *
-	 * @param  null $user_id user id to check.
+	 * @param null $user_id user id to check.
 	 *
 	 * @return bool
 	 */
 	public function user_can_update( $user_id = null ) {
 		$user_id = $user_id ?? get_current_user_id();
+
 		return user_can( $user_id, self::USER_CAPABILITY );
 	}
 

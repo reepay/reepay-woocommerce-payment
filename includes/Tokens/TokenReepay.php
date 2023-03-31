@@ -56,7 +56,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 		ob_start();
 		?>
 		<img <?php echo $style; ?> src="<?php echo $img; ?>"
-								  alt="<?php echo wc_get_credit_card_type_label( $this->get_card_type() ); ?>"/>
+		                           alt="<?php echo wc_get_credit_card_type_label( $this->get_card_type() ); ?>"/>
 		<?php echo esc_html( $this->get_masked_card() ); ?>
 		<?php echo esc_html( $this->get_expiry_month() . '/' . substr( $this->get_expiry_year(), 2 ) ); ?>
 
@@ -162,8 +162,8 @@ class TokenReepay extends WC_Payment_Token_CC {
 	/**
 	 * Controls the output for credit cards on the my account page.
 	 *
-	 * @param  array       $item           Individual list item from woocommerce_saved_payment_methods_list.
-	 * @param  TokenReepay $payment_token  The payment token associated with this method entry.
+	 * @param array       $item          Individual list item from woocommerce_saved_payment_methods_list.
+	 * @param TokenReepay $payment_token The payment token associated with this method entry.
 	 *
 	 * @return array                           Filtered item.
 	 */
@@ -226,8 +226,8 @@ class TokenReepay extends WC_Payment_Token_CC {
 	/**
 	 * Fix html on Payment methods list
 	 *
-	 * @param string             $html option's html.
-	 * @param WC_Payment_Token   $token payment token.
+	 * @param string             $html    option's html.
+	 * @param WC_Payment_Token   $token   payment token.
 	 * @param WC_Payment_Gateway $gateway token's gateway.
 	 *
 	 * @return string

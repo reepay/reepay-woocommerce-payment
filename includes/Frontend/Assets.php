@@ -69,7 +69,7 @@ class Assets {
 			reepay()->get_setting( 'js_url' ) . 'checkout' . $suffix . '.js',
 			array(
 				'jquery',
-//				'wc-checkout',
+				// 'wc-checkout',
 				self::SLUG_REEPAY_CDN_JS,
 			),
 			filemtime( reepay()->get_setting( 'js_path' ) . 'checkout' . $suffix . '.js' ),
@@ -83,7 +83,7 @@ class Assets {
 		);
 
 		if ( ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() )
-			 && ! is_order_received_page()
+		     && ! is_order_received_page()
 		) {
 			wp_enqueue_script( self::SLUG_REEPAY_CDN_JS );
 			wp_enqueue_script( self::SLUG_CHECKOUT_JS );
