@@ -56,7 +56,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 		ob_start();
 		?>
 		<img <?php echo $style; ?> src="<?php echo $img; ?>"
-		                           alt="<?php echo wc_get_credit_card_type_label( $this->get_card_type() ); ?>"/>
+								   alt="<?php echo wc_get_credit_card_type_label( $this->get_card_type() ); ?>"/>
 		<?php echo esc_html( $this->get_masked_card() ); ?>
 		<?php echo esc_html( $this->get_expiry_month() . '/' . substr( $this->get_expiry_year(), 2 ) ); ?>
 

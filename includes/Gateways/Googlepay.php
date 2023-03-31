@@ -33,6 +33,9 @@ class Googlepay extends ReepayGateway {
 		'googlepay',
 	);
 
+	/**
+	 * Googlepay constructor.
+	 */
 	public function __construct() {
 		$this->id           = 'reepay_googlepay';
 		$this->has_fields   = true;
@@ -45,7 +48,6 @@ class Googlepay extends ReepayGateway {
 
 		parent::__construct();
 
-		// Load setting from parent method
 		$this->apply_parent_settings();
 
 		if ( 'yes' === $this->enabled ) {

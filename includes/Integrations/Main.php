@@ -15,6 +15,9 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Integrations
  */
 class Main {
+	/**
+	 * Main constructor.
+	 */
 	public function __construct() {
 		new WooBlocksIntegration();
 	}

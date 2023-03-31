@@ -31,6 +31,9 @@ class Paypal extends ReepayGateway {
 		'paypal',
 	);
 
+	/**
+	 * Paypal constructor.
+	 */
 	public function __construct() {
 		$this->id           = 'reepay_paypal';
 		$this->has_fields   = true;
@@ -43,7 +46,6 @@ class Paypal extends ReepayGateway {
 
 		parent::__construct();
 
-		// Load setting from parent method
 		$this->apply_parent_settings();
 	}
 

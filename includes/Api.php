@@ -48,7 +48,7 @@ class Api {
 	 *
 	 * @param       $method
 	 * @param       $url
-	 * @param array $params
+	 * @param array  $params
 	 *
 	 * @return array|mixed|object|WP_Error
 	 */
@@ -439,7 +439,7 @@ class Api {
 			if ( is_wp_error( $result ) ) {
 
 				if ( 'yes' === reepay()->get_setting( 'handle_failover' ) &&
-				     ( in_array( $result->get_error_code(), array( 105, 79, 29, 99, 72 ) ) )
+					 ( in_array( $result->get_error_code(), array( 105, 79, 29, 99, 72 ) ) )
 				) {
 					// Workaround: handle already exists lets create another with unique handle
 					$params['handle'] = rp_get_order_handle( $order, true );

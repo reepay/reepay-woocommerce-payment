@@ -101,7 +101,7 @@ class ThankyouPage {
 
 		// Update the order status if webhook wasn't configured.
 		if ( 'no' === $gateway->is_webhook_configured
-		     && ! empty( $_GET['invoice'] )
+			 && ! empty( $_GET['invoice'] )
 		) {
 			$this->process_order_confirmation( wc_clean( $_GET['invoice'] ) );
 		}
@@ -124,8 +124,8 @@ class ThankyouPage {
 		$order = wc_get_order( absint( $wp->query_vars['order-received'] ) );
 
 		if ( empty( $order )
-		     || ! $order->key_is_valid( $order_key )
-		     || ! rp_is_order_paid_via_reepay( $order )
+			 || ! $order->key_is_valid( $order_key )
+			 || ! rp_is_order_paid_via_reepay( $order )
 		) {
 			return;
 		}
@@ -232,7 +232,7 @@ class ThankyouPage {
 				$message = 'Order has been failed';
 
 				if ( count( $result['transactions'] ) > 0 &&
-				     isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
+					 isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
 				) {
 					$message = $result['transactions'][0]['card_transaction']['acquirer_message'];
 				}

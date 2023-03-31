@@ -31,6 +31,9 @@ class KlarnaSliceIt extends ReepayGateway {
 		'klarna_slice_it',
 	);
 
+	/**
+	 * KlarnaSliceIt constructor.
+	 */
 	public function __construct() {
 		$this->id           = 'reepay_klarna_slice_it';
 		$this->has_fields   = true;
@@ -43,7 +46,6 @@ class KlarnaSliceIt extends ReepayGateway {
 
 		parent::__construct();
 
-		// Load setting from parent method
 		$this->apply_parent_settings();
 	}
 

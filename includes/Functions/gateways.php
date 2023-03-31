@@ -10,9 +10,9 @@ defined( 'ABSPATH' ) || exit();
 
 if ( ! function_exists( 'rp_get_payment_method ' ) ) {
 	/**
-	 * Get Payment Method.
+	 * Get payment method from order.
 	 *
-	 * @param WC_Order $order
+	 * @param WC_Order $order order to get payment method.
 	 *
 	 * @return false|ReepayCheckout
 	 */
@@ -27,9 +27,9 @@ if ( ! function_exists( 'is_reepay_payment_method' ) ) {
 	/**
 	 * Check if payment method is reepay payment method
 	 *
-	 * @param string $payment_method
+	 * @param string $payment_method payment method to check.
 	 */
 	function rp_is_reepay_payment_method( $payment_method ) {
-		return in_array( $payment_method, Gateways::PAYMENT_METHODS );
+		return in_array( $payment_method, Gateways::PAYMENT_METHODS, true );
 	}
 }

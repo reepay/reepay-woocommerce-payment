@@ -40,7 +40,7 @@ class UpdateDB {
 	 */
 	public function __construct() {
 		if ( version_compare( get_option( 'woocommerce_reepay_version', self::DB_VERSION ), self::DB_VERSION, '<' )
-		     && $this->user_can_update()
+			 && $this->user_can_update()
 		) {
 			add_action( 'admin_notices', array( $this, 'update_notice' ) );
 		}

@@ -13,6 +13,9 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\OrderFlow
  */
 class Main {
+	/**
+	 * Main constructor.
+	 */
 	public function __construct() {
 		new OrderStatuses();
 		new OrderCapture();

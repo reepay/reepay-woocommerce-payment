@@ -314,7 +314,7 @@ class Subscriptions {
 	 * When a subscription payment is due.
 	 *
 	 * @param          $amount_to_charge
-	 * @param WC_Order $renewal_order
+	 * @param WC_Order         $renewal_order
 	 */
 	public static function scheduled_subscription_payment( $amount_to_charge, $renewal_order, $settle = false ) {
 		$gateway = rp_get_payment_method( $renewal_order );
@@ -426,7 +426,7 @@ class Subscriptions {
 	 */
 	public static function maybe_render_subscription_payment_method( $payment_method_to_display, $subscription ) {
 		if ( ! in_array( $subscription->get_payment_method(), self::PAYMENT_METHODS ) ||
-		     ! $subscription->get_user_id()
+			 ! $subscription->get_user_id()
 		) {
 			return $payment_method_to_display;
 		}
@@ -447,7 +447,7 @@ class Subscriptions {
 			}
 
 			return sprintf(
-			/* translators: 1: pan 2: month 3: year */ __( 'Via %1$s card ending in %2$s/%3$s', 'reepay-checkout-gateway' ),
+			/* translators: 1: pan 2: month 3: year */                __( 'Via %1$s card ending in %2$s/%3$s', 'reepay-checkout-gateway' ),
 				$token->get_masked_card(),
 				$token->get_expiry_month(),
 				$token->get_expiry_year()

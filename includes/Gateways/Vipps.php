@@ -31,6 +31,9 @@ class Vipps extends ReepayGateway {
 		'vipps',
 	);
 
+	/**
+	 * Vipps constructor.
+	 */
 	public function __construct() {
 		$this->id           = 'reepay_vipps';
 		$this->has_fields   = true;
@@ -43,7 +46,6 @@ class Vipps extends ReepayGateway {
 
 		parent::__construct();
 
-		// Load setting from parent method
 		$this->apply_parent_settings();
 	}
 

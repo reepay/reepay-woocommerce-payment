@@ -19,13 +19,16 @@ class Assets {
 
 	const SLUG_GLOBAL_CSS = 'wc-gateway-reepay-checkout';
 
+	/**
+	 * Assets constructor.
+	 */
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_payment_assets' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_payment_assets' ) );
 	}
 
 	/**
-	 * enqueue_payment_assets function.
+	 * Enqueue_payment_assets function.
 	 *
 	 * Outputs scripts used for payment
 	 *
@@ -37,7 +40,8 @@ class Assets {
 		wp_enqueue_style(
 			self::SLUG_GLOBAL_CSS,
 			reepay()->get_setting( 'css_url' ) . 'style' . $suffix . '.css',
-			array()
+			array(),
+			filemtime( reepay()->get_setting( 'css_path' ) . 'style' . $suffix . '.css' ),
 		);
 
 		$logo_height = reepay()->get_setting( 'logo_height' );
@@ -61,7 +65,9 @@ class Assets {
 		wp_register_script(
 			self::SLUG_REEPAY_CDN_JS,
 			reepay()->get_setting( 'js_url' ) . 'checkout-cdn.js',
-			array()
+			array(),
+			filemtime( reepay()->get_setting( 'js_path' ) . 'checkout-cdn.js' ),
+			true
 		);
 
 		wp_register_script(
@@ -83,7 +89,7 @@ class Assets {
 		);
 
 		if ( ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() )
-		     && ! is_order_received_page()
+			 && ! is_order_received_page()
 		) {
 			wp_enqueue_script( self::SLUG_REEPAY_CDN_JS );
 			wp_enqueue_script( self::SLUG_CHECKOUT_JS );

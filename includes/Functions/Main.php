@@ -13,6 +13,9 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Functions
  */
 class Main {
+	/**
+	 * Main constructor.
+	 */
 	public function __construct() {
 		include_once dirname( __FILE__ ) . '/currency.php';
 		include_once dirname( __FILE__ ) . '/customer.php';

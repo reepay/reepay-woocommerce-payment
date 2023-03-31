@@ -48,7 +48,7 @@ class MetaBoxes {
 			return;
 		}
 
-		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && $post->post_parent != 0 ) {
+		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && 0 !== $post->post_parent ) {
 			$subscription = get_post_meta( $post->post_parent, '_reepay_subscription_handle', true );
 		} else {
 			$subscription = get_post_meta( $post->ID, '_reepay_subscription_handle', true );
@@ -63,7 +63,7 @@ class MetaBoxes {
 			'high'
 		);
 
-		if ( empty( $subscription ) || ( $post->post_parent != 0 ) ) {
+		if ( empty( $subscription ) || ( 0 !== $post->post_parent ) ) {
 			add_meta_box(
 				'reepay_checkout_invoice',
 				__( 'Invoice' ),
@@ -87,14 +87,13 @@ class MetaBoxes {
 	}
 
 	/**
-	 * function to show customer meta box content
+	 * Function to show customer meta box content
 	 *
-	 * @param WP_Post $post current post object
-	 * @param array   $args additional arguments sent to add_meta_box function
+	 * @param WP_Post $post current post object.
+	 * @param array   $args additional arguments sent to add_meta_box function.
 	 */
 	public function generate_meta_box_content_customer( $post, $args ) {
-
-		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && $post->post_parent != 0 ) {
+		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && 0 !== $post->post_parent ) {
 			$handle = get_post_meta( $post->post_parent, '_reepay_customer', true );
 		} else {
 			$handle = get_post_meta( $post->ID, '_reepay_customer', true );
@@ -114,10 +113,10 @@ class MetaBoxes {
 	}
 
 	/**
-	 * function to show customer meta box content
+	 * Function to show customer meta box content
 	 *
-	 * @param WP_Post $post current post object
-	 * @param array   $args additional arguments sent to add_meta_box function
+	 * @param WP_Post $post current post object.
+	 * @param array   $args additional arguments sent to add_meta_box function.
 	 */
 	public function generate_meta_box_content_invoice( $post, $args ) {
 		$order = wc_get_order( $post );
@@ -149,21 +148,20 @@ class MetaBoxes {
 				'order'              => $order,
 				'order_id'           => $order->get_order_number(),
 				'order_data'         => $order_data,
-				'order_is_cancelled' => $order->get_meta( '_reepay_order_cancelled' ) === '1' && 'cancelled' != $order_data['state'],
+				'order_is_cancelled' => $order->get_meta( '_reepay_order_cancelled' ) === '1' && 'cancelled' !== $order_data['state'],
 				'link'               => $this->dashboard_url . 'payments/invoices/invoice/' . $order_data['handle'],
 			)
 		);
 	}
 
 	/**
-	 * function to show customer meta box content
+	 * Function to show customer meta box content
 	 *
-	 * @param WP_Post $post current post object
-	 * @param array   $args additional arguments sent to add_meta_box function
+	 * @param WP_Post $post current post object.
+	 * @param array   $args additional arguments sent to add_meta_box function.
 	 */
 	public function generate_meta_box_content_subscription( $post, $args ) {
-
-		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && $post->post_parent != 0 ) {
+		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && 0 !== $post->post_parent ) {
 			$handle = get_post_meta( $post->post_parent, '_reepay_subscription_handle', true );
 			$plan   = get_post_meta( $post->post_parent, '_reepay_subscription_plan', true );
 		} else {
@@ -181,7 +179,8 @@ class MetaBoxes {
 				$subscription          = reepay_s()->api()->request( "subscription/{$template_args['handle']}" );
 				$template_args['plan'] = $subscription['plan'];
 				update_post_meta( $post->ID, '_reepay_subscription_plan', $subscription['plan'] );
-			} catch ( Exception $e ) {
+			} catch ( Exception $e ) { //phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+				// Do not show subscription plan name if api error.
 			}
 		}
 

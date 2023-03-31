@@ -9,8 +9,8 @@ if ( ! function_exists( 'rp_prepare_amount' ) ) {
 	/**
 	 * Prepare amount.
 	 *
-	 * @param float  $amount
-	 * @param string $currency
+	 * @param float  $amount amount to prepare.
+	 * @param string $currency currency to prepare.
 	 *
 	 * @return float
 	 */
@@ -23,18 +23,13 @@ if ( ! function_exists( 'rp_make_initial_amount' ) ) {
 	/**
 	 * Convert amount from gateway to initial amount.
 	 *
-	 * @param $amount
-	 * @param $currency
+	 * @param int    $amount amount to convert.
+	 * @param string $currency currency to convert.
 	 *
 	 * @return int
 	 */
 	function rp_make_initial_amount( $amount, $currency ) {
-		$denominator = rp_get_currency_multiplier( $currency );
-		if ( ! $denominator ) {
-			return 0;
-		}
-
-		return $amount / $denominator;
+		return $amount / rp_get_currency_multiplier( $currency );
 	}
 }
 
@@ -42,13 +37,13 @@ if ( ! function_exists( 'rp_get_currency_multiplier' ) ) {
 	/**
 	 * Get count of minor units fof currency.
 	 *
-	 * @param string $currency
+	 * @param string $currency currency to get multiplier.
 	 *
 	 * @return int
 	 */
 	function rp_get_currency_multiplier( $currency ) {
 		/**
-		 * array for currencies that have different minor units that 100
+		 * Array for currencies that have different minor units that 100
 		 * key is currency value is minor units
 		 * for currencies that doesn't have minor units, value must be 1
 		 *

@@ -45,12 +45,12 @@ class Ajax {
 	/**
 	 * Exit if wrong nonce
 	 *
-	 * @param string $action action to verify
+	 * @param string $action action to verify.
 	 *
 	 * @return bool
 	 */
 	private function verify_nonce( $action = 'nonce' ) {
-		if ( ! wp_verify_nonce( $_REQUEST['nonce'], $action ) ) {
+		if ( ! wp_verify_nonce( $_REQUEST['nonce'] ?? '', $action ) ) {
 			exit( 'No naughty business' );
 		}
 
@@ -62,6 +62,10 @@ class Ajax {
 	 */
 	public function capture() {
 		$this->verify_nonce();
+
+		if ( empty( $_REQUEST['order_id'] ) ) {
+			wp_send_json_error( __( 'Order id not specified' ) );
+		}
 
 		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
 		$order    = wc_get_order( $order_id );
@@ -82,11 +86,14 @@ class Ajax {
 	public function cancel() {
 		$this->verify_nonce();
 
+		if ( empty( $_REQUEST['order_id'] ) ) {
+			wp_send_json_error( __( 'Order id not specified' ) );
+		}
+
 		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
 		$order    = wc_get_order( $order_id );
 
-		// Check if the order is already cancelled
-		// ensure no more actions are made
+		// Check if the order is already cancelled.
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
 			wp_send_json_success( __( 'Order already cancelled.', 'reepay-checkout-gateway' ) );
 
@@ -96,16 +103,13 @@ class Ajax {
 		try {
 			$gateway = rp_get_payment_method( $order );
 
-			// Check if the payment can be cancelled
 			if ( $gateway->can_cancel( $order ) ) {
 				$gateway->cancel_payment( $order );
 			}
 
-			// Mark the order as cancelled - no more communication to reepay is done!
 			$order->update_meta_data( '_reepay_order_cancelled', 1 );
 			$order->save_meta_data();
 
-			// Return success
 			wp_send_json_success( __( 'Cancel success.', 'reepay-checkout-gateway' ) );
 		} catch ( Exception $e ) {
 			wp_send_json_error( $e->getMessage() );
@@ -118,12 +122,22 @@ class Ajax {
 	public function refund() {
 		$this->verify_nonce();
 
-		$amount   = (int) wc_clean( $_REQUEST['amount'] );
+		if ( empty( $_REQUEST['order_id'] ) ) {
+			wp_send_json_error( __( 'Order id not specified' ) );
+		}
+
 		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
 		$order    = wc_get_order( $order_id );
 
+		$amount = ! empty( $_REQUEST['amount'] ) ? (int) wc_clean( $_REQUEST['amount'] ) : false;
+
 		try {
 			$gateway = rp_get_payment_method( $order );
+
+			if ( empty( $gateway ) ) {
+				wp_send_json_error( __( 'Payment method not found at the order', 'reepay-checkout-gateway' ) );
+			}
+
 			$gateway->refund_payment( $order, $amount );
 
 			wp_send_json_success( __( 'Refund success.', 'reepay-checkout-gateway' ) );
@@ -190,6 +204,10 @@ class Ajax {
 	 */
 	public function set_complete_settle_transient() {
 		$this->verify_nonce();
+
+		if ( empty( $_POST['order_id'] ) || empty( $_POST['settle_order'] ) ) {
+			wp_send_json_error( __( 'Order id or settle order not specified' ) );
+		}
 
 		$order_id     = wc_clean( $_POST['order_id'] );
 		$settle_order = wc_clean( $_POST['settle_order'] );

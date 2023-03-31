@@ -31,6 +31,9 @@ class Mobilepay extends ReepayGateway {
 		'mobilepay',
 	);
 
+	/**
+	 * Mobilepay constructor.
+	 */
 	public function __construct() {
 		$this->id           = 'reepay_mobilepay';
 		$this->has_fields   = true;
@@ -43,7 +46,6 @@ class Mobilepay extends ReepayGateway {
 
 		parent::__construct();
 
-		// Load setting from parent method
 		$this->apply_parent_settings();
 	}
 

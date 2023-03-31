@@ -23,10 +23,10 @@ class InstantSettle {
 	/**
 	 * Settle Type options
 	 */
-	const SETTLE_VIRTUAL = 'online_virtual';
-	const SETTLE_PHYSICAL = 'physical';
+	const SETTLE_VIRTUAL   = 'online_virtual';
+	const SETTLE_PHYSICAL  = 'physical';
 	const SETTLE_RECURRING = 'recurring';
-	const SETTLE_FEE = 'fee';
+	const SETTLE_FEE       = 'fee';
 
 	/**
 	 * Constructor.
@@ -91,20 +91,20 @@ class InstantSettle {
 			$product = $item->get_product();
 
 			if ( in_array( self::SETTLE_PHYSICAL, $settle, true ) &&
-			     ( ! wcs_is_subscription_product( $product ) &&
-			       $product->needs_shipping() &&
-			       ! $product->is_downloadable() )
+				 ( ! wcs_is_subscription_product( $product ) &&
+				   $product->needs_shipping() &&
+				   ! $product->is_downloadable() )
 			) {
 				$items_data[] = $item->get_id();
 				continue;
 			} elseif ( in_array( self::SETTLE_VIRTUAL, $settle, true ) &&
-			           ( ! wcs_is_subscription_product( $product ) &&
-			             ( $product->is_virtual() || $product->is_downloadable() ) )
+					   ( ! wcs_is_subscription_product( $product ) &&
+						 ( $product->is_virtual() || $product->is_downloadable() ) )
 			) {
 				$items_data[] = $item->get_id();
 				continue;
 			} elseif ( in_array( self::SETTLE_RECURRING, $settle, true ) &&
-			           wcs_is_subscription_product( $product )
+					   wcs_is_subscription_product( $product )
 			) {
 				$items_data[] = $item->get_id();
 			}
@@ -125,22 +125,22 @@ class InstantSettle {
 			$product = $item->get_product();
 
 			if ( in_array( self::SETTLE_PHYSICAL, $settle, true ) &&
-			     ( ! wcs_is_subscription_product( $product ) &&
-			       $product->needs_shipping() &&
-			       ! $product->is_downloadable() )
+				 ( ! wcs_is_subscription_product( $product ) &&
+				   $product->needs_shipping() &&
+				   ! $product->is_downloadable() )
 			) {
 				$items_data[] = $item;
 
 				continue;
 			} elseif ( in_array( self::SETTLE_VIRTUAL, $settle, true ) &&
-			           ( ! wcs_is_subscription_product( $product ) &&
-			             ( $product->is_virtual() || $product->is_downloadable() ) )
+					   ( ! wcs_is_subscription_product( $product ) &&
+						 ( $product->is_virtual() || $product->is_downloadable() ) )
 			) {
 				$items_data[] = $item;
 
 				continue;
 			} elseif ( in_array( self::SETTLE_RECURRING, $settle, true ) &&
-			           wcs_is_subscription_product( $product )
+					   wcs_is_subscription_product( $product )
 			) {
 				$items_data[] = $item;
 			}
@@ -191,9 +191,9 @@ class InstantSettle {
 			$price_incl_tax = $order->get_line_subtotal( $item, true, false );
 
 			if ( in_array( self::SETTLE_PHYSICAL, $settle, true ) &&
-			     ( ! wcs_is_subscription_product( $product ) &&
-			       $product->needs_shipping() &&
-			       ! $product->is_downloadable() )
+				 ( ! wcs_is_subscription_product( $product ) &&
+				   $product->needs_shipping() &&
+				   ! $product->is_downloadable() )
 			) {
 				$debug[] = array(
 					'product' => $product->get_id(),
@@ -203,13 +203,13 @@ class InstantSettle {
 				);
 
 				$physical     = true;
-				$total        += $price_incl_tax;
+				$total       += $price_incl_tax;
 				$items_data[] = $OrderCapture->get_item_data( $item, $order );
 
 				continue;
 			} elseif ( in_array( self::SETTLE_VIRTUAL, $settle, true ) &&
-			           ( ! wcs_is_subscription_product( $product ) &&
-			             ( $product->is_virtual() || $product->is_downloadable() ) )
+					   ( ! wcs_is_subscription_product( $product ) &&
+						 ( $product->is_virtual() || $product->is_downloadable() ) )
 			) {
 				$debug[] = array(
 					'product' => $product->get_id(),
@@ -219,12 +219,12 @@ class InstantSettle {
 				);
 
 				$online_virtual = true;
-				$total          += $price_incl_tax;
+				$total         += $price_incl_tax;
 				$items_data[]   = $OrderCapture->get_item_data( $item, $order );
 
 				continue;
 			} elseif ( in_array( self::SETTLE_RECURRING, $settle, true ) &&
-			           wcs_is_subscription_product( $product )
+					   wcs_is_subscription_product( $product )
 			) {
 				$debug[] = array(
 					'product' => $product->get_id(),
@@ -234,7 +234,7 @@ class InstantSettle {
 				);
 
 				$recurring    = true;
-				$total        += $price_incl_tax;
+				$total       += $price_incl_tax;
 				$items_data[] = $OrderCapture->get_item_data( $item, $order );
 			}
 		}
@@ -244,7 +244,7 @@ class InstantSettle {
 			if ( (float) $order->get_shipping_total() > 0 ) {
 				$shipping = (float) $order->get_shipping_total();
 				$tax      = (float) $order->get_shipping_tax();
-				$total    += ( $shipping + $tax );
+				$total   += ( $shipping + $tax );
 
 				$debug[] = array(
 					'product' => $order->get_shipping_method(),
@@ -260,8 +260,8 @@ class InstantSettle {
 		if ( in_array( self::SETTLE_FEE, $settle ) ) {
 			foreach ( $order->get_fees() as $order_fee ) {
 				/** @var WC_Order_Item_Fee $order_fee */
-				$fee   = (float) $order_fee->get_total();
-				$tax   = (float) $order_fee->get_total_tax();
+				$fee    = (float) $order_fee->get_total();
+				$tax    = (float) $order_fee->get_total_tax();
 				$total += ( $fee + $tax );
 
 				$debug[] = array(
@@ -275,7 +275,7 @@ class InstantSettle {
 		// Add discounts
 		if ( $order->get_total_discount( false ) > 0 ) {
 			$discountWithTax = $order->get_total_discount( false );
-			$total           -= $discountWithTax;
+			$total          -= $discountWithTax;
 
 			$debug[] = array(
 				'product' => 'discount',

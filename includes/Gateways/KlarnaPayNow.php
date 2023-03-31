@@ -31,6 +31,9 @@ class KlarnaPayNow extends ReepayGateway {
 		'klarna_pay_now',
 	);
 
+	/**
+	 * KlarnaPayNow constructor.
+	 */
 	public function __construct() {
 		$this->id           = 'reepay_klarna_pay_now';
 		$this->has_fields   = true;
@@ -43,7 +46,6 @@ class KlarnaPayNow extends ReepayGateway {
 
 		parent::__construct();
 
-		// Load setting from parent method
 		$this->apply_parent_settings();
 	}
 

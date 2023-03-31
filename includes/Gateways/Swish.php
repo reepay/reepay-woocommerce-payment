@@ -31,6 +31,9 @@ class Swish extends ReepayGateway {
 		'swish',
 	);
 
+	/**
+	 * Swish constructor.
+	 */
 	public function __construct() {
 		$this->id           = 'reepay_swish';
 		$this->has_fields   = true;
@@ -43,7 +46,6 @@ class Swish extends ReepayGateway {
 
 		parent::__construct();
 
-		// Load setting from parent method
 		$this->apply_parent_settings();
 	}
 

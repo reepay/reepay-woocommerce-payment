@@ -13,6 +13,9 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Admin
  */
 class PluginsPage {
+	/**
+	 * PluginsPage constructor.
+	 */
 	public function __construct() {
 		add_filter( 'plugin_action_links_' . reepay()->get_setting( 'plugin_basename' ), array( $this, 'add_action_links' ) );
 		add_filter( 'plugin_row_meta', array( $this, 'add_plugin_row_meta' ), 10, 2 );
@@ -21,7 +24,7 @@ class PluginsPage {
 	/**
 	 * Add relevant links to plugins page
 	 *
-	 * @param array $links
+	 * @param array $links default links.
 	 *
 	 * @return array
 	 */

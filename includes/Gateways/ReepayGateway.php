@@ -170,7 +170,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	private $logging_source;
 
 	/**
-	 * Init
+	 * ReepayGateway constructor.
 	 */
 	public function __construct() {
 		$this->logging_source = $this->id;
@@ -306,7 +306,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$webhook_url = $default_wc_api_url . 'WC_Gateway_Reepay/';
 			$alert_email = '';
 			if ( ! empty( $this->settings['failed_webhooks_email'] ) &&
-			     is_email( $this->settings['failed_webhooks_email'] )
+				 is_email( $this->settings['failed_webhooks_email'] )
 			) {
 				$alert_email = $this->settings['failed_webhooks_email'];
 			}
@@ -317,7 +317,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			foreach ( $request['urls'] as $url ) {
 				if ( strpos( $url, $default_wc_api_url ) === false ||
-				     $url === $webhook_url ) {
+					 $url === $webhook_url ) {
 					$urls[] = $url;
 				} else {
 					$exist_waste_urls = true;
@@ -326,8 +326,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			// Verify the webhook settings
 			if ( ! empty( $urls ) && in_array( $webhook_url, $urls )
-			     && ( empty( $alert_email ) || in_array( $alert_email, $alert_emails ) )
-			     && ! $exist_waste_urls
+				 && ( empty( $alert_email ) || in_array( $alert_email, $alert_emails ) )
+				 && ! $exist_waste_urls
 			) {
 				// Webhook has been configured before
 				$this->update_option( 'is_webhook_configured', 'yes' );
@@ -432,11 +432,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					<?php endif; ?>
 
 					<input type="hidden" name="<?php echo esc_attr( $field_key ); ?>"
-					       id="<?php echo esc_attr( $field_key ); ?>"
-					       value="
+						   id="<?php echo esc_attr( $field_key ); ?>"
+						   value="
 						   <?php
-					       echo esc_attr( $configured ); // WPCS: XSS ok.
-					       ?>
+							echo esc_attr( $configured ); // WPCS: XSS ok.
+							?>
 						   "/>
 				</fieldset>
 			</td>
@@ -664,9 +664,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$token_id = isset( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) ? wc_clean( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) : 'new';
 
 		if ( 'yes' === $this->save_cc
-		     && $token_id === 'new'
-		     && isset( $_POST[ 'wc-' . $this->id . '-new-payment-method' ] )
-		     && $_POST[ 'wc-' . $this->id . '-new-payment-method' ] !== false
+			 && $token_id === 'new'
+			 && isset( $_POST[ 'wc-' . $this->id . '-new-payment-method' ] )
+			 && $_POST[ 'wc-' . $this->id . '-new-payment-method' ] !== false
 		) {
 			$maybe_save_card = $_POST[ 'wc-' . $this->id . '-new-payment-method' ] === 'true';
 		} else {
@@ -1156,7 +1156,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		if ( 'failed' == $result['state'] ) {
 			if ( count( $result['transactions'] ) > 0 &&
-			     isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
+				 isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
 			) {
 				$message = $result['transactions'][0]['card_transaction']['acquirer_message'];
 
@@ -1377,7 +1377,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		// Add "Gift Up!" discount
 		if ( defined( 'GIFTUP_ORDER_META_CODE_KEY' ) &&
-		     defined( 'GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY' )
+			 defined( 'GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY' )
 		) {
 			if ( $order->meta_exists( GIFTUP_ORDER_META_CODE_KEY ) ) {
 				$code              = $order->get_meta( GIFTUP_ORDER_META_CODE_KEY );

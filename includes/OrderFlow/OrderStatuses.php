@@ -358,7 +358,7 @@ class OrderStatuses {
 	 */
 	public function is_paid( $is_paid, $order ) {
 		if ( rp_is_order_paid_via_reepay( $order )
-		     && in_array( $order->get_status(), array( REEPAY_STATUS_SETTLED ), true )
+			 && in_array( $order->get_status(), array( REEPAY_STATUS_SETTLED ), true )
 		) {
 			$is_paid = true;
 		}

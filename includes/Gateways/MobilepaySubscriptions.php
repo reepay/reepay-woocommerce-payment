@@ -32,7 +32,7 @@ class MobilepaySubscriptions extends ReepayGateway {
 	);
 
 	/**
-	 * Constructor
+	 * MobilepaySubscriptions constructor.
 	 */
 	public function __construct() {
 		$this->id           = 'reepay_mobilepay_subscriptions';
@@ -60,7 +60,6 @@ class MobilepaySubscriptions extends ReepayGateway {
 
 		parent::__construct();
 
-		// Load setting from parent method
 		$this->apply_parent_settings();
 	}
 
@@ -103,24 +102,9 @@ class MobilepaySubscriptions extends ReepayGateway {
 	 * @return bool
 	 */
 	public function is_available() {
-		if ( ! parent::is_available() ) {
-			return false;
-		}
-
-		// need for cron to available
-		if ( ! is_checkout() ) {
-			return true;
-		}
-
-		if ( is_checkout() && wcs_cart_have_subscription() ) {
-			return true;
-		}
-
-		if ( is_add_payment_method_page() ) {
-			return true;
-		}
-
-		return false;
+		return parent::is_available()
+			   && ( ( is_checkout() && wcs_cart_have_subscription() )
+					|| is_add_payment_method_page() );
 	}
 
 	/**
@@ -136,10 +120,10 @@ class MobilepaySubscriptions extends ReepayGateway {
 			)
 		);
 
-		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription
+		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription.
 		if ( ! is_add_payment_method_page()
-		     || wcs_cart_have_subscription()
-		     || wcs_is_payment_change()
+			 || wcs_cart_have_subscription()
+			 || wcs_is_payment_change()
 		) {
 			$this->tokenization_script();
 			$this->saved_payment_methods();

@@ -31,6 +31,9 @@ class Viabill extends ReepayGateway {
 		'viabill',
 	);
 
+	/**
+	 * Viabill constructor.
+	 */
 	public function __construct() {
 		$this->id           = 'reepay_viabill';
 		$this->has_fields   = true;
@@ -43,7 +46,6 @@ class Viabill extends ReepayGateway {
 
 		parent::__construct();
 
-		// Load setting from parent method
 		$this->apply_parent_settings();
 	}
 

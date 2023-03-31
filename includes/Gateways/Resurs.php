@@ -31,6 +31,9 @@ class Resurs extends ReepayGateway {
 		'resurs',
 	);
 
+	/**
+	 * Resurs constructor.
+	 */
 	public function __construct() {
 		$this->id           = 'reepay_resurs';
 		$this->has_fields   = true;
@@ -43,7 +46,6 @@ class Resurs extends ReepayGateway {
 
 		parent::__construct();
 
-		// Load setting from parent method
 		$this->apply_parent_settings();
 	}
 

@@ -31,6 +31,9 @@ class Anyday extends ReepayGateway {
 		'anyday',
 	);
 
+	/**
+	 * Anyday constructor.
+	 */
 	public function __construct() {
 		$this->id           = 'reepay_anyday';
 		$this->has_fields   = true;
@@ -43,15 +46,19 @@ class Anyday extends ReepayGateway {
 
 		parent::__construct();
 
-		// Load setting from parent method
 		$this->apply_parent_settings();
 	}
 
+	/**
+	 * This payment method works only for cart with total more than 300 DKK
+	 *
+	 * @return bool
+	 */
 	public function is_available() {
-		if ( ! empty( WC()->cart ) ) {
-			if ( WC()->cart->get_total( '' ) < 300 && get_option( 'woocommerce_currency' ) != 'DKK' ) {
-				return false;
-			}
+		if ( ! empty( WC()->cart )
+			 && WC()->cart->get_total( '' ) < 300
+			 && get_option( 'woocommerce_currency' ) !== 'DKK' ) {
+			return false;
 		}
 
 		return parent::is_available();

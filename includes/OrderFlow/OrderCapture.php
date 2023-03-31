@@ -25,6 +25,8 @@ class OrderCapture {
 	 * Constructor
 	 */
 	public function __construct() {
+		add_filter( 'woocommerce_order_item_get_formatted_meta_data', array( $this, 'unset_specific_order_item_meta_data' ), 10, 2 );
+
 		add_action( 'woocommerce_after_order_itemmeta', array( $this, 'add_item_capture_button' ), 10, 3 );
 
 		add_action( 'woocommerce_after_order_fee_item_name', array( $this, 'add_item_capture_button' ), 10, 3 );
@@ -34,10 +36,14 @@ class OrderCapture {
 		add_action( 'admin_init', array( $this, 'process_item_capture' ) );
 
 		add_action( 'woocommerce_order_item_add_action_buttons', array( $this, 'capture_full_order_button' ), 10, 1 );
-
-		add_filter( 'woocommerce_order_item_get_formatted_meta_data', array( $this, 'unset_specific_order_item_meta_data' ), 10, 2 );
 	}
 
+	/**
+	 * @param $formatted_meta
+	 * @param $item
+	 *
+	 * @return mixed
+	 */
 	public function unset_specific_order_item_meta_data( $formatted_meta, $item ) {
 		// Only on emails notifications.
 		if ( is_admin() && isset( $_GET['post'] ) ) {
@@ -57,6 +63,44 @@ class OrderCapture {
 		}
 
 		return $formatted_meta;
+	}
+
+	/**
+	 * @param int        $item_id the id of the item being displayed.
+	 * @param object     $item    the item being displayed.
+	 * @param WC_Product $product product of item.
+	 *
+	 * @throws Exception
+	 */
+	public function add_item_capture_button( $item_id, $item, $product ) {
+		$order_id = wc_get_order_id_by_order_item_id( $item_id );
+		$order    = wc_get_order( $order_id );
+
+		$payment_method = $order->get_payment_method();
+
+		if ( strpos( $payment_method, 'reepay' ) === false ) {
+			return;
+		}
+
+		$settled = $item->get_meta( 'settled' );
+		$data    = $item->get_data();
+
+		if ( empty( $settled ) && floatval( $data['total'] ) > 0 && $this->check_allow_capture( $order ) ) {
+			$order_item    = WC_Order_Factory::get_order_item( $item_id );
+			$price         = self::get_item_price( $order_item, $order );
+			$unitPrice     = number_format( round( $price['with_tax'], 2 ), 2, '.', '' );
+			$instant_items = InstantSettle::get_instant_items( $order );
+
+			if ( empty( $instant_items ) ) {
+				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="' . $item_id . '">
+                    ' . __( 'Capture ' . $order->get_currency() . $unitPrice, 'reepay-checkout-gateway' ) . '
+                </button>';
+			} elseif ( ! in_array( $item_id, $instant_items ) ) {
+				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="' . $item_id . '">
+                    ' . __( 'Capture ' . $order->get_currency() . $unitPrice, 'reepay-checkout-gateway' ) . '
+                </button>';
+			}
+		}
 	}
 
 	/**
@@ -82,7 +126,56 @@ class OrderCapture {
 	}
 
 	/**
-	 * @param WC_Order $order order to settle.
+	 * Capture items from request
+	 *
+	 * @throws Exception
+	 */
+	public function process_item_capture() {
+		if ( isset( $_POST['line_item_capture'] ) && isset( $_POST['post_type'] ) && isset( $_POST['post_ID'] ) ) {
+			if ( $_POST['post_type'] == 'shop_order' ) {
+
+				$order = wc_get_order( $_POST['post_ID'] );
+
+				$item = WC_Order_Factory::get_order_item( $_POST['line_item_capture'] );
+				$this->settle_item( $item, $order );
+			}
+		}
+
+		if ( isset( $_POST['all_items_capture'] ) && isset( $_POST['post_type'] ) && isset( $_POST['post_ID'] ) ) {
+			if ( $_POST['post_type'] == 'shop_order' ) {
+				$order = wc_get_order( $_POST['post_ID'] );
+
+				$payment_method = $order->get_payment_method();
+
+				if ( strpos( $payment_method, 'reepay' ) === false ) {
+					return;
+				}
+
+				$this->multi_settle( $order );
+			}
+		}
+	}
+
+	public function capture_full_order_button( $order ) {
+		$payment_method = $order->get_payment_method();
+
+		if ( strpos( $payment_method, 'reepay' ) === false ) {
+			return;
+		}
+
+		if ( $this->check_allow_capture( $order ) ) {
+			$amount = $this->get_no_settled_amount( $order );
+			if ( $amount > 0 ) {
+				$amount = number_format( round( $amount, 2 ), 2, '.', '' );
+				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="all_items_capture" value="' . $order->get_id() . '">
+                    ' . __( 'Capture ' . $order->get_currency() . $amount, 'reepay-checkout-gateway' ) . '
+                </button>';
+			}
+		}
+	}
+
+	/**
+	 * @param WC_Order   $order order to settle.
 	 * @param          $items_data
 	 * @param          $total_all
 	 * @param          $line_items
@@ -140,7 +233,7 @@ class OrderCapture {
 				} elseif ( $total > 0 && $this->check_allow_capture( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
-					$total_all    += $total;
+					$total_all   += $total;
 				}
 			}
 		}
@@ -152,7 +245,7 @@ class OrderCapture {
 				if ( $total > 0 && $this->check_allow_capture( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
-					$total_all    += $total;
+					$total_all   += $total;
 				}
 			}
 		}
@@ -164,7 +257,7 @@ class OrderCapture {
 				if ( $total > 0 && $this->check_allow_capture( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
-					$total_all    += $total;
+					$total_all   += $total;
 				}
 			}
 		}
@@ -288,93 +381,6 @@ class OrderCapture {
 		return $amount;
 	}
 
-	public function capture_full_order_button( $order ) {
-		$payment_method = $order->get_payment_method();
-
-		if ( strpos( $payment_method, 'reepay' ) === false ) {
-			return;
-		}
-
-		if ( $this->check_allow_capture( $order ) ) {
-			$amount = $this->get_no_settled_amount( $order );
-			if ( $amount > 0 ) {
-				$amount = number_format( round( $amount, 2 ), 2, '.', '' );
-				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="all_items_capture" value="' . $order->get_id() . '">
-                    ' . __( 'Capture ' . $order->get_currency() . $amount, 'reepay-checkout-gateway' ) . '
-                </button>';
-			}
-		}
-	}
-
-	/**
-	 * @param int        $item_id the id of the item being displayed.
-	 * @param object     $item    the item being displayed.
-	 * @param WC_Product $product product of item.
-	 *
-	 * @throws Exception
-	 */
-	public function add_item_capture_button( $item_id, $item, $product ) {
-		$order_id = wc_get_order_id_by_order_item_id( $item_id );
-		$order    = wc_get_order( $order_id );
-
-		$payment_method = $order->get_payment_method();
-
-		if ( strpos( $payment_method, 'reepay' ) === false ) {
-			return;
-		}
-
-		$settled = $item->get_meta( 'settled' );
-		$data    = $item->get_data();
-
-		if ( empty( $settled ) && floatval( $data['total'] ) > 0 && $this->check_allow_capture( $order ) ) {
-			$order_item    = WC_Order_Factory::get_order_item( $item_id );
-			$price         = self::get_item_price( $order_item, $order );
-			$unitPrice     = number_format( round( $price['with_tax'], 2 ), 2, '.', '' );
-			$instant_items = InstantSettle::get_instant_items( $order );
-
-			if ( empty( $instant_items ) ) {
-				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="' . $item_id . '">
-                    ' . __( 'Capture ' . $order->get_currency() . $unitPrice, 'reepay-checkout-gateway' ) . '
-                </button>';
-			} elseif ( ! in_array( $item_id, $instant_items ) ) {
-				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="' . $item_id . '">
-                    ' . __( 'Capture ' . $order->get_currency() . $unitPrice, 'reepay-checkout-gateway' ) . '
-                </button>';
-			}
-		}
-	}
-
-	/**
-	 * Capture items from request
-	 *
-	 * @throws Exception
-	 */
-	public function process_item_capture() {
-		if ( isset( $_POST['line_item_capture'] ) && isset( $_POST['post_type'] ) && isset( $_POST['post_ID'] ) ) {
-			if ( $_POST['post_type'] == 'shop_order' ) {
-
-				$order = wc_get_order( $_POST['post_ID'] );
-
-				$item = WC_Order_Factory::get_order_item( $_POST['line_item_capture'] );
-				$this->settle_item( $item, $order );
-			}
-		}
-
-		if ( isset( $_POST['all_items_capture'] ) && isset( $_POST['post_type'] ) && isset( $_POST['post_ID'] ) ) {
-			if ( $_POST['post_type'] == 'shop_order' ) {
-				$order = wc_get_order( $_POST['post_ID'] );
-
-				$payment_method = $order->get_payment_method();
-
-				if ( strpos( $payment_method, 'reepay' ) === false ) {
-					return;
-				}
-
-				$this->multi_settle( $order );
-			}
-		}
-	}
-
 	/**
 	 * @param WC_Order_Item $order_item order item to get data.
 	 * @param WC_Order      $order      current order.
@@ -398,7 +404,6 @@ class OrderCapture {
 			'amount_incl_vat' => $prices_incl_tax,
 		);
 	}
-
 
 	public static function get_item_price( $order_item, $order ) {
 		if ( is_object( $order_item ) && get_class( $order_item ) == 'WC_Order_Item_Product' ) {

@@ -31,6 +31,9 @@ class KlarnaPayLater extends ReepayGateway {
 		'klarna_pay_later',
 	);
 
+	/**
+	 * KlarnaPayLater constructor.
+	 */
 	public function __construct() {
 		$this->id           = 'reepay_klarna_pay_later';
 		$this->has_fields   = true;
@@ -43,7 +46,6 @@ class KlarnaPayLater extends ReepayGateway {
 
 		parent::__construct();
 
-		// Load setting from parent method
 		$this->apply_parent_settings();
 	}
 

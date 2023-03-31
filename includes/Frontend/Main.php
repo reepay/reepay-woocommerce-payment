@@ -13,6 +13,9 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Frontend
  */
 class Main {
+	/**
+	 * Main constructor.
+	 */
 	public function __construct() {
 		new Assets();
 	}
