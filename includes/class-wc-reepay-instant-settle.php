@@ -58,12 +58,13 @@ class WC_Reepay_Instant_Settle {
 			return;
 		}
 
-		$settle_items = self::get_items_to_settle( $order );
+		$payment_method = $order->get_payment_method();
 
-		if ( ! empty( $settle_items ) ) {
-			foreach ( $settle_items as $item ) {
-				$WC_Reepay_Order_Capture->settle_item( $item, $order );
-			}
+		if ( strpos( $payment_method, 'reepay' ) === false ) {
+			return;
+		}
+
+		if($WC_Reepay_Order_Capture->multi_settle( $order )){
 			$order->add_meta_data( '_is_instant_settled', '1' );
 			$order->save_meta_data();
 		}

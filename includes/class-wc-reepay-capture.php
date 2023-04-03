@@ -157,8 +157,10 @@ class WC_Reepay_Order_Capture {
 		}
 
 		if ( ! empty( $items_data ) ) {
-			$this->settle_items( $order, $items_data, $total_all, $line_items );
+			return $this->settle_items( $order, $items_data, $total_all, $line_items );
 		}
+
+		return false;
 	}
 
 	public function complete_settle( $item, $order, $total ) {
