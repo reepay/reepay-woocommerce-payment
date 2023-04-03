@@ -391,7 +391,6 @@ class Subscriptions {
 				$renewal_order,
 				$token->get_token(),
 				$amount_to_charge,
-				$renewal_order->get_currency(),
 				null,
 				$settle
 			);

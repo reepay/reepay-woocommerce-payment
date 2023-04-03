@@ -485,20 +485,20 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Capture.
 	 *
-	 * @param WC_Order|int $order
-	 * @param float|false  $amount
+	 * @param WC_Order|int $order order to capture.
+	 * @param float|null   $amount amount to capture. Null to capture order total.
 	 *
 	 * @return void
-	 * @throws Exception
+	 * @throws Exception If capture error.
 	 * @api
 	 */
-	public function capture_payment( $order, $amount ) {
-		// Check if the order is cancelled - if so - then return as nothing has happened
+	public function capture_payment( $order, $amount = null ) {
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
 			throw new Exception( 'Order is already canceled' );
 		}
 
 		$result = reepay()->api( $this )->capture_payment( $order, $amount );
+
 		if ( is_wp_error( $result ) ) {
 			throw new Exception( $result->get_error_message() );
 		}
@@ -953,7 +953,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					$order_lines = $this->skip_order_lines === 'no' ? $this->get_order_items( $order ) : null;
 					$amount      = $this->skip_order_lines === 'yes' ? $order->get_total() : null;
 					// Charge payment
-					$result = reepay()->api( $this )->charge( $order, $token->get_token(), $amount, $order->get_currency(), $order_lines );
+					$result = reepay()->api( $this )->charge( $order, $token->get_token(), $amount, $order_lines );
 
 					if ( is_wp_error( $result ) ) {
 						wc_add_notice( $result->get_error_message(), 'error' );
