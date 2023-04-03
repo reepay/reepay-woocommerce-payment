@@ -135,7 +135,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 		$change_payment_method = isset( $_GET['change_payment_method'] ) ? wc_clean( $_GET['change_payment_method'] ) : '';
 
 		// Mark Method as Checked on "Payment Change" page.
-		if ( abs( $change_payment_method ) > 0 && wcs_is_payment_change() ) {
+		if ( $change_payment_method > 0 && wcs_is_payment_change() ) {
 			$subscription = wcs_get_subscription( $change_payment_method );
 			$tokens       = $subscription->get_payment_tokens();
 			foreach ( $tokens as $token_id ) {
