@@ -383,7 +383,7 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 					'title'       => __( 'Payment button text', 'reepay-checkout-gateway' ),
 					'type'        => 'text',
 					'description' => __( 'Text on button which will be displayed on payment page if subscription products is being purchased', 'reepay-checkout-gateway' ),
-					'default'     => __( 'PAY AND SAVE CARD', 'reepay-checkout-gateway' ),
+					'default'     => '',
 				),
 			),
 			$this
