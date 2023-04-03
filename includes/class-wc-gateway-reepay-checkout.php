@@ -220,13 +220,13 @@ class WC_Gateway_Reepay_Checkout extends WC_Gateway_Reepay {
 				),
 				'payment_type'               => array(
 					'title'       => __( 'Payment Window Display', 'reepay-checkout-gateway' ),
-					'description' => __( 'Choose between a redirect window or a overlay window', 'reepay-checkout-gateway' ),
+					'description' => __( 'Choose between a redirect window or a overlay window. Note that some payment methods like Apple Pay do not work for overlay window.', 'reepay-checkout-gateway' ),
 					'type'        => 'select',
 					'options'     => array(
 						self::METHOD_WINDOW  => 'Window',
 						self::METHOD_OVERLAY => 'Overlay',
 					),
-					'default'     => '',
+					'default'     => self::METHOD_WINDOW,
 				),
 				'payment_methods'            => array(
 					'title'       => __( 'Payment Methods', 'reepay-checkout-gateway' ),
