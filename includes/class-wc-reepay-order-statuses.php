@@ -16,7 +16,7 @@ class WC_Reepay_Order_Statuses {
 		define( 'REEPAY_STATUS_SETTLED', isset( $settings['status_settled'] ) ? str_replace( 'wc-', '', $settings['status_settled'] ) : 'processing' );
 
 		add_filter(
-			'woocommerce_settings_api_form_fields_reepay_checkout',
+			'reepay_checkout_form_fields',
 			array(
 				$this,
 				'form_fields',
@@ -136,7 +136,6 @@ class WC_Reepay_Order_Statuses {
 
 		$form_fields['hr_sync'] = array(
 			'type' => 'separator',
-			'id'   => 'hr_sync',
 		);
 
 		$form_fields['enable_sync'] = array(

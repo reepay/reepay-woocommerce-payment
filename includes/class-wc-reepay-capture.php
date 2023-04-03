@@ -44,10 +44,10 @@ class WC_Reepay_Order_Capture {
 	}
 
 	/**
-	 * @param  int      $order_id
-	 * @param  string   $this_status_transition_from
-	 * @param  string   $this_status_transition_to
-	 * @param  WC_Order $order
+	 * @param  int  $order_id
+	 * @param  string  $this_status_transition_from
+	 * @param  string  $this_status_transition_to
+	 * @param  WC_Order  $order
 	 *
 	 * @throws Exception If settle error
 	 */
@@ -66,7 +66,7 @@ class WC_Reepay_Order_Capture {
 	}
 
 	/**
-	 * @param WC_Order   $order order to settle.
+	 * @param  WC_Order  $order  order to settle.
 	 * @param $items_data
 	 * @param $total_all
 	 * @param $line_items
@@ -82,14 +82,16 @@ class WC_Reepay_Order_Capture {
 
 		if ( is_wp_error( $result ) ) {
 			$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-			set_transient( 'reepay_api_action_error', __( $result->get_error_message(), 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+			set_transient( 'reepay_api_action_error', __( $result->get_error_message(), 'reepay-checkout-gateway' ),
+				MINUTE_IN_SECONDS / 2 );
 
 			return false;
 		}
 
 		if ( $result['state'] == 'failed' ) {
 			$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-			set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+			set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ),
+				MINUTE_IN_SECONDS / 2 );
 
 			return false;
 		}
@@ -106,7 +108,7 @@ class WC_Reepay_Order_Capture {
 	}
 
 	/**
-	 * @param WC_Order $order order to settle.
+	 * @param  WC_Order  $order  order to settle.
 	 *
 	 * @throws Exception
 	 */
@@ -119,12 +121,13 @@ class WC_Reepay_Order_Capture {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
 				$total     = $item_data['amount'] * $item_data['quantity'];
-				if ( $total == 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
+				if ( $total == 0 && method_exists( $item,
+						'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
 					WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 				} elseif ( $total > 0 && $this->check_allow_capture( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
-					$total_all   += $total;
+					$total_all    += $total;
 				}
 			}
 		}
@@ -136,7 +139,7 @@ class WC_Reepay_Order_Capture {
 				if ( $total > 0 && $this->check_allow_capture( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
-					$total_all   += $total;
+					$total_all    += $total;
 				}
 			}
 		}
@@ -148,7 +151,7 @@ class WC_Reepay_Order_Capture {
 				if ( $total > 0 && $this->check_allow_capture( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
-					$total_all   += $total;
+					$total_all    += $total;
 				}
 			}
 		}
@@ -167,8 +170,8 @@ class WC_Reepay_Order_Capture {
 	}
 
 	/**
-	 * @param WC_Order_Item $item order item to settle.
-	 * @param WC_Order      $order current order.
+	 * @param  WC_Order_Item  $item  order item to settle.
+	 * @param  WC_Order  $order  current order.
 	 *
 	 * @return bool
 	 */
@@ -181,21 +184,24 @@ class WC_Reepay_Order_Capture {
 			$total          = $item_data['amount'] * $item_data['quantity'];
 			unset( $_POST['post_status'] );
 			$gateway = rp_get_payment_method( $order );
-			if ( $total == 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
+			if ( $total == 0 && method_exists( $item,
+					'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
 				WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 			} elseif ( $total > 0 && $this->check_allow_capture( $order ) ) {
 				$result = $gateway->api->settle( $order, $total, $line_item_data, $item );
 
 				if ( is_wp_error( $result ) ) {
 					$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-					set_transient( 'reepay_api_action_error', __( $result->get_error_message(), 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+					set_transient( 'reepay_api_action_error',
+						__( $result->get_error_message(), 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
 
 					return false;
 				}
 
 				if ( $result['state'] == 'failed' ) {
 					$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-					set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+					set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ),
+						MINUTE_IN_SECONDS / 2 );
 
 					return false;
 				}
@@ -225,7 +231,6 @@ class WC_Reepay_Order_Capture {
 		if ( ! empty( $gateway ) && ! empty( $gateway->api ) ) {
 			$invoice_data = $gateway->api->get_invoice_data( $order );
 		}
-
 
 		if ( is_wp_error( $invoice_data ) ) {
 			echo __( 'Invoice not found', 'reepay-checkout-gateway' );
@@ -284,6 +289,7 @@ class WC_Reepay_Order_Capture {
 
 		if ( $this->check_allow_capture( $order ) ) {
 			$amount = $this->get_no_settled_amount( $order );
+
 			if ( $amount > 0 ) {
 				$amount = number_format( round( $amount, 2 ), 2, '.', '' );
 				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="all_items_capture" value="' . $order->get_id() . '">
@@ -294,9 +300,9 @@ class WC_Reepay_Order_Capture {
 	}
 
 	/**
-	 * @param int        $item_id the id of the item being displayed.
-	 * @param object     $item the item being displayed.
-	 * @param WC_Product $product product of item.
+	 * @param  int  $item_id  the id of the item being displayed.
+	 * @param  object  $item  the item being displayed.
+	 * @param  WC_Product  $product  product of item.
 	 *
 	 * @throws Exception
 	 */
@@ -363,8 +369,8 @@ class WC_Reepay_Order_Capture {
 	}
 
 	/**
-	 * @param WC_Order_Item $order_item order item to get data.
-	 * @param WC_Order      $order current order.
+	 * @param  WC_Order_Item  $order_item  order item to get data.
+	 * @param  WC_Order  $order  current order.
 	 *
 	 * @return array
 	 */
@@ -375,7 +381,8 @@ class WC_Reepay_Order_Capture {
 
 		$tax        = $price['with_tax'] - $price['original'];
 		$taxPercent = ( $tax > 0 ) ? 100 / ( $price['original'] / $tax ) : 0;
-		$unitPrice  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
+		$unitPrice  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(),
+			2 );
 
 		return array(
 			'ordertext'       => $order_item->get_name(),
@@ -412,7 +419,12 @@ class WC_Reepay_Order_Capture {
 			}
 		}
 
-		$price['with_tax'] = $price['original'] + $res_tax;
+		if ( ! empty( $order_item->get_meta( '_is_card_fee' ) ) ) {
+			$price['with_tax'] = $price['original'];
+		} else {
+			$price['with_tax'] = $price['original'] + $res_tax;
+		}
+
 
 		return $price;
 	}
