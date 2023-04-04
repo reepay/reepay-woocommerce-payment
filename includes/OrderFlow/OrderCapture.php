@@ -112,7 +112,7 @@ class OrderCapture {
 		$settled = $item->get_meta( 'settled' );
 		$data    = $item->get_data();
 
-		if ( empty( $settled ) && floatval( $data['total'] ) > 0 && $this->check_allow_capture( $order ) ) {
+		if ( empty( $settled ) && floatval( $data['total'] ) > 0 && $this->check_capture_allowed( $order ) ) {
 			$order_item    = WC_Order_Factory::get_order_item( $item_id );
 			$price         = self::get_item_price( $order_item, $order );
 			$unit_price    = number_format( round( $price['with_tax'], 2 ), 2, '.', '' );
@@ -193,8 +193,9 @@ class OrderCapture {
 			return;
 		}
 
-		if ( $this->check_allow_capture( $order ) ) {
-			$amount = $this->get_no_settled_amount( $order );
+		if ( $this->check_capture_allowed( $order ) ) {
+			$amount = $this->get_not_settled_amount( $order );
+
 			if ( $amount > 0 ) {
 				$amount = number_format( round( $amount, 2 ), 2, '.', '' );
 				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="all_items_capture" value="' . $order->get_id() . '">
@@ -205,10 +206,12 @@ class OrderCapture {
 	}
 
 	/**
-	 * @param WC_Order   $order order to settle.
-	 * @param          $items_data
-	 * @param          $total_all
-	 * @param          $line_items
+	 * Settle order items.
+	 *
+	 * @param WC_Order        $order order to settle.
+	 * @param array[]         $items_data items data from self::get_item_data.
+	 * @param float           $total_all order total amount ot settle.
+	 * @param WC_Order_Item[] $line_items order line items.
 	 *
 	 * @return bool
 	 */
@@ -260,7 +263,7 @@ class OrderCapture {
 
 				if ( $total <= 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
 					WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
-				} elseif ( $total > 0 && $this->check_allow_capture( $order ) ) {
+				} elseif ( $total > 0 && $this->check_capture_allowed( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
 					$total_all   += $total;
@@ -272,7 +275,7 @@ class OrderCapture {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
 				$total     = $item_data['amount'] * $item_data['quantity'];
-				if ( $total > 0 && $this->check_allow_capture( $order ) ) {
+				if ( $total > 0 && $this->check_capture_allowed( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
 					$total_all   += $total;
@@ -286,9 +289,9 @@ class OrderCapture {
 	}
 
 	/**
-	 * @param $item
-	 * @param $order
-	 * @param $total
+	 * @param WC_Order_Item $item order item to set 'settled' meta.
+	 * @param WC_Order      $order order to activate woo subscription (if it is possible).
+	 * @param float|int     $total settled total to set to 'settled' meta.
 	 */
 	public function complete_settle( $item, $order, $total ) {
 		if ( method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
@@ -313,19 +316,19 @@ class OrderCapture {
 			$total          = $item_data['amount'] * $item_data['quantity'];
 			unset( $_POST['post_status'] );
 			$gateway = rp_get_payment_method( $order );
-			if ( $total == 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
+			if ( $total <= 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
 				WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
-			} elseif ( $total > 0 && $this->check_allow_capture( $order ) ) {
+			} elseif ( $total > 0 && $this->check_capture_allowed( $order ) ) {
 				$result = reepay()->api( $gateway )->settle( $order, $total, $line_item_data, $item );
 
 				if ( is_wp_error( $result ) ) {
 					$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-					set_transient( 'reepay_api_action_error', __( $result->get_error_message(), 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+					set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
 
 					return false;
 				}
 
-				if ( $result['state'] == 'failed' ) {
+				if ( 'failed' === $result['state'] ) {
 					$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
 					set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
 
@@ -341,7 +344,14 @@ class OrderCapture {
 		return true;
 	}
 
-	public function check_allow_capture( $order ) {
+	/**
+	 * Check if capture is allowed
+	 *
+	 * @param WC_Order $order order to check.
+	 *
+	 * @return bool
+	 */
+	public function check_capture_allowed( $order ) {
 		$payment_method = $order->get_payment_method();
 
 		if ( class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
@@ -356,48 +366,22 @@ class OrderCapture {
 
 		$invoice_data = reepay()->api( $gateway )->get_invoice_data( $order );
 
-		if ( is_wp_error( $invoice_data ) ) {
-			echo __( 'Invoice not found', 'reepay-checkout-gateway' );
-
-			return false;
-		}
-
-		if ( $invoice_data['authorized_amount'] > $invoice_data['settled_amount'] ) {
-			return true;
-		}
-
-		return false;
+		return ! is_wp_error( $invoice_data ) && $invoice_data['authorized_amount'] > $invoice_data['settled_amount'];
 	}
 
-	public function get_no_settled_amount( $order ) {
+	/**
+	 * Get not settled order items amount.
+	 *
+	 * @param WC_Order $order order to get.
+	 *
+	 * @return int|mixed
+	 */
+	public function get_not_settled_amount( $order ) {
 		$amount = 0;
-		foreach ( $order->get_items() as $item ) {
-			$settled = $item->get_meta( 'settled' );
-			if ( empty( $settled ) ) {
-				$price = self::get_item_price( $item, $order );
-				if ( ! empty( $price ) ) {
-					$amount += $price['with_tax'];
-				}
-			}
-		}
 
-		foreach ( $order->get_items( 'shipping' ) as $item ) {
-			$settled = $item->get_meta( 'settled' );
-			if ( empty( $settled ) ) {
-				$price = self::get_item_price( $item, $order );
-				if ( ! empty( $price ) ) {
-					$amount += $price['with_tax'];
-				}
-			}
-		}
-
-		foreach ( $order->get_items( 'fee' ) as $item ) {
-			$settled = $item->get_meta( 'settled' );
-			if ( empty( $settled ) ) {
-				$price = self::get_item_price( $item, $order );
-				if ( ! empty( $price ) ) {
-					$amount += $price['with_tax'];
-				}
+		foreach ( $order->get_items( array( 'line_item', 'shipping', 'fee' ) ) as $item ) {
+			if ( empty( $item->get_meta( 'settled' ) ) ) {
+				$amount += self::get_item_price( $item, $order )['with_tax'];
 			}
 		}
 
@@ -415,22 +399,32 @@ class OrderCapture {
 
 		$price = self::get_item_price( $order_item, $order );
 
-		$tax        = $price['with_tax'] - $price['original'];
-		$taxPercent = ( $tax > 0 ) ? 100 / ( $price['original'] / $tax ) : 0;
-		$unitPrice  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
+		$tax         = $price['with_tax'] - $price['original'];
+		$tax_percent = ( $tax > 0 ) ? 100 / ( $price['original'] / $tax ) : 0;
+		$unit_price  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
 
 		return array(
 			'ordertext'       => $order_item->get_name(),
 			'quantity'        => $order_item->get_quantity(),
-			'amount'          => rp_prepare_amount( $unitPrice, $order->get_currency() ),
-			'vat'             => round( $taxPercent / 100, 2 ),
+			'amount'          => rp_prepare_amount( $unit_price, $order->get_currency() ),
+			'vat'             => round( $tax_percent / 100, 2 ),
 			'amount_incl_vat' => $prices_incl_tax,
 		);
 	}
 
+	/**
+	 * Get order item price for reepay.
+	 *
+	 * @param WC_Order_Item $order_item order item to get price and tax.
+	 * @param WC_Order      $order current order.
+	 *
+	 * @return array
+	 */
 	public static function get_item_price( $order_item, $order ) {
-		if ( is_object( $order_item ) && get_class( $order_item ) == 'WC_Order_Item_Product' ) {
-			$price['original'] = floatval( $order->get_line_subtotal( $order_item, false, false ) );
+		$price = array();
+
+		if ( is_object( $order_item ) && get_class( $order_item ) === 'WC_Order_Item_Product' ) {
+			$price['original'] = $order->get_line_subtotal( $order_item, false, false );
 			if ( $order_item->get_subtotal() !== $order_item->get_total() ) {
 				$discount          = $order_item->get_subtotal() - $order_item->get_total();
 				$price['original'] = $price['original'] - $discount;
