@@ -18,7 +18,7 @@ class Main {
 	 */
 	public function __construct() {
 		new OrderStatuses();
-		new OrderCapture();
+		OrderCapture::get_instance();
 		new InstantSettle();
 		new ThankyouPage();
 		new Webhook();

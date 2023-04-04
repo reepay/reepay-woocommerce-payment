@@ -61,7 +61,7 @@ class InstantSettle {
 	 * @return void
 	 */
 	public function process_instant_settle( $order ) {
-		$order_capture = self::get_order_capture();
+		$order_capture = OrderCapture::get_instance();
 
 		if ( ! empty( $order->get_meta( '_is_instant_settled' ) ) ) {
 			return;
@@ -158,7 +158,7 @@ class InstantSettle {
 			if ( self::can_product_be_settled_instantly( $product, $settle_types ) ) {
 				$is_instant_settle = true;
 				$total            += $price_incl_tax;
-				$items_data[]      = self::get_order_capture()->get_item_data( $item, $order );
+				$items_data[]      = OrderCapture::get_instance()->get_item_data( $item, $order );
 			}
 		}
 
@@ -214,23 +214,10 @@ class InstantSettle {
 
 		foreach ( $order->get_items() as $item ) {
 			if ( ! empty( $item->get_meta( 'settled' ) ) ) {
-				$settled[] = self::get_order_capture()->get_item_data( $item, $order );
+				$settled[] = OrderCapture::get_instance()->get_item_data( $item, $order );
 			}
 		}
 
 		return $settled;
-	}
-
-	/**
-	 * @return OrderCapture
-	 */
-	public static function get_order_capture() {
-		static $instance = null;
-
-		if ( is_null( $instance ) ) {
-			$instance = new OrderCapture();
-		}
-
-		return $instance;
 	}
 }
