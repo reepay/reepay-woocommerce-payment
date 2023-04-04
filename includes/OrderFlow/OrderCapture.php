@@ -39,8 +39,12 @@ class OrderCapture {
 	}
 
 	/**
-	 * @param $formatted_meta
-	 * @param $item
+	 * Hooked to woocommerce_order_item_get_formatted_meta_data. Remove 'settled' meta
+	 *
+	 * @see WC_Order_Item::get_formatted_meta_data
+	 *
+	 * @param array<int, object> $formatted_meta order item meta data.
+	 * @param WC_Order_Item      $item order item.
 	 *
 	 * @return mixed
 	 */
@@ -48,7 +52,7 @@ class OrderCapture {
 		// Only on emails notifications.
 		if ( is_admin() && isset( $_GET['post'] ) ) {
 			foreach ( $formatted_meta as $meta ) {
-				if ( in_array( $meta->key, array( 'settled' ) ) ) {
+				if ( in_array( $meta->key, array( 'settled' ), true ) ) {
 					$meta->display_key = 'Settle';
 				}
 			}
@@ -57,7 +61,7 @@ class OrderCapture {
 		}
 
 		foreach ( $formatted_meta as $key => $meta ) {
-			if ( in_array( $meta->key, array( 'settled' ) ) ) {
+			if ( in_array( $meta->key, array( 'settled' ), true ) ) {
 				unset( $formatted_meta[ $key ] );
 			}
 		}
@@ -66,11 +70,13 @@ class OrderCapture {
 	}
 
 	/**
+	 * Hooked to woocommerce_after_order_fee_item_name. Print capture button.
+	 *
 	 * @param int        $item_id the id of the item being displayed.
 	 * @param object     $item    the item being displayed.
 	 * @param WC_Product $product product of item.
 	 *
-	 * @throws Exception
+	 * @throws Exception When `WC_Data_Store::load` validation fails.
 	 */
 	public function add_item_capture_button( $item_id, $item, $product ) {
 		$order_id = wc_get_order_id_by_order_item_id( $item_id );
@@ -88,28 +94,28 @@ class OrderCapture {
 		if ( empty( $settled ) && floatval( $data['total'] ) > 0 && $this->check_allow_capture( $order ) ) {
 			$order_item    = WC_Order_Factory::get_order_item( $item_id );
 			$price         = self::get_item_price( $order_item, $order );
-			$unitPrice     = number_format( round( $price['with_tax'], 2 ), 2, '.', '' );
-			$instant_items = InstantSettle::get_instant_items( $order );
+			$unit_price    = number_format( round( $price['with_tax'], 2 ), 2, '.', '' );
+			$instant_items = InstantSettle::get_instant_settle_items( $order );
 
-			if ( empty( $instant_items ) ) {
+			if ( ! in_array( $item_id, $instant_items, true ) ) {
 				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="' . $item_id . '">
-                    ' . __( 'Capture ' . $order->get_currency() . $unitPrice, 'reepay-checkout-gateway' ) . '
-                </button>';
-			} elseif ( ! in_array( $item_id, $instant_items ) ) {
-				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="' . $item_id . '">
-                    ' . __( 'Capture ' . $order->get_currency() . $unitPrice, 'reepay-checkout-gateway' ) . '
+                    ' . __( 'Capture ', 'reepay-checkout-gateway' ) . $order->get_currency() . $unit_price . '
                 </button>';
 			}
 		}
 	}
 
 	/**
-	 * @param int      $order_id
-	 * @param string   $this_status_transition_from
-	 * @param string   $this_status_transition_to
-	 * @param WC_Order $order
+	 * Hooked to woocommerce_order_status_changed.
 	 *
-	 * @throws Exception If settle error
+	 * @see WC_Order::status_transition
+	 *
+	 * @param int      $order_id current order id.
+	 * @param string   $this_status_transition_from old status.
+	 * @param string   $this_status_transition_to new status.
+	 * @param WC_Order $order current order.
+	 *
+	 * @throws Exception If settle error.
 	 */
 	public function capture_full_order( $order_id, $this_status_transition_from, $this_status_transition_to, $order ) {
 		$payment_method = $order->get_payment_method();
@@ -120,19 +126,17 @@ class OrderCapture {
 
 		$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
 
-		if ( $this_status_transition_to == 'completed' && ( 1 == $value || false === $value ) ) {
+		if ( 'completed' === $this_status_transition_to && ( '1' === $value || false === $value ) ) {
 			$this->multi_settle( $order );
 		}
 	}
 
 	/**
-	 * Capture items from request
-	 *
-	 * @throws Exception
+	 * Hooked to admin_init. Capture items from request
 	 */
 	public function process_item_capture() {
 		if ( isset( $_POST['line_item_capture'] ) && isset( $_POST['post_type'] ) && isset( $_POST['post_ID'] ) ) {
-			if ( $_POST['post_type'] == 'shop_order' ) {
+			if ( 'shop_order' === $_POST['post_type'] ) {
 
 				$order = wc_get_order( $_POST['post_ID'] );
 
@@ -142,7 +146,7 @@ class OrderCapture {
 		}
 
 		if ( isset( $_POST['all_items_capture'] ) && isset( $_POST['post_type'] ) && isset( $_POST['post_ID'] ) ) {
-			if ( $_POST['post_type'] == 'shop_order' ) {
+			if ( 'shop_order' === $_POST['post_type'] ) {
 				$order = wc_get_order( $_POST['post_ID'] );
 
 				$payment_method = $order->get_payment_method();
@@ -156,6 +160,11 @@ class OrderCapture {
 		}
 	}
 
+	/**
+	 * Hooked to woocommerce_order_item_add_action_buttons. Print full capture button.
+	 *
+	 * @param WC_Order $order current order.
+	 */
 	public function capture_full_order_button( $order ) {
 		$payment_method = $order->get_payment_method();
 
@@ -168,7 +177,7 @@ class OrderCapture {
 			if ( $amount > 0 ) {
 				$amount = number_format( round( $amount, 2 ), 2, '.', '' );
 				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="all_items_capture" value="' . $order->get_id() . '">
-                    ' . __( 'Capture ' . $order->get_currency() . $amount, 'reepay-checkout-gateway' ) . '
+                    ' . __( 'Capture ', 'reepay-checkout-gateway' ) . $order->get_currency() . $amount . '
                 </button>';
 			}
 		}
@@ -181,7 +190,6 @@ class OrderCapture {
 	 * @param          $line_items
 	 *
 	 * @return bool
-	 * @throws Exception
 	 */
 	public function settle_items( $order, $items_data, $total_all, $line_items ) {
 		unset( $_POST['post_status'] );
@@ -191,12 +199,12 @@ class OrderCapture {
 
 		if ( is_wp_error( $result ) ) {
 			$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-			set_transient( 'reepay_api_action_error', __( $result->get_error_message(), 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+			set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
 
 			return false;
 		}
 
-		if ( $result['state'] == 'failed' ) {
+		if ( 'failed' === $result['state'] ) {
 			$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
 			set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
 
@@ -215,9 +223,9 @@ class OrderCapture {
 	}
 
 	/**
-	 * @param WC_Order $order order to settle.
+	 * Settle all items in order.
 	 *
-	 * @throws Exception
+	 * @param WC_Order $order order to settle.
 	 */
 	public function multi_settle( $order ) {
 		$items_data = array();
@@ -228,7 +236,8 @@ class OrderCapture {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
 				$total     = $item_data['amount'] * $item_data['quantity'];
-				if ( $total == 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
+
+				if ( $total <= 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
 					WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 				} elseif ( $total > 0 && $this->check_allow_capture( $order ) ) {
 					$items_data[] = $item_data;
@@ -238,19 +247,7 @@ class OrderCapture {
 			}
 		}
 
-		foreach ( $order->get_items( 'shipping' ) as $item ) {
-			if ( empty( $item->get_meta( 'settled' ) ) ) {
-				$item_data = $this->get_item_data( $item, $order );
-				$total     = $item_data['amount'] * $item_data['quantity'];
-				if ( $total > 0 && $this->check_allow_capture( $order ) ) {
-					$items_data[] = $item_data;
-					$line_items[] = $item;
-					$total_all   += $total;
-				}
-			}
-		}
-
-		foreach ( $order->get_items( 'fee' ) as $item ) {
+		foreach ( $order->get_items( array( 'shipping', 'fee' ) ) as $item ) {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
 				$total     = $item_data['amount'] * $item_data['quantity'];
@@ -267,12 +264,17 @@ class OrderCapture {
 		}
 	}
 
+	/**
+	 * @param $item
+	 * @param $order
+	 * @param $total
+	 */
 	public function complete_settle( $item, $order, $total ) {
 		if ( method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
 			WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 		}
 		$item->update_meta_data( 'settled', $total / 100 );
-		$item->save(); // Save item
+		$item->save();
 	}
 
 	/**

@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout
+ */
 
 namespace Reepay\Checkout;
 
@@ -19,7 +22,7 @@ trait LoggingTrait {
 
 		// Write message to log.
 		if ( ! is_string( $message ) ) {
-			$message = print_r( $message, true );
+			$message = print_r( $message, true ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 		}
 
 		$logger->debug(

@@ -152,9 +152,11 @@ class Ajax {
 	public function capture_partly() {
 		$this->verify_nonce();
 
-		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
-		$order    = wc_get_order( $order_id );
-		$amount   = str_replace( array( ',', '.' ), '', wc_clean( $_REQUEST['amount'] ) );
+		$order_id = isset( $_REQUEST['order_id'] ) ? (int) wc_clean( $_REQUEST['order_id'] ) : 0;
+		$amount   = isset( $_REQUEST['amount'] ) ? wc_clean( $_REQUEST['amount'] ) : 0;
+
+		$order  = wc_get_order( $order_id );
+		$amount = str_replace( array( ',', '.' ), '', $amount );
 
 		try {
 			$gateway = rp_get_payment_method( $order );
@@ -173,9 +175,11 @@ class Ajax {
 	public function refund_partly() {
 		$this->verify_nonce();
 
-		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
-		$order    = wc_get_order( $order_id );
-		$amount   = str_replace( array( ',', '.' ), '', wc_clean( $_REQUEST['amount'] ) );
+		$order_id = isset( $_REQUEST['order_id'] ) ? (int) wc_clean( $_REQUEST['order_id'] ) : 0;
+		$amount   = isset( $_REQUEST['amount'] ) ? wc_clean( $_REQUEST['amount'] ) : 0;
+
+		$order  = wc_get_order( $order_id );
+		$amount = str_replace( array( ',', '.' ), '', $amount );
 
 		try {
 			$gateway = rp_get_payment_method( $order );
@@ -200,7 +204,7 @@ class Ajax {
 	}
 
 	/**
-	 *
+	 * Action to set complete settle to transient option
 	 */
 	public function set_complete_settle_transient() {
 		$this->verify_nonce();

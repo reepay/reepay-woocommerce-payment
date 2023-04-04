@@ -61,7 +61,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Settle
 	 *
-	 * @var string
+	 * @var string[]
 	 */
 	public $settle = array(
 		InstantSettle::SETTLE_VIRTUAL,

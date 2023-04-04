@@ -430,7 +430,7 @@ class OrderStatuses {
 			case REEPAY_STATUS_SETTLED:
 				// Capture payment.
 				$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
-				if ( ( '1' === $value || 1 === $value || false === $value ) && $gateway->can_capture( $order ) ) {
+				if ( ( '1' === $value || false === $value ) && $gateway->can_capture( $order ) ) {
 					try {
 						$order_data = reepay()->api( $gateway )->get_invoice_data( $order );
 						if ( is_wp_error( $order_data ) ) {

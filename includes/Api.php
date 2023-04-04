@@ -511,6 +511,8 @@ class Api {
 	 * @param bool           $item
 	 *
 	 * @return array|WP_Error
+	 *
+	 * @ToDO refactor function. $amount is useless.
 	 */
 	public function settle( WC_Order $order, $amount = null, $item_data = false, $item = false ) {
 		$this->log( sprintf( 'Settle: %s, %s', $order->get_id(), $amount ) );
