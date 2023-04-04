@@ -407,8 +407,8 @@ class WC_Reepay_Order_Capture {
 			$price['original'] = floatval( $order->get_line_total( $order_item, false, false ) );
 		}
 
-		$tax_data = wc_tax_enabled() ? $order_item->get_taxes() : false;
-		$taxes    = $order->get_taxes();
+		$tax_data = wc_tax_enabled() && method_exists($order_item, 'get_taxes') ? $order_item->get_taxes() : false;
+		$taxes    = method_exists($order, 'get_taxes') ? $order->get_taxes() : false;
 
 		$res_tax = 0;
 		if ( ! empty( $taxes ) ) {
