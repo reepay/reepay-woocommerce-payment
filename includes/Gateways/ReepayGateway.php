@@ -207,8 +207,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	public function check_is_active() {
-		$gateway = new ReepayCheckout();
-
 		$gateways_reepay = get_transient( 'gateways_reepay' );
 		if ( empty( $gateways_reepay ) ) {
 			$gateways_reepay = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/agreement?only_active=true' );

@@ -117,7 +117,7 @@ class InstantSettle {
 	 * @return array
 	 */
 	public static function get_instant_settle_items( $order ) {
-		$settle_types = rp_get_payment_method( $order )->settle;
+		$settle_types = rp_get_payment_method( $order )->settle ?: array();
 		$items_data   = array();
 
 		// Walk through the order lines and check if order item is virtual, downloadable, recurring or physical.
@@ -147,7 +147,7 @@ class InstantSettle {
 		$total             = 0;
 		$items_data        = array();
 
-		$settle_types = rp_get_payment_method( $order )->settle;
+		$settle_types = rp_get_payment_method( $order )->settle ?: array();
 
 		// Walk through the order lines and check if order item is virtual, downloadable, recurring or physical.
 		foreach ( $order->get_items() as $item ) {
