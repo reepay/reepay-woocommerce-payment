@@ -887,12 +887,12 @@ class Api {
 	public function get_customer_handle_order( $order_id ) {
 		$order = wc_get_order( $order_id );
 
-		$handle = $this->get_customer_handle_online( $order );
+		$handle = $this->get_customer_handle( $order );
 		if ( ! empty( $handle ) ) {
 			return $handle;
 		}
 
-		if ( $order->get_customer_id() == 0 ) {
+		if ( $order->get_customer_id() === 0 ) {
 			$handle = $order->get_meta( '_reepay_customer' );
 		}
 
@@ -913,12 +913,11 @@ class Api {
 	/**
 	 * Get Customer handle by order online.
 	 *
-	 * @param WC_Order $order
+	 * @param WC_Order $order order to get handle.
 	 *
 	 * @return false|string
 	 */
-	public function get_customer_handle_online( $order ) {
-		// Get customer handle by order
+	public function get_customer_handle( $order ) {
 		$handle = rp_get_order_handle( $order );
 
 		$result = get_transient( 'reepay_invoice_' . $handle );

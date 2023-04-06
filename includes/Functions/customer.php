@@ -22,7 +22,7 @@ if ( ! function_exists( 'rp_get_customer_handle' ) ) {
 
 				// Get customer handle by order.
 				$gateway = rp_get_payment_method( $order );
-				$handle  = reepay()->api( $gateway )->get_customer_handle_online( $order );
+				$handle  = reepay()->api( $gateway )->get_customer_handle( $order );
 				if ( $handle ) {
 					return $handle;
 				}
