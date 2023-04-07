@@ -145,7 +145,7 @@ class WC_ReepayCheckout {
 				'private_key'             => $gateway_settings['private_key'] ?? '',
 				'private_key_test'        => $gateway_settings['private_key_test'] ?? '',
 				'test_mode'               => $gateway_settings['test_mode'] ?? '',
-				'settle'                  => $gateway_settings['settle'] ?? '',
+				'settle'                  => $gateway_settings['settle'] ?? array(),
 				'language'                => $gateway_settings['language'] ?? '',
 				'debug'                   => $gateway_settings['debug'] ?? '',
 				'payment_type'            => $gateway_settings['payment_type'] ?? '',
@@ -154,6 +154,7 @@ class WC_ReepayCheckout {
 				'is_webhook_configured'   => $gateway_settings['is_webhook_configured'] ?? '',
 				'handle_failover'         => $gateway_settings['handle_failover'] ?? '',
 				'logo_height'             => $gateway_settings['logo_height'] ?? '',
+				'payment_button_text'     => $gateway_settings['payment_button_text'] ?? '',
 
 				'enable_sync'             => $gateway_settings['enable_sync'] ?? '',
 				'status_created'          => $gateway_settings['status_created'] ?? '',

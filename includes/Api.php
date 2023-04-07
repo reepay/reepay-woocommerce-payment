@@ -802,7 +802,7 @@ class Api {
 							'Payment has been settled. Amount: %1$s. Transaction: %2$s',
 							'reepay-checkout-gateway'
 						),
-						wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ) ),
+						wc_price( $result['amount'] ),
 						$result['transaction']
 					),
 					$result['transaction']
