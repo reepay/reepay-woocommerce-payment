@@ -272,6 +272,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 	/**
 	 * @return bool
+	 *
+	 * @throws Exception Never, just for phpcs.
 	 */
 	public function is_webhook_configured() {
 		try {
@@ -407,9 +409,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		<tr valign="top">
 			<th scope="row" class="titledesc">
 				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?>
-					<?php
-					echo $this->get_tooltip_html( $data ); // WPCS: XSS ok.
-					?>
+					<?php echo $this->get_tooltip_html( $data ); ?>
 				</label>
 			</th>
 			<td class="forminp">
@@ -429,11 +429,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 					<input type="hidden" name="<?php echo esc_attr( $field_key ); ?>"
 						   id="<?php echo esc_attr( $field_key ); ?>"
-						   value="
-						   <?php
-							echo esc_attr( $is_active ); // WPCS: XSS ok.
-							?>
-						   "/>
+						   value="<?php echo esc_attr( $is_active ); ?>"/>
 				</fieldset>
 			</td>
 		</tr>
@@ -445,11 +441,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Check is Capture possible
 	 *
-	 * @param WC_Order|int $order
-	 * @param bool         $amount
+	 * @param WC_Order|int $order order to check.
+	 * @param float|false  $amount amount to capture.
 	 *
 	 * @return bool
-	 * @api
 	 */
 	public function can_capture( $order, $amount = false ) {
 		return reepay()->api( $this )->can_capture( $order, $amount );
@@ -458,21 +453,18 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Check is Cancel possible
 	 *
-	 * @param WC_Order|int $order
+	 * @param WC_Order|int $order order to check.
 	 *
 	 * @return bool
-	 * @api
 	 */
 	public function can_cancel( $order ) {
 		return reepay()->api( $this )->can_cancel( $order );
 	}
 
 	/**
-	 * @param WC_Order $order
+	 * @param WC_Order $order order to check.
 	 *
 	 * @return bool
-	 * @throws Exception
-	 * @api
 	 */
 	public function can_refund( $order ) {
 		return reepay()->api( $this )->can_refund( $order );
@@ -486,7 +478,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @return void
 	 * @throws Exception If capture error.
-	 * @api
 	 */
 	public function capture_payment( $order, $amount = null ) {
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
@@ -503,13 +494,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Cancel.
 	 *
-	 * @param WC_Order|int $order
+	 * @param WC_Order|int $order order to cancel.
 	 *
-	 * @return void
 	 * @throws Exception
 	 */
 	public function cancel_payment( $order ) {
-		// Check if hte order is cancelled - if so - then return as nothing has happened
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
 			throw new Exception( 'Order is already canceled' );
 		}
@@ -519,10 +508,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			throw new Exception( $result->get_error_message() );
 		}
 		add_action( 'the_post', array( $this, 'payment_confirm' ) );
-
-		// Cancel actions
-		add_action( 'wp_ajax_reepay_cancel', array( $this, 'reepay_cancel' ) );
-		add_action( 'wp_ajax_nopriv_reepay_cancel', array( $this, 'reepay_cancel' ) );
 	}
 
 	/**
