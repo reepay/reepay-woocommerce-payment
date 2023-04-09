@@ -726,7 +726,7 @@ class Api {
 		$order->save_meta_data();
 
 		$message = sprintf(
-			// translatros: refunded amount, %2$s credit note id, %3$s refund reason.
+			// translators: refunded amount, %2$s credit note id, %3$s refund reason.
 			__( 'Refunded: %1$s. Credit Note Id #%2$s. Reason: %3$s', 'reepay-checkout-gateway' ),
 			$amount,
 			$result['credit_note_id'],
@@ -743,22 +743,22 @@ class Api {
 	/**
 	 * Process the result of Charge request.
 	 *
-	 * @param WC_Order $order
-	 * @param array    $result
+	 * @param WC_Order $order order to check state.
+	 * @param array    $result data from API @see https://reference.reepay.com/api/#create-charge.
 	 *
-	 * @throws Exception
+	 * @throws Exception If cannot change order status.
 	 */
-	private function process_charge_result( $order, array $result ) {
+	private function process_charge_result( $order, $result ) {
 		// For asynchronous payment methods this flag indicates that the charge is awaiting result.
 		// The charge/invoice state will be pending.
 
-		// Check results
 		switch ( $result['state'] ) {
 			case 'pending':
 				OrderStatuses::update_order_status(
 					$order,
 					'pending',
 					sprintf(
+						// translators: %1$s pending amount, transaction id.
 						__( 'Transaction is pending. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
 						wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ) ),
 						$result['transaction']
@@ -771,17 +771,15 @@ class Api {
 				OrderStatuses::set_authorized_status(
 					$order,
 					sprintf(
-						__(
-							'Payment has been authorized. Amount: %1$s. Transaction: %2$s',
-							'reepay-checkout-gateway'
-						),
+						// translators: %1$s authorized amount, %2$s transaction id.
+						__( 'Payment has been authorized. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
 						wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ) ),
 						$result['transaction']
 					),
 					$result['transaction']
 				);
 
-				// Settle an authorized payment instantly if possible
+				// Settle an authorized payment instantly if possible.
 				do_action( 'reepay_instant_settle', $order );
 
 				break;
@@ -791,10 +789,8 @@ class Api {
 				OrderStatuses::set_settled_status(
 					$order,
 					sprintf(
-						__(
-							'Payment has been settled. Amount: %1$s. Transaction: %2$s',
-							'reepay-checkout-gateway'
-						),
+						// translators: %1$s settled amount, transaction id.
+						__( 'Payment has been settled. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
 						wc_price( $result['amount'] ),
 						$result['transaction']
 					),
@@ -830,8 +826,8 @@ class Api {
 	/**
 	 * Get Customer Cards from Reepay
 	 *
-	 * @param string      $customer_handle
-	 * @param string|null $reepay_token
+	 * @param string      $customer_handle reepay customer handle.
+	 * @param string|null $reepay_token when specified, a card with such a token will be returned.
 	 *
 	 * @return array|WP_Error
 	 */
@@ -877,7 +873,7 @@ class Api {
 	 *
 	 * @return string
 	 */
-	public function get_customer_handle_order( $order ) {
+	public function get_customer_handle_by_order( $order ) {
 		$order = wc_get_order( $order );
 
 		$handle = $this->get_customer_handle( $order );

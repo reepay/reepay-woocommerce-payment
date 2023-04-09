@@ -88,7 +88,7 @@ trait TokenReepayTrait {
 	 */
 	public function add_payment_token( $order, $reepay_token ) {
 		// Create Payment Token.
-		$customer_handle = reepay()->api( $this->id )->get_customer_handle_order( $order->get_id() );
+		$customer_handle = reepay()->api( $this->id )->get_customer_handle_by_order( $order );
 		$source          = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
 
 		$this->log(

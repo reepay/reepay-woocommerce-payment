@@ -682,7 +682,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		// Switch of Payment Method
 		if ( wcs_is_payment_change() ) {
-			$customer_handle = reepay()->api( $this )->get_customer_handle_order( $order_id );
+			$customer_handle = reepay()->api( $this )->get_customer_handle_by_order( $order_id );
 
 			if ( absint( $token_id ) > 0 ) {
 				$token = new TokenReepay( $token_id );
@@ -781,7 +781,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		// Get Customer reference
-		$customer_handle = reepay()->api( $this )->get_customer_handle_order( $order->get_id() );
+		$customer_handle = reepay()->api( $this )->get_customer_handle_by_order( $order );
 
 		$data = array(
 			'country'         => $country,
