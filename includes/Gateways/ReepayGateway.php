@@ -36,8 +36,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	const METHOD_OVERLAY = 'OVERLAY';
 
 	/**
-	 * Test Mode
-	 *
 	 * @var string
 	 */
 	public $test_mode = 'yes';
@@ -48,7 +46,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public $private_key;
 
 	/**
-	 * @var
+	 * @var string
 	 */
 	public $private_key_test;
 
@@ -59,8 +57,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public $public_key;
 
 	/**
-	 * Settle
-	 *
 	 * @var string[]
 	 */
 	public $settle = array(
@@ -71,22 +67,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	);
 
 	/**
-	 * Debug Mode
-	 *
 	 * @var string
 	 */
 	public $debug = 'yes';
 
 	/**
-	 * Language
-	 *
 	 * @var string
 	 */
 	public $language = 'en_US';
 
 	/**
-	 * Logos
-	 *
 	 * @var array
 	 */
 	public $logos = array(
@@ -106,33 +96,31 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	);
 
 	/**
-	 * Payment Type
-	 *
 	 * @var string
 	 */
 	public $payment_type = 'OVERLAY';
 
 	/**
-	 * Save CC
-	 *
 	 * @var string
 	 */
 	public $save_cc = 'yes';
 
 	/**
-	 * Logo Height
-	 *
 	 * @var string
 	 */
 	public $logo_height = '';
 
 	/**
 	 * Skip order lines to Reepay and use order totals instead
+	 *
+	 * @var string
 	 */
 	public $skip_order_lines = 'no';
 
 	/**
 	 * If automatically cancel unpaid orders should be ignored
+	 *
+	 * @var string
 	 */
 	public $enable_order_autocancel = 'no';
 
@@ -181,17 +169,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		// Load the settings.
 		$this->init_settings();
 
-		// Define user set variables
 		$this->enabled     = $this->settings['enabled'] ?? 'no';
 		$this->title       = $this->settings['title'] ?? 'no';
 		$this->description = $this->settings['description'] ?? 'no';
 
 		add_action( 'admin_notices', array( $this, 'admin_notice_api_action' ) );
 
-		// Payment confirmation
 		add_action( 'the_post', array( $this, 'payment_confirm' ) );
 
-		// Cancel actions
 		add_action( 'wp_ajax_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
 		add_action( 'wp_ajax_nopriv_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
 		add_action( 'woocommerce_checkout_create_order_line_item', array( $this, 'action_checkout_create_order_line_item' ), 10, 4 );
@@ -199,13 +184,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 	}
 
-	function action_checkout_create_order_line_item( $item, $cart_item_key, $values, $order ) {
-		$line_discount     = $values['line_subtotal'] - $values['line_total'];
-		$line_discount_tax = $values['line_subtotal_tax'] - $values['line_tax'];
-
-		$item->update_meta_data( '_line_discount', $line_discount + $line_discount_tax );
-	}
-
+	/**
+	 * Check if payment method activated in repay
+	 *
+	 * @return bool
+	 */
 	public function check_is_active() {
 		$gateways_reepay = get_transient( 'gateways_reepay' );
 		if ( empty( $gateways_reepay ) ) {
@@ -227,13 +210,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	public function is_configured() {
-		$configured = false;
-
 		if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'checkout' && ! empty( $_GET['section'] ) && $_GET['section'] != 'reepay_checkout' ) {
-			$configured = $this->check_is_active();
+			return $this->check_is_active();
 		}
 
-		return $configured;
+		return false;
 	}
 
 
@@ -1258,6 +1239,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		} catch ( Exception $e ) {
 			return new WP_Error( 'refund', $e->getMessage() );
 		}
+	}
+
+	function action_checkout_create_order_line_item( $item, $cart_item_key, $values, $order ) {
+		$line_discount     = $values['line_subtotal'] - $values['line_total'];
+		$line_discount_tax = $values['line_subtotal_tax'] - $values['line_tax'];
+
+		$item->update_meta_data( '_line_discount', $line_discount + $line_discount_tax );
 	}
 
 	/**
