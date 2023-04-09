@@ -11,6 +11,7 @@ use Reepay\Checkout\OrderFlow\InstantSettle;
 use Reepay\Checkout\OrderFlow\OrderCapture;
 use WC_Order;
 use Reepay\Checkout\OrderFlow\OrderStatuses;
+use WC_Order_Item;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
@@ -505,16 +506,16 @@ class Api {
 	/**
 	 * Settle the payment online.
 	 *
-	 * @param WC_Order       $order
-	 * @param float|int|null $amount
-	 * @param false|array    $item_data
-	 * @param bool           $item
+	 * @param WC_Order        $order      order to settle.
+	 * @param float|int|null  $amount     amount to settle.
+	 * @param false|array     $items_data order items info. @see OrderCapture::get_item_data.
+	 * @param WC_Order_Item[] $line_items order line items.
 	 *
 	 * @return array|WP_Error
 	 *
 	 * @ToDO refactor function. $amount is useless.
 	 */
-	public function settle( WC_Order $order, $amount = null, $item_data = false, $item = false ) {
+	public function settle( $order, $amount = null, $items_data = false, $line_items = false ) {
 		$this->log( sprintf( 'Settle: %s, %s', $order->get_id(), $amount ) );
 
 		$handle = rp_get_order_handle( $order );
@@ -522,20 +523,20 @@ class Api {
 			return new WP_Error( 0, 'Unable to get order handle' );
 		}
 
-		if ( ! $amount || ! $item_data ) {
+		if ( ! $amount || ! $items_data ) {
 			$settle_data = InstantSettle::calculate_instant_settle( $order );
 
 			if ( ! $amount ) {
 				$amount = $settle_data->settle_amount;
 			}
 
-			if ( ! $item_data ) {
-				$item_data = $settle_data->items;
+			if ( ! $items_data ) {
+				$items_data = $settle_data->items;
 			}
 		}
 
-		$request_data['order_lines'] = $item_data;
-		if ( ! empty( $item_data ) && floatval( current( $item_data )['amount'] ) <= 0 ) {
+		$request_data['order_lines'] = $items_data;
+		if ( ! empty( $items_data ) && floatval( current( $items_data )['amount'] ) <= 0 ) {
 			return new WP_Error( 100, 'Amount must be lager than zero' );
 		}
 
@@ -546,16 +547,16 @@ class Api {
 		);
 
 		if ( is_wp_error( $result ) ) {
-			// Workaround: Check if the invoice has been settled before to prevent "Invoice already settled"
+			// Workaround: Check if the invoice has been settled before to prevent "Invoice already settled".
 			if ( mb_strpos( $result->get_error_message(), 'Invoice already settled', 0, 'UTF-8' ) !== false ) {
 				return array();
 			}
 
-			if ( mb_strpos( $result->get_error_message(), 'Amount higher than authorized amount', 0, 'UTF-8' ) !== false && ! empty( $item ) ) {
+			if ( mb_strpos( $result->get_error_message(), 'Amount higher than authorized amount', 0, 'UTF-8' ) !== false && ! empty( $line_items ) ) {
 				$order_data = $this->get_invoice_data( $order );
 				$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
 
-				if ( count( $request_data['order_lines'] ) > 1 && is_array( $item ) ) {
+				if ( count( $request_data['order_lines'] ) > 1 && is_array( $line_items ) ) {
 					$request_data['amount'] = $remaining;
 					unset( $request_data['order_lines'] );
 
@@ -565,7 +566,7 @@ class Api {
 						$request_data
 					);
 				} else {
-					$price = OrderCapture::get_item_price( $item, $order );
+					$price = OrderCapture::get_item_price( $line_items, $order );
 					if ( $remaining > 0 && round( $remaining / 100 ) == $price['with_tax'] && ! empty( $request_data['order_lines'][0] ) ) {
 						$full = $remaining / ( $request_data['order_lines'][0]['vat'] + 1 );
 						if ( $full > 0 ) {
@@ -581,20 +582,12 @@ class Api {
 				}
 			}
 
-			// need to be shown on admin notices
-			if ( $item_data ) {
-				$error = sprintf(
-					__( 'Failed to settle %1$s. Error: %2$s.', 'reepay-checkout-gateway' ),
-					floatval( $item_data[0]['amount'] ) / 100,
-					$result->get_error_message()
-				);
-			} else {
-				$error = sprintf(
-					__( 'Failed to settle %1$s. Error: %2$s.', 'reepay-checkout-gateway' ),
-					$amount,
-					$result->get_error_message()
-				);
-			}
+			$error = sprintf(
+				// translators: %1$s amount, %2$s error message.
+				__( 'Failed to settle %1$s. Error: %2$s.', 'reepay-checkout-gateway' ),
+				$items_data ? floatval( $items_data[0]['amount'] ) / 100 : $amount,
+				$result->get_error_message()
+			);
 
 			set_transient( 'reepay_api_action_error', $error, MINUTE_IN_SECONDS / 2 );
 
@@ -608,16 +601,15 @@ class Api {
 		$order->update_meta_data( '_reepay_capture_transaction', $result['transaction'] );
 		$order->save_meta_data();
 
-		// Set transaction Id
 		try {
 			$order->set_transaction_id( $result['transaction'] );
-		} catch ( Exception $e ) {
-
+		} catch ( Exception $e ) { //phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Do nothing if error.
 		}
 
 		$order->save();
 
-		// Check the amount and change the order status to settled if needs
+		// Check the amount and change the order status to settled if needs.
 		$order_data = $this->get_invoice_data( $order );
 		if ( is_wp_error( $order_data ) ) {
 			/** @var WP_Error $order_data */
@@ -628,15 +620,13 @@ class Api {
 		}
 
 		$message = sprintf(
+			// translators: %1$s amount to settle, %2$s transaction number.
 			__( 'Payment has been settled. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
 			rp_make_initial_amount( $amount, $order->get_currency() ) . ' ' . $order->get_currency(),
 			$result['transaction']
 		);
 
-		// Add order note
-		$order->add_order_note(
-			$message
-		);
+		$order->add_order_note( $message );
 
 		set_transient( 'reepay_api_action_success', $message, MINUTE_IN_SECONDS / 2 );
 
@@ -646,11 +636,11 @@ class Api {
 	/**
 	 * Cancel the payment online.
 	 *
-	 * @param WC_Order $order
+	 * @param WC_Order $order order to cancel payment.
 	 *
 	 * @return array|WP_Error
 	 */
-	public function cancel_payment( WC_Order $order ) {
+	public function cancel_payment( $order ) {
 		$handle = rp_get_order_handle( $order );
 		if ( empty( $handle ) ) {
 			return new WP_Error( 0, 'Unable to get order handle' );
@@ -659,6 +649,7 @@ class Api {
 		$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle . '/cancel' );
 		if ( is_wp_error( $result ) ) {
 			$error = sprintf(
+				// translators: %s error message.
 				__( 'Failed to cancel the payment. Error: %s.', 'reepay-checkout-gateway' ),
 				$result->get_error_message()
 			);
@@ -687,13 +678,13 @@ class Api {
 	/**
 	 * Refund the payment online.
 	 *
-	 * @param WC_Order       $order
-	 * @param float|int|null $amount
-	 * @param string|null    $reason
+	 * @param WC_Order       $order  order to refund.
+	 * @param float|int|null $amount amount ot refund.
+	 * @param string|null    $reason refund reason.
 	 *
 	 * @return array|WP_Error
 	 */
-	public function refund( WC_Order $order, $amount = null, $reason = null ) {
+	public function refund( $order, $amount = null, $reason = null ) {
 		$handle = rp_get_order_handle( $order );
 		if ( empty( $handle ) ) {
 			return new WP_Error( 0, 'Unable to get order handle' );
@@ -711,6 +702,7 @@ class Api {
 		if ( is_wp_error( $result ) ) {
 			/** @var WP_Error $result */
 			$error = sprintf(
+				// translators: %1$s refund amount, %2$s error message.
 				__( 'Failed to refund "%1$s". Error: %2$s.', 'reepay-checkout-gateway' ),
 				wc_price( $amount ),
 				$result->get_error_message()
@@ -723,7 +715,7 @@ class Api {
 			return $result;
 		}
 
-		// Save Credit Note ID
+		// Save Credit Note ID.
 		$credit_note_ids = $order->get_meta( '_reepay_credit_note_ids' );
 		if ( ! is_array( $credit_note_ids ) ) {
 			$credit_note_ids = array();
@@ -734,6 +726,7 @@ class Api {
 		$order->save_meta_data();
 
 		$message = sprintf(
+			// translatros: refunded amount, %2$s credit note id, %3$s refund reason.
 			__( 'Refunded: %1$s. Credit Note Id #%2$s. Reason: %3$s', 'reepay-checkout-gateway' ),
 			$amount,
 			$result['credit_note_id'],
@@ -755,7 +748,7 @@ class Api {
 	 *
 	 * @throws Exception
 	 */
-	private function process_charge_result( WC_Order $order, array $result ) {
+	private function process_charge_result( $order, array $result ) {
 		// For asynchronous payment methods this flag indicates that the charge is awaiting result.
 		// The charge/invoice state will be pending.
 
@@ -880,12 +873,12 @@ class Api {
 	/**
 	 * Get Customer handle by Order ID.
 	 *
-	 * @param $order_id
+	 * @param mixed $order order id to get id.
 	 *
 	 * @return string
 	 */
-	public function get_customer_handle_order( $order_id ) {
-		$order = wc_get_order( $order_id );
+	public function get_customer_handle_order( $order ) {
+		$order = wc_get_order( $order );
 
 		$handle = $this->get_customer_handle( $order );
 		if ( ! empty( $handle ) ) {

@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package Reepay\Checkout
+ */
 
 namespace Reepay\Checkout;
 
@@ -13,61 +16,59 @@ use WC_Subscription;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class Subscriptions
+ *
+ * @package Reepay\Checkout
+ */
 class Subscriptions {
 	const PAYMENT_METHODS = array(
 		'reepay_checkout',
 		'reepay_mobilepay_subscriptions',
 	);
 
+	/**
+	 * Subscriptions constructor.
+	 */
 	public function __construct() {
-		// Add payment token when subscription was created
+		// Add payment token when subscription was created.
 		add_action( 'woocommerce_payment_token_added_to_order', array( $this, 'add_payment_token_id' ), 10, 4 );
 		add_action( 'woocommerce_payment_complete', __CLASS__ . '::add_subscription_card_id', 10, 1 );
 		add_action( 'woocommerce_payment_complete_order_status_on-hold', __CLASS__ . '::add_subscription_card_id', 10, 1 );
 
-		// Subscriptions
+		// Subscriptions.
 		add_filter( 'wcs_renewal_order_created', array( $this, 'renewal_order_created' ), 10, 2 );
 
 		foreach ( self::PAYMENT_METHODS as $method ) {
 			add_action( 'woocommerce_thankyou_' . $method, __CLASS__ . '::thankyou_page' );
 
-			// Update failing payment method
+			// Update failing payment method.
 			add_action( 'woocommerce_subscription_failing_payment_method_updated_' . $method, __CLASS__ . '::update_failing_payment_method', 10, 1 );
 
-			// Charge the payment when a subscription payment is due
+			// Charge the payment when a subscription payment is due.
 			add_action( 'woocommerce_scheduled_subscription_payment_' . $method, __CLASS__ . '::scheduled_subscription_payment', 10, 2 );
 
-			// Charge the payment when a subscription payment is due
+			// Charge the payment when a subscription payment is due.
 			add_action( 'scheduled_subscription_payment_' . $method, __CLASS__ . '::scheduled_subscription_payment', 10, 2 );
 		}
 
-		// Don't transfer customer meta to resubscribe orders
+		// Don't transfer customer meta to resubscribe orders.
 		add_action( 'wcs_resubscribe_order_created', __CLASS__ . '::delete_resubscribe_meta', 10 );
 
-		// Allow store managers to manually set card id as the payment method on a subscription
+		// Allow store managers to manually set card id as the payment method on a subscription.
 		add_filter( 'woocommerce_subscription_payment_meta', __CLASS__ . '::add_subscription_payment_meta', 10, 2 );
 
-		// Validate the payment meta data
+		// Validate the payment meta data.
 		add_action( 'woocommerce_subscription_validate_payment_meta', __CLASS__ . '::validate_subscription_payment_meta', 10, 3 );
 
-		// Save payment method meta data for the Subscription
+		// Save payment method meta data for the Subscription.
 		add_action( 'wcs_save_other_payment_meta', __CLASS__ . '::save_subscription_payment_meta', 10, 4 );
 
-		// Display the credit card used for a subscription in the "My Subscriptions" table
-		add_filter(
-			'woocommerce_my_subscriptions_payment_method',
-			__CLASS__ . '::maybe_render_subscription_payment_method',
-			10,
-			2
-		);
+		// Display the credit card used for a subscription in the "My Subscriptions" table.
+		add_filter( 'woocommerce_my_subscriptions_payment_method', __CLASS__ . '::maybe_render_subscription_payment_method', 10, 2 );
 
-		// Lock "Save card" if needs
-		add_filter(
-			'woocommerce_payment_gateway_save_new_payment_method_option_html',
-			__CLASS__ . '::save_new_payment_method_option_html',
-			10,
-			2
-		);
+		// Lock "Save card" if needs.
+		add_filter( 'woocommerce_payment_gateway_save_new_payment_method_option_html', __CLASS__ . '::save_new_payment_method_option_html', 10, 2 );
 
 		add_action( 'woocommerce_order_status_changed', array( $this, 'create_sub_invoice' ), 10, 4 );
 	}
