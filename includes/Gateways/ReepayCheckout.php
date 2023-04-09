@@ -68,7 +68,7 @@ class ReepayCheckout extends ReepayGateway {
 		$this->private_key             = apply_filters( 'woocommerce_reepay_private_key', $this->settings['private_key'] ?? $this->private_key );
 		$this->private_key_test        = apply_filters( 'woocommerce_reepay_private_key_test', $this->settings['private_key_test'] ?? $this->private_key_test );
 		$this->test_mode               = $this->settings['test_mode'] ?? $this->test_mode;
-		$this->settle                  = ($this->settings['settle'] ?? $this->settle) ?: array();
+		$this->settle                  = ( $this->settings['settle'] ?? $this->settle ) ?: array();
 		$this->language                = $this->settings['language'] ?? $this->language;
 		$this->save_cc                 = $this->settings['save_cc'] ?? $this->save_cc;
 		$this->debug                   = $this->settings['debug'] ?? $this->debug;
