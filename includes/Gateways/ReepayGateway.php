@@ -1483,4 +1483,37 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		return reepay()->get_setting( 'logo_url' ) . 'svg/' . $image . '.logo.svg';
 	}
+
+	/**
+	 * Initialise default settings form fields
+	 */
+	public function init_form_fields() {
+		$this->form_fields = array(
+			'is_reepay_configured' => array(
+				'title'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
+				'type'    => 'gateway_status',
+				'label'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
+				'default' => $this->test_mode,
+			),
+			'enabled'              => array(
+				'title'    => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
+				'type'     => 'checkbox',
+				'label'    => __( 'Enable plugin', 'reepay-checkout-gateway' ),
+				'default'  => 'no',
+				'disabled' => ! $this->is_configured(),
+			),
+			'title'                => array(
+				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
+				'type'        => 'text',
+				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
+				'default'     => $this->method_title,
+			),
+			'description'          => array(
+				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
+				'type'        => 'text',
+				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
+				'default'     => $this->method_title,
+			),
+		);
+	}
 }
