@@ -231,13 +231,13 @@ class ReepayCheckout extends ReepayGateway {
 				),
 				'payment_type'               => array(
 					'title'       => __( 'Payment Window Display', 'reepay-checkout-gateway' ),
-					'description' => __( 'Choose between a redirect window or a overlay window', 'reepay-checkout-gateway' ),
+					'description' => __( 'Choose between a redirect window or a overlay window. Note that some payment methods like Apple Pay do not work for overlay window.', 'reepay-checkout-gateway' ),
 					'type'        => 'select',
 					'options'     => array(
 						self::METHOD_WINDOW  => 'Window',
 						self::METHOD_OVERLAY => 'Overlay',
 					),
-					'default'     => '',
+					'default'     => self::METHOD_WINDOW,
 				),
 				'payment_methods'            => array(
 					'title'       => __( 'Payment Methods', 'reepay-checkout-gateway' ),
@@ -394,7 +394,7 @@ class ReepayCheckout extends ReepayGateway {
 					'title'       => __( 'Payment button text', 'reepay-checkout-gateway' ),
 					'type'        => 'text',
 					'description' => __( 'Text on button which will be displayed on payment page if subscription products is being purchased', 'reepay-checkout-gateway' ),
-					'default'     => __( 'PAY AND SAVE CARD', 'reepay-checkout-gateway' ),
+					'default'     => '',
 				),
 			),
 			$this

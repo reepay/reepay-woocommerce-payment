@@ -15,7 +15,7 @@ if ( ! function_exists( 'rp_prepare_amount' ) ) {
 	 * @return float
 	 */
 	function rp_prepare_amount( $amount, $currency ) {
-		return round( $amount * rp_get_currency_multiplier( $currency ) );
+		return apply_filters( 'rp_prepare_amount', round( $amount * rp_get_currency_multiplier( $currency ) ) );
 	}
 }
 

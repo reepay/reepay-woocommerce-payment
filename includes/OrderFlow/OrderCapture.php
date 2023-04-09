@@ -284,8 +284,10 @@ class OrderCapture {
 		}
 
 		if ( ! empty( $items_data ) ) {
-			$this->settle_items( $order, $items_data, $total_all, $line_items );
+			return $this->settle_items( $order, $items_data, $total_all, $line_items );
 		}
+
+		return false;
 	}
 
 	/**
@@ -433,8 +435,8 @@ class OrderCapture {
 			$price['original'] = floatval( $order->get_line_total( $order_item, false, false ) );
 		}
 
-		$tax_data = wc_tax_enabled() ? $order_item->get_taxes() : false;
-		$taxes    = $order->get_taxes();
+		$tax_data = wc_tax_enabled() && method_exists( $order_item, 'get_taxes' ) ? $order_item->get_taxes() : false;
+		$taxes    = method_exists( $order, 'get_taxes' ) ? $order->get_taxes() : false;
 
 		$res_tax = 0;
 		if ( ! empty( $taxes ) ) {
