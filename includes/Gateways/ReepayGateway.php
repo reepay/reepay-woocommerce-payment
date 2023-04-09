@@ -209,12 +209,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		return false;
 	}
 
-	public function is_configured() {
-		if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'checkout' && ! empty( $_GET['section'] ) && $_GET['section'] != 'reepay_checkout' ) {
-			return $this->check_is_active();
-		}
-
-		return false;
+	/**
+	 * Check if current page is gateway settings page
+	 *
+	 * @return bool
+	 */
+	public function is_gateway_settings_page() {
+		return isset( $_GET['tab'] ) && 'checkout' === $_GET['tab'] &&
+			   ! empty( $_GET['section'] ) && $_GET['section'] === $this->id;
 	}
 
 
@@ -383,7 +385,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$data = wp_parse_args( $data, $defaults );
 
-		$configured = $this->is_configured();
+		$is_active = $this->check_is_active();
 
 		ob_start();
 		?>
@@ -400,7 +402,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					<legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span>
 					</legend>
 
-					<?php if ( $configured ) : ?>
+					<?php if ( $is_active ) : ?>
 						<span style="color: green;">
 							<?php esc_html_e( 'Active', 'reepay-checkout-gateway' ); ?>
 						</span>
@@ -414,7 +416,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 						   id="<?php echo esc_attr( $field_key ); ?>"
 						   value="
 						   <?php
-							echo esc_attr( $configured ); // WPCS: XSS ok.
+							echo esc_attr( $is_active ); // WPCS: XSS ok.
 							?>
 						   "/>
 				</fieldset>
@@ -1500,7 +1502,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'type'     => 'checkbox',
 				'label'    => __( 'Enable plugin', 'reepay-checkout-gateway' ),
 				'default'  => 'no',
-				'disabled' => ! $this->is_configured(),
+				'disabled' => $this->is_gateway_settings_page() && ! $this->check_is_active(), // Check calls api, so use it only on gateway page.
 			),
 			'title'                => array(
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
