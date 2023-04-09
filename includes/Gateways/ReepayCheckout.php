@@ -438,7 +438,7 @@ class ReepayCheckout extends ReepayGateway {
 			return '';
 		}
 
-		$info = $this->get_account_info( $this, $data['is_test'] );
+		$info = $this->get_account_info( $data['is_test'] );
 
 		ob_start();
 		?>

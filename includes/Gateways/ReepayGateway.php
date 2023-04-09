@@ -219,9 +219,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			   ! empty( $_GET['section'] ) && $_GET['section'] === $this->id;
 	}
 
-
-	public function get_account_info( $gateway, $is_test = false ) {
-		if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'checkout' && ! empty( $_GET['section'] ) && $_GET['section'] == 'reepay_checkout' ) {
+	/**
+	 * @param bool $is_test use test or live reepay api keys.
+	 *
+	 * @return array|mixed|object|WP_Error
+	 */
+	public function get_account_info( $is_test = false ) {
+		if ( $this->is_gateway_settings_page() ) {
 			$key = 'account_info';
 
 			if ( $is_test ) {
@@ -244,7 +248,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * @return string
 	 */
-	public static function get_default_api_url( $request = '' ) {
+	public static function get_default_api_url() {
 		$default_wc_api_url = WC()->api_request_url( '' );
 
 		if ( class_exists( SitePress::class ) ) {
@@ -263,7 +267,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 		}
 
-		return ! empty( $request ) ? $default_wc_api_url . $request . '/' : $default_wc_api_url;
+		return $default_wc_api_url . 'WC_Gateway_Reepay/';
 	}
 
 	/**
@@ -279,12 +283,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				}
 			}
 
-			$default_wc_api_url = self::get_default_api_url();
+			$webhook_url = self::get_default_api_url();
 
 			$alert_emails = $request['alert_emails'];
 
-			// The webhook settings of the payment plugin
-			$webhook_url = $default_wc_api_url . 'WC_Gateway_Reepay/';
+			// The webhook settings of the payment plugin.
 			$alert_email = '';
 			if ( ! empty( $this->settings['failed_webhooks_email'] ) &&
 				 is_email( $this->settings['failed_webhooks_email'] )
@@ -297,7 +300,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$urls = array();
 
 			foreach ( $request['urls'] as $url ) {
-				if ( strpos( $url, $default_wc_api_url ) === false ||
+				if ( strpos( $url, $webhook_url ) === false || // either another site or exact url match.
 					 $url === $webhook_url ) {
 					$urls[] = $url;
 				} else {
@@ -305,21 +308,18 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				}
 			}
 
-			// Verify the webhook settings
-			if ( ! empty( $urls ) && in_array( $webhook_url, $urls )
-				 && ( empty( $alert_email ) || in_array( $alert_email, $alert_emails ) )
-				 && ! $exist_waste_urls
+			// Verify the webhook settings.
+			if ( ! $exist_waste_urls &&
+				 in_array( $webhook_url, $urls, true )
+				 && ( empty( $alert_email ) || in_array( $alert_email, $alert_emails, true ) )
 			) {
-				// Webhook has been configured before
 				$this->update_option( 'is_webhook_configured', 'yes' );
-
-				// Skip the update
 				return true;
 			}
 
-			// Update the webhook settings
+			// Update the webhook settings.
 			try {
-				if ( ! in_array( $webhook_url, $urls ) ) {
+				if ( ! in_array( $webhook_url, $urls, true ) ) {
 					$urls[] = $webhook_url;
 				}
 
@@ -339,14 +339,26 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					throw new Exception( $request->get_error_message(), $request->get_error_code() );
 				}
 
-				$this->log( sprintf( 'WebHook has been successfully created/updated: %s', var_export( $request, true ) ) );
+				$this->log(
+					array(
+						'source' => 'WebHook has been successfully created/updated',
+						$request,
+					)
+				);
+
 				$this->update_option( 'is_webhook_configured', 'yes' );
 				WC_Admin_Settings::add_message( __( 'Reepay: WebHook has been successfully created/updated', 'reepay-checkout-gateway' ) );
 
 				return true;
 			} catch ( Exception $e ) {
+				$this->log(
+					array(
+						'source' => 'WebHook creation/update has been failed',
+						$request,
+					)
+				);
+
 				$this->update_option( 'is_webhook_configured', 'no' );
-				$this->log( sprintf( 'WebHook creation/update has been failed: %s', var_export( $request, true ) ) );
 				WC_Admin_Settings::add_error( __( 'Reepay: WebHook creation/update has been failed', 'reepay-checkout-gateway' ) );
 			}
 		} catch ( Exception $e ) {
@@ -357,12 +369,15 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		return false;
 	}
 
+	/**
+	 * Redirect to the gateway settings page after enabling the gateway if it needs to be configured.
+	 *
+	 * @see WC_AJAX::toggle_gateway_enabled
+	 *
+	 * @return bool
+	 */
 	public function needs_setup() {
-		if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] === 'woocommerce_toggle_gateway_enabled' ) {
-			return ! $this->check_is_active();
-		}
-
-		return false;
+		return doing_action( 'wp_ajax_woocommerce_toggle_gateway_enabled' ) && ! $this->check_is_active();
 	}
 
 	/**
