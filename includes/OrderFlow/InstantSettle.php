@@ -131,6 +131,18 @@ class InstantSettle {
 			}
 		}
 
+		if ( in_array( self::SETTLE_FEE, $settle_types ) ) {
+			foreach ( $order->get_fees() as $i => $order_fee ) {
+				$items_data[ $i ] = $order_fee;
+			}
+		}
+
+		if ( in_array( self::SETTLE_PHYSICAL, $settle_types ) ) {
+			foreach ( $order->get_items( 'shipping' ) as $i => $item_shipping ) {
+				$items_data[ $i ] = $item_shipping;
+			}
+		}
+
 		return $items_data;
 	}
 
