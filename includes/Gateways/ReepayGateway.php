@@ -972,9 +972,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			);
 		}
 
-		if ( class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
-			$have_sub = true;
-		}
+		$have_sub =  class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order );
 
 		$only_items_lines = array();
 
