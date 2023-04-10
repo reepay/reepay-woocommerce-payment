@@ -1,8 +1,8 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
+use Reepay\Checkout\Gateways\ReepayCheckout;
+
+defined( 'ABSPATH' ) || exit;
 
 // Set PHP Settings
 set_time_limit( 0 );
@@ -19,7 +19,7 @@ if ( ! function_exists( 'wcs_get_users_subscriptions' ) ) {
 }
 
 // Gateway
-$gateway = new WC_Gateway_Reepay_Checkout();
+$gateway = new ReepayCheckout();
 
 $log->add( $handler, sprintf( 'Start upgrade %s....', basename( __FILE__ ) ) );
 
@@ -39,7 +39,7 @@ try {
 	// Process Subscriptions
 	$processed = array();
 	foreach ( $subscriptions as $subscription ) {
-		$token = WC_Gateway_Reepay_Checkout::get_payment_token_order( $subscription );
+		$token = ReepayCheckout::get_payment_token_order( $subscription );
 
 		if ( ! $token ) {
 			$log->add( $handler, sprintf( '[INFO] Subscription #%s doesn\'t have assigned tokens.', $subscription->get_id() ) );

@@ -103,6 +103,15 @@
   min-height: 1px !important;
   text-align: center; }
 
+#payment .reepay-logos li {
+  list-style: none; }
+
+#payment li.payment_method_reepay_applepay {
+  display: none; }
+
+#payment li.payment_method_reepay_googlepay {
+  display: none; }
+
 #payment .wc_payment_methods li label {
   display: flex !important;
   align-items: center; }

@@ -1,8 +1,8 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
+use Reepay\Checkout\Gateways\ReepayCheckout;
+
+defined( 'ABSPATH' ) || exit;
 
 // Set PHP Settings
 set_time_limit( 0 );
@@ -19,7 +19,7 @@ if ( ! function_exists( 'wcs_get_users_subscriptions' ) ) {
 }
 
 // Gateway
-$gateway = new WC_Gateway_Reepay_Checkout();
+$gateway = new ReepayCheckout();
 
 $log->add( $handler, sprintf( 'Start upgrade %s....', basename( __FILE__ ) ) );
 

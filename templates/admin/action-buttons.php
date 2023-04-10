@@ -1,10 +1,14 @@
 <?php
-/** @var WC_Gateway_Reepay_Checkout $gateway */
-/** @var WC_Order $order */
+/**
+ * @package Reepay\Checkout
+ *
+ * @var ReepayCheckout $gateway
+ * @var WC_Order $order
+ */
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-} // Exit if accessed directly
+use Reepay\Checkout\Gateways\ReepayCheckout;
+
+defined( 'ABSPATH' ) || exit();
 
 ?>
 

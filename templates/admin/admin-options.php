@@ -1,10 +1,14 @@
 <?php
-/** @var WC_Payment_Gateway $gateway */
-/** @var bool $webhook_installed */
+/**
+ * @package Reepay\Checkout
+ *
+ * @var WC_Payment_Gateway $gateway
+ * @var bool $webhook_installed
+ */
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-} // Exit if accessed directly
+use Reepay\Checkout\Gateways\ReepayGateway;
+
+defined( 'ABSPATH' ) || exit();
 ?>
 
 <h2><?php esc_html( $gateway->get_method_title() ); ?></h2>
@@ -14,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<p>
 		<?php
 		echo sprintf(
+				// translators: %s link to reepay dashboard.
 			__( 'Please setup WebHook in <a href="%s" target="_blank">Reepay Dashboard</a>.', 'reepay-checkout-gateway' ),
 			'https://admin.reepay.com/'
 		);
@@ -21,9 +26,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<br>
 		<?php
 		echo sprintf(
+			// translators: %1$s, %2$s - webhook url.
 			__( 'WebHook URL: <a href="%1$s" target="_blank">%2$s</a>', 'reepay-checkout-gateway' ),
-			WC_Gateway_Reepay::get_default_api_url( 'WC_Gateway_Reepay' ),
-			WC_Gateway_Reepay::get_default_api_url( 'WC_Gateway_Reepay' )
+			ReepayGateway::get_default_api_url(),
+			ReepayGateway::get_default_api_url()
 		);
 		?>
 	</p>

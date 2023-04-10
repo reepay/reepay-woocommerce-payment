@@ -235,7 +235,7 @@ class InstalledVersions
                 continue;
             }
 
-            return $installed['versions'][ $packageName ]['install_path'] ?? null;
+            return isset($installed['versions'][$packageName]['install_path']) ? $installed['versions'][$packageName]['install_path'] : null;
         }
 
         throw new \OutOfBoundsException('Package "' . $packageName . '" is not installed');
