@@ -1,6 +1,8 @@
 <?php
 /**
- * @var WC_Gateway_Reepay_Checkout $gateway
+ * @package Reepay\Checkout
+ *
+ * @var ReepayCheckout $gateway
  * @var WC_Order                   $order
  * @var int                        $order_id
  * @var array                      $order_data
@@ -8,9 +10,9 @@
  * @var string                     $link
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-} // Exit if accessed directly
+use Reepay\Checkout\Gateways\ReepayCheckout;
+
+defined( 'ABSPATH' ) || exit();
 
 if ( ! empty( $order_data['transactions'][0] ) ) {
 	$card_logo = $gateway->get_logo( $order_data['transactions'][0]['card_transaction']['card_type'] );

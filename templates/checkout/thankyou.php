@@ -16,9 +16,10 @@
  * @global WC_Order $order
  */
 
+defined( 'ABSPATH' ) || exit;
+
 $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_current_user_id();
 
-defined( 'ABSPATH' ) || exit;
 ?>
 <style type="text/css">
 	.transaction-error {
@@ -51,23 +52,19 @@ defined( 'ABSPATH' ) || exit;
 			if ( ! empty( $another_orders ) ) {
 				foreach ( $another_orders as $order_id ) {
 					$order_another = wc_get_order( $order_id );
-					wc_get_template(
-						'/order-details.php',
+					reepay()->get_template(
+						'checkout/order-details.php',
 						array(
 							'order' => $order_another,
-						),
-						'',
-						dirname( __FILE__ )
+						)
 					);
 				}
 			} else {
-				wc_get_template(
-					'/order-details.php',
+				reepay()->get_template(
+					'checkout/order-details.php',
 					array(
 						'order' => $order,
-					),
-					'',
-					dirname( __FILE__ )
+					)
 				);
 			}
 			?>

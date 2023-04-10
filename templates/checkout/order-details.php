@@ -1,7 +1,11 @@
 <?php
 /**
+ * @package Reepay\Checkout
+ *
  * @var WC_Order $order current order.
  */
+
+defined( 'ABSPATH' ) || exit();
 ?>
 <ul class="woocommerce-order-overview woocommerce-thankyou-order-details order_details">
 
