@@ -818,7 +818,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			'cancel_url' => $order->get_cancel_order_url(),
 		);
 
-		$params['button_text'] = reepay()->get_setting( 'payment_button_text' );
+		if ( $params['recurring'] ) {
+			$params['button_text'] = reepay()->get_setting( 'payment_button_text' );
+		}
 
 		if ( ! empty( $country ) ) {
 			$params['order']['customer']['country']        = $country;
