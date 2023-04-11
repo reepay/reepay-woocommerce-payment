@@ -1,5 +1,7 @@
 <?php
 /**
+ * Payment actions in admin
+ *
  * @package Reepay\Checkout
  *
  * @var ReepayCheckout $gateway

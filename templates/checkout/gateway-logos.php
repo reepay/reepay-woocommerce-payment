@@ -1,5 +1,7 @@
 <?php
 /**
+ * List of gateway logos in checkout
+ *
  * @package Reepay\Checkout
  *
  * @var array $logos

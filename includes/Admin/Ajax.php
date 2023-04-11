@@ -1,5 +1,7 @@
 <?php
 /**
+ * Admin ajax actions
+ *
  * @package Reepay\Checkout\Admin
  */
 
@@ -17,11 +19,15 @@ defined( 'ABSPATH' ) || exit();
  */
 class Ajax {
 	/**
+	 * Actions prefix
+	 *
 	 * @var string
 	 */
 	const PREFIX = 'reepay';
 
 	/**
+	 * Actions list
+	 *
 	 * @var array
 	 */
 	const ACTIONS = array(

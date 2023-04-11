@@ -1,5 +1,7 @@
 <?php
 /**
+ * KlarnaPayNow gateway
+ *
  * @package Reepay\Checkout\Gateways
  */
 

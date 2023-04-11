@@ -1,5 +1,7 @@
 <?php
 /**
+ * Reepay api class
+ *
  * @package Reepay\Checkout
  */
 
@@ -32,6 +34,8 @@ class Api {
 	private $logging_source;
 
 	/**
+	 * If repeated request after "Request rate limit exceeded"
+	 *
 	 * @var bool
 	 */
 	private $request_retry = false;
@@ -347,7 +351,6 @@ class Api {
 		$order_data = $this->get_invoice_by_handle( $handle );
 
 		if ( is_wp_error( $order_data ) ) {
-			/** @var WP_Error $order_data */
 			$this->log(
 				sprintf(
 					'Error (get_invoice_data): %s. Order ID: %s',
@@ -389,8 +392,6 @@ class Api {
 
 		$result = $this->get_invoice_data( $order );
 		if ( is_wp_error( $result ) ) {
-			/** @var WP_Error $result */
-
 			$this->log(
 				sprintf(
 					'Payment can\'t be captured. Error: %s. Order ID: %s',
@@ -425,8 +426,6 @@ class Api {
 
 		$result = $this->get_invoice_data( $order );
 		if ( is_wp_error( $result ) ) {
-			/** @var WP_Error $result */
-
 			$this->log(
 				sprintf(
 					'Payment can\'t be cancelled. Error: %s. Order ID: %s',
@@ -443,6 +442,8 @@ class Api {
 	}
 
 	/**
+	 * Check if order can be refunded
+	 *
 	 * @param WC_Order $order order to refund.
 	 *
 	 * @return bool
@@ -459,8 +460,6 @@ class Api {
 		$result = $this->get_invoice_data( $order );
 
 		if ( is_wp_error( $result ) ) {
-			/** @var WP_Error $result */
-
 			$this->log(
 				sprintf(
 					'Payment can\'t be refunded. Error: %s. Order ID: %s',
@@ -476,7 +475,7 @@ class Api {
 	}
 
 	/**
-	 * Capture
+	 * Capture order payment
 	 *
 	 * @param WC_Order|int $order order to capture.
 	 * @param float|null   $amount amount to capture. Null to capture order total.
@@ -524,6 +523,7 @@ class Api {
 	}
 
 	/**
+	 * Process recurring payment
 	 *
 	 * @param string[]     $payment_methods array of payment methods.
 	 * @see ReepayGateway::payment_methods.
@@ -637,8 +637,6 @@ class Api {
 			return $result;
 		} catch ( Exception $e ) {
 			$this->log( $e->getMessage() );
-
-			/** @var WP_Error $result */
 			$order->update_status( 'failed' );
 			$order->add_order_note(
 				sprintf(
@@ -765,7 +763,6 @@ class Api {
 		// Check the amount and change the order status to settled if needs.
 		$order_data = $this->get_invoice_data( $order );
 		if ( is_wp_error( $order_data ) ) {
-			/** @var WP_Error $order_data */
 			return new WP_Error(
 				0,
 				'Settled, but unable to verify the transaction. Error: ' . $order_data->get_error_message()
@@ -853,7 +850,6 @@ class Api {
 		);
 		$result = $this->request( 'POST', 'https://api.reepay.com/v1/refund', $params );
 		if ( is_wp_error( $result ) ) {
-			/** @var WP_Error $result */
 			$error = sprintf(
 				// translators: %1$s refund amount, %2$s error message.
 				__( 'Failed to refund "%1$s". Error: %2$s.', 'reepay-checkout-gateway' ),
@@ -990,7 +986,6 @@ class Api {
 			'https://api.reepay.com/v1/customer/' . $customer_handle . '/payment_method'
 		);
 		if ( is_wp_error( $result ) ) {
-			/** @var WP_Error $result */
 			return $result;
 		}
 
@@ -1067,7 +1062,6 @@ class Api {
 		if ( ! $result ) {
 			$invoice_data = $this->get_invoice_by_handle( wc_clean( $handle ) );
 			if ( is_wp_error( $invoice_data ) ) {
-				/** @var WP_Error $result */
 				return null;
 			}
 		}

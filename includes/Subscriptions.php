@@ -1,5 +1,7 @@
 <?php
 /**
+ * Woocommerce and Reepay subscriptions payment logic
+ *
  * @package Reepay\Checkout
  */
 
@@ -476,10 +478,14 @@ class Subscriptions {
 	// phpcs:enable
 
 	/**
-	 * @param int      $order_id current order id.
+	 * Create new invoice after woocommerce_order_status_changed
+	 *
+	 * @param int      $order_id                    current order id.
 	 * @param string   $this_status_transition_from old status.
-	 * @param string   $this_status_transition_to new status.
-	 * @param WC_Order $instance current order.
+	 * @param string   $this_status_transition_to   new status.
+	 * @param WC_Order $instance                    current order.
+	 *
+	 * @throws Exception Never, just for phpcs.
 	 */
 	public function create_sub_invoice( $order_id, $this_status_transition_from, $this_status_transition_to, $instance ) {
 		$renewal_order = wc_get_order( $order_id );

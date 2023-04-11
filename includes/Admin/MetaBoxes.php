@@ -1,5 +1,7 @@
 <?php
 /**
+ * Register reepay order metaboxes
+ *
  * @package Reepay\Checkout\Admin
  */
 
@@ -16,8 +18,9 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Admin
  */
 class MetaBoxes {
-
 	/**
+	 * Reepay dashboard url
+	 *
 	 * @var string
 	 */
 	private $dashboard_url = 'https://app.reepay.com/#/rp/';

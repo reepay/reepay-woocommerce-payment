@@ -153,7 +153,6 @@ class WC_ReepayCheckout {
 				'enable_order_autocancel' => $gateway_settings['enable_order_autocancel'] ?? '',
 				'is_webhook_configured'   => $gateway_settings['is_webhook_configured'] ?? '',
 				'handle_failover'         => $gateway_settings['handle_failover'] ?? '',
-				'logo_height'             => $gateway_settings['logo_height'] ?? '',
 				'payment_button_text'     => $gateway_settings['payment_button_text'] ?? '',
 
 				'enable_sync'             => $gateway_settings['enable_sync'] ?? '',
@@ -206,7 +205,9 @@ class WC_ReepayCheckout {
 			$api = new Api( $source );
 		} else {
 			/**
-			 * @var Api $api Api instance
+			 * Api instance
+			 *
+			 * @var Api $api
 			 */
 			$api->set_logging_source( $source );
 		}

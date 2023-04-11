@@ -1,5 +1,7 @@
 <?php
 /**
+ * Trait for working with tokens
+ *
  * @package Reepay\Checkout\Tokens
  */
 

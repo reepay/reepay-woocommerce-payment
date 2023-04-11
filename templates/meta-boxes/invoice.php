@@ -1,5 +1,7 @@
 <?php
 /**
+ * Metabox invoice template
+ *
  * @package Reepay\Checkout
  *
  * @var ReepayCheckout $gateway

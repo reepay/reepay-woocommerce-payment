@@ -1,5 +1,7 @@
 <?php
 /**
+ * Anyday gateway
+ *
  * @package Reepay\Checkout\Gateways
  */
 

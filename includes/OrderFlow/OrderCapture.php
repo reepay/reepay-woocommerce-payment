@@ -1,5 +1,7 @@
 <?php
 /**
+ * Capturing order amount if possible
+ *
  * @package Reepay\Checkout\OrderFlow
  */
 
@@ -67,7 +69,7 @@ class OrderCapture {
 	 * @param array<int, object> $formatted_meta order item meta data.
 	 * @param WC_Order_Item      $item order item.
 	 *
-	 * @return mixed
+	 * @return array
 	 */
 	public function unset_specific_order_item_meta_data( $formatted_meta, $item ) {
 		// Only on emails notifications.
@@ -291,6 +293,8 @@ class OrderCapture {
 	}
 
 	/**
+	 * Complete settle for order item, activate associated subscription and save data to meta
+	 *
 	 * @param WC_Order_Item $item order item to set 'settled' meta.
 	 * @param WC_Order      $order order to activate woo subscription (if it is possible).
 	 * @param float|int     $total settled total to set to 'settled' meta.
@@ -304,6 +308,10 @@ class OrderCapture {
 	}
 
 	/**
+	 * Settle order item
+	 *
+	 * @see OrderCapture::complete_settle
+	 *
 	 * @param WC_Order_Item $item  order item to settle.
 	 * @param WC_Order      $order current order.
 	 *
@@ -391,6 +399,8 @@ class OrderCapture {
 	}
 
 	/**
+	 * Prepare order item data for reepay
+	 *
 	 * @param WC_Order_Item $order_item order item to get data.
 	 * @param WC_Order      $order      current order.
 	 *

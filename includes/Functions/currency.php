@@ -1,5 +1,7 @@
 <?php
 /**
+ * Currency functions
+ *
  * @package Reepay\Checkout\Functions
  */
 

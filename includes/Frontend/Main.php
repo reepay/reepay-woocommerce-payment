@@ -1,5 +1,7 @@
 <?php
 /**
+ * Frontend main class
+ *
  * @package Reepay\Checkout\Frontend
  */
 

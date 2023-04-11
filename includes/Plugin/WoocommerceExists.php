@@ -1,5 +1,7 @@
 <?php
 /**
+ * Class with woocommerce activation checks
+ *
  * @package Reepay\Checkout\Plugin
  */
 
