@@ -131,13 +131,13 @@ class InstantSettle {
 			}
 		}
 
-		if ( in_array( self::SETTLE_FEE, $settle_types ) ) {
+		if ( in_array( self::SETTLE_FEE, $settle_types, true ) ) {
 			foreach ( $order->get_fees() as $i => $order_fee ) {
 				$items_data[ $i ] = $order_fee;
 			}
 		}
 
-		if ( in_array( self::SETTLE_PHYSICAL, $settle_types ) ) {
+		if ( in_array( self::SETTLE_PHYSICAL, $settle_types, true ) ) {
 			foreach ( $order->get_items( 'shipping' ) as $i => $item_shipping ) {
 				$items_data[ $i ] = $item_shipping;
 			}

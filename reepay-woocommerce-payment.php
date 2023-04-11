@@ -171,14 +171,25 @@ class WC_ReepayCheckout {
 	 *
 	 * @param  string $template  Template name.
 	 * @param  array  $args      Arguments.
+	 * @param  bool   $return      Return or echo template.
 	 */
-	public function get_template( $template, $args = array() ) {
+	public function get_template( $template, $args = array(), $return = false ) {
+		if ( $return ) {
+			ob_start();
+		}
+
 		wc_get_template(
 			$template,
 			$args,
 			'',
 			$this->get_setting( 'templates_path' )
 		);
+
+		if ( $return ) {
+			return ob_get_clean();
+		}
+
+		return true;
 	}
 
 	/**
