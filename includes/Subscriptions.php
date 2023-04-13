@@ -43,7 +43,7 @@ class Subscriptions {
 			add_action( 'woocommerce_thankyou_' . $method, array( $this, 'thankyou_page' ) );
 
 			// Update failing payment method.
-			add_action( 'woocommerce_subscription_failing_payment_method_updated_' . $method, array( $this, 'update_failing_payment_method' ), 10, 1 );
+			add_action( 'woocommerce_subscription_failing_payment_method_updated_' . $method, array( $this, 'update_failing_payment_method' ), 10, 2 );
 
 			// Charge the payment when a subscription payment is due.
 			add_action( 'woocommerce_scheduled_subscription_payment_' . $method, array( $this, 'scheduled_subscription_payment' ), 10, 2 );
