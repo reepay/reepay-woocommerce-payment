@@ -68,13 +68,60 @@ trait TokenReepayTrait {
 
 		if ( ! $token ) {
 			// Create Payment Token.
-			$token = $this->add_payment_token( $order, $reepay_token );
+			$token = $this->add_payment_token_to_order( $order, $reepay_token );
 		}
 
 		// Assign token to order.
 		self::assign_payment_token( $order, $token );
 
 		return $token;
+	}
+
+	/**
+	 * Add payment token to customer
+	 *
+	 * @param int    $customer_id customer id to add token
+	 * @param string $reepay_token card token from reepay
+	 *
+	 * @return array
+	 * @throws Exception If invalid token or order.
+	 */
+	public function add_payment_token_to_customer( $customer_id, $reepay_token ) {
+		$customer_handle = get_user_meta( $customer_id, 'reepay_customer_id', true );
+		$card_info       = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
+
+		if ( is_wp_error( $card_info ) || empty( $card_info ) ) {
+			throw new Exception( __( 'Reepay error. Try again or contact us.', 'reepay-checkout-gateway' ) );
+		}
+
+		if ( 'ms_' === substr( $card_info['id'], 0, 3 ) ) {
+			$token = new TokenReepayMS();
+			$token->set_gateway_id( $this->id );
+			$token->set_token( $reepay_token );
+			$token->set_user_id( $customer_id );
+		} else {
+			$expiry_date = explode( '-', $card_info['exp_date'] );
+
+			$token = new TokenReepay();
+			$token->set_gateway_id( $this->id );
+			$token->set_token( $reepay_token );
+			$token->set_last4( substr( $card_info['masked_card'], - 4 ) );
+			$token->set_expiry_year( 2000 + $expiry_date[1] );
+			$token->set_expiry_month( $expiry_date[0] );
+			$token->set_card_type( $card_info['card_type'] );
+			$token->set_user_id( $customer_id );
+			$token->set_masked_card( $card_info['masked_card'] );
+		}
+
+		// Save Credit Card.
+		if ( ! $token->save() ) {
+			throw new Exception( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ) );
+		}
+
+		return array(
+			'token'     => $token,
+			'card_info' => $card_info,
+		);
 	}
 
 	/**
@@ -86,57 +133,24 @@ trait TokenReepayTrait {
 	 * @return TokenReepay
 	 * @throws Exception If invalid token or order.
 	 */
-	public function add_payment_token( $order, $reepay_token ) {
-		// Create Payment Token.
-		$customer_handle = reepay()->api( $this->id )->get_customer_handle_by_order( $order );
-		$source          = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
+	public function add_payment_token_to_order( $order, $reepay_token ) {
+		[ //phpcs:ignore Generic.Arrays.DisallowShortArraySyntax.Found
+			'token'     => $token,
+			'card_info' => $card_info,
+		] = $this->add_payment_token_to_customer( $order->get_customer_id(), $reepay_token );
 
-		$this->log(
-			array(
-				'source'  => 'TokenReepayTrait::add_payment_token',
-				'$source' => $source,
-			),
-		);
+		update_post_meta( $order->get_id(), 'reepay_masked_card', $card_info['masked_card'] );
+		update_post_meta( $order->get_id(), 'reepay_card_type', $card_info['card_type'] );
+		update_post_meta( $order->get_id(), '_reepay_source', $card_info );
 
-		if ( is_wp_error( $source ) || empty( $source ) ) {
-			throw new Exception( __( 'Reepay error. Try again or contact us.', 'reepay-checkout-gateway' ) );
-		}
-
-		if ( 'ms_' === substr( $source['id'], 0, 3 ) ) {
-			$token = new TokenReepayMS();
-			$token->set_user_id( $order->get_customer_id() );
-			$token->set_token( $reepay_token );
-			$token->set_gateway_id( $this->id );
-		} else {
-			$expiry_date = explode( '-', $source['exp_date'] );
-
-			$token = new TokenReepay();
-			$token->set_gateway_id( $this->id );
-			$token->set_token( $reepay_token );
-			$token->set_last4( substr( $source['masked_card'], - 4 ) );
-			$token->set_expiry_year( 2000 + $expiry_date[1] );
-			$token->set_expiry_month( $expiry_date[0] );
-			$token->set_card_type( $source['card_type'] );
-			$token->set_user_id( $order->get_customer_id() );
-			$token->set_masked_card( $source['masked_card'] );
-
-			update_post_meta( $order->get_id(), 'reepay_masked_card', $source['masked_card'] );
-			update_post_meta( $order->get_id(), 'reepay_card_type', $source['card_type'] );
-		}
-
-		// Save Credit Card.
-		if ( ! $token->save() ) {
-			throw new Exception( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ) );
-		}
-
-		update_post_meta( $order->get_id(), '_reepay_source', $source );
 		self::assign_payment_token( $order, $token );
+
 		$this->log(
 			sprintf(
 				'%s Payment token #%s created for %s',
 				__METHOD__,
 				$token->get_id(),
-				$source['masked_card'] ?? ''
+				$card_info['masked_card'] ?? ''
 			)
 		);
 
