@@ -6,6 +6,8 @@
 namespace Reepay\Checkout\Admin;
 
 use Exception;
+use Reepay\Checkout\Gateways\ReepayGateway;
+use Reepay\Checkout\Tokens\TokenReepay;
 use WC_AJAX;
 
 defined( 'ABSPATH' ) || exit();
@@ -31,6 +33,7 @@ class Ajax {
 		'capture_partly',
 		'refund_partly',
 		'set_complete_settle_transient',
+		'set_new_order_token',
 	);
 
 	/**
@@ -207,7 +210,7 @@ class Ajax {
 	 * Action to set complete settle to transient option
 	 */
 	public function set_complete_settle_transient() {
-		$this->verify_nonce();
+		$this->verify_nonce('reepay');
 
 		if ( empty( $_POST['order_id'] ) || empty( $_POST['settle_order'] ) ) {
 			wp_send_json_error( __( 'Order id or settle order not specified' ) );
@@ -218,5 +221,52 @@ class Ajax {
 
 		set_transient( 'reepay_order_complete_should_settle_' . $order_id, $settle_order, 60 );
 		wp_send_json_success( 'success' );
+	}
+
+	public function set_new_order_token() {
+		$this->verify_nonce( 'reepay' );
+
+		$token = isset( $_POST['token'] ) ? wc_clean( $_POST['token'] ) : '';
+
+		$order_id = isset( $_POST['order_id'] ) ? wc_clean( $_POST['order_id'] ) : 0;
+		$order    = wc_get_order( $order_id );
+
+		if ( empty( $token ) || empty( $order ) ) {
+			wp_send_json( array(
+				'success' => false,
+				'message' => __( 'Invalid data', 'reepay-checkout-gateway' )
+			) );
+		}
+
+		$gateway = rp_get_payment_method( $order );
+
+		try {
+			$gateway->add_payment_token( $order, $token );
+		} catch (Exception $e) {
+			try {
+				$wc_token = new TokenReepay();
+				$wc_token->set_gateway_id( $gateway->id );
+				$wc_token->set_token( $token );
+				$wc_token->set_last4( 'xxxx' );
+				$wc_token->set_expiry_year( 'xxxx' );
+				$wc_token->set_expiry_month( 'xx' );
+				$wc_token->set_card_type( 'x' );
+				$wc_token->set_user_id( $order->get_customer_id() );
+				$wc_token->set_masked_card( 'xxxx' );
+
+				$wc_token->save();
+
+				$gateway::assign_payment_token( $order, $wc_token );
+			} catch (Exception $e) {
+				wp_send_json( array(
+					'success' => false,
+					'message' => __( 'Unable create or save token', 'reepay-checkout-gateway' ) . " ({$e->getMessage()})"
+				) );
+			}
+		}
+
+		wp_send_json( array(
+			'success' => true
+		) );
 	}
 }

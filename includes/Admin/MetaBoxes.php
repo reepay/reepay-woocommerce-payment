@@ -159,16 +159,8 @@ class MetaBoxes {
 		 * Set types of args variables
 		 *
 		 * @var WC_Order $order
-		 * @var ReepayCheckout $gateway
 		 */
 		$order   = $meta['args']['order'];
-		$gateway = $meta['args']['gateway'];
-//		$order->add_payment_token( $token );
-//
-//		$order->update_meta_data( '_reepay_token_id', $token->get_id() );
-//		$order->update_meta_data( 'reepay_token', $token->get_token() );
-//		$order->update_meta_data( '_reepay_token', $token->get_token() );
-//		$order->save_meta_data();
 
 		reepay()->get_template(
 			'meta-boxes/token.php',

@@ -15,7 +15,9 @@ defined( 'ABSPATH' ) || exit;
 			   data-reepay-token-value>
 	</li>
 	<li class="reepay-admin-section-li">
-		<button class="button" data-reepay-token-update>
+		<button class="button"
+				style="display:none"
+				data-reepay-token-update>
 			<?php _e( 'Update ', 'reepay-subscriptions-for-woocommerce' ); ?>
 		</button>
 	</li>
