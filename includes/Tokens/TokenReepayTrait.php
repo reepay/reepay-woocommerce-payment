@@ -66,15 +66,42 @@ trait TokenReepayTrait {
 		// Check if token is exists in WooCommerce.
 		$token = self::get_payment_token( $reepay_token );
 
-		if ( ! $token ) {
-			// Create Payment Token.
+		if ( $token ) {
+			// Just assign token to order.
+			self::assign_payment_token( $order, $token );
+		} else {
+			// Create and assign payment token.
 			$token = $this->add_payment_token_to_order( $order, $reepay_token );
 		}
 
-		// Assign token to order.
-		self::assign_payment_token( $order, $token );
-
 		return $token;
+	}
+
+	/**
+	 * Save Payment Data (card type and masked card)
+	 *
+	 * @param WC_Order $order        order to save.
+	 * @param string   $reepay_token token to save.
+	 *
+	 * @throws Exception If invalid token or order.
+	 */
+	protected function reepay_save_card_info( $order, $reepay_token ) {
+		$customer_handle = get_user_meta( $order->get_customer_id(), 'reepay_customer_id', true );
+		$card_info       = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
+
+		update_post_meta( $order->get_id(), 'reepay_masked_card', $card_info['masked_card'] );
+		update_post_meta( $order->get_id(), 'reepay_card_type', $card_info['card_type'] );
+
+		update_post_meta( $order->get_id(), '_reepay_source', $card_info );
+
+		$this->log(
+			sprintf(
+				'%s Payment info saved for order %s (%s)',
+				__METHOD__,
+				$order->get_id(),
+				$card_info['masked_card'] ?? 'xxxx'
+			)
+		);
 	}
 
 	/**
@@ -141,6 +168,7 @@ trait TokenReepayTrait {
 
 		update_post_meta( $order->get_id(), 'reepay_masked_card', $card_info['masked_card'] );
 		update_post_meta( $order->get_id(), 'reepay_card_type', $card_info['card_type'] );
+
 		update_post_meta( $order->get_id(), '_reepay_source', $card_info );
 
 		self::assign_payment_token( $order, $token );
