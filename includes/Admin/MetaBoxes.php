@@ -78,19 +78,6 @@ class MetaBoxes {
 			)
 		);
 
-		add_meta_box(
-			'reepay_checkout_token',
-			__( 'Card token', 'reepay-checkout-gateway' ),
-			array( $this, 'generate_meta_box_content_token' ),
-			'shop_order',
-			'side',
-			'high',
-			array(
-				'order'   => $order,
-				'gateway' => $gateway,
-			)
-		);
-
 		if ( empty( $subscription ) || ( 0 !== $post->post_parent ) ) {
 			add_meta_box(
 				'reepay_checkout_invoice',
@@ -145,28 +132,6 @@ class MetaBoxes {
 		reepay()->get_template(
 			'meta-boxes/customer.php',
 			$template_args,
-		);
-	}
-
-	/**
-	 * Function to show customer meta box token
-	 *
-	 * @param WP_Post $post current post object.
-	 * @param array   $meta additional info. Get arguments by 'args' key.
-	 */
-	public function generate_meta_box_content_token( $post, $meta ) {
-		/**
-		 * Set types of args variables
-		 *
-		 * @var WC_Order $order
-		 */
-		$order   = $meta['args']['order'];
-
-		reepay()->get_template(
-			'meta-boxes/token.php',
-			array(
-				'token' => $order->get_meta( 'reepay_token' )
-			),
 		);
 	}
 
