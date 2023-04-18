@@ -772,7 +772,7 @@ class Api {
 		$message = sprintf(
 			// translators: %1$s amount to settle, %2$s transaction number.
 			__( 'Payment has been settled. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
-			rp_make_initial_amount( $amount, $order->get_currency() ) . ' ' . $order->get_currency(),
+			wc_price( $result['amount'] ),
 			$result['transaction']
 		);
 
