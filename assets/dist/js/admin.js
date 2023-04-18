@@ -212,4 +212,60 @@ jQuery(document).ready(function ($) {
         alias: "currency",
         groupSeparator: ''
     });
+
+    const $tokenMetabox = $('.js-order_action');
+    const $tokenInput = $tokenMetabox.find('[data-reepay-token-value]');
+    const $tokenUpdateBtn = $tokenMetabox.find('[data-reepay-token-update]');
+    const defaultToken = $tokenInput.val();
+
+    $tokenInput.on('input', function (e) {
+        e.preventDefault();
+
+        const $this = $(this);
+
+        if ($this.val() !== defaultToken) {
+            $tokenUpdateBtn.show();
+        } else {
+            $tokenUpdateBtn.hide();
+        }
+    })
+
+    $tokenUpdateBtn.on( 'click', function (e) {
+        e.preventDefault();
+
+        $tokenMetabox.block({
+            message: null,
+            overlayCSS: {
+                background: '#fff',
+                opacity: 0.6
+            }
+        });
+
+        $.ajax({
+            url: Reepay_Admin.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'reepay_set_new_order_token',
+                nonce: Reepay_Admin.nonce,
+                token: $tokenInput.val(),
+                order_id: $("#post_ID").val(),
+            },
+            beforeSend: function () {
+            },
+            success: function (res) {
+                console.log(res);
+                if(res.success) {
+                    $('#post').submit();
+                } else {
+                    alert(res.message);
+                }
+            },
+            error: function (response) {
+                alert("error response: " + JSON.stringify(response));
+            },
+            complete: function () {
+                $tokenMetabox.unblock();
+            }
+        });
+    } )
 });
