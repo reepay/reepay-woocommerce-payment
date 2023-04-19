@@ -1,8 +1,9 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
+use Reepay\Checkout\Gateways\ReepayCheckout;
+use Reepay\Checkout\Tokens\TokenReepay;
+
+defined( 'ABSPATH' ) || exit;
 
 // Set PHP Settings
 set_time_limit( 0 );
@@ -19,7 +20,7 @@ if ( ! function_exists( 'wcs_get_users_subscriptions' ) ) {
 }
 
 // Gateway
-$gateway = new WC_Gateway_Reepay_Checkout();
+$gateway = new ReepayCheckout();
 
 $log->add( $handler, sprintf( 'Start upgrade %s....', basename( __FILE__ ) ) );
 
@@ -50,7 +51,7 @@ foreach ( $subscriptions as $subscription ) {
 	}
 
 	// Get Token
-	$token = new WC_Payment_Token_Reepay( $token_id );
+	$token = new TokenReepay( $token_id );
 	if ( ! $token->get_id() ) {
 		$log->add( $handler, sprintf( '[INFO] Invalid Token ID #%s doesn\'t have token id.', $token_id ) );
 		continue;
@@ -64,8 +65,12 @@ foreach ( $subscriptions as $subscription ) {
 	// Check subscription's token
 	$subscriptions_tokens = get_post_meta( $subscription->get_id(), '_payment_tokens', true );
 	if ( empty( $subscriptions_tokens ) ) {
-		WC_Gateway_Reepay_Checkout::assign_payment_token( $subscription, $token );
-		$log->add( $handler, sprintf( '[SUCCESS] Token #%s assigned to subscription #%s.', $token->get_id(), $subscription->get_id() ) );
+		try {
+			ReepayCheckout::assign_payment_token( $subscription, $token );
+			$log->add( $handler, sprintf( '[SUCCESS] Token #%s assigned to subscription #%s.', $token->get_id(), $subscription->get_id() ) );
+		} catch ( Exception $e ) {
+			$log->add( $handler, sprintf( '[ERROR] Token #%s not assigned to subscription #%s.', $token->get_id(), $subscription->get_id() ) );
+		}
 	}
 
 	// Get renewal orders
@@ -74,8 +79,12 @@ foreach ( $subscriptions as $subscription ) {
 		/** WC_Order $order */
 		$order_tokens = get_post_meta( $order->get_id(), '_payment_tokens', true );
 		if ( empty( $order_tokens ) ) {
-			WC_Gateway_Reepay_Checkout::assign_payment_token( $order, $token );
-			$log->add( $handler, sprintf( '[SUCCESS] Token #%s assigned to order #%s.', $token->get_id(), $order->get_id() ) );
+			try {
+				ReepayCheckout::assign_payment_token( $order, $token );
+				$log->add( $handler, sprintf( '[SUCCESS] Token #%s assigned to order #%s.', $token->get_id(), $order->get_id() ) );
+			} catch ( Exception $e ) {
+				$log->add( $handler, sprintf( '[ERROR] Token #%s not  assigned to order #%s.', $token->get_id(), $order->get_id() ) );
+			}
 		}
 	}
 }

@@ -6,3 +6,11 @@ node_modules
 
 #Ignore PHP storm config
 .idea
+
+#Ignore build
+build
+
+#Ignore all composer dependencies except autoloader
+vendor
+!vendor/autoload.php
+!vendor/composer
