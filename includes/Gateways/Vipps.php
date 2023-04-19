@@ -1,5 +1,7 @@
 <?php
 /**
+ * Vipps gateway
+ *
  * @package Reepay\Checkout\Gateways
  */
 

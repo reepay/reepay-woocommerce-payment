@@ -1,5 +1,7 @@
 <?php
 /**
+ * Gateways registration
+ *
  * @package Reepay\Checkout
  */
 
@@ -88,7 +90,11 @@ class Gateways {
 			$gateway = new $class_name();
 
 			if ( ! empty( $gateway ) ) {
-				/** @var ReepayGateway $gateway */
+				/**
+				 * Reepay gateway class instance
+				 *
+				 * @var ReepayGateway $gateway
+				 */
 				$this->gateways[ $gateway->id ] = $gateway;
 
 				// Register gateway instance.

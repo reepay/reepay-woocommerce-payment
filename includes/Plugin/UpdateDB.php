@@ -1,5 +1,7 @@
 <?php
 /**
+ * Class to update database along with plugin update
+ *
  * @package Reepay\Checkout\Plugin
  */
 
@@ -20,7 +22,11 @@ class UpdateDB {
 	 */
 	const DB_VERSION = '1.4.54';
 
-	/** @var array DB updates that need to be run */
+	/**
+	 * DB updates that need to be run
+	 *
+	 * @var array
+	 */
 	const DB_UPDATES = array(
 		'1.1.0'  => 'updates/update-1.1.0.php',
 		'1.2.0'  => 'updates/update-1.2.0.php',

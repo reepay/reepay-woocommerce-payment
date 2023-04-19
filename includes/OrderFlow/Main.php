@@ -1,5 +1,7 @@
 <?php
 /**
+ * Activate order flow classes
+ *
  * @package Reepay\Checkout\OrderFlow
  */
 

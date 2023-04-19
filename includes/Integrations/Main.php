@@ -1,5 +1,7 @@
 <?php
 /**
+ * Integrations activation
+ *
  * @package Reepay\Checkout\Integrations
  */
 

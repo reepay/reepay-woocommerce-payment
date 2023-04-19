@@ -1,5 +1,7 @@
 <?php
 /**
+ * Changing order status depending on order status in reepay and gateway settings
+ *
  * @package Reepay\Checkout\OrderFlow
  */
 

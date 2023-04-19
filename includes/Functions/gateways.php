@@ -1,5 +1,7 @@
 <?php
 /**
+ * Gateway functions
+ *
  * @package Reepay\Checkout\Functions
  */
 

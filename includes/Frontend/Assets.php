@@ -1,5 +1,7 @@
 <?php
 /**
+ * Register, localize and enqueue scripts and styles
+ *
  * @package Reepay\Checkout\Frontend
  */
 

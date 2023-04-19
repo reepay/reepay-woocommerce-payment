@@ -1,5 +1,7 @@
 <?php
 /**
+ * Instant settle logic
+ *
  * @package Reepay\Checkout\OrderFlow
  */
 
@@ -122,8 +124,11 @@ class InstantSettle {
 
 		// Walk through the order lines and check if order item is virtual, downloadable, recurring or physical.
 		foreach ( $order->get_items() as $order_item ) {
-			/** @var WC_Order_Item_Product $order_item */
-			/** @var WC_Product $product */
+			/**
+			 * WC_Order_Item_Product returns not WC_Order_Item
+			 *
+			 * @var WC_Order_Item_Product $order_item
+			 */
 			$product = $order_item->get_product();
 
 			if ( self::can_product_be_settled_instantly( $product, $settle_types ) ) {
@@ -131,13 +136,13 @@ class InstantSettle {
 			}
 		}
 
-		if ( in_array( self::SETTLE_FEE, $settle_types ) ) {
+		if ( in_array( self::SETTLE_FEE, $settle_types, true ) ) {
 			foreach ( $order->get_fees() as $i => $order_fee ) {
 				$items_data[ $i ] = $order_fee;
 			}
 		}
 
-		if ( in_array( self::SETTLE_PHYSICAL, $settle_types ) ) {
+		if ( in_array( self::SETTLE_PHYSICAL, $settle_types, true ) ) {
 			foreach ( $order->get_items( 'shipping' ) as $i => $item_shipping ) {
 				$items_data[ $i ] = $item_shipping;
 			}
@@ -163,7 +168,11 @@ class InstantSettle {
 
 		// Walk through the order lines and check if order item is virtual, downloadable, recurring or physical.
 		foreach ( $order->get_items() as $item ) {
-			/** @var WC_Order_Item_Product $item */
+			/**
+			 * WC_Order_Item_Product returns not WC_Order_Item
+			 *
+			 * @var WC_Order_Item_Product $item
+			 */
 			$product        = $item->get_product();
 			$price_incl_tax = $order->get_line_subtotal( $item, true, false );
 

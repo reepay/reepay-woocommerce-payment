@@ -1,5 +1,7 @@
 <?php
 /**
+ * ApplePay gateway
+ *
  * @package Reepay\Checkout\Gateways
  */
 
