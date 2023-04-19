@@ -954,6 +954,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			try {
 				self::assign_payment_token( $order, $token->get_id() );
+				$this->reepay_save_card_info( $order, $token->get_token() );
 			} catch ( Exception $e ) {
 				$order->add_order_note( $e->getMessage() );
 			}
