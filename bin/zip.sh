@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Exit if any command fails.
-set -e
+set -ex
 
 # Change to the expected directory.
 DIR=$(pwd)
@@ -71,10 +71,5 @@ then
 else
   warning "zip command not found. Create archive by yourself ./build/reepay-woocommerce-payment"
 fi
-
-# Install composer dev dependencies.
-cd ..
-status "Return all composer dependencies... 📦"
-composer install
 
 success "Done. You've built plugin! 🎉 "
