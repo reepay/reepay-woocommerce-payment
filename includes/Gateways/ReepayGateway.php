@@ -807,7 +807,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			'locale'     => $this->get_language(),
 			'recurring'  => apply_filters(
 				'order_contains_reepay_subscription',
-				$maybe_save_card || order_contains_subscription( $order ) || wcs_is_payment_change() || 'reepay_checkout' === $this->id ,
+				$maybe_save_card || order_contains_subscription( $order ) || wcs_is_payment_change() || 'reepay_checkout' === $this->id,
 				$order
 			),
 			'order'      => array(
@@ -1220,18 +1220,18 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			)
 		);
 
-		if( ! empty( $_GET['payment_method'] ) ) {
-			// Save Payment Method
+		if ( ! empty( $_GET['payment_method'] ) ) {
+			// Save Payment Method.
 			$maybe_save_card = $order->get_meta( '_reepay_maybe_save_card' );
 
 			try {
-				if (  $maybe_save_card || order_contains_subscription( $order ) ) {
+				if ( $maybe_save_card || order_contains_subscription( $order ) ) {
 					$this->reepay_save_token( $order, wc_clean( $_GET['payment_method'] ) );
 				} else {
 					$this->reepay_save_card_info( $order, wc_clean( $_GET['payment_method'] ) );
 				}
-			} catch (Exception $e) {
-				$this->log('card saving error');
+			} catch ( Exception $e ) {
+				$this->log( 'card saving error' );
 			}
 		}
 	}

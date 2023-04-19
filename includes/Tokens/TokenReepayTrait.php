@@ -109,8 +109,8 @@ trait TokenReepayTrait {
 	/**
 	 * Add payment token to customer
 	 *
-	 * @param int    $customer_id customer id to add token
-	 * @param string $reepay_token card token from reepay
+	 * @param int    $customer_id customer id to add token.
+	 * @param string $reepay_token card token from reepay.
 	 *
 	 * @return array
 	 * @throws Exception If invalid token or order.
