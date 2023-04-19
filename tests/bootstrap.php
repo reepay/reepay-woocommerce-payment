@@ -28,11 +28,27 @@ require_once "{$_tests_dir}/includes/functions.php";
 /**
  * Manually load the plugin being tested.
  */
+tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 function _manually_load_plugin() {
+	$wordpres_plugins_path = ABSPATH . 'wp-content/plugins/';
+
+	require $wordpres_plugins_path . 'woocommerce/woocommerce.php';
+
 	require dirname( dirname( __FILE__ ) ) . '/./reepay-woocommerce-payment.php';
 }
 
-tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
-
+// install WC.
+tests_add_filter( 'setup_theme', 'install_wc' );
+function install_wc() {
+	// Clean existing install first.
+	define( 'WP_UNINSTALL_PLUGIN', true );
+	define( 'WC_REMOVE_ALL_DATA', true );
+	include (ABSPATH . 'wp-content/plugins/woocommerce/uninstall.php');
+	echo esc_html( 'Installing WooCommerce...' . PHP_EOL );
+	WC_Install::install();
+	// Reload capabilities after install, see https://core.trac.wordpress.org/ticket/28374
+	$GLOBALS['wp_roles'] = null;
+	wp_roles();
+}
 // Start up the WP testing environment.
 require "{$_tests_dir}/includes/bootstrap.php";

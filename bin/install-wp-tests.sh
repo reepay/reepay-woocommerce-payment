@@ -145,7 +145,6 @@ create_db() {
 }
 
 install_db() {
-
 	if [ ${SKIP_DB_CREATE} = "true" ]; then
 		return 0
 	fi
@@ -177,6 +176,23 @@ install_db() {
 	fi
 }
 
+install_dependencies() {
+#    WP_SITE_URL="http://localhost:8080"
+    WP_PLUGIN_DIR=$(pwd)
+    WP_DB_DATA="$WP_PLUGIN_DIR/tests/data/db.sql"
+
+    cd "$WP_CORE_DIR"
+    curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+    [ ! -f ./wp-config.php ] && php wp-cli.phar core config --dbname=$DB_NAME --dbuser=$DB_USER --dbpass=$DB_PASS --dbhost=$DB_HOST --dbprefix=wptests_
+    php wp-cli.phar db import $WP_DB_DATA
+#    php wp-cli.phar search-replace "http://local.wordpress.test" "$WP_SITE_URL"
+#    php wp-cli.phar theme install twentyseventeen --activate
+     php wp-cli.phar plugin install woocommerce --activate --force
+    php wp-cli.phar plugin install reepay-subscriptions-for-woocommerce --force
+    php wp-cli.phar plugin list
+}
+
 install_wp
 install_test_suite
 install_db
+install_dependencies
