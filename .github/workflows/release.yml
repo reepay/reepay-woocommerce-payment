@@ -27,6 +27,6 @@ jobs:
     - uses: ncipollo/release-action@v1
       with:
         artifactErrorsFailBuild: true,
-        artifacts: "./build/app.zip"
+        artifacts: "./build/reepay-woocommerce-payment.zip"
 
     
