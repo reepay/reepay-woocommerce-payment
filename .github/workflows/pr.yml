@@ -10,9 +10,6 @@ permissions:
   contents: write
 
 jobs:
-  phpunit:
-    runs-on: ubuntu-latest
-
   code_standarts:
     runs-on: ubuntu-latest
 
