@@ -1,5 +1,7 @@
 <?php
 /**
+ * Gateway wrapper for woocommerce checkout block integration
+ *
  * @package Reepay\Checkout\Integrations\WooBlocks
  */
 
@@ -17,7 +19,6 @@ use WC_Payment_Tokens;
 
 /**
  * Reepay payment methods integration
- *
  */
 final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	/**
@@ -28,10 +29,17 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	protected $name = '';
 
 	/**
+	 * Wrapped gateway
+	 *
 	 * @var WC_Payment_Gateway
 	 */
 	protected $gateway;
 
+	/**
+	 * Array of reepay gateways supporting card payment
+	 *
+	 * @var string[]
+	 */
 	protected $support_cards = array(
 		'reepay_checkout',
 	);
@@ -41,7 +49,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	 *
 	 * @param string $name Payment method name/id/slug.
 	 *
-	 * @throws Exception
+	 * @throws Exception If gateway not exist.
 	 */
 	public function __construct( string $name ) {
 		$this->name    = $name;
@@ -56,7 +64,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	 * Initializes the payment method type.
 	 */
 	public function initialize() {
-		$this->settings = get_option( "woocommerce_{$this->name}_settings", [] );
+		$this->settings = get_option( "woocommerce_{$this->name}_settings", array() );
 	}
 
 	/**
@@ -80,6 +88,8 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 			wp_enqueue_style(
 				'wc-reepay-blocks',
 				reepay()->get_setting( 'css_url' ) . 'woo_blocks.css',
+				array(),
+				filemtime( reepay()->get_setting( 'css_path' ) . 'woo_blocks.css' ),
 			);
 		}
 
@@ -94,22 +104,17 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 		 *
 		 * @return array
 		 */
-		$script_dependencies = apply_filters( 'woocommerce_blocks_register_script_dependencies', [ Assets::SLUG_CHECKOUT_JS ], $handle );
-//		$script_dependencies = [
-//			'jquery',
-//			'wc-checkout',
-//			Assets::SLUG_REEPAY_CDN_JS,
-//		];
+		$script_dependencies = apply_filters( 'woocommerce_blocks_register_script_dependencies', array( Assets::SLUG_CHECKOUT_JS ), $handle );
 
 		wp_register_script(
 			$handle,
 			reepay()->get_setting( 'js_url' ) . "woo-blocks$suffix.js?name=$this->name",
 			$script_dependencies,
-			false,
+			filemtime( reepay()->get_setting( 'js_path' ) . "woo-blocks$suffix.js?name=$this->name" ),
 			true
 		);
 
-		return [ $handle ];
+		return array( $handle );
 	}
 
 	/**
@@ -118,16 +123,15 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	 * @return string[]
 	 */
 	public function get_supported_features() {
-		/** @var ReepayGateway $gateway */
-		$gateway = WC()->payment_gateways()->get_available_payment_gateways()[ $this->name ] ?? null;
+		$gateway = reepay()->gateways()->get_gateway( $this->name );
 
 		if ( ! empty( $gateway ) ) {
 			$features = $gateway->supports;
 		} else {
-			$features = [ 'products' ];
+			$features = array( 'products' );
 		}
 
-		if ( in_array( $this->name, $this->support_cards ) ) {
+		if ( in_array( $this->name, $this->support_cards, true ) ) {
 			$features[] = 'cards';
 		}
 
@@ -140,23 +144,21 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	 * @return array
 	 */
 	public function get_payment_method_data() {
-		$data = [
+		$data = array(
 			'title'       => $this->get_setting( 'title' ),
 			'description' => $this->get_setting( 'description' ),
 			'supports'    => $this->get_supported_features(),
-		];
+		);
 
-
-		if ( in_array( 'cards', $data['supports'] ) ) {
+		if ( in_array( 'cards', $data['supports'], true ) ) {
 			$tokens = $this->gateway->get_tokens();
 
 			if ( ! empty( $tokens ) ) {
-				$data['tokens'] = [];
+				$data['tokens'] = array();
 
 				foreach ( $this->gateway->get_tokens() as $token ) {
 					if ( $token instanceof TokenReepay ) {
-						/** @var TokenReepay $token */
-						$data['tokens'][] = [
+						$data['tokens'][] = array(
 							'id'           => $token->get_id(),
 							'expiry_month' => $token->get_expiry_month(),
 							'expiry_year'  => $token->get_expiry_year(),
@@ -165,7 +167,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 							'image'        => $token->get_card_image_url(),
 							'image_alt'    => wc_get_credit_card_type_label( $token->get_card_type() ),
 							'is_default'   => checked( $token->is_default(), true, false ),
-						];
+						);
 					}
 				}
 

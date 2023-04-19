@@ -1,5 +1,7 @@
 <?php
 /**
+ * Woocommerce checkout block integration
+ *
  * @package Reepay\Checkout\Integrations\WooBlocks
  */
 
@@ -19,6 +21,9 @@ defined( 'ABSPATH' ) || exit;
  * @package Reepay\Checkout\Integrations\WooBlocks
  */
 class WooBlocksIntegration {
+	/**
+	 * WooBlocksIntegration constructor.
+	 */
 	public function __construct() {
 		add_action( 'woocommerce_blocks_payment_method_type_registration', array( $this, 'register_payment_method_integrations' ) );
 	}
@@ -41,8 +46,7 @@ class WooBlocksIntegration {
 				$payment_method_registry->register(
 					Package::container()->get( $payment_method )
 				);
-			} catch ( Exception $e ) {
-
+			} catch ( Exception $e ) { //phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			}
 		}
 	}
