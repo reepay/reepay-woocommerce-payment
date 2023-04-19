@@ -3,7 +3,7 @@ run-name: Release
 
 on: 
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
     tags:
     - 'v*'
     
