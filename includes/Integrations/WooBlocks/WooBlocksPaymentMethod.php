@@ -110,7 +110,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 			$handle,
 			reepay()->get_setting( 'js_url' ) . "woo-blocks$suffix.js?name=$this->name",
 			$script_dependencies,
-			filemtime( reepay()->get_setting( 'js_path' ) . "woo-blocks$suffix.js?name=$this->name" ),
+			filemtime( reepay()->get_setting( 'js_path' ) . "woo-blocks$suffix.js" ),
 			true
 		);
 
