@@ -744,43 +744,11 @@ class ReepayCheckout extends ReepayGateway {
 	 * Ajax: Add Payment Method
 	 */
 	public function reepay_card_store() {
-		$id              = isset( $_GET['id'] ) ? wc_clean( $_GET['id'] ) : '';
-		$customer_handle = isset( $_GET['customer'] ) ? wc_clean( $_GET['customer'] ) : '';
-		$reepay_token    = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
+		$reepay_token = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
 
-		// Create Payment Token.
-		$source = reepay()->api( $this )->get_reepay_cards( $customer_handle, $reepay_token );
-
-		if ( is_wp_error( $source ) || empty( $source ) ) {
-			wc_add_notice( __( 'Reepay error. Try again or contact us.', 'reepay-checkout-gateway' ), 'error' );
-			wp_redirect( wc_get_account_endpoint_url( 'add-payment-method' ) );
-			exit();
-		}
-
-		if ( 'ms_' === substr( $source['id'], 0, 3 ) ) {
-			$token = new TokenReepayMS();
-			$token->set_gateway_id( $this->id );
-			$token->set_token( $reepay_token );
-			$token->set_user_id( get_current_user_id() );
-		} else {
-			$expiry_date = explode( '-', $source['exp_date'] );
-
-			$token = new TokenReepay();
-			$token->set_gateway_id( $this->id );
-			$token->set_token( $reepay_token );
-			$token->set_last4( substr( $source['masked_card'], - 4 ) );
-			$token->set_expiry_year( 2000 + $expiry_date[1] );
-			$token->set_expiry_month( $expiry_date[0] );
-			$token->set_card_type( $source['card_type'] );
-			$token->set_user_id( get_current_user_id() );
-			$token->set_masked_card( $source['masked_card'] );
-
-			update_post_meta( $id, 'reepay_masked_card', $source['masked_card'] );
-			update_post_meta( $id, 'reepay_card_type', $source['card_type'] );
-		}
-
-		$token->save();
-		if ( ! $token->get_id() ) {
+		try {
+			$token = $this->add_payment_token_to_customer( get_current_user_id(), $reepay_token )['token'];
+		} catch ( Exception $e ) {
 			wc_add_notice( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ), 'error' );
 			wp_redirect( wc_get_account_endpoint_url( 'add-payment-method' ) );
 			exit();

@@ -278,7 +278,7 @@ class Subscriptions {
 				$token   = $gateway::get_payment_token( $reepay_token );
 				if ( ! $token ) {
 					// Create Payment Token.
-					$token = $gateway->add_payment_token( $subscription, $reepay_token );
+					$token = $gateway->add_payment_token_to_order( $subscription, $reepay_token );
 				}
 
 				$gateway::assign_payment_token( $subscription, $token );
@@ -339,7 +339,7 @@ class Subscriptions {
 
 				// Save token.
 				if ( ! empty( $token ) ) {
-					$token = $gateway->add_payment_token( $renewal_order, $token );
+					$token = $gateway->add_payment_token_to_order( $renewal_order, $token );
 					if ( $token ) {
 						$gateway::assign_payment_token( $renewal_order, $token );
 					}
