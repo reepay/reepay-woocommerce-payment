@@ -31,7 +31,7 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 
 	<?php
 	if ( $order ) :
-		$another_orders = get_post_meta( $order->get_id(), '_reepay_another_orders', true );
+		$another_orders = get_post_meta( $order->get_id(), '_reepay_another_orders', true ) ?: array();
 
 		do_action( 'woocommerce_before_thankyou', $order->get_id() );
 		?>
@@ -49,21 +49,22 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 			?>
 				</p>
 			<?php
-			if ( ! empty( $another_orders ) ) {
-				foreach ( $another_orders as $order_id ) {
-					$order_another = wc_get_order( $order_id );
-					reepay()->get_template(
-						'checkout/order-details.php',
-						array(
-							'order' => $order_another,
-						)
-					);
+			reepay()->get_template(
+				'checkout/order-details.php',
+				array(
+					'order' => $order,
+				)
+			);
+
+			foreach ( $another_orders as $order_id ) {
+				if( $order->get_id() === $order_id ) {
+					continue; // Backward compatibility
 				}
-			} else {
+
 				reepay()->get_template(
 					'checkout/order-details.php',
 					array(
-						'order' => $order,
+						'order' => wc_get_order( $order_id ),
 					)
 				);
 			}
