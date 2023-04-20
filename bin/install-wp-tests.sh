@@ -11,7 +11,6 @@ DB_PASS=$3
 DB_HOST=${4-"127.0.0.1"}
 WP_VERSION=${5-latest}
 SKIP_DB_CREATE=${6-false}
-echo $DB_HOST
 
 TMPDIR=$(php ./bin/set-php-temp-path.php)
 TMPDIR=${TMPDIR-/tmp}
@@ -185,6 +184,11 @@ install_dependencies() {
     cd "$WP_CORE_DIR"
     curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
     [ ! -f ./wp-config.php ] && php wp-cli.phar core config --dbname=$DB_NAME --dbuser=$DB_USER --dbpass=$DB_PASS --dbhost=$DB_HOST --dbprefix=wptests_
+
+    echo '--1-1-1--1-1-1-1-1-1'
+    sed -n l "$WP_CORE_DIR"/wp-tests-config.php
+    echo '--1-1-1--1-1-1-1-1-1'
+
     php wp-cli.phar db import $WP_DB_DATA
 #    php wp-cli.phar search-replace "http://local.wordpress.test" "$WP_SITE_URL"
 #    php wp-cli.phar theme install twentyseventeen --activate
@@ -195,5 +199,8 @@ install_dependencies() {
 
 install_wp
 install_test_suite
+echo '--1-1-1--1-1-1-1-1-1'
+sed -n l "$WP_TESTS_DIR"/wp-tests-config.php
+echo '--1-1-1--1-1-1-1-1-1'
 install_db
 install_dependencies
