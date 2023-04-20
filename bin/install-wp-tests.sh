@@ -185,13 +185,13 @@ install_dependencies() {
     curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
     [ ! -f ./wp-config.php ] && php wp-cli.phar core config --dbname=$DB_NAME --dbuser=$DB_USER --dbpass=$DB_PASS --dbhost=$DB_HOST --dbprefix=wptests_
 
-    wp-cli.phar db check
+    php wp-cli.phar db check
     php wp-cli.phar db import $WP_DB_DATA
-    wp-cli.phar db check
+    php wp-cli.phar db check
 #    php wp-cli.phar search-replace "http://local.wordpress.test" "$WP_SITE_URL"
 #    php wp-cli.phar theme install twentyseventeen --activate
      php wp-cli.phar plugin install woocommerce --activate --force
-    wp-cli.phar db check
+    php wp-cli.phar db check
     php wp-cli.phar plugin install reepay-subscriptions-for-woocommerce --force
     php wp-cli.phar plugin list
 }
