@@ -186,7 +186,7 @@ install_dependencies() {
     [ ! -f ./wp-config.php ] && php wp-cli.phar core config --dbname=$DB_NAME --dbuser=$DB_USER --dbpass=$DB_PASS --dbhost=$DB_HOST --dbprefix=wptests_
 
     echo '--1-1-1--1-1-1-1-1-1'
-    sed -n l "$WP_CORE_DIR"/wp-tests-config.php
+    sed -n l "$WP_CORE_DIR"/wp-config.php
     echo '--1-1-1--1-1-1-1-1-1'
 
     php wp-cli.phar db import $WP_DB_DATA
