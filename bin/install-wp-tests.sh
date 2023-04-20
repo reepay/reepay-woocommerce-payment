@@ -188,19 +188,21 @@ install_dependencies() {
     echo '--1-1-1--1-1-1-1-1-1'
     sed -n l "$WP_CORE_DIR"/wp-config.php
     echo '--1-1-1--1-1-1-1-1-1'
-
+    wp-cli.phar db check
     php wp-cli.phar db import $WP_DB_DATA
+    wp-cli.phar db check
 #    php wp-cli.phar search-replace "http://local.wordpress.test" "$WP_SITE_URL"
 #    php wp-cli.phar theme install twentyseventeen --activate
      php wp-cli.phar plugin install woocommerce --activate --force
+    wp-cli.phar db check
     php wp-cli.phar plugin install reepay-subscriptions-for-woocommerce --force
     php wp-cli.phar plugin list
 }
 
-install_wp
-install_test_suite
-echo '--1-1-1--1-1-1-1-1-1'
-sed -n l "$WP_TESTS_DIR"/wp-tests-config.php
-echo '--1-1-1--1-1-1-1-1-1'
+#install_wp
+#install_test_suite
+#echo '--1-1-1--1-1-1-1-1-1'
+#sed -n l "$WP_TESTS_DIR"/wp-tests-config.php
+#echo '--1-1-1--1-1-1-1-1-1'
 install_db
 install_dependencies
