@@ -188,6 +188,7 @@ install_dependencies() {
     php wp-cli.phar db check
     php wp-cli.phar db import $WP_DB_DATA
     php wp-cli.phar db check
+    php wp-cli.phar option get siteurl
 #    php wp-cli.phar search-replace "http://local.wordpress.test" "$WP_SITE_URL"
 #    php wp-cli.phar theme install twentyseventeen --activate
      php wp-cli.phar plugin install woocommerce --activate --force
