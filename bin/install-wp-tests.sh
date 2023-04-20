@@ -8,9 +8,10 @@ fi
 DB_NAME=$1
 DB_USER=$2
 DB_PASS=$3
-DB_HOST=${4-localhost}
+DB_HOST=${4-"127.0.0.1"}
 WP_VERSION=${5-latest}
 SKIP_DB_CREATE=${6-false}
+echo $DB_HOST
 
 TMPDIR=$(php ./bin/set-php-temp-path.php)
 TMPDIR=${TMPDIR-/tmp}
