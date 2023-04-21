@@ -954,6 +954,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 						);
 
 						do_action( 'reepay_create_subscription', $data, $order );
+
+						try {
+							foreach ( $order->get_meta( '_reepay_another_orders' ) ?: array() as $order_id ) {
+								$this->reepay_save_card_info( wc_get_order( $order_id ), $token->get_token() );
+							}
+						} catch ( Exception $e ) {
+							wc_get_order( $order_id )->add_order_note( $e->getMessage() );
+						}
 					}
 				} elseif ( wcs_cart_have_subscription() ) {
 					return $this->process_session_charge( $params, $order );
@@ -973,14 +981,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 				do_action( 'reepay_instant_settle', $order );
 
-			}
-
-			try {
-				foreach ( $order->get_meta( '_reepay_another_orders' ) ?: [] as $order_id ) {
-					$this->reepay_save_card_info( wc_get_order( $order_id ), $token->get_token() );
-				}
-			} catch ( Exception $e ) {
-				$order->add_order_note( $e->getMessage() );
 			}
 
 			return array(
