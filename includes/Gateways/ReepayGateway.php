@@ -930,6 +930,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			} else {
 				try {
 					self::assign_payment_token( $order, $token );
+					$this->reepay_save_card_info( $order, $token->get_token() );
 				} catch ( Exception $e ) {
 					$order->add_order_note( $e->getMessage() );
 
@@ -975,9 +976,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 
 			try {
-				self::assign_payment_token( $order, $token->get_id() );
-				$this->reepay_save_card_info( $order, $token->get_token() );
-
 				foreach ( $order->get_meta( '_reepay_another_orders' ) ?: [] as $order_id ) {
 					$this->reepay_save_card_info( wc_get_order( $order_id ), $token->get_token() );
 				}
