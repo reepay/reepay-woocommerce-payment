@@ -53,7 +53,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	 */
 	public function __construct( string $name ) {
 		$this->name    = $name;
-		$this->gateway = WC()->payment_gateways()->get_available_payment_gateways()[ $this->name ] ?? null;
+		$this->gateway = reepay()->gateways()->get_gateway( $this->name );
 
 		if ( is_null( $this->gateway ) ) {
 			throw new Exception( "Gateway '$this->name' not found" );
