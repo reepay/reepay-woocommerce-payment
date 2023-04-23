@@ -97,7 +97,7 @@ class UpdateDB {
 	 *
 	 * @return bool
 	 */
-	public function user_can_update( $user_id = null ) {
+	public function user_can_update( $user_id = null ): bool {
 		$user_id = $user_id ?? get_current_user_id();
 
 		return user_can( $user_id, self::USER_CAPABILITY );
@@ -121,7 +121,7 @@ class UpdateDB {
 	 *
 	 * @param string $version version to set.
 	 */
-	private function update_db_version( $version ) {
+	private function update_db_version( string $version ) {
 		update_option( 'woocommerce_reepay_version', $version );
 	}
 }

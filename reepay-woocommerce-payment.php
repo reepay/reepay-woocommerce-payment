@@ -70,7 +70,7 @@ class WC_ReepayCheckout {
 	 *
 	 * @return WC_ReepayCheckout
 	 */
-	public static function get_instance() {
+	public static function get_instance(): WC_ReepayCheckout {
 		static $instance_requested = false;
 
 		if ( true === $instance_requested && is_null( self::$instance ) ) {
@@ -98,11 +98,11 @@ class WC_ReepayCheckout {
 	/**
 	 * Get plugin or reepay checkout gateway setting
 	 *
-	 * @param  string $name  Setting key.
+	 * @param string $name Setting key.
 	 *
 	 * @return string|null
 	 */
-	public function get_setting( $name ) {
+	public function get_setting( string $name ): ?string {
 		if ( empty( $this->settings ) ) {
 			$gateway_settings = get_option( 'woocommerce_reepay_checkout_settings' );
 
@@ -168,11 +168,11 @@ class WC_ReepayCheckout {
 	/**
 	 * Wrapper of wc_get_template function
 	 *
-	 * @param  string $template  Template name.
-	 * @param  array  $args      Arguments.
-	 * @param  bool   $return      Return or echo template.
+	 * @param string $template Template name.
+	 * @param  array $args     Arguments.
+	 * @param  bool  $return   Return or echo template.
 	 */
-	public function get_template( $template, $args = array(), $return = false ) {
+	public function get_template( string $template, $args = array(), $return = false ) {
 		if ( $return ) {
 			ob_start();
 		}
@@ -198,7 +198,7 @@ class WC_ReepayCheckout {
 	 *
 	 * @return Api;
 	 */
-	public function api( $source ) {
+	public function api( $source ): ?Api {
 		static $api = null;
 
 		if ( is_null( $api ) ) {
@@ -220,7 +220,7 @@ class WC_ReepayCheckout {
 	 *
 	 * @return Gateways|null
 	 */
-	public function gateways() {
+	public function gateways(): ?Gateways {
 		return $this->gateways;
 	}
 	/**
@@ -252,7 +252,7 @@ class WC_ReepayCheckout {
  *
  * @return WC_ReepayCheckout
  */
-function reepay() {
+function reepay(): WC_ReepayCheckout {
 	return WC_ReepayCheckout::get_instance();
 }
 

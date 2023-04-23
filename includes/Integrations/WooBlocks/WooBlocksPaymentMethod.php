@@ -72,7 +72,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	 *
 	 * @return boolean
 	 */
-	public function is_active() {
+	public function is_active(): bool {
 		return filter_var( $this->get_setting( 'enabled', false ), FILTER_VALIDATE_BOOLEAN );
 	}
 
@@ -81,7 +81,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	 *
 	 * @return array
 	 */
-	public function get_payment_method_script_handles() {
+	public function get_payment_method_script_handles(): array {
 		static $gateway_scripts_initialized = false;
 
 		if ( ! $gateway_scripts_initialized ) {
@@ -122,7 +122,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	 *
 	 * @return string[]
 	 */
-	public function get_supported_features() {
+	public function get_supported_features(): array {
 		$gateway = reepay()->gateways()->get_gateway( $this->name );
 
 		if ( ! empty( $gateway ) ) {
@@ -143,7 +143,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	 *
 	 * @return array
 	 */
-	public function get_payment_method_data() {
+	public function get_payment_method_data(): array {
 		$data = array(
 			'title'       => $this->get_setting( 'title' ),
 			'description' => $this->get_setting( 'description' ),

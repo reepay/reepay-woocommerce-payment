@@ -30,7 +30,7 @@ trait TokenReepayTrait {
 	 *
 	 * @throws Exception If invalid token or order.
 	 */
-	public static function assign_payment_token( $order, $token ) {
+	public static function assign_payment_token( WC_Order $order, $token ) {
 		if ( is_numeric( $token ) ) {
 			$token = new TokenReepay( $token );
 		} elseif ( ! $token instanceof TokenReepay && ! $token instanceof TokenReepayMS ) {
@@ -64,7 +64,7 @@ trait TokenReepayTrait {
 	 *
 	 * @throws Exception If invalid token or order.
 	 */
-	protected function reepay_save_token( $order, $reepay_token ) {
+	protected function reepay_save_token( WC_Order $order, string $reepay_token ) {
 		// Check if token is exists in WooCommerce.
 		$token = self::get_payment_token( $reepay_token );
 
@@ -87,7 +87,7 @@ trait TokenReepayTrait {
 	 *
 	 * @throws Exception If invalid token or order.
 	 */
-	protected function reepay_save_card_info( $order, $reepay_token ) {
+	protected function reepay_save_card_info( WC_Order $order, string $reepay_token ) {
 		$customer_handle = get_user_meta( $order->get_customer_id(), 'reepay_customer_id', true );
 		$card_info       = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
 
@@ -109,13 +109,13 @@ trait TokenReepayTrait {
 	/**
 	 * Add payment token to customer
 	 *
-	 * @param int    $customer_id customer id to add token.
+	 * @param int    $customer_id  customer id to add token.
 	 * @param string $reepay_token card token from reepay.
 	 *
 	 * @return array
 	 * @throws Exception If invalid token or order.
 	 */
-	public function add_payment_token_to_customer( $customer_id, $reepay_token ) {
+	public function add_payment_token_to_customer( int $customer_id, string $reepay_token ): array {
 		$customer_handle = get_user_meta( $customer_id, 'reepay_customer_id', true );
 		$card_info       = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
 
@@ -162,7 +162,7 @@ trait TokenReepayTrait {
 	 * @return TokenReepay
 	 * @throws Exception If invalid token or order.
 	 */
-	public function add_payment_token_to_order( $order, $reepay_token ) {
+	public function add_payment_token_to_order( WC_Order $order, string $reepay_token ): TokenReepay {
 		[ //phpcs:ignore Generic.Arrays.DisallowShortArraySyntax.Found
 			'token'     => $token,
 			'card_info' => $card_info,
@@ -210,7 +210,7 @@ trait TokenReepayTrait {
 	 *
 	 * @return null|bool|WC_Payment_Token
 	 */
-	public static function get_payment_token( $token ) {
+	public static function get_payment_token( string $token ) {
 		global $wpdb;
 
 		$token_id = wp_cache_get( $token, 'reepay_tokens' );

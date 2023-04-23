@@ -78,12 +78,12 @@ class Subscriptions {
 	/**
 	 * Add Token ID.
 	 *
-	 * @param int         $order_id current order id.
-	 * @param int         $token_id token id to add.
-	 * @param TokenReepay $token token instance.
+	 * @param int         $order_id  current order id.
+	 * @param int         $token_id  token id to add.
+	 * @param TokenReepay $token     token instance.
 	 * @param array       $token_ids all order tokens (include current).
 	 */
-	public function add_payment_token_id( $order_id, $token_id, $token, $token_ids ) {
+	public function add_payment_token_id( int $order_id, int $token_id, TokenReepay $token, array $token_ids ) {
 		$order = wc_get_order( $order_id );
 		if ( in_array( $order->get_payment_method(), self::PAYMENT_METHODS, true ) ) {
 			$order->update_meta_data( '_reepay_token_id', $token_id );
@@ -99,7 +99,7 @@ class Subscriptions {
 	 *
 	 * @throws Exception If invalid token sent to assign_payment_token.
 	 */
-	public function add_subscription_card_id( $order_id ) {
+	public function add_subscription_card_id( int $order_id ) {
 		if ( ! function_exists( 'wcs_get_subscriptions_for_order' ) ) {
 			return;
 		}
@@ -153,7 +153,7 @@ class Subscriptions {
 	 * @return void
 	 * @throws Exception If invalid order token.
 	 */
-	public function thankyou_page( $order_id ) {
+	public function thankyou_page( int $order_id ) {
 		self::add_subscription_card_id( $order_id );
 	}
 
@@ -168,7 +168,7 @@ class Subscriptions {
 	 *
 	 * @return void
 	 */
-	public function update_failing_payment_method( $subscription, $renewal_order ) {
+	public function update_failing_payment_method( WC_Subscription $subscription, WC_Order $renewal_order ) {
 		$subscription->update_meta_data( '_reepay_token', $renewal_order->get_meta( '_reepay_token' ) );
 		$subscription->update_meta_data( '_reepay_token_id', $renewal_order->get_meta( '_reepay_token_id' ) );
 		$subscription->save_meta_data();
@@ -183,7 +183,7 @@ class Subscriptions {
 	 *
 	 * @return void
 	 */
-	public function delete_resubscribe_meta( $resubscribe_order ) {
+	public function delete_resubscribe_meta( WC_Order $resubscribe_order ) {
 		if ( in_array( $resubscribe_order->get_payment_method(), self::PAYMENT_METHODS, true ) ) {
 			// Delete tokens.
 			delete_post_meta( $resubscribe_order->get_id(), '_payment_tokens' );
@@ -202,7 +202,7 @@ class Subscriptions {
 	 *
 	 * @return array
 	 */
-	public function add_subscription_payment_meta( $payment_meta, $subscription ) {
+	public function add_subscription_payment_meta( array $payment_meta, WC_Subscription $subscription ): array {
 		$token = $subscription->get_meta( '_reepay_token' );
 
 		// If token wasn't stored in Subscription.
@@ -235,7 +235,7 @@ class Subscriptions {
 	 *
 	 * @throws Exception If validation error.
 	 */
-	public function validate_subscription_payment_meta( $payment_method_id, $payment_meta, $subscription ) {
+	public function validate_subscription_payment_meta( string $payment_method_id, array $payment_meta, WC_Subscription $subscription ) {
 		if ( in_array( $payment_method_id, self::PAYMENT_METHODS, true ) ) {
 			if ( empty( $payment_meta['post_meta']['_reepay_token']['value'] ) ) {
 				throw new Exception( 'A "Reepay Token" value is required.' );
@@ -262,13 +262,13 @@ class Subscriptions {
 	 * Save payment method meta data for the Subscription
 	 *
 	 * @param WC_Subscription $subscription subscription to save meta.
-	 * @param string          $meta_table meta table name.
-	 * @param string          $meta_key meta key name.
-	 * @param string          $meta_value meta value to save.
+	 * @param string          $meta_table   meta table name.
+	 * @param string          $meta_key     meta key name.
+	 * @param string          $meta_value   meta value to save.
 	 *
 	 * @throws Exception If invalid token or order.
 	 */
-	public function save_subscription_payment_meta( $subscription, $meta_table, $meta_key, $meta_value ) {
+	public function save_subscription_payment_meta( WC_Subscription $subscription, string $meta_table, string $meta_key, string $meta_value ) {
 		if ( in_array( $subscription->get_payment_method(), self::PAYMENT_METHODS, true ) &&
 			 'post_meta' === $meta_table && '_reepay_token' === $meta_key ) {
 			// Add tokens.
@@ -290,12 +290,12 @@ class Subscriptions {
 	 * When a subscription payment is due.
 	 *
 	 * @param float    $amount_to_charge amount to charge.
-	 * @param WC_Order $renewal_order order to charge amount.
-	 * @param bool     $settle settle payment or not.
+	 * @param WC_Order $renewal_order    order to charge amount.
+	 * @param bool     $settle           settle payment or not.
 	 *
 	 * @throws Exception Never, just for phpcs.
 	 */
-	public function scheduled_subscription_payment( $amount_to_charge, $renewal_order, $settle = false ) {
+	public function scheduled_subscription_payment( float $amount_to_charge, WC_Order $renewal_order, $settle = false ) {
 		$gateway = rp_get_payment_method( $renewal_order );
 		$gateway->log( 'WCS process scheduled payment' );
 		// Lookup token.
@@ -407,7 +407,7 @@ class Subscriptions {
 	 *
 	 * @return string the subscription payment method
 	 */
-	public function maybe_render_subscription_payment_method( $payment_method_to_display, $subscription ) {
+	public function maybe_render_subscription_payment_method( string $payment_method_to_display, WC_Subscription $subscription ): string {
 		if ( ! in_array( $subscription->get_payment_method(), self::PAYMENT_METHODS, true ) ||
 			 ! $subscription->get_user_id()
 		) {
@@ -450,7 +450,7 @@ class Subscriptions {
 	 * @return string
 	 */
 	// phpcs:disable
-	public function save_new_payment_method_option_html( $html, $gateway ) {
+	public function save_new_payment_method_option_html( string $html, WC_Payment_Gateway $gateway ): string {
 		if ( ! in_array( $gateway->id, self::PAYMENT_METHODS ) ) {
 			return $html;
 		}
@@ -487,7 +487,7 @@ class Subscriptions {
 	 *
 	 * @throws Exception Never, just for phpcs.
 	 */
-	public function create_sub_invoice( $order_id, $this_status_transition_from, $this_status_transition_to, $instance ) {
+	public function create_sub_invoice( int $order_id, string $this_status_transition_from, string $this_status_transition_to, WC_Order $instance ) {
 		$renewal_order = wc_get_order( $order_id );
 		$renewal_sub   = get_post_meta( $order_id, '_subscription_renewal', true );
 		$gateway       = rp_get_payment_method( $renewal_order );

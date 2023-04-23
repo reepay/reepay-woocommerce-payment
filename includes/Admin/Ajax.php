@@ -55,7 +55,7 @@ class Ajax {
 	 *
 	 * @return bool
 	 */
-	private function verify_nonce( $action = 'nonce' ) {
+	private function verify_nonce( $action = 'nonce' ): bool {
 		if ( ! wp_verify_nonce( $_REQUEST['nonce'] ?? '', $action ) ) {
 			exit( 'No naughty business' );
 		}

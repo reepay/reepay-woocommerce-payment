@@ -59,7 +59,7 @@ class Statistics {
 	 *
 	 * @return Statistics
 	 */
-	public static function get_instance( $plugin_file = null ) {
+	public static function get_instance( $plugin_file = null ): Statistics {
 		if ( ! is_null( $plugin_file ) ) {
 			self::$plugin_file = $plugin_file;
 		}
@@ -78,7 +78,7 @@ class Statistics {
 	 *
 	 * @return array|false|WP_Error
 	 */
-	public function send_event( $event ) {
+	public function send_event( string $event ) {
 		$this->log( sprintf( 'Event init: %s', $event ) );
 
 		$key = reepay()->get_setting( 'test_mode' ) === 'yes' ? reepay()->get_setting( 'private_key_test' ) : reepay()->get_setting( 'private_key' );
@@ -143,7 +143,7 @@ class Statistics {
 	 * @param WP_Upgrader $upgrader_object instance of WP_Upgrader.
 	 * @param array       $options         upgrade options.
 	 */
-	public static function upgrade_completed( $upgrader_object, $options ) {
+	public static function upgrade_completed( WP_Upgrader $upgrader_object, array $options ) {
 		if ( ! empty( $options['plugins'] ) && is_array( $options['plugins'] ) ) {
 			foreach ( $options['plugins'] as $plugin ) {
 				if ( strpos( $plugin, self::$plugin_file ) ) {

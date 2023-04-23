@@ -33,7 +33,7 @@ class Main {
 	 *
 	 * @return void
 	 */
-	public function admin_enqueue_scripts( $hook ) {
+	public function admin_enqueue_scripts( string $hook ) {
 		if ( 'post.php' === $hook ) {
 			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
