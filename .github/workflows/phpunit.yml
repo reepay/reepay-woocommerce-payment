@@ -1,4 +1,5 @@
-name: PHPunit
+name: PHPUnit
+run-name: PHPUnit
 
 on: [workflow_dispatch]
 
