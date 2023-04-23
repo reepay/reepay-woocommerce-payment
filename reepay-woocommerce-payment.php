@@ -100,9 +100,9 @@ class WC_ReepayCheckout {
 	 *
 	 * @param string $name Setting key.
 	 *
-	 * @return string|null
+	 * @return string|string[]|null
 	 */
-	public function get_setting( string $name ): ?string {
+	public function get_setting( string $name ) {
 		if ( empty( $this->settings ) ) {
 			$gateway_settings = get_option( 'woocommerce_reepay_checkout_settings' );
 
