@@ -36,9 +36,9 @@ class OrderCapture {
 	private function __construct() {
 		add_filter( 'woocommerce_order_item_get_formatted_meta_data', array( $this, 'unset_specific_order_item_meta_data' ), 10, 2 );
 
-		add_action( 'woocommerce_after_order_itemmeta', array( $this, 'add_item_capture_button' ), 10, 3 );
+		add_action( 'woocommerce_after_order_itemmeta', array( $this, 'add_item_capture_button' ), 10, 2 );
 
-		add_action( 'woocommerce_after_order_fee_item_name', array( $this, 'add_item_capture_button' ), 10, 3 );
+		add_action( 'woocommerce_after_order_fee_item_name', array( $this, 'add_item_capture_button' ), 10, 2 );
 
 		add_action( 'woocommerce_order_status_changed', array( $this, 'capture_full_order' ), 10, 4 );
 
@@ -95,11 +95,10 @@ class OrderCapture {
 	 *
 	 * @param int        $item_id the id of the item being displayed.
 	 * @param object     $item    the item being displayed.
-	 * @param WC_Product $product product of item.
 	 *
 	 * @throws Exception When `WC_Data_Store::load` validation fails.
 	 */
-	public function add_item_capture_button( int $item_id, object $item, WC_Product $product ) {
+	public function add_item_capture_button( int $item_id, object $item ) {
 		$order_id = wc_get_order_id_by_order_item_id( $item_id );
 		$order    = wc_get_order( $order_id );
 
