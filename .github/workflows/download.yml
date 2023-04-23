@@ -18,7 +18,7 @@ jobs:
       run: |
         chmod 777 ./bin/zip.sh
         sudo bash ./bin/zip.sh
-        shell: bash
+      shell: bash
       
     - name: Add archive to artifacts
       uses: actions/upload-artifact@v3
