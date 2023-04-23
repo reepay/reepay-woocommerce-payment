@@ -43,7 +43,7 @@ class Assets {
 			self::SLUG_GLOBAL_CSS,
 			reepay()->get_setting( 'css_url' ) . 'style' . $suffix . '.css',
 			array(),
-			filemtime( reepay()->get_setting( 'css_path' ) . 'style' . $suffix . '.css' ),
+			filemtime( reepay()->get_setting( 'css_path' ) . 'style' . $suffix . '.css' )
 		);
 
 		$logo_height = reepay()->get_setting( 'logo_height' );

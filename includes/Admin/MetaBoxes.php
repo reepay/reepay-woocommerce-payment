@@ -131,7 +131,7 @@ class MetaBoxes {
 
 		reepay()->get_template(
 			'meta-boxes/customer.php',
-			$template_args,
+			$template_args
 		);
 	}
 

@@ -89,7 +89,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 				'wc-reepay-blocks',
 				reepay()->get_setting( 'css_url' ) . 'woo_blocks.css',
 				array(),
-				filemtime( reepay()->get_setting( 'css_path' ) . 'woo_blocks.css' ),
+				filemtime( reepay()->get_setting( 'css_path' ) . 'woo_blocks.css' )
 			);
 		}
 
