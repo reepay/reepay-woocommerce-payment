@@ -91,7 +91,7 @@ trait TokenReepayTrait {
 		$customer_handle = get_user_meta( $order->get_customer_id(), 'reepay_customer_id', true );
 		$card_info       = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
 
-		if( is_wp_error( $card_info ) ) {
+		if ( is_wp_error( $card_info ) ) {
 			throw new Exception( $card_info->get_error_message() );
 		}
 
