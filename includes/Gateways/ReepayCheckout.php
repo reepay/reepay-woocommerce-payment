@@ -1,5 +1,8 @@
 <?php
 /**
+ * ReepayCheckout gateway.
+ * Main gateway. It stores settings for other gateways
+ *
  * @package Reepay\Checkout\Gateways
  */
 
@@ -26,6 +29,8 @@ class ReepayCheckout extends ReepayGateway {
 	use LoggingTrait;
 
 	/**
+	 * Logging source
+	 *
 	 * @var string
 	 */
 	private $logging_source;
@@ -618,12 +623,7 @@ class ReepayCheckout extends ReepayGateway {
 	 * @return void
 	 */
 	public function payment_fields() {
-		reepay()->get_template(
-			'checkout/payment-fields.php',
-			array(
-				'description' => $this->get_description(),
-			)
-		);
+		parent::payment_fields();
 
 		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription.
 		if ( ( 'yes' === $this->save_cc && ! is_add_payment_method_page() ) ||
@@ -693,8 +693,6 @@ class ReepayCheckout extends ReepayGateway {
 
 		$result = reepay()->api( $this )->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
 		if ( is_wp_error( $result ) ) {
-			/** @var WP_Error $result */
-
 			if ( $result->get_error_code() === API::ERROR_CODES['Customer has been deleted'] ||
 				 $result->get_error_code() === API::ERROR_CODES['Customer not found'] ) {
 				$params = array(
@@ -722,12 +720,10 @@ class ReepayCheckout extends ReepayGateway {
 				$result = reepay()->api( $this )->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
 
 				if ( is_wp_error( $result ) ) {
-					/** @var WP_Error $result */
 					wc_add_notice( $result->get_error_message(), 'error' );
 					parent::add_payment_method();
 				}
 			} else {
-				/** @var WP_Error $result */
 				wc_add_notice( $result->get_error_message(), 'error' );
 				parent::add_payment_method();
 			}
@@ -745,86 +741,14 @@ class ReepayCheckout extends ReepayGateway {
 	}
 
 	/**
-	 * @param int $order_id current order id.
-	 *
-	 * @return void
-	 */
-	public function thankyou_page( $order_id ) {
-		try {
-			$this->add_subscription_card_id( $order_id );
-		} catch ( Exception $e ) {
-			$this->log( sprintf( 'add_subscription_card_id error: %s', $e->getMessage() ) );
-		}
-	}
-
-	/**
-	 * Clone Card ID when Subscription created
-	 *
-	 * @param int $order_id order id to clone card.
-	 *
-	 * @throws Exception If invalid token or order at assign_payment_token.
-	 */
-	public function add_subscription_card_id( $order_id ) {
-		if ( ! function_exists( 'wcs_get_subscriptions_for_order' ) ) {
-			return;
-		}
-
-		$subscriptions = wcs_get_subscriptions_for_order( $order_id, array( 'order_type' => 'parent' ) );
-		foreach ( $subscriptions as $subscription ) {
-			$token = self::get_payment_token_order( $subscription );
-			if ( ! $token ) {
-				// Copy tokens from parent order.
-				$order = wc_get_order( $order_id );
-				$token = self::get_payment_token_order( $order );
-
-				if ( $token ) {
-					self::assign_payment_token( $subscription, $token );
-				}
-			}
-		}
-	}
-
-	/**
 	 * Ajax: Add Payment Method
 	 */
 	public function reepay_card_store() {
-		$id              = isset( $_GET['id'] ) ? wc_clean( $_GET['id'] ) : '';
-		$customer_handle = isset( $_GET['customer'] ) ? wc_clean( $_GET['customer'] ) : '';
-		$reepay_token    = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
+		$reepay_token = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
 
-		// Create Payment Token.
-		$source = reepay()->api( $this )->get_reepay_cards( $customer_handle, $reepay_token );
-
-		if ( is_wp_error( $source ) || empty( $source ) ) {
-			wc_add_notice( __( 'Reepay error. Try again or contact us.', 'reepay-checkout-gateway' ), 'error' );
-			wp_redirect( wc_get_account_endpoint_url( 'add-payment-method' ) );
-			exit();
-		}
-
-		if ( 'ms_' === substr( $source['id'], 0, 3 ) ) {
-			$token = new TokenReepayMS();
-			$token->set_gateway_id( $this->id );
-			$token->set_token( $reepay_token );
-			$token->set_user_id( get_current_user_id() );
-		} else {
-			$expiry_date = explode( '-', $source['exp_date'] );
-
-			$token = new TokenReepay();
-			$token->set_gateway_id( $this->id );
-			$token->set_token( $reepay_token );
-			$token->set_last4( substr( $source['masked_card'], - 4 ) );
-			$token->set_expiry_year( 2000 + $expiry_date[1] );
-			$token->set_expiry_month( $expiry_date[0] );
-			$token->set_card_type( $source['card_type'] );
-			$token->set_user_id( get_current_user_id() );
-			$token->set_masked_card( $source['masked_card'] );
-
-			update_post_meta( $id, 'reepay_masked_card', $source['masked_card'] );
-			update_post_meta( $id, 'reepay_card_type', $source['card_type'] );
-		}
-
-		$token->save();
-		if ( ! $token->get_id() ) {
+		try {
+			$token = $this->add_payment_token_to_customer( get_current_user_id(), $reepay_token )['token'];
+		} catch ( Exception $e ) {
 			wc_add_notice( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ), 'error' );
 			wp_redirect( wc_get_account_endpoint_url( 'add-payment-method' ) );
 			exit();
@@ -891,13 +815,11 @@ class ReepayCheckout extends ReepayGateway {
 
 				$result = reepay()->api( $this )->get_invoice_by_handle( wc_clean( $_GET['invoice'] ) );
 				if ( is_wp_error( $result ) ) {
-					/** @var WP_Error $result */
 					throw new Exception( $result->get_error_message() );
 				}
 
 				$result = reepay()->api( $this )->get_invoice_by_handle( wc_clean( $_GET['invoice'] ) );
 				if ( is_wp_error( $result ) ) {
-					/** @var WP_Error $result */
 					throw new Exception( $result->get_error_message() );
 				}
 
@@ -941,6 +863,8 @@ class ReepayCheckout extends ReepayGateway {
 	}
 
 	/**
+	 * Get data for wp_localize_script
+	 *
 	 * @return array
 	 */
 	public function get_localize_script_data() {

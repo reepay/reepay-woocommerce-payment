@@ -1,5 +1,7 @@
 <?php
 /**
+ * Swish gateway
+ *
  * @package Reepay\Checkout\Gateways
  */
 

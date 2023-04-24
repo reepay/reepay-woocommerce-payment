@@ -1,5 +1,7 @@
 <?php
 /**
+ * KlarnaSliceIt gateway
+ *
  * @package Reepay\Checkout\Gateways
  */
 

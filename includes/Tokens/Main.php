@@ -1,5 +1,7 @@
 <?php
 /**
+ * Token classes registration
+ *
  * @package Reepay\Checkout\Tokens
  */
 

@@ -4,7 +4,7 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: reepay
  * Author URI: http://reepay.com
- * Version: 1.4.63
+ * Version: 1.4.64
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -153,7 +153,6 @@ class WC_ReepayCheckout {
 				'enable_order_autocancel' => $gateway_settings['enable_order_autocancel'] ?? '',
 				'is_webhook_configured'   => $gateway_settings['is_webhook_configured'] ?? '',
 				'handle_failover'         => $gateway_settings['handle_failover'] ?? '',
-				'logo_height'             => $gateway_settings['logo_height'] ?? '',
 				'payment_button_text'     => $gateway_settings['payment_button_text'] ?? '',
 
 				'enable_sync'             => $gateway_settings['enable_sync'] ?? '',
@@ -171,14 +170,25 @@ class WC_ReepayCheckout {
 	 *
 	 * @param  string $template  Template name.
 	 * @param  array  $args      Arguments.
+	 * @param  bool   $return      Return or echo template.
 	 */
-	public function get_template( $template, $args = array() ) {
+	public function get_template( $template, $args = array(), $return = false ) {
+		if ( $return ) {
+			ob_start();
+		}
+
 		wc_get_template(
 			$template,
 			$args,
 			'',
 			$this->get_setting( 'templates_path' )
 		);
+
+		if ( $return ) {
+			return ob_get_clean();
+		}
+
+		return true;
 	}
 
 	/**
@@ -195,7 +205,9 @@ class WC_ReepayCheckout {
 			$api = new Api( $source );
 		} else {
 			/**
-			 * @var Api $api Api instance
+			 * Api instance
+			 *
+			 * @var Api $api
 			 */
 			$api->set_logging_source( $source );
 		}

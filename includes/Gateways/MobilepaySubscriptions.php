@@ -1,5 +1,7 @@
 <?php
 /**
+ * MobilepaySubscriptions gateway
+ *
  * @package Reepay\Checkout\Gateways
  */
 
@@ -80,12 +82,7 @@ class MobilepaySubscriptions extends ReepayGateway {
 	 * @return void
 	 */
 	public function payment_fields() {
-		reepay()->get_template(
-			'checkout/payment-fields.php',
-			array(
-				'description' => $this->get_description(),
-			)
-		);
+		parent::payment_fields();
 
 		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription.
 		if ( ! is_add_payment_method_page()

@@ -1,5 +1,7 @@
 <?php
 /**
+ * Reepay subscriptions token
+ *
  * @package Reepay\Checkout\Tokens
  */
 

@@ -1,5 +1,7 @@
 <?php
 /**
+ * Add data to plugins page
+ *
  * @package Reepay\Checkout\Admin
  */
 

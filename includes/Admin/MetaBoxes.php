@@ -1,11 +1,15 @@
 <?php
 /**
+ * Register reepay order metaboxes
+ *
  * @package Reepay\Checkout\Admin
  */
 
 namespace Reepay\Checkout\Admin;
 
 use Exception;
+use Reepay\Checkout\Gateways\ReepayCheckout;
+use WC_Order;
 use WP_Post;
 
 defined( 'ABSPATH' ) || exit();
@@ -16,8 +20,9 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Admin
  */
 class MetaBoxes {
-
 	/**
+	 * Reepay dashboard url
+	 *
 	 * @var string
 	 */
 	private $dashboard_url = 'https://app.reepay.com/#/rp/';
@@ -44,7 +49,13 @@ class MetaBoxes {
 
 		$order = wc_get_order( $post->ID );
 
-		if ( empty( $order ) ) {
+		if ( empty( $order ) || ! rp_is_order_paid_via_reepay( $order ) ) {
+			return;
+		}
+
+		$gateway = rp_get_payment_method( $order );
+
+		if ( empty( $gateway ) ) {
 			return;
 		}
 
@@ -56,32 +67,44 @@ class MetaBoxes {
 
 		add_meta_box(
 			'reepay_checkout_customer',
-			__( 'Customer' ),
+			__( 'Customer', 'reepay-checkout-gateway' ),
 			array( $this, 'generate_meta_box_content_customer' ),
 			'shop_order',
 			'side',
-			'high'
+			'high',
+			array(
+				'order'   => $order,
+				'gateway' => $gateway,
+			)
 		);
 
 		if ( empty( $subscription ) || ( 0 !== $post->post_parent ) ) {
 			add_meta_box(
 				'reepay_checkout_invoice',
-				__( 'Invoice' ),
+				__( 'Invoice', 'reepay-checkout-gateway' ),
 				array( $this, 'generate_meta_box_content_invoice' ),
 				'shop_order',
 				'side',
-				'high'
+				'high',
+				array(
+					'order'   => $order,
+					'gateway' => $gateway,
+				)
 			);
 		}
 
 		if ( ! empty( $subscription ) ) {
 			add_meta_box(
 				'reepay_checkout_subscription',
-				__( 'Subscription' ),
+				__( 'Subscription', 'reepay-checkout-gateway' ),
 				array( $this, 'generate_meta_box_content_subscription' ),
 				'shop_order',
 				'side',
-				'high'
+				'high',
+				array(
+					'order'   => $order,
+					'gateway' => $gateway,
+				)
 			);
 		}
 	}
@@ -90,9 +113,9 @@ class MetaBoxes {
 	 * Function to show customer meta box content
 	 *
 	 * @param WP_Post $post current post object.
-	 * @param array   $args additional arguments sent to add_meta_box function.
+	 * @param array   $meta additional info. Get arguments by 'args' key.
 	 */
-	public function generate_meta_box_content_customer( $post, $args ) {
+	public function generate_meta_box_content_customer( $post, $meta ) {
 		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && 0 !== $post->post_parent ) {
 			$handle = get_post_meta( $post->post_parent, '_reepay_customer', true );
 		} else {
@@ -108,7 +131,7 @@ class MetaBoxes {
 
 		reepay()->get_template(
 			'meta-boxes/customer.php',
-			$template_args,
+			$template_args
 		);
 	}
 
@@ -116,24 +139,17 @@ class MetaBoxes {
 	 * Function to show customer meta box content
 	 *
 	 * @param WP_Post $post current post object.
-	 * @param array   $args additional arguments sent to add_meta_box function.
+	 * @param array   $meta additional info. Get arguments by 'args' key.
 	 */
-	public function generate_meta_box_content_invoice( $post, $args ) {
-		$order = wc_get_order( $post );
-
-		if ( ! $order ) {
-			return;
-		}
-
-		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
-			return;
-		}
-
-		$gateway = rp_get_payment_method( $order );
-
-		if ( empty( $gateway ) ) {
-			return;
-		}
+	public function generate_meta_box_content_invoice( $post, $meta ) {
+		/**
+		 * Set types of args variables
+		 *
+		 * @var WC_Order $order
+		 * @var ReepayCheckout $gateway
+		 */
+		$order   = $meta['args']['order'];
+		$gateway = $meta['args']['gateway'];
 
 		$order_data = reepay()->api( $gateway )->get_invoice_data( $order );
 
@@ -158,9 +174,9 @@ class MetaBoxes {
 	 * Function to show customer meta box content
 	 *
 	 * @param WP_Post $post current post object.
-	 * @param array   $args additional arguments sent to add_meta_box function.
+	 * @param array   $meta additional info. Get arguments by 'args' key.
 	 */
-	public function generate_meta_box_content_subscription( $post, $args ) {
+	public function generate_meta_box_content_subscription( $post, $meta ) {
 		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && 0 !== $post->post_parent ) {
 			$handle = get_post_meta( $post->post_parent, '_reepay_subscription_handle', true );
 			$plan   = get_post_meta( $post->post_parent, '_reepay_subscription_plan', true );

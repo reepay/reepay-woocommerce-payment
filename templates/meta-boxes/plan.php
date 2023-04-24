@@ -1,5 +1,7 @@
 <?php
 /**
+ * Metabox plan template
+ *
  * @package Reepay\Checkout
  *
  * @var array $args arguments sent to template.
