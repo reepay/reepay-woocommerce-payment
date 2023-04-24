@@ -56,7 +56,7 @@ class Anyday extends ReepayGateway {
 	 *
 	 * @return bool
 	 */
-	public function is_available() {
+	public function is_available(): bool {
 		if ( ! empty( WC()->cart )
 			 && WC()->cart->get_total( '' ) < 300
 			 && get_option( 'woocommerce_currency' ) !== 'DKK' ) {

@@ -31,7 +31,7 @@ if ( ! function_exists( 'is_reepay_payment_method' ) ) {
 	 *
 	 * @param string $payment_method payment method to check.
 	 */
-	function rp_is_reepay_payment_method( $payment_method ) {
+	function rp_is_reepay_payment_method( string $payment_method ): bool {
 		return in_array( $payment_method, Gateways::PAYMENT_METHODS, true );
 	}
 }

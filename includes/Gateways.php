@@ -85,7 +85,7 @@ class Gateways {
 	 *
 	 * @param string $class_name gateway class name to register.
 	 */
-	private function register_gateway( $class_name ) {
+	private function register_gateway( string $class_name ) {
 		if ( ! isset( $gateways[ $class_name ] ) && class_exists( $class_name, true ) ) {
 			$gateway = new $class_name();
 
@@ -117,7 +117,7 @@ class Gateways {
 	 *
 	 * @return ReepayGateway|null
 	 */
-	public function get_gateway( $id ) {
+	public function get_gateway( string $id ): ?ReepayGateway {
 		return $this->gateways[ $id ] ?? null;
 	}
 
@@ -126,7 +126,7 @@ class Gateways {
 	 *
 	 * @return ReepayCheckout
 	 */
-	public function checkout() {
+	public function checkout(): ?ReepayCheckout {
 		return $this->gateways['reepay_checkout'] ?? null;
 	}
 }
