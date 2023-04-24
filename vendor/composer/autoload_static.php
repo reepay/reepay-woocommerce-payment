@@ -4,16 +4,12 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitab992c586c98adab55ef2ab7cbd4b8ef
+class ComposerStaticInit04be3cf86b4aa4a752ea61702fce27d8
 {
     public static $prefixLengthsPsr4 = array (
         'R' => 
         array (
             'Reepay\\Checkout\\' => 16,
-        ),
-        'D' => 
-        array (
-            'Dealerdirect\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\' => 55,
         ),
     );
 
@@ -22,22 +18,61 @@ class ComposerStaticInitab992c586c98adab55ef2ab7cbd4b8ef
         array (
             0 => __DIR__ . '/../..' . '/includes',
         ),
-        'Dealerdirect\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/dealerdirect/phpcodesniffer-composer-installer/src',
-        ),
     );
 
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'Reepay\\Checkout\\Admin\\Ajax' => __DIR__ . '/../..' . '/includes/Admin/Ajax.php',
+        'Reepay\\Checkout\\Admin\\Main' => __DIR__ . '/../..' . '/includes/Admin/Main.php',
+        'Reepay\\Checkout\\Admin\\MetaBoxes' => __DIR__ . '/../..' . '/includes/Admin/MetaBoxes.php',
+        'Reepay\\Checkout\\Admin\\PluginsPage' => __DIR__ . '/../..' . '/includes/Admin/PluginsPage.php',
+        'Reepay\\Checkout\\Api' => __DIR__ . '/../..' . '/includes/Api.php',
+        'Reepay\\Checkout\\Frontend\\Assets' => __DIR__ . '/../..' . '/includes/Frontend/Assets.php',
+        'Reepay\\Checkout\\Frontend\\Main' => __DIR__ . '/../..' . '/includes/Frontend/Main.php',
+        'Reepay\\Checkout\\Functions\\Main' => __DIR__ . '/../..' . '/includes/Functions/Main.php',
+        'Reepay\\Checkout\\Gateways' => __DIR__ . '/../..' . '/includes/Gateways.php',
+        'Reepay\\Checkout\\Gateways\\Anyday' => __DIR__ . '/../..' . '/includes/Gateways/Anyday.php',
+        'Reepay\\Checkout\\Gateways\\ApplePay' => __DIR__ . '/../..' . '/includes/Gateways/ApplePay.php',
+        'Reepay\\Checkout\\Gateways\\Googlepay' => __DIR__ . '/../..' . '/includes/Gateways/Googlepay.php',
+        'Reepay\\Checkout\\Gateways\\KlarnaPayLater' => __DIR__ . '/../..' . '/includes/Gateways/KlarnaPayLater.php',
+        'Reepay\\Checkout\\Gateways\\KlarnaPayNow' => __DIR__ . '/../..' . '/includes/Gateways/KlarnaPayNow.php',
+        'Reepay\\Checkout\\Gateways\\KlarnaSliceIt' => __DIR__ . '/../..' . '/includes/Gateways/KlarnaSliceIt.php',
+        'Reepay\\Checkout\\Gateways\\Mobilepay' => __DIR__ . '/../..' . '/includes/Gateways/Mobilepay.php',
+        'Reepay\\Checkout\\Gateways\\MobilepaySubscriptions' => __DIR__ . '/../..' . '/includes/Gateways/MobilepaySubscriptions.php',
+        'Reepay\\Checkout\\Gateways\\Paypal' => __DIR__ . '/../..' . '/includes/Gateways/Paypal.php',
+        'Reepay\\Checkout\\Gateways\\ReepayCheckout' => __DIR__ . '/../..' . '/includes/Gateways/ReepayCheckout.php',
+        'Reepay\\Checkout\\Gateways\\ReepayGateway' => __DIR__ . '/../..' . '/includes/Gateways/ReepayGateway.php',
+        'Reepay\\Checkout\\Gateways\\Resurs' => __DIR__ . '/../..' . '/includes/Gateways/Resurs.php',
+        'Reepay\\Checkout\\Gateways\\Swish' => __DIR__ . '/../..' . '/includes/Gateways/Swish.php',
+        'Reepay\\Checkout\\Gateways\\Viabill' => __DIR__ . '/../..' . '/includes/Gateways/Viabill.php',
+        'Reepay\\Checkout\\Gateways\\Vipps' => __DIR__ . '/../..' . '/includes/Gateways/Vipps.php',
+        'Reepay\\Checkout\\Integrations\\Main' => __DIR__ . '/../..' . '/includes/Integrations/Main.php',
+        'Reepay\\Checkout\\Integrations\\WooBlocks\\WooBlocksIntegration' => __DIR__ . '/../..' . '/includes/Integrations/WooBlocks/WooBlocksIntegration.php',
+        'Reepay\\Checkout\\Integrations\\WooBlocks\\WooBlocksPaymentMethod' => __DIR__ . '/../..' . '/includes/Integrations/WooBlocks/WooBlocksPaymentMethod.php',
+        'Reepay\\Checkout\\LoggingTrait' => __DIR__ . '/../..' . '/includes/LoggingTrait.php',
+        'Reepay\\Checkout\\OrderFlow\\InstantSettle' => __DIR__ . '/../..' . '/includes/OrderFlow/InstantSettle.php',
+        'Reepay\\Checkout\\OrderFlow\\Main' => __DIR__ . '/../..' . '/includes/OrderFlow/Main.php',
+        'Reepay\\Checkout\\OrderFlow\\OrderCapture' => __DIR__ . '/../..' . '/includes/OrderFlow/OrderCapture.php',
+        'Reepay\\Checkout\\OrderFlow\\OrderStatuses' => __DIR__ . '/../..' . '/includes/OrderFlow/OrderStatuses.php',
+        'Reepay\\Checkout\\OrderFlow\\ThankyouPage' => __DIR__ . '/../..' . '/includes/OrderFlow/ThankyouPage.php',
+        'Reepay\\Checkout\\OrderFlow\\Webhook' => __DIR__ . '/../..' . '/includes/OrderFlow/Webhook.php',
+        'Reepay\\Checkout\\Plugin\\LifeCycle' => __DIR__ . '/../..' . '/includes/Plugin/LifeCycle.php',
+        'Reepay\\Checkout\\Plugin\\Statistics' => __DIR__ . '/../..' . '/includes/Plugin/Statistics.php',
+        'Reepay\\Checkout\\Plugin\\UpdateDB' => __DIR__ . '/../..' . '/includes/Plugin/UpdateDB.php',
+        'Reepay\\Checkout\\Plugin\\WoocommerceExists' => __DIR__ . '/../..' . '/includes/Plugin/WoocommerceExists.php',
+        'Reepay\\Checkout\\Subscriptions' => __DIR__ . '/../..' . '/includes/Subscriptions.php',
+        'Reepay\\Checkout\\Tokens\\Main' => __DIR__ . '/../..' . '/includes/Tokens/Main.php',
+        'Reepay\\Checkout\\Tokens\\TokenReepay' => __DIR__ . '/../..' . '/includes/Tokens/TokenReepay.php',
+        'Reepay\\Checkout\\Tokens\\TokenReepayMS' => __DIR__ . '/../..' . '/includes/Tokens/TokenReepayMS.php',
+        'Reepay\\Checkout\\Tokens\\TokenReepayTrait' => __DIR__ . '/../..' . '/includes/Tokens/TokenReepayTrait.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitab992c586c98adab55ef2ab7cbd4b8ef::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitab992c586c98adab55ef2ab7cbd4b8ef::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInitab992c586c98adab55ef2ab7cbd4b8ef::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit04be3cf86b4aa4a752ea61702fce27d8::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit04be3cf86b4aa4a752ea61702fce27d8::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit04be3cf86b4aa4a752ea61702fce27d8::$classMap;
 
         }, null, ClassLoader::class);
     }

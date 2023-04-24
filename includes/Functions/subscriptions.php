@@ -1,5 +1,7 @@
 <?php
 /**
+ * Subscriptions functions
+ *
  * @package Reepay\Checkout\Functions
  */
 

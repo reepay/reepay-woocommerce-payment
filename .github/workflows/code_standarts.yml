@@ -1,5 +1,5 @@
-name: Check pr
-run-name: Check pr
+name: Check code standarts
+run-name: Check code standarts
 
 on:
   pull_request:

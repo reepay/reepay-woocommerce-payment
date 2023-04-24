@@ -1,5 +1,7 @@
 <?php
 /**
+ * Viabill gateway
+ *
  * @package Reepay\Checkout\Gateways
  */
 

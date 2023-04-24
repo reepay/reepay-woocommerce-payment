@@ -7,5 +7,4 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Reepay\\Checkout\\' => array($baseDir . '/includes'),
-    'Dealerdirect\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\' => array($vendorDir . '/dealerdirect/phpcodesniffer-composer-installer/src'),
 );

@@ -1,5 +1,7 @@
 <?php
 /**
+ * Main admin class
+ *
  * @package Reepay\Checkout\Admin
  */
 

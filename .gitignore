@@ -14,3 +14,9 @@ build
 vendor
 !vendor/autoload.php
 !vendor/composer
+
+#Ignore composer.lock
+composer.lock
+
+#PHPunit cache
+.phpunit.result.cache

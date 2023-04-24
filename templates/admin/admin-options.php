@@ -1,5 +1,7 @@
 <?php
 /**
+ * Custom gateway settings page
+ *
  * @package Reepay\Checkout
  *
  * @var WC_Payment_Gateway $gateway
@@ -28,8 +30,8 @@ defined( 'ABSPATH' ) || exit();
 		echo sprintf(
 			// translators: %1$s, %2$s - webhook url.
 			__( 'WebHook URL: <a href="%1$s" target="_blank">%2$s</a>', 'reepay-checkout-gateway' ),
-			ReepayGateway::get_default_api_url(),
-			ReepayGateway::get_default_api_url()
+			ReepayGateway::get_webhook_url(),
+			ReepayGateway::get_webhook_url()
 		);
 		?>
 	</p>

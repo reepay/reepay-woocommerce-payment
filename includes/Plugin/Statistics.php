@@ -1,5 +1,7 @@
 <?php
 /**
+ * Class for collecting information about plugin activations and deactivations and sending data to reepay
+ *
  * @package Reepay\Checkout\Plugin
  */
 
@@ -20,16 +22,22 @@ class Statistics {
 	use LoggingTrait;
 
 	/**
+	 * Class instance
+	 *
 	 * @var Statistics
 	 */
 	private static $instance;
 
 	/**
+	 * Path to main plugin file
+	 *
 	 * @var string
 	 */
 	private static $plugin_file;
 
 	/**
+	 * Logging source
+	 *
 	 * @var string
 	 */
 	private $logging_source = 'reepay-statistics';

@@ -1,5 +1,7 @@
 <?php
 /**
+ * Woocommerce and Reepay subscriptions payment logic
+ *
  * @package Reepay\Checkout
  */
 
@@ -43,7 +45,7 @@ class Subscriptions {
 			add_action( 'woocommerce_thankyou_' . $method, array( $this, 'thankyou_page' ) );
 
 			// Update failing payment method.
-			add_action( 'woocommerce_subscription_failing_payment_method_updated_' . $method, array( $this, 'update_failing_payment_method' ), 10, 1 );
+			add_action( 'woocommerce_subscription_failing_payment_method_updated_' . $method, array( $this, 'update_failing_payment_method' ), 10, 2 );
 
 			// Charge the payment when a subscription payment is due.
 			add_action( 'woocommerce_scheduled_subscription_payment_' . $method, array( $this, 'scheduled_subscription_payment' ), 10, 2 );
@@ -276,7 +278,7 @@ class Subscriptions {
 				$token   = $gateway::get_payment_token( $reepay_token );
 				if ( ! $token ) {
 					// Create Payment Token.
-					$token = $gateway->add_payment_token( $subscription, $reepay_token );
+					$token = $gateway->add_payment_token_to_order( $subscription, $reepay_token );
 				}
 
 				$gateway::assign_payment_token( $subscription, $token );
@@ -337,7 +339,7 @@ class Subscriptions {
 
 				// Save token.
 				if ( ! empty( $token ) ) {
-					$token = $gateway->add_payment_token( $renewal_order, $token );
+					$token = $gateway->add_payment_token_to_order( $renewal_order, $token );
 					if ( $token ) {
 						$gateway::assign_payment_token( $renewal_order, $token );
 					}
@@ -476,10 +478,14 @@ class Subscriptions {
 	// phpcs:enable
 
 	/**
-	 * @param int      $order_id current order id.
+	 * Create new invoice after woocommerce_order_status_changed
+	 *
+	 * @param int      $order_id                    current order id.
 	 * @param string   $this_status_transition_from old status.
-	 * @param string   $this_status_transition_to new status.
-	 * @param WC_Order $instance current order.
+	 * @param string   $this_status_transition_to   new status.
+	 * @param WC_Order $instance                    current order.
+	 *
+	 * @throws Exception Never, just for phpcs.
 	 */
 	public function create_sub_invoice( $order_id, $this_status_transition_from, $this_status_transition_to, $instance ) {
 		$renewal_order = wc_get_order( $order_id );

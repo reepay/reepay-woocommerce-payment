@@ -1,5 +1,7 @@
 <?php
 /**
+ * Order details on thankyou page
+ *
  * @package Reepay\Checkout
  *
  * @var WC_Order $order current order.

@@ -1,5 +1,7 @@
 <?php
 /**
+ * Paypal gateway
+ *
  * @package Reepay\Checkout\Gateways
  */
 

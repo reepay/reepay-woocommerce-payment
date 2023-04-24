@@ -1,5 +1,7 @@
 <?php
 /**
+ * Formatting functions
+ *
  * @package Reepay\Checkout\Functions
  */
 

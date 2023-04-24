@@ -1,5 +1,7 @@
 <?php
 /**
+ * Status processing in reepay after payment on the thankyou page
+ *
  * @package Reepay\Checkout\OrderFlow
  */
 
@@ -22,6 +24,8 @@ class ThankyouPage {
 	use LoggingTrait;
 
 	/**
+	 * Logging source
+	 *
 	 * @var string
 	 */
 	private $logging_source = 'reepay-thankyou';
@@ -179,6 +183,8 @@ class ThankyouPage {
 
 		foreach ( $order->get_items() as $item ) {
 			/**
+			 * WC_Order_Item_Product returns not WC_Order_Item
+			 *
 			 * @var WC_Order_Item_Product $item
 			 */
 			if ( class_exists( WC_Subscriptions_Product::class ) && WC_Subscriptions_Product::is_subscription( $item->get_product() ) ) {

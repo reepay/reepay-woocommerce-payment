@@ -1,5 +1,7 @@
 <?php
 /**
+ * Admin ajax actions
+ *
  * @package Reepay\Checkout\Admin
  */
 
@@ -17,11 +19,15 @@ defined( 'ABSPATH' ) || exit();
  */
 class Ajax {
 	/**
+	 * Actions prefix
+	 *
 	 * @var string
 	 */
 	const PREFIX = 'reepay';
 
 	/**
+	 * Actions list
+	 *
 	 * @var array
 	 */
 	const ACTIONS = array(
@@ -207,7 +213,7 @@ class Ajax {
 	 * Action to set complete settle to transient option
 	 */
 	public function set_complete_settle_transient() {
-		$this->verify_nonce();
+		$this->verify_nonce( 'reepay' );
 
 		if ( empty( $_POST['order_id'] ) || empty( $_POST['settle_order'] ) ) {
 			wp_send_json_error( __( 'Order id or settle order not specified' ) );

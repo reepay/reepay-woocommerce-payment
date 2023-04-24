@@ -1,5 +1,7 @@
 <?php
 /**
+ * Trait for logging
+ *
  * @package Reepay\Checkout
  */
 

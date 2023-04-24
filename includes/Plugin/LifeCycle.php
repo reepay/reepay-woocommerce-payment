@@ -1,11 +1,12 @@
 <?php
 /**
+ * Class with registration activation and deactivation hooks
+ * Instead of register_uninstall_hook, it's better to use the uninstall.php file
+ *
  * @package Reepay\Checkout\Plugin
  */
 
 namespace Reepay\Checkout\Plugin;
-
-use UpdateDB;
 
 defined( 'ABSPATH' ) || exit();
 

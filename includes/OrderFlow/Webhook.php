@@ -1,5 +1,7 @@
 <?php
 /**
+ * Class for handling reepay hooks
+ *
  * @package Reepay\Checkout\OrderFlow
  */
 
@@ -22,14 +24,11 @@ class Webhook {
 	use LoggingTrait;
 
 	/**
+	 * Logging source
+	 *
 	 * @var string
 	 */
 	private $logging_source = 'reepay-webhook';
-
-	/**
-	 * @var array
-	 */
-	private $data;
 
 	/**
 	 * Constructor.
@@ -61,9 +60,7 @@ class Webhook {
 		if ( empty( $secret ) ) {
 			$result = reepay()->api( $this->logging_source )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
 			if ( is_wp_error( $result ) ) {
-				/** @var WP_Error $result */
 				$this->log( 'WebHook: Error: ' . $result->get_error_message() );
-
 				return;
 			}
 
@@ -150,7 +147,6 @@ class Webhook {
 				$gateway      = rp_get_payment_method( $order );
 				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
-					/** @var WP_Error $result */
 					$invoice_data = array();
 				}
 
@@ -239,7 +235,6 @@ class Webhook {
 				$gateway      = rp_get_payment_method( $order );
 				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
-					/** @var WP_Error $result */
 					$invoice_data = array();
 				}
 
@@ -336,7 +331,6 @@ class Webhook {
 				$gateway      = rp_get_payment_method( $order );
 				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
-					/** @var WP_Error $result */
 					$invoice_data = array();
 				}
 
