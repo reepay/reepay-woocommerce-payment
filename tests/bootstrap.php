@@ -50,5 +50,18 @@ function install_wc() {
 	$GLOBALS['wp_roles'] = null;
 	wp_roles();
 }
+
+// install WC.
+tests_add_filter( 'plugins_loaded', 'init_reepay' );
+function init_reepay() {
+	$reepay_checkout = reepay()->gateways()->checkout();
+	$reepay_checkout->process_admin_options();
+	$reepay_checkout->update_option( 'enabled' );
+	$reepay_checkout->update_option( 'test_mode', 'yes' );
+	$reepay_checkout->update_option( 'private_key_test', 'priv_2795e0868bc1609c66783e0c8d967bcf' );
+	$reepay_checkout->is_webhook_configured();
+}
+
+
 // Start up the WP testing environment.
 require "{$_tests_dir}/includes/bootstrap.php";
