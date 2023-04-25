@@ -30,7 +30,7 @@ class PluginsPage {
 	 *
 	 * @return array
 	 */
-	public function add_action_links( $links ) {
+	public function add_action_links( array $links ): array {
 		$plugin_links = array(
 			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=reepay_checkout' ) . '">' . __( 'Settings', 'reepay-checkout-gateway' ) . '</a>',
 		);
@@ -46,7 +46,7 @@ class PluginsPage {
 	 *
 	 * @return array
 	 */
-	public function add_plugin_row_meta( $links, $file ) {
+	public function add_plugin_row_meta( $links, $file ): array {
 		if ( reepay()->get_setting( 'plugin_basename' ) === $file ) {
 			$links = array_merge(
 				$links,

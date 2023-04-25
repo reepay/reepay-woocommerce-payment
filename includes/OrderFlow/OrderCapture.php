@@ -8,7 +8,6 @@
 namespace Reepay\Checkout\OrderFlow;
 
 use Exception;
-use Stripe\Order;
 use WC_Order;
 use WC_Order_Factory;
 use WC_Order_Item;
@@ -37,9 +36,9 @@ class OrderCapture {
 	private function __construct() {
 		add_filter( 'woocommerce_order_item_get_formatted_meta_data', array( $this, 'unset_specific_order_item_meta_data' ), 10, 2 );
 
-		add_action( 'woocommerce_after_order_itemmeta', array( $this, 'add_item_capture_button' ), 10, 3 );
+		add_action( 'woocommerce_after_order_itemmeta', array( $this, 'add_item_capture_button' ), 10, 2 );
 
-		add_action( 'woocommerce_after_order_fee_item_name', array( $this, 'add_item_capture_button' ), 10, 3 );
+		add_action( 'woocommerce_after_order_fee_item_name', array( $this, 'add_item_capture_button' ), 10, 2 );
 
 		add_action( 'woocommerce_order_status_changed', array( $this, 'capture_full_order' ), 10, 4 );
 
@@ -53,7 +52,7 @@ class OrderCapture {
 	 *
 	 * @return OrderCapture
 	 */
-	public static function get_instance() {
+	public static function get_instance(): OrderCapture {
 		if ( is_null( self::$instance ) ) {
 			self::$instance = new self();
 		}
@@ -64,14 +63,13 @@ class OrderCapture {
 	/**
 	 * Hooked to woocommerce_order_item_get_formatted_meta_data. Remove 'settled' meta
 	 *
-	 * @see WC_Order_Item::get_formatted_meta_data
-	 *
 	 * @param array<int, object> $formatted_meta order item meta data.
-	 * @param WC_Order_Item      $item order item.
+	 * @param WC_Order_Item      $item           order item.
 	 *
 	 * @return array
+	 * @see WC_Order_Item::get_formatted_meta_data
 	 */
-	public function unset_specific_order_item_meta_data( $formatted_meta, $item ) {
+	public function unset_specific_order_item_meta_data( array $formatted_meta, WC_Order_Item $item ): array {
 		// Only on emails notifications.
 		if ( is_admin() && isset( $_GET['post'] ) ) {
 			foreach ( $formatted_meta as $meta ) {
@@ -95,13 +93,12 @@ class OrderCapture {
 	/**
 	 * Hooked to woocommerce_after_order_fee_item_name. Print capture button.
 	 *
-	 * @param int        $item_id the id of the item being displayed.
-	 * @param object     $item    the item being displayed.
-	 * @param WC_Product $product product of item.
+	 * @param int    $item_id the id of the item being displayed.
+	 * @param object $item    the item being displayed.
 	 *
 	 * @throws Exception When `WC_Data_Store::load` validation fails.
 	 */
-	public function add_item_capture_button( $item_id, $item, $product ) {
+	public function add_item_capture_button( int $item_id, object $item ) {
 		$order_id = wc_get_order_id_by_order_item_id( $item_id );
 		$order    = wc_get_order( $order_id );
 
@@ -131,16 +128,15 @@ class OrderCapture {
 	/**
 	 * Hooked to woocommerce_order_status_changed.
 	 *
-	 * @see WC_Order::status_transition
-	 *
-	 * @param int      $order_id current order id.
+	 * @param int      $order_id                    current order id.
 	 * @param string   $this_status_transition_from old status.
-	 * @param string   $this_status_transition_to new status.
-	 * @param WC_Order $order current order.
+	 * @param string   $this_status_transition_to   new status.
+	 * @param WC_Order $order                       current order.
 	 *
 	 * @throws Exception If settle error.
+	 * @see WC_Order::status_transition
 	 */
-	public function capture_full_order( $order_id, $this_status_transition_from, $this_status_transition_to, $order ) {
+	public function capture_full_order( int $order_id, string $this_status_transition_from, string $this_status_transition_to, WC_Order $order ) {
 		$payment_method = $order->get_payment_method();
 
 		if ( strpos( $payment_method, 'reepay' ) === false ) {
@@ -188,7 +184,7 @@ class OrderCapture {
 	 *
 	 * @param WC_Order $order current order.
 	 */
-	public function capture_full_order_button( $order ) {
+	public function capture_full_order_button( WC_Order $order ) {
 		$payment_method = $order->get_payment_method();
 
 		if ( strpos( $payment_method, 'reepay' ) === false ) {
@@ -210,14 +206,14 @@ class OrderCapture {
 	/**
 	 * Settle order items.
 	 *
-	 * @param WC_Order        $order order to settle.
+	 * @param WC_Order        $order      order to settle.
 	 * @param array[]         $items_data items data from self::get_item_data.
-	 * @param float           $total_all order total amount ot settle.
+	 * @param float           $total_all  order total amount ot settle.
 	 * @param WC_Order_Item[] $line_items order line items.
 	 *
 	 * @return bool
 	 */
-	public function settle_items( $order, $items_data, $total_all, $line_items ) {
+	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items ): bool {
 		unset( $_POST['post_status'] );
 
 		$gateway = rp_get_payment_method( $order );
@@ -253,7 +249,7 @@ class OrderCapture {
 	 *
 	 * @param WC_Order $order order to settle.
 	 */
-	public function multi_settle( $order ) {
+	public function multi_settle( WC_Order $order ): bool {
 		$items_data = array();
 		$line_items = array();
 		$total_all  = 0;
@@ -295,11 +291,11 @@ class OrderCapture {
 	/**
 	 * Complete settle for order item, activate associated subscription and save data to meta
 	 *
-	 * @param WC_Order_Item $item order item to set 'settled' meta.
+	 * @param WC_Order_Item $item  order item to set 'settled' meta.
 	 * @param WC_Order      $order order to activate woo subscription (if it is possible).
 	 * @param float|int     $total settled total to set to 'settled' meta.
 	 */
-	public function complete_settle( $item, $order, $total ) {
+	public function complete_settle( WC_Order_Item $item, WC_Order $order, $total ) {
 		if ( method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
 			WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 		}
@@ -310,14 +306,13 @@ class OrderCapture {
 	/**
 	 * Settle order item
 	 *
-	 * @see OrderCapture::complete_settle
-	 *
 	 * @param WC_Order_Item $item  order item to settle.
 	 * @param WC_Order      $order current order.
 	 *
 	 * @return bool
+	 * @see OrderCapture::complete_settle
 	 */
-	public function settle_item( $item, $order ) {
+	public function settle_item( WC_Order_Item $item, WC_Order $order ): bool {
 		$settled = $item->get_meta( 'settled' );
 
 		if ( empty( $settled ) ) {
@@ -361,7 +356,7 @@ class OrderCapture {
 	 *
 	 * @return bool
 	 */
-	public function check_capture_allowed( $order ) {
+	public function check_capture_allowed( WC_Order $order ): bool {
 		$payment_method = $order->get_payment_method();
 
 		if ( class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
@@ -386,7 +381,7 @@ class OrderCapture {
 	 *
 	 * @return int|mixed
 	 */
-	public function get_not_settled_amount( $order ) {
+	public function get_not_settled_amount( WC_Order $order ) {
 		$amount = 0;
 
 		foreach ( $order->get_items( array( 'line_item', 'shipping', 'fee' ) ) as $item ) {
@@ -406,7 +401,7 @@ class OrderCapture {
 	 *
 	 * @return array
 	 */
-	public function get_item_data( $order_item, $order ) {
+	public function get_item_data( WC_Order_Item $order_item, WC_Order $order ): array {
 		$prices_incl_tax = wc_prices_include_tax();
 
 		$price = self::get_item_price( $order_item, $order );
@@ -428,11 +423,11 @@ class OrderCapture {
 	 * Get order item price for reepay.
 	 *
 	 * @param WC_Order_Item $order_item order item to get price and tax.
-	 * @param WC_Order      $order current order.
+	 * @param WC_Order      $order      current order.
 	 *
 	 * @return array
 	 */
-	public static function get_item_price( $order_item, $order ) {
+	public static function get_item_price( WC_Order_Item $order_item, WC_Order $order ): array {
 		$price = array();
 
 		if ( is_object( $order_item ) && get_class( $order_item ) === 'WC_Order_Item_Product' ) {

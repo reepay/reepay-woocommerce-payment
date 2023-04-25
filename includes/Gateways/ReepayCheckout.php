@@ -413,7 +413,7 @@ class ReepayCheckout extends ReepayGateway {
 	 * @return string
 	 * @see WC_Settings_API::generate_settings_html
 	 */
-	public function generate_separator_html( $key, $data ) {
+	public function generate_separator_html( string $key, array $data ): string {
 		return '<tr valign="top" style="border-top: 1px solid #c3c4c7"></tr>';
 	}
 
@@ -426,7 +426,7 @@ class ReepayCheckout extends ReepayGateway {
 	 * @return string
 	 * @see WC_Settings_API::generate_settings_html
 	 */
-	public function generate_account_info_html( $key, $data ) {
+	public function generate_account_info_html( string $key, array $data ): string {
 		$data = wp_parse_args(
 			$data,
 			array(
@@ -475,7 +475,7 @@ class ReepayCheckout extends ReepayGateway {
 	 * @return string
 	 * @see WC_Settings_API::generate_settings_html
 	 */
-	public function generate_verify_key_html( $key, $data ) {
+	public function generate_verify_key_html( string $key, array $data ): string {
 		$data = wp_parse_args(
 			$data,
 			array(
@@ -517,7 +517,7 @@ class ReepayCheckout extends ReepayGateway {
 	 * @return string
 	 * @see WC_Settings_API::generate_settings_html
 	 */
-	public function generate_webhook_status_html( $key, $data ) {
+	public function generate_webhook_status_html( string $key, array $data ): string {
 		$data = wp_parse_args(
 			$data,
 			array(
@@ -597,7 +597,7 @@ class ReepayCheckout extends ReepayGateway {
 	 *
 	 * @return bool was anything saved?
 	 */
-	public function process_admin_options() {
+	public function process_admin_options(): bool {
 		parent::process_admin_options();
 
 		$current_key                             = $this->private_key ?? '';
@@ -867,7 +867,7 @@ class ReepayCheckout extends ReepayGateway {
 	 *
 	 * @return array
 	 */
-	public function get_localize_script_data() {
+	public function get_localize_script_data(): array {
 		return array(
 			'payment_type' => $this->payment_type,
 			'public_key'   => $this->public_key,

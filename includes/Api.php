@@ -213,12 +213,12 @@ class Api {
 	 * Request
 	 *
 	 * @param string $method http method.
-	 * @param string $url request url.
+	 * @param string $url    request url.
 	 * @param array  $params request params.
 	 *
 	 * @return array|mixed|object|WP_Error
 	 */
-	public function request( $method, $url, $params = array() ) {
+	public function request( string $method, string $url, $params = array() ) {
 		$start = microtime( true );
 		if ( reepay()->get_setting( 'debug' ) === 'yes' ) {
 			$this->log( sprintf( 'Request: %s %s %s', $method, $url, wp_json_encode( $params, JSON_PRETTY_PRINT ) ) );
@@ -322,20 +322,22 @@ class Api {
 	 *
 	 * @return array|WP_Error
 	 */
-	public function get_invoice_by_handle( $handle ) {
+	public function get_invoice_by_handle( string $handle ) {
 		return $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $handle );
 	}
 
 	/**
 	 * Get Invoice data of Order.
 	 *
-	 * @param WC_Order $order order to get data.
+	 * @param mixed $order order to get data.
 	 *
 	 * @return array|WP_Error
 	 */
 	public function get_invoice_data( $order ) {
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
+		$order = wc_get_order( $order );
+
+		if ( empty( $order ) ) {
+			return new WP_Error( 0, 'Wrong order' );
 		}
 
 		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
@@ -381,7 +383,7 @@ class Api {
 	 *
 	 * @return bool
 	 */
-	public function can_capture( $order, $amount = null ) {
+	public function can_capture( $order, $amount = null ): bool {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
@@ -419,7 +421,7 @@ class Api {
 	 *
 	 * @return bool
 	 */
-	public function can_cancel( $order ) {
+	public function can_cancel( $order ): bool {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
@@ -448,7 +450,7 @@ class Api {
 	 *
 	 * @return bool
 	 */
-	public function can_refund( $order ) {
+	public function can_refund( WC_Order $order ): bool {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
@@ -526,15 +528,15 @@ class Api {
 	 * Process recurring payment
 	 *
 	 * @param string[]     $payment_methods array of payment methods.
-	 * @see ReepayGateway::payment_methods.
-	 * @param WC_Order     $order order to get data from.
-	 * @param array        $data additional data.
-	 * @param string|false $token payment token.
-	 * @param string       $payment_text payment button text.
+	 * @param WC_Order     $order           order to get data from.
+	 * @param array        $data            additional data.
+	 * @param string|false $token           payment token.
+	 * @param string       $payment_text    payment button text.
 	 *
 	 * @return array|mixed|object|WP_Error
+	 * @see ReepayGateway::payment_methods.
 	 */
-	public function recurring( $payment_methods, $order, $data, $token = false, $payment_text = '' ) {
+	public function recurring( array $payment_methods, WC_Order $order, array $data, $token = false, $payment_text = '' ) {
 		$params = array(
 			'locale'          => $data['language'],
 			'create_customer' => array(
@@ -583,16 +585,16 @@ class Api {
 	/**
 	 * Charge payment.
 	 *
-	 * @param WC_Order   $order order to charge.
-	 * @param string     $token payment token.
-	 * @param float      $amount amount to charge.
+	 * @param WC_Order   $order       order to charge.
+	 * @param string     $token       payment token.
+	 * @param float      $amount      amount to charge.
 	 * @param array|null $order_items order items data. @see \Reepay\Checkout\Gateways::get_order_items.
-	 * @param bool       $settle settle payment or not.
+	 * @param bool       $settle      settle payment or not.
 	 *
 	 * @return array|WP_Error
 	 * @throws Exception If charge error.
 	 */
-	public function charge( $order, $token, $amount, $order_items = null, $settle = false ) {
+	public function charge( WC_Order $order, string $token, float $amount, $order_items = null, $settle = false ) {
 		$currency = $order->get_currency();
 
 		$params = array(
@@ -664,7 +666,7 @@ class Api {
 	 *
 	 * @ToDO refactor function. $amount is useless.
 	 */
-	public function settle( $order, $amount = null, $items_data = false, $line_item = false ) {
+	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false ) {
 		$this->log( sprintf( 'Settle: %s, %s', $order->get_id(), $amount ) );
 
 		$handle = rp_get_order_handle( $order );
@@ -790,7 +792,7 @@ class Api {
 	 *
 	 * @return array|WP_Error
 	 */
-	public function cancel_payment( $order ) {
+	public function cancel_payment( WC_Order $order ) {
 		$handle = rp_get_order_handle( $order );
 		if ( empty( $handle ) ) {
 			return new WP_Error( 0, 'Unable to get order handle' );
@@ -834,7 +836,7 @@ class Api {
 	 *
 	 * @return array|WP_Error
 	 */
-	public function refund( $order, $amount = null, $reason = null ) {
+	public function refund( WC_Order $order, $amount = null, $reason = null ) {
 		$handle = rp_get_order_handle( $order );
 		if ( empty( $handle ) ) {
 			return new WP_Error( 0, 'Unable to get order handle' );
@@ -892,12 +894,12 @@ class Api {
 	/**
 	 * Process the result of Charge request.
 	 *
-	 * @param WC_Order $order order to check state.
+	 * @param WC_Order $order  order to check state.
 	 * @param array    $result data from API @see https://reference.reepay.com/api/#create-charge.
 	 *
 	 * @throws Exception If cannot change order status.
 	 */
-	private function process_charge_result( $order, $result ) {
+	private function process_charge_result( WC_Order $order, array $result ) {
 		// For asynchronous payment methods this flag indicates that the charge is awaiting result.
 		// The charge/invoice state will be pending.
 
@@ -976,11 +978,11 @@ class Api {
 	 * Get Customer Cards from Reepay
 	 *
 	 * @param string      $customer_handle reepay customer handle.
-	 * @param string|null $reepay_token when specified, a card with such a token will be returned.
+	 * @param string|null $reepay_token    when specified, a card with such a token will be returned.
 	 *
 	 * @return array|WP_Error
 	 */
-	public function get_reepay_cards( $customer_handle, $reepay_token = null ) {
+	public function get_reepay_cards( string $customer_handle, $reepay_token = null ) {
 		$result = $this->request(
 			'GET',
 			'https://api.reepay.com/v1/customer/' . $customer_handle . '/payment_method'
@@ -1054,7 +1056,7 @@ class Api {
 	 *
 	 * @return false|string
 	 */
-	public function get_customer_handle( $order ) {
+	public function get_customer_handle( WC_Order $order ) {
 		$handle = rp_get_order_handle( $order );
 
 		$result = get_transient( 'reepay_invoice_' . $handle );

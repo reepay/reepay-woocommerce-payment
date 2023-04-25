@@ -68,7 +68,7 @@ class TokenReepayMS extends WC_Payment_Token {
 	 *
 	 * @return array                           Filtered item.
 	 */
-	public static function wc_get_account_saved_payment_methods_list_item( $item, $payment_token ) {
+	public static function wc_get_account_saved_payment_methods_list_item( array $item, WC_Payment_Token $payment_token ): array {
 		if ( 'reepay_mobilepay_subscriptions' !== $payment_token->get_gateway_id() ) {
 			return $item;
 		}
@@ -86,7 +86,7 @@ class TokenReepayMS extends WC_Payment_Token {
 	 *
 	 * @see wc_get_customer_saved_methods_list
 	 */
-	public static function wc_account_payment_methods_column_method( $method ) {
+	public static function wc_account_payment_methods_column_method( array $method ) {
 		if ( 'reepay_mobilepay_subscriptions' !== $method['method']['gateway'] ) {
 			return;
 		}

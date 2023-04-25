@@ -96,7 +96,7 @@ class Webhook {
 	 * @todo split switch into methods
 	 * @todo remove code duplication
 	 */
-	public function process( $data ) {
+	public function process( array $data ) {
 		do_action( 'reepay_webhook', $data );
 
 		$this->log(
@@ -463,7 +463,7 @@ class Webhook {
 	 * @return void
 	 * @see wait_for_unlock()
 	 */
-	private static function lock_order( $order_id ) {
+	private static function lock_order( int $order_id ) {
 		update_post_meta( $order_id, '_reepay_locked', '1' );
 	}
 
@@ -486,7 +486,7 @@ class Webhook {
 	 *
 	 * @return bool
 	 */
-	private static function wait_for_unlock( $order_id ) {
+	private static function wait_for_unlock( int $order_id ): bool {
 		set_time_limit( 0 );
 
 		$is_locked    = (bool) get_post_meta( $order_id, '_reepay_locked', true );

@@ -16,7 +16,7 @@ if ( ! function_exists( 'order_contains_subscription ' ) ) {
 	 * @return bool
 	 * @see wcs_order_contains_subscription()
 	 */
-	function order_contains_subscription( $order ) {
+	function order_contains_subscription( WC_Order $order ): bool {
 		if ( ! function_exists( 'wcs_order_contains_subscription' ) ) {
 			return false;
 		}
@@ -33,7 +33,7 @@ if ( ! function_exists( 'wcs_is_subscription_product' ) ) {
 	 *
 	 * @return bool
 	 */
-	function wcs_is_subscription_product( $product ) {
+	function wcs_is_subscription_product( WC_Product $product ): bool {
 		return class_exists( WC_Subscriptions_Product::class, false ) &&
 			   WC_Subscriptions_Product::is_subscription( $product );
 	}
@@ -47,7 +47,7 @@ if ( ! function_exists( 'wcr_is_subscription_product' ) ) {
 	 *
 	 * @return bool
 	 */
-	function wcr_is_subscription_product( $product ) {
+	function wcr_is_subscription_product( WC_Product $product ): bool {
 		return class_exists( WC_Reepay_Checkout::class, false ) &&
 			   WC_Reepay_Checkout::is_reepay_product( $product );
 	}
@@ -59,7 +59,7 @@ if ( ! function_exists( 'wcs_is_payment_change' ) ) {
 	 *
 	 * @return bool
 	 */
-	function wcs_is_payment_change() {
+	function wcs_is_payment_change(): bool {
 		return class_exists( WC_Subscriptions_Change_Payment_Gateway::class, false ) &&
 			   WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
 	}
@@ -73,7 +73,7 @@ if ( ! function_exists( 'wcs_cart_have_subscription' ) ) {
 	 *
 	 * @return bool
 	 */
-	function wcs_cart_have_subscription() {
+	function wcs_cart_have_subscription(): bool {
 		if (
 			class_exists( WC_Subscriptions_Product::class )
 			&& WC()->cart
@@ -97,7 +97,7 @@ if ( ! function_exists( 'wcs_cart_only_subscriptions' ) ) {
 	 *
 	 * @return bool
 	 */
-	function wcs_cart_only_subscriptions() {
+	function wcs_cart_only_subscriptions(): bool {
 		$have_product = false;
 		if (
 			class_exists( WC_Subscriptions_Product::class )
@@ -124,7 +124,7 @@ if ( ! function_exists( 'wc_cart_only_reepay_subscriptions' ) ) {
 	 *
 	 * @return bool
 	 */
-	function wc_cart_only_reepay_subscriptions() {
+	function wc_cart_only_reepay_subscriptions(): bool {
 		return apply_filters( 'wcs_cart_only_subscriptions', false );
 	}
 }

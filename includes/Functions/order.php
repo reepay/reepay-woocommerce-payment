@@ -18,7 +18,7 @@ if ( ! function_exists( 'rp_get_order_handle' ) ) {
 	 *
 	 * @return string
 	 */
-	function rp_get_order_handle( WC_Order $order, $unique = false ) {
+	function rp_get_order_handle( WC_Order $order, $unique = false ): ?string {
 		if ( $unique ) {
 			$handle = null;
 			$order->delete_meta_data( '_reepay_order' );
@@ -48,7 +48,7 @@ if ( ! function_exists( 'rp_get_order_by_handle' ) ) {
 	 *
 	 * @return false|WC_Order
 	 */
-	function rp_get_order_by_handle( $handle ) {
+	function rp_get_order_by_handle( string $handle ) {
 		global $wpdb;
 
 		$order_id = wp_cache_get( $handle, 'reepay_order_by_handle' );
@@ -85,7 +85,7 @@ if ( ! function_exists( 'rp_get_order_by_session' ) ) {
 	 *
 	 * @return false|WC_Order
 	 */
-	function rp_get_order_by_session( $session_id ) {
+	function rp_get_order_by_session( string $session_id ) {
 		global $wpdb;
 
 		$order_id = wp_cache_get( $session_id, 'reepay_order_by_session' );
@@ -120,7 +120,7 @@ if ( ! function_exists( 'rp_is_order_paid_via_reepay' ) ) {
 	 *
 	 * @param WC_Order $order order to check.
 	 */
-	function rp_is_order_paid_via_reepay( $order ) {
+	function rp_is_order_paid_via_reepay( WC_Order $order ): bool {
 		return in_array( $order->get_payment_method(), Gateways::PAYMENT_METHODS, true );
 	}
 }
