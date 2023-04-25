@@ -93,8 +93,8 @@ class OrderCapture {
 	/**
 	 * Hooked to woocommerce_after_order_fee_item_name. Print capture button.
 	 *
-	 * @param int        $item_id the id of the item being displayed.
-	 * @param object     $item    the item being displayed.
+	 * @param int    $item_id the id of the item being displayed.
+	 * @param object $item    the item being displayed.
 	 *
 	 * @throws Exception When `WC_Data_Store::load` validation fails.
 	 */
