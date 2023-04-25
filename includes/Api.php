@@ -329,13 +329,15 @@ class Api {
 	/**
 	 * Get Invoice data of Order.
 	 *
-	 * @param WC_Order $order order to get data.
+	 * @param mixed $order order to get data.
 	 *
 	 * @return array|WP_Error
 	 */
-	public function get_invoice_data( WC_Order $order ) {
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
+	public function get_invoice_data( $order ) {
+		$order = wc_get_order( $order );
+
+		if ( empty( $order ) ) {
+			return new WP_Error( 0, 'Wrong order' );
 		}
 
 		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
