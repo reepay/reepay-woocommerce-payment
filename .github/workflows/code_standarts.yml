@@ -20,5 +20,5 @@ jobs:
       - name: PHP Code Standarts
         run: |
           chmod +x ./bin/phpcs.sh
-          ./bin/phpcs.sh
+          ./bin/phpcs.sh -full
         shell: bash
