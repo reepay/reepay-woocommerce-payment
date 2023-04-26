@@ -1231,16 +1231,18 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					$this->reepay_save_token( $order, wc_clean( $_GET['payment_method'] ) );
 				}
 			} catch ( Exception $e ) {
-				$this->log( "Card saving error: " . $e->getMessage() );
+				$this->log( 'Card saving error: ' . $e->getMessage() );
 			}
 		}
 
 		$invoice_data = reepay()->api( $this->id )->get_invoice_data( $order );
 
-		$this->log( array(
-			'source'       => 'ReepayGateway::payment_confirm',
-			'invoice_data' => $invoice_data
-		) );
+		$this->log(
+			array(
+				'source'       => 'ReepayGateway::payment_confirm',
+				'invoice_data' => $invoice_data,
+			)
+		);
 
 		if ( ! empty( $invoice_data['transactions'] ) &&
 			 ! empty( $invoice_data['transactions'][0] ) &&
