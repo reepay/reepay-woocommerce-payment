@@ -166,6 +166,14 @@ class WC_ReepayCheckout {
 	}
 
 	/**
+	 * Reset options from database. Now using only for testing purposes
+	 */
+	public function reset_settings() {
+		$this->settings = null;
+		$this->get_setting('');
+	}
+
+	/**
 	 * Wrapper of wc_get_template function
 	 *
 	 * @param string $template Template name.
