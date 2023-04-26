@@ -14,6 +14,7 @@ use Reepay\Checkout\Tokens\TokenReepay;
 use WC_Order;
 use WC_Order_Refund;
 use WC_Payment_Gateway;
+use WC_Payment_Token;
 use WC_Subscription;
 
 defined( 'ABSPATH' ) || exit();
@@ -78,12 +79,12 @@ class Subscriptions {
 	/**
 	 * Add Token ID.
 	 *
-	 * @param int         $order_id  current order id.
-	 * @param int         $token_id  token id to add.
-	 * @param TokenReepay $token     token instance.
-	 * @param array       $token_ids all order tokens (include current).
+	 * @param int              $order_id  current order id.
+	 * @param int              $token_id  token id to add.
+	 * @param WC_Payment_Token $token     token instance.
+	 * @param array            $token_ids all order tokens (include current).
 	 */
-	public function add_payment_token_id( int $order_id, int $token_id, TokenReepay $token, array $token_ids ) {
+	public function add_payment_token_id( int $order_id, int $token_id, WC_Payment_Token $token, array $token_ids ) {
 		$order = wc_get_order( $order_id );
 		if ( in_array( $order->get_payment_method(), self::PAYMENT_METHODS, true ) ) {
 			$order->update_meta_data( '_reepay_token_id', $token_id );
