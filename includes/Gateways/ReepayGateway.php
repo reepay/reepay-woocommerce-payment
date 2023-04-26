@@ -1244,7 +1244,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			)
 		);
 
-		if ( !is_wp_error($invoice_data) && ! empty( $invoice_data['transactions'] ) &&
+		if ( ! is_wp_error( $invoice_data ) && ! empty( $invoice_data['transactions'] ) &&
 			 ! empty( $invoice_data['transactions'][0] ) &&
 			 ! empty( $invoice_data['transactions'][0]['card_transaction'] ) &&
 			 ! empty( $invoice_data['transactions'][0]['card_transaction'] )
