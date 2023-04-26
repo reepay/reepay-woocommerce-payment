@@ -807,7 +807,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			'locale'     => $this->get_language(),
 			'recurring'  => apply_filters(
 				'order_contains_reepay_subscription',
-				$maybe_save_card || order_contains_subscription( $order ) || wcs_is_payment_change() || 'reepay_checkout' === $this->id,
+				$maybe_save_card || order_contains_subscription( $order ) || wcs_is_payment_change(),
 				$order
 			),
 			'order'      => array(
@@ -1217,7 +1217,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$this->log(
 			array(
-				'sourse' => 'payment_confirm incoming data',
+				'source' => 'payment_confirm incoming data',
 				'$_GET'  => $_GET,
 			)
 		);
@@ -1229,12 +1229,30 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			try {
 				if ( $maybe_save_card || order_contains_subscription( $order ) ) {
 					$this->reepay_save_token( $order, wc_clean( $_GET['payment_method'] ) );
-				} else {
-					$this->reepay_save_card_info( $order, wc_clean( $_GET['payment_method'] ) );
 				}
 			} catch ( Exception $e ) {
-				$this->log( 'card saving error' );
+				$this->log( 'Card saving error: ' . $e->getMessage() );
 			}
+		}
+
+		$invoice_data = reepay()->api( $this->id )->get_invoice_data( $order );
+
+		$this->log(
+			array(
+				'source'       => 'ReepayGateway::payment_confirm',
+				'invoice_data' => $invoice_data,
+			)
+		);
+
+		if ( ! is_wp_error( $invoice_data ) && ! empty( $invoice_data['transactions'] ) &&
+			 ! empty( $invoice_data['transactions'][0] ) &&
+			 ! empty( $invoice_data['transactions'][0]['card_transaction'] ) &&
+			 ! empty( $invoice_data['transactions'][0]['card_transaction'] )
+		) {
+			$card_info = $invoice_data['transactions'][0]['card_transaction'];
+
+			update_post_meta( $order->get_id(), 'reepay_masked_card', $card_info['masked_card'] );
+			update_post_meta( $order->get_id(), 'reepay_card_type', $card_info['card_type'] );
 		}
 	}
 
