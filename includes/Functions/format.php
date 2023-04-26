@@ -15,7 +15,7 @@ if ( ! function_exists( 'rp_format_price_decimals' ) ) {
 	 *
 	 * @return string the nicely formatted value
 	 */
-	function rp_format_price_decimals( $price_minor ) {
+	function rp_format_price_decimals( string $price_minor ): string {
 		return number_format( $price_minor / 100, 2, wc_get_price_decimal_separator(), '' );
 	}
 }
@@ -28,7 +28,7 @@ if ( ! function_exists( 'rp_format_credit_card' ) ) {
 	 *
 	 * @return false|string the nicely formatted value
 	 */
-	function rp_format_credit_card( $cc ) {
+	function rp_format_credit_card( string $cc ) {
 		$cc        = str_replace( array( '-', ' ' ), '', $cc );
 		$cc_length = strlen( $cc );
 		$new_cc    = substr( $cc, - 4 );

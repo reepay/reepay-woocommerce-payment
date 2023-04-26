@@ -15,7 +15,7 @@ if ( ! function_exists( 'rp_get_customer_handle' ) ) {
 	 *
 	 * @return string
 	 */
-	function rp_get_customer_handle( $user_id ) {
+	function rp_get_customer_handle( int $user_id ): string {
 		// Allow to pay exist orders by guests.
 		if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) {
 			$order_id = wc_get_order_id_by_order_key( $_GET['key'] );
@@ -50,7 +50,7 @@ if ( ! function_exists( 'rp_get_userid_by_handle' ) ) {
 	 *
 	 * @return int|false
 	 */
-	function rp_get_userid_by_handle( $handle ) {
+	function rp_get_userid_by_handle( string $handle ) {
 		if ( strpos( $handle, 'guest-' ) !== false ) {
 			return 0;
 		}

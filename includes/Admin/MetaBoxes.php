@@ -115,7 +115,7 @@ class MetaBoxes {
 	 * @param WP_Post $post current post object.
 	 * @param array   $meta additional info. Get arguments by 'args' key.
 	 */
-	public function generate_meta_box_content_customer( $post, $meta ) {
+	public function generate_meta_box_content_customer( WP_Post $post, array $meta ) {
 		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && 0 !== $post->post_parent ) {
 			$handle = get_post_meta( $post->post_parent, '_reepay_customer', true );
 		} else {
@@ -141,7 +141,7 @@ class MetaBoxes {
 	 * @param WP_Post $post current post object.
 	 * @param array   $meta additional info. Get arguments by 'args' key.
 	 */
-	public function generate_meta_box_content_invoice( $post, $meta ) {
+	public function generate_meta_box_content_invoice( WP_Post $post, array $meta ) {
 		/**
 		 * Set types of args variables
 		 *
@@ -176,7 +176,7 @@ class MetaBoxes {
 	 * @param WP_Post $post current post object.
 	 * @param array   $meta additional info. Get arguments by 'args' key.
 	 */
-	public function generate_meta_box_content_subscription( $post, $meta ) {
+	public function generate_meta_box_content_subscription( WP_Post $post, array $meta ) {
 		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && 0 !== $post->post_parent ) {
 			$handle = get_post_meta( $post->post_parent, '_reepay_subscription_handle', true );
 			$plan   = get_post_meta( $post->post_parent, '_reepay_subscription_plan', true );

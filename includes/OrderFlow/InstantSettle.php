@@ -43,7 +43,7 @@ class InstantSettle {
 	 *
 	 * @param WC_Order $order order to settle payment.
 	 */
-	public function maybe_settle_instantly( $order ) {
+	public function maybe_settle_instantly( WC_Order $order ) {
 		if ( ! is_object( $order ) ) {
 			$order = wc_get_order( $order );
 		}
@@ -62,7 +62,7 @@ class InstantSettle {
 	 *
 	 * @return void
 	 */
-	public function process_instant_settle( $order ) {
+	public function process_instant_settle( WC_Order $order ) {
 		$order_capture = OrderCapture::get_instance();
 
 		if ( ! empty( $order->get_meta( '_is_instant_settled' ) ) ) {
@@ -83,14 +83,13 @@ class InstantSettle {
 	/**
 	 * Check if product can be settled instantly.
 	 *
-	 * @param WC_Product $product if need check the product.
+	 * @param WC_Product $product      if need check the product.
 	 * @param string[]   $settle_types settle types.
 	 *
-	 * @see ReepayGateway::$settle
-	 *
 	 * @return bool
+	 * @see ReepayGateway::$settle
 	 */
-	public static function can_product_be_settled_instantly( $product, $settle_types ) {
+	public static function can_product_be_settled_instantly( WC_Product $product, array $settle_types ): bool {
 		if ( in_array( self::SETTLE_PHYSICAL, $settle_types, true ) &&
 			 ( ! wcs_is_subscription_product( $product ) &&
 			   $product->needs_shipping() &&
@@ -118,7 +117,7 @@ class InstantSettle {
 	 *
 	 * @return array
 	 */
-	public static function get_instant_settle_items( $order ) {
+	public static function get_instant_settle_items( WC_Order $order ): array {
 		$settle_types = rp_get_payment_method( $order )->settle ?: array();
 		$items_data   = array();
 
@@ -158,7 +157,7 @@ class InstantSettle {
 	 *
 	 * @return stdClass
 	 */
-	public static function calculate_instant_settle( $order ) {
+	public static function calculate_instant_settle( WC_Order $order ): stdClass {
 		$is_instant_settle = false;
 		$delivery          = false;
 		$total             = 0;
@@ -230,7 +229,7 @@ class InstantSettle {
 	 *
 	 * @see OrderCapture::get_item_data
 	 */
-	public static function get_settled_items( $order ) {
+	public static function get_settled_items( WC_Order $order ): array {
 		$settled = array();
 
 		foreach ( $order->get_items() as $item ) {

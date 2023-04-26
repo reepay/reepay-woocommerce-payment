@@ -49,7 +49,7 @@ class WoocommerceExists {
 	 *
 	 * @return bool
 	 */
-	public static function woo_activated() {
+	public static function woo_activated(): bool {
 		return class_exists( WooCommerce::class, false ) && defined( 'WC_ABSPATH' );
 	}
 }

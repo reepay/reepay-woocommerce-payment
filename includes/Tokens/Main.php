@@ -31,7 +31,7 @@ class Main {
 	 * @return string
 	 * @see WC_Payment_Tokens::get_token_classname
 	 */
-	public function set_token_class_name( $token_class_name ) {
+	public function set_token_class_name( string $token_class_name ): string {
 		static $tokens = array(
 			'WC_Payment_Token_Reepay'    => TokenReepay::class,
 			'WC_Payment_Token_Reepay_MS' => TokenReepayMS::class,

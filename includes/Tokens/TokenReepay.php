@@ -47,7 +47,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 *
 	 * @return string
 	 */
-	public function get_display_name( $deprecated = '' ) {
+	public function get_display_name( $deprecated = '' ): string {
 		$img   = $this->get_card_image_url();
 		$style = '';
 
@@ -74,7 +74,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 *
 	 * @return string
 	 */
-	public function get_card_image_url() {
+	public function get_card_image_url(): string {
 		if ( $this->get_card_type() === 'visa_dk' ) {
 			return reepay()->get_setting( 'images_url' ) . 'dankort.png';
 		} else {
@@ -87,7 +87,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 *
 	 * @return boolean True if the passed data is valid
 	 */
-	public function validate() {
+	public function validate(): bool {
 		if ( false === parent::validate() ) {
 			return false;
 		}
@@ -104,7 +104,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 *
 	 * @return string
 	 */
-	protected function get_hook_prefix() {
+	protected function get_hook_prefix(): string {
 		return 'woocommerce_payment_token_reepay_get_';
 	}
 
@@ -115,7 +115,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 *
 	 * @return string Masked Card
 	 */
-	public function get_masked_card( $context = 'view' ) {
+	public function get_masked_card( $context = 'view' ): string {
 		return $this->get_prop( 'masked_card', $context );
 	}
 
@@ -124,7 +124,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 *
 	 * @param string $masked_card Masked Card.
 	 */
-	public function set_masked_card( $masked_card ) {
+	public function set_masked_card( string $masked_card ) {
 		$this->set_prop( 'masked_card', $masked_card );
 	}
 
@@ -133,7 +133,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 *
 	 * @return boolean True if the token is default
 	 */
-	public function is_default() {
+	public function is_default(): bool {
 		$change_payment_method = isset( $_GET['change_payment_method'] ) ? wc_clean( $_GET['change_payment_method'] ) : '';
 
 		// Mark Method as Checked on "Payment Change" page.
@@ -169,7 +169,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 *
 	 * @return array                           Filtered item.
 	 */
-	public static function wc_get_account_saved_payment_methods_list_item( $item, $payment_token ) {
+	public static function wc_get_account_saved_payment_methods_list_item( array $item, TokenReepay $payment_token ): array {
 		if ( 'reepay_checkout' !== $payment_token->get_gateway_id() ) {
 			return $item;
 		}
@@ -196,7 +196,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 * @return void
 	 * @see wc_get_customer_saved_methods_list
 	 */
-	public static function wc_account_payment_methods_column_method( $method ) {
+	public static function wc_account_payment_methods_column_method( array $method ) {
 		if ( 'reepay_checkout' !== $method['method']['gateway'] ) {
 			return;
 		}
@@ -234,7 +234,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 *
 	 * @return string
 	 */
-	public static function wc_get_saved_payment_method_option_html( $html, $token, $gateway ) {
+	public static function wc_get_saved_payment_method_option_html( string $html, WC_Payment_Token $token, WC_Payment_Gateway $gateway ): string {
 		if ( rp_is_reepay_payment_method( $token->get_gateway_id() ) ) {
 			$html = html_entity_decode( $html, ENT_COMPAT | ENT_XHTML, 'UTF-8' );
 		}

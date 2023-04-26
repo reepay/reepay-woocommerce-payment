@@ -117,7 +117,7 @@ $log->add( $handler, 'Upgrade has been completed!' );
  *
  * @return array
  */
-function reepay_get_order_notes( $order_id ) {
+function reepay_get_order_notes( $order_id ): array {
 	global $wpdb;
 
 	$table = $wpdb->prefix . 'comments';

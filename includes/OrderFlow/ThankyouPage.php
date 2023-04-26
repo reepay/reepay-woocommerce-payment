@@ -54,7 +54,7 @@ class ThankyouPage {
 	 *
 	 * @return string
 	 */
-	public function override_template( $located, $template_name, $args, $template_path, $default_path ) {
+	public function override_template( string $located, string $template_name, array $args, string $template_path, string $default_path ): string {
 		if ( strpos( $located, 'checkout/thankyou.php' ) !== false ) {
 			if ( ! isset( $args['order'] ) ) {
 				return $located;
@@ -87,7 +87,7 @@ class ThankyouPage {
 	 * @return void
 	 * @throws Exception If error with order confirmation.
 	 */
-	public function thankyou_page( $order_id ) {
+	public function thankyou_page( int $order_id ) {
 		$order = wc_get_order( $order_id );
 		if ( ! $order ) {
 			return;
@@ -262,7 +262,7 @@ class ThankyouPage {
 	 * @return void
 	 * @throws Exception If status update failed.
 	 */
-	private function process_order_confirmation( $invoice_id ) {
+	private function process_order_confirmation( string $invoice_id ) {
 		$this->log( sprintf( 'accept_url: Processing status update %s', $invoice_id ) );
 
 		$order = rp_get_order_by_handle( $invoice_id );

@@ -209,7 +209,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @return bool
 	 */
-	public function check_is_active() {
+	public function check_is_active(): bool {
 		$gateways_reepay = get_transient( 'gateways_reepay' );
 		if ( empty( $gateways_reepay ) ) {
 			$gateways_reepay = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/agreement?only_active=true' );
@@ -234,7 +234,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @return bool
 	 */
-	public function is_gateway_settings_page() {
+	public function is_gateway_settings_page(): bool {
 		return isset( $_GET['tab'] ) && 'checkout' === $_GET['tab'] &&
 			   ! empty( $_GET['section'] ) && $_GET['section'] === $this->id;
 	}
@@ -272,7 +272,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @return string
 	 */
-	public static function get_webhook_url() {
+	public static function get_webhook_url(): string {
 		$default_wc_api_url = WC()->api_request_url( '' );
 
 		if ( class_exists( SitePress::class ) ) {
@@ -302,7 +302,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @throws Exception Never, just for phpcs.
 	 */
-	public function is_webhook_configured() {
+	public function is_webhook_configured(): bool {
 		try {
 			$request = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
 			if ( is_wp_error( $request ) ) {
@@ -403,7 +403,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @return bool
 	 * @see WC_AJAX::toggle_gateway_enabled
 	 */
-	public function needs_setup() {
+	public function needs_setup(): bool {
 		return doing_action( 'wp_ajax_woocommerce_toggle_gateway_enabled' ) && ! $this->check_is_active();
 	}
 
@@ -416,7 +416,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @return string
 	 * @see WC_Settings_API::generate_settings_html
 	 */
-	public function generate_gateway_status_html( $key, $data ) {
+	public function generate_gateway_status_html( string $key, array $data ): string {
 		$field_key = $this->get_field_key( $key );
 		$defaults  = array(
 			'title'       => '',
@@ -471,7 +471,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @return bool
 	 */
-	public function can_capture( $order, $amount = false ) {
+	public function can_capture( $order, $amount = false ): bool {
 		return reepay()->api( $this )->can_capture( $order, $amount );
 	}
 
@@ -482,7 +482,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @return bool
 	 */
-	public function can_cancel( $order ) {
+	public function can_cancel( $order ): bool {
 		return reepay()->api( $this )->can_cancel( $order );
 	}
 
@@ -493,7 +493,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @return bool
 	 */
-	public function can_refund( $order ) {
+	public function can_refund( WC_Order $order ): bool {
 		return reepay()->api( $this )->can_refund( $order );
 	}
 
@@ -602,7 +602,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @return string
 	 */
-	public function get_icon() {
+	public function get_icon(): string {
 		$logos = array_map(
 			function ( $logo ) {
 				return array(
@@ -807,7 +807,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			'locale'     => $this->get_language(),
 			'recurring'  => apply_filters(
 				'order_contains_reepay_subscription',
-				$maybe_save_card || order_contains_subscription( $order ) || wcs_is_payment_change() || 'reepay_checkout' === $this->id,
+				$maybe_save_card || order_contains_subscription( $order ) || wcs_is_payment_change(),
 				$order
 			),
 			'order'      => array(
@@ -1056,12 +1056,12 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Process session charge
 	 *
 	 * @param array    $params reepay api params.
-	 * @param WC_Order $order current order.
+	 * @param WC_Order $order  current order.
 	 *
 	 * @return array
 	 * @throws Exception If reepay api error.
 	 */
-	public function process_session_charge( $params, $order ) {
+	public function process_session_charge( array $params, WC_Order $order ): array {
 		$result = reepay()->api( $this )->request(
 			'POST',
 			'https://checkout-api.reepay.com/v1/session/charge',
@@ -1217,7 +1217,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$this->log(
 			array(
-				'sourse' => 'payment_confirm incoming data',
+				'source' => 'payment_confirm incoming data',
 				'$_GET'  => $_GET,
 			)
 		);
@@ -1229,12 +1229,30 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			try {
 				if ( $maybe_save_card || order_contains_subscription( $order ) ) {
 					$this->reepay_save_token( $order, wc_clean( $_GET['payment_method'] ) );
-				} else {
-					$this->reepay_save_card_info( $order, wc_clean( $_GET['payment_method'] ) );
 				}
 			} catch ( Exception $e ) {
-				$this->log( 'card saving error' );
+				$this->log( 'Card saving error: ' . $e->getMessage() );
 			}
+		}
+
+		$invoice_data = reepay()->api( $this->id )->get_invoice_data( $order );
+
+		$this->log(
+			array(
+				'source'       => 'ReepayGateway::payment_confirm',
+				'invoice_data' => $invoice_data,
+			)
+		);
+
+		if ( ! empty( $invoice_data['transactions'] ) &&
+			 ! empty( $invoice_data['transactions'][0] ) &&
+			 ! empty( $invoice_data['transactions'][0]['card_transaction'] ) &&
+			 ! empty( $invoice_data['transactions'][0]['card_transaction'] )
+		) {
+			$card_info = $invoice_data['transactions'][0]['card_transaction'];
+
+			update_post_meta( $order->get_id(), 'reepay_masked_card', $card_info['masked_card'] );
+			update_post_meta( $order->get_id(), 'reepay_card_type', $card_info['card_type'] );
 		}
 	}
 
@@ -1290,14 +1308,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Count line item discount
 	 *
-	 * @param WC_Order_Item_Product $item created order item.
+	 * @param WC_Order_Item_Product $item          created order item.
 	 * @param string                $cart_item_key order item key in cart.
-	 * @param array                 $values values from cart item.
-	 * @param WC_Order              $order new order.
+	 * @param array                 $values        values from cart item.
+	 * @param WC_Order              $order         new order.
 	 *
 	 * @see WC_Checkout::create_order_line_items
 	 */
-	public function action_checkout_create_order_line_item( $item, $cart_item_key, $values, $order ) {
+	public function action_checkout_create_order_line_item( WC_Order_Item_Product $item, string $cart_item_key, array $values, WC_Order $order ) {
 		$line_discount     = $values['line_subtotal'] - $values['line_total'];
 		$line_discount_tax = $values['line_subtotal_tax'] - $values['line_tax'];
 
@@ -1307,12 +1325,12 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Get Order lines.
 	 *
-	 * @param WC_Order $order order to get items.
+	 * @param WC_Order $order            order to get items.
 	 * @param bool     $only_not_settled get only not settled items.
 	 *
 	 * @return array
 	 */
-	public function get_order_items( $order, $only_not_settled = false ) {
+	public function get_order_items( WC_Order $order, $only_not_settled = false ): array {
 		$prices_incl_tax = wc_prices_include_tax();
 
 		$items               = array();
@@ -1447,7 +1465,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @return string
 	 */
-	protected function get_language() {
+	protected function get_language(): string {
 		if ( ! empty( $this->language ) ) {
 			return $this->language;
 		}
@@ -1471,7 +1489,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @return string the logo
 	 */
-	public function get_logo( $card_type ) {
+	public function get_logo( string $card_type ): string {
 		switch ( $card_type ) {
 			case 'visa':
 				$image = 'visa';
