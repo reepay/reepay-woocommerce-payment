@@ -8,8 +8,14 @@
 	convertWarningsToExceptions="true"
 	>
 	<testsuites>
-		<testsuite name="testing">
-			<directory suffix="Test.php">./tests/</directory>
-		</testsuite>
+        <testsuite name="Main class">
+            <file>./tests/MainClassTest.php</file>
+        </testsuite>
+        <testsuite name="Api configured">
+            <file>./tests/ApiConfiguredTest.php</file>
+        </testsuite>
+        <testsuite name="Functions">
+            <directory suffix="Test.php">./tests/functions</directory>
+        </testsuite>
 	</testsuites>
 </phpunit>

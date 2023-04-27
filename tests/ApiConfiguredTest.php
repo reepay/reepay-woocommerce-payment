@@ -8,7 +8,7 @@
 /**
  * ApiTest.
  */
-class ApiTest extends WP_UnitTestCase {
+class ApiConfiguredTest extends WP_UnitTestCase {
 
 	/**
 	 * Checks if api is configured

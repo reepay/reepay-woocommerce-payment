@@ -63,6 +63,7 @@ function init_reepay() {
 	$reepay_checkout->is_webhook_configured();
 }
 
+require_once 'RP_TEST_HELPERS.php';
 
 // Start up the WP testing environment.
 require "{$_tests_dir}/includes/bootstrap.php";
