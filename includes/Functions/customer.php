@@ -17,6 +17,7 @@ if ( ! function_exists( 'rp_get_customer_handle' ) ) {
 	 */
 	function rp_get_customer_handle( int $user_id ): string {
 		// Allow to pay exist orders by guests.
+		// ToDo test this case
 		if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) {
 			$order_id = wc_get_order_id_by_order_key( $_GET['key'] );
 			if ( $order_id ) {

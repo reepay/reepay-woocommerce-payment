@@ -28,9 +28,9 @@ if ( ! function_exists( 'rp_make_initial_amount' ) ) {
 	 * @param int    $amount   amount to convert.
 	 * @param string $currency currency to convert.
 	 *
-	 * @return int
+	 * @return float
 	 */
-	function rp_make_initial_amount( int $amount, string $currency ) {
+	function rp_make_initial_amount( int $amount, string $currency ): float {
 		return $amount / rp_get_currency_multiplier( $currency );
 	}
 }
