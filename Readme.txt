@@ -18,7 +18,7 @@ The Reepay plugin extends WooCommerce allowing you to take payments on your stor
 See installation guide right here: https://intercom.help/reepay/reepay-plugins/woocommerce-plugin
 
 == Changelog ==
-v 1.4.64 - Fix instant settle to full amount
+v 1.4.65 - Fix instant settle to full amount
 v 1.4.64 - Fix subscription hook
 v 1.4.63 - Global code refactors
 v 1.4.62 - Instant settle full order lines
