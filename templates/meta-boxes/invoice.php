@@ -16,7 +16,7 @@ use Reepay\Checkout\Gateways\ReepayCheckout;
 
 defined( 'ABSPATH' ) || exit();
 
-if ( ! empty( $order_data['transactions'][0] ) ) {
+if ( ! empty( $order_data['transactions'][0] ) && !empty($order_data['transactions'][0]['card_transaction']) && !empty($order_data['transactions'][0]['card_transaction']['card_type']) ) {
 	$card_logo = $gateway->get_logo( $order_data['transactions'][0]['card_transaction']['card_type'] );
 }
 
