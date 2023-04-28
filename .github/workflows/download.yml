@@ -1,0 +1,27 @@
+name: Download
+run-name: Download
+
+on: [workflow_dispatch]
+    
+permissions:
+  contents: write
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build and zip project
+      run: |
+        chmod 777 ./bin/zip.sh
+        sudo bash ./bin/zip.sh
+      shell: bash
+      
+    - name: Add archive to artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: reepay-woocommerce-payment.zip
+        path: ./build/reepay-woocommerce-payment.zip

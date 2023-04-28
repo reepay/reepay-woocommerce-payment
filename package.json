@@ -6,17 +6,28 @@
   "dependencies": {
     "gulp-clean-css": "^4.3.0",
     "gulp-sass": "^5.0.0",
-    "node-sass": "^7.0.3"
+    "node-sass": "^6.0.1",
+    "yargs": "^17.7.1"
   },
   "devDependencies": {
+    "fs-extra": "^11.1.0",
     "gulp": "^4.0.2",
     "gulp-clean-css": "^4.3.0",
+    "gulp-if": "^3.0.0",
     "gulp-rename": "^2.0.0",
     "gulp-sourcemaps": "^3.0.0",
     "gulp-uglify-es": "^3.0.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "gulp watch",
+    "build:dev": "gulp build",
+    "build": "gulp build --production",
+    "zip": "bash bin/zip.sh",
+    "phpcs": "bash ./bin/phpcs.sh",
+    "phpcs:full": "bash ./bin/phpcs.sh -full",
+    "phpcs:fix": "bash ./bin/phpcs.sh -fix",
+    "phpunit": "php ./vendor/bin/phpunit",
+    "phpunit:init": "bash bin/install-wp-tests.sh wp_phpunit root ''"
   },
   "repository": {
     "type": "git",

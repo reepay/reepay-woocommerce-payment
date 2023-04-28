@@ -1,0 +1,22 @@
+.reepay-blocks {
+  &-list {
+    margin: 0;
+    list-style-type: none;
+
+    &-item {
+      display: flex;
+      flex-wrap: wrap;
+      padding-top: .8em;
+      padding-bottom: .8em;
+
+      & > * {
+        margin-right: 5px;
+      }
+
+      & > label {
+        display: flex;
+        flex-wrap: wrap;
+      }
+    }
+  }
+}

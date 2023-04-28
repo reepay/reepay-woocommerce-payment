@@ -1,0 +1,32 @@
+name: Release
+run-name: Release
+
+on: 
+  push:
+    tags:
+    - 'v*'
+    
+permissions:
+  contents: write
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Zip code
+      run: |
+        echo "zip it x2"
+        chmod 777 ./bin/zip.sh
+        sudo bash ./bin/zip.sh
+      shell: bash
+      
+    - uses: ncipollo/release-action@v1
+      with:
+        artifactErrorsFailBuild: true,
+        artifacts: "./build/reepay-woocommerce-payment.zip"
+
+    
