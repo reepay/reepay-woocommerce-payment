@@ -71,10 +71,25 @@ class InstantSettle {
 
 		$settle_items = self::get_instant_settle_items( $order );
 
+		$items_data = array();
+		$total_all  = 0;
+
 		if ( ! empty( $settle_items ) ) {
 			foreach ( $settle_items as $item ) {
-				$order_capture->settle_item( $item, $order );
+				if ( empty( $item->get_meta( 'settled' ) ) ) {
+					$item_data = $order_capture->get_item_data( $item, $order );
+					$total     = $item_data['amount'] * $item_data['quantity'];
+
+					if ( $total <= 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
+						WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
+					} elseif ( $total > 0 && $order_capture->check_capture_allowed( $order ) ) {
+						$items_data[] = $item_data;
+						$total_all   += $total;
+					}
+				}
 			}
+
+			$order_capture->settle_items( $order, $items_data, $total_all, $settle_items );
 			$order->add_meta_data( '_is_instant_settled', '1' );
 			$order->save_meta_data();
 		}
