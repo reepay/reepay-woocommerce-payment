@@ -51,17 +51,6 @@ function install_wc() {
 	wp_roles();
 }
 
-// install WC Subscriptions.
-//tests_add_filter( 'setup_theme', 'install_wc_subscriptions' );
-//function install_wc_subscriptions() {
-//	include (ABSPATH . 'wp-content/plugins/woocommerce/uninstall.php');
-//	echo esc_html( 'Installing WooCommerce...' . PHP_EOL );
-//	WC_Install::install();
-//	// Reload capabilities after install, see https://core.trac.wordpress.org/ticket/28374
-//	$GLOBALS['wp_roles'] = null;
-//	wp_roles();
-//}
-
 // Init reepay.
 tests_add_filter( 'plugins_loaded', 'init_reepay' );
 function init_reepay() {
