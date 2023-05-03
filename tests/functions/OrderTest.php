@@ -39,7 +39,7 @@ class OrderTest extends WP_UnitTestCase {
 	}
 
 	public function payment_methods(): array {
-		return RP_TEST_HELPERS::rp_test_get_payment_methods();
+		return RP_TEST_HELPERS::get_payment_methods();
 	}
 
 	public function test_rp_get_order_handle() {

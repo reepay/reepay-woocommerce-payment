@@ -5,8 +5,6 @@
  * @package Reepay\Checkout
  */
 
-use Reepay\Checkout\Gateways;
-
 /**
  * CurrencyTest.
  */
@@ -39,7 +37,7 @@ class GatewaysTest extends WP_UnitTestCase {
 	}
 
 	public function payment_methods(): array {
-		return RP_TEST_HELPERS::rp_test_get_payment_methods();
+		return RP_TEST_HELPERS::get_payment_methods();
 	}
 
 	/**
