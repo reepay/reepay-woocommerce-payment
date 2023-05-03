@@ -188,12 +188,11 @@ install_dependencies() {
     php wp-cli.phar db check
     php wp-cli.phar db import $WP_DB_DATA
     php wp-cli.phar db check
-    php wp-cli.phar option get siteurl
 #    php wp-cli.phar search-replace "http://local.wordpress.test" "$WP_SITE_URL"
 #    php wp-cli.phar theme install twentyseventeen --activate
      php wp-cli.phar plugin install woocommerce --activate --force
-    php wp-cli.phar db check
     php wp-cli.phar plugin install reepay-subscriptions-for-woocommerce --force
+    php wp-cli.phar plugin install https://git.one-pix.com/onepix/woocommerce-subscriptions-for-phpunit/-/archive/main/woocommerce-subscriptions-for-phpunit-main.zip --force
     php wp-cli.phar plugin list
 }
 

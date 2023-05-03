@@ -51,7 +51,18 @@ function install_wc() {
 	wp_roles();
 }
 
-// install WC.
+// install WC Subscriptions.
+//tests_add_filter( 'setup_theme', 'install_wc_subscriptions' );
+//function install_wc_subscriptions() {
+//	include (ABSPATH . 'wp-content/plugins/woocommerce/uninstall.php');
+//	echo esc_html( 'Installing WooCommerce...' . PHP_EOL );
+//	WC_Install::install();
+//	// Reload capabilities after install, see https://core.trac.wordpress.org/ticket/28374
+//	$GLOBALS['wp_roles'] = null;
+//	wp_roles();
+//}
+
+// Init reepay.
 tests_add_filter( 'plugins_loaded', 'init_reepay' );
 function init_reepay() {
 	$reepay_checkout = reepay()->gateways()->checkout();
@@ -63,7 +74,8 @@ function init_reepay() {
 	$reepay_checkout->is_webhook_configured();
 }
 
-require_once 'RP_TEST_HELPERS.php';
+require_once 'helpers/RP_TEST_HELPERS.php';
+require_once 'helpers/Rp_Test_Order_Generator.php';
 
 // Start up the WP testing environment.
 require "{$_tests_dir}/includes/bootstrap.php";
