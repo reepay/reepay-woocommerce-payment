@@ -674,6 +674,8 @@ class Api {
 			return new WP_Error( 0, 'Unable to get order handle' );
 		}
 
+		$is_skip = reepay()->get_setting( 'skip_order_lines' ) == 'yes';
+
 		if ( ! $amount || ! $items_data ) {
 			$settle_data = InstantSettle::calculate_instant_settle( $order );
 
@@ -686,7 +688,13 @@ class Api {
 			}
 		}
 
-		$request_data['order_lines'] = $items_data;
+		if($is_skip && !empty($amount)){
+			$request_data['amount'] = $amount;
+		}else{
+			$request_data['order_lines'] = $items_data;
+		}
+
+
 		if ( ! empty( $items_data ) && floatval( current( $items_data )['amount'] ) <= 0 ) {
 			return new WP_Error( 100, 'Amount must be lager than zero' );
 		}
