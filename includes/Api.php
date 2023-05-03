@@ -674,7 +674,7 @@ class Api {
 			return new WP_Error( 0, 'Unable to get order handle' );
 		}
 
-		$is_skip = reepay()->get_setting( 'skip_order_lines' ) == 'yes';
+		$is_skip = reepay()->get_setting( 'skip_order_lines' ) === 'yes';
 
 		if ( ! $amount || ! $items_data ) {
 			$settle_data = InstantSettle::calculate_instant_settle( $order );
