@@ -688,12 +688,11 @@ class Api {
 			}
 		}
 
-		if($is_skip && !empty($amount)){
+		if ( $is_skip && ! empty( $amount ) ) {
 			$request_data['amount'] = $amount;
-		}else{
+		} else {
 			$request_data['order_lines'] = $items_data;
 		}
-
 
 		if ( ! empty( $items_data ) && floatval( current( $items_data )['amount'] ) <= 0 ) {
 			return new WP_Error( 100, 'Amount must be lager than zero' );
