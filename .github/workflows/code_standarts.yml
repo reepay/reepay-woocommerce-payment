@@ -4,7 +4,7 @@ run-name: Check code standarts
 on:
   pull_request:
      types: [opened, reopened, synchronize]
-    branches: [ "master", "dev" ]
+     branches: [ "master", "dev" ]
 
 permissions:
   contents: write
