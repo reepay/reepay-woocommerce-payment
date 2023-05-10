@@ -64,7 +64,10 @@ function init_reepay() {
 }
 
 require_once 'helpers/RP_TEST_HELPERS.php';
-require_once 'helpers/Rp_Test_Order_Generator.php';
+require_once 'helpers/RP_TEST_PLUGINS_STATE.php';
+require_once 'helpers/RpTestOrderGenerator.php';
+require_once 'helpers/RpTestProductGenerator.php';
+require_once 'helpers/RpTestCartGenerator.php';
 
 // Start up the WP testing environment.
 require "{$_tests_dir}/includes/bootstrap.php";

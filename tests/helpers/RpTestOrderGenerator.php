@@ -1,6 +1,6 @@
 <?php
 
-class Rp_Test_Order_Generator {
+class RpTestOrderGenerator {
 	/**
 	 * @var WC_Order|null
 	 */
@@ -39,14 +39,26 @@ class Rp_Test_Order_Generator {
 	}
 
 	public function add_simple_product() {
-		$product = new WC_Product_Simple();
-		$product->save();
-		$this->order->add_product( $product );
+		$this->order->add_product(
+			( new RpTestProductGenerator( 'simple' ) )->product()
+		);
 	}
 
-	public function add_woo_subscription() {
-		$product = new WC_Product_Subscription();
-		$product->save();
-		$this->order->add_product( $product );
+	public function add_variable_product() {
+		$this->order->add_product(
+			( new RpTestProductGenerator( 'variable' ) )->product()
+		);
 	}
+
+	public function add_woocommerce_subscription_product() {
+		$this->order->add_product(
+			( new RpTestProductGenerator( 'woocommerce_subscription' ) )->product()
+		);
+	}
+
+//	public function add_woo_subscription() {
+//		$product = new WC_Product_Subscription();
+//		$product->save();
+//		$this->order->add_product( $product );
+//	}
 }
