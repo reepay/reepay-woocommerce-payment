@@ -24,7 +24,7 @@ trait TokenReepayTrait {
 	 * Assign payment token to order.
 	 *
 	 * @param WC_Order        $order order to assign.
-	 * @param TokenReepay|int $token token to assign.
+	 * @param WC_Payment_Token|int $token token to assign.
 	 *
 	 * @return void
 	 *
@@ -60,7 +60,7 @@ trait TokenReepayTrait {
 	 * @param WC_Order $order        order to save.
 	 * @param string   $reepay_token token to save.
 	 *
-	 * @return bool|TokenReepay
+	 * @return bool|WC_Payment_Token
 	 *
 	 * @throws Exception If invalid token or order.
 	 */
@@ -163,10 +163,10 @@ trait TokenReepayTrait {
 	 * @param WC_Order $order        order to add token.
 	 * @param string   $reepay_token token to add.
 	 *
-	 * @return TokenReepay
+	 * @return WC_Payment_Token
 	 * @throws Exception If invalid token or order.
 	 */
-	public function add_payment_token_to_order( WC_Order $order, string $reepay_token ): TokenReepay {
+	public function add_payment_token_to_order( WC_Order $order, string $reepay_token ): WC_Payment_Token {
 		[ //phpcs:ignore Generic.Arrays.DisallowShortArraySyntax.Found
 			'token'     => $token,
 			'card_info' => $card_info,
