@@ -22,7 +22,7 @@ jobs:
 
       # Mount composer cache directory
     -   id:     mount-composer-cache-directory
-        name:   Mount cache directory
+        name:   Mount composer cache directory
         uses:   actions/cache@v3
         with:
             path:           ${{ steps.get-composer-cache-directory.outputs.dir }}
@@ -31,7 +31,7 @@ jobs:
           
       # Mount composer cache directory
     -   id:     mount-npm-cache-directory
-        name:   Mount cache directory
+        name:   Mount npm cache directory
         uses:   actions/cache@v3
         with:
             path:           ~/npm
