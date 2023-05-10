@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      -   uses:   actions/checkout@v3
 
       # Get composer cache directory
       -   id:     get-composer-cache-directory
@@ -38,8 +38,8 @@ jobs:
           run:    composer install --prefer-dist --no-progress --no-suggest
           shell:  bash
 
-      - name: PHP Code Standarts
-        run: |
-          chmod +x ./bin/phpcs.sh
-          ./bin/phpcs.sh -full
-        shell: bash
+      -   name: PHP Code Standarts
+          run: |
+            chmod +x ./bin/phpcs.sh
+            ./bin/phpcs.sh -full
+          shell: bash
