@@ -429,7 +429,7 @@ class Webhook {
 			case 'customer_payment_method_added':
 				if ( ! empty( $data['payment_method_reference'] ) ) {
 					$order = rp_get_order_by_session( $data['payment_method_reference'] );
-					if ( order_contains_subscription( $order ) ) {
+					if ( $order && order_contains_subscription( $order ) ) {
 						WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 					}
 				}

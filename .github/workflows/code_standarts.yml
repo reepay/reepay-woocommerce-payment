@@ -3,8 +3,8 @@ run-name: Check code standarts
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
-    branches: [ "master", "dev" ]
+     types: [opened, reopened, synchronize]
+     branches: [ "master", "dev" ]
 
 permissions:
   contents: write
@@ -14,11 +14,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: php-actions/composer@v6
+      -   uses:   actions/checkout@v3
 
-      - name: PHP Code Standarts
-        run: |
-          chmod +x ./bin/phpcs.sh
-          ./bin/phpcs.sh -full
-        shell: bash
+      # Get composer cache directory
+      -   id:     get-composer-cache-directory
+          name:   Get Composer caches directory path
+          run:    echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+          shell:  bash
+
+      # Mount composer cache directory
+      -   id:     mount-composer-cache-directory
+          name:   Mount composer cache directory
+          uses:   actions/cache@v3
+          with:
+            path:           ${{ steps.get-composer-cache-directory.outputs.dir }}
+            key:            ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+            restore-keys:   ${{ runner.os }}-composer-
+
+      # Install composer deps, if .lock file was changed
+      -   id:     install-composer-dependencies
+          name:   Install composer dependencies
+          run:    composer install --prefer-dist --no-progress
+          shell:  bash
+
+      -   name: PHP Code Standarts
+          run: |
+            chmod +x ./bin/phpcs.sh
+            ./bin/phpcs.sh -full
+          shell: bash

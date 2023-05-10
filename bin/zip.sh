@@ -36,7 +36,7 @@ mkdir -p "$BUILD_DIR"
 if [ ! -d "./node_modules" ];
 then
   status "Installing npm dependencies... 📦"
-  npm install
+  npm ci  --ignore-scripts
 fi
 
 # Install composer no-dev dependencies.
@@ -67,7 +67,7 @@ then
   zip -r -q reepay-woocommerce-payment.zip reepay-woocommerce-payment
 
   # remove the source directory
-  rm -rf ./reepay-woocommerce-payment
+#  rm -rf ./reepay-woocommerce-payment
 else
   warning "zip command not found. Create archive by yourself ./build/reepay-woocommerce-payment"
 fi
