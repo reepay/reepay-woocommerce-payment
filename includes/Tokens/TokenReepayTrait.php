@@ -172,8 +172,14 @@ trait TokenReepayTrait {
 			'card_info' => $card_info,
 		] = $this->add_payment_token_to_customer( $order->get_customer_id(), $reepay_token );
 
-		update_post_meta( $order->get_id(), 'reepay_masked_card', $card_info['masked_card'] );
-		update_post_meta( $order->get_id(), 'reepay_card_type', $card_info['card_type'] );
+		if ( ! empty( $card_info['masked_card'] ) ) {
+			update_post_meta( $order->get_id(), 'reepay_masked_card', $card_info['masked_card'] );
+		}
+
+		if ( ! empty( $card_info['card_type'] ) ) {
+			update_post_meta( $order->get_id(), 'reepay_card_type', $card_info['card_type'] );
+		}
+
 
 		update_post_meta( $order->get_id(), '_reepay_source', $card_info );
 
