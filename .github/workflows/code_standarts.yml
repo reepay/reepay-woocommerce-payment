@@ -29,7 +29,7 @@ jobs:
           uses:   actions/cache@v3
           with:
             path:           ${{ steps.get-composer-cache-directory.outputs.dir }}
-            key:            ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+            key:            ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
             restore-keys:   ${{ runner.os }}-composer-
 
       # Install composer deps, if .lock file was changed
