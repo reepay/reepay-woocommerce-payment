@@ -3,7 +3,7 @@
 const gulp       = require( 'gulp' ),
     rename     = require( 'gulp-rename' ),
     gulpif     = require( 'gulp-if' ),
-    sass       = require( 'gulp-sass' )(require('node-sass')),
+    sass       = require( 'gulp-sass' )(require('sass')),
     sourcemaps = require( 'gulp-sourcemaps' ),
     cssmin     = require( 'gulp-clean-css' ),
     uglify     = require( 'gulp-uglify-es' ).default,

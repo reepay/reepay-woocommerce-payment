@@ -13,15 +13,39 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    
+      # Get composer cache directory
+    -   id:     get-composer-cache-directory
+        name:   Get Composer caches directory path
+        run:    echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+        shell:  bash
 
-    - name: Build and zip project
-      run: |
-        chmod 777 ./bin/zip.sh
-        sudo bash ./bin/zip.sh
-      shell: bash
+      # Mount composer cache directory
+    -   id:     mount-composer-cache-directory
+        name:   Mount composer cache directory
+        uses:   actions/cache@v3
+        with:
+            path:           ${{ steps.get-composer-cache-directory.outputs.dir }}
+            key:            ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+            restore-keys:   ${{ runner.os }}-composer-
+          
+      # Mount composer cache directory
+    -   id:     mount-npm-cache-directory
+        name:   Mount npm cache directory
+        uses:   actions/cache@v3
+        with:
+            path:           node_modules
+            key:            ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+            restore-keys:   ${{ runner.os }}-npm-
+        
+    -  name: Build and zip project
+       run: |
+         chmod 777 ./bin/zip.sh
+         sudo bash ./bin/zip.sh
+       shell: bash
       
-    - name: Add archive to artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: reepay-woocommerce-payment.zip
-        path: ./build/reepay-woocommerce-payment.zip
+    -  name: Add archive to artifacts
+       uses: actions/upload-artifact@v3
+       with:
+         name: reepay-woocommerce-payment.zip
+         path: ./build/reepay-woocommerce-payment.zip
