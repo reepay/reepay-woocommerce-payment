@@ -16,9 +16,27 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      
-      - name: Install PHP dependencies
-        uses: lukekortunov/php-composer-install-and-cache@v1
+
+      # Get composer cache directory
+      -   id:     get-composer-cache-directory
+          name:   Get Composer caches directory path
+          run:    echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+          shell:  bash
+
+      # Mount cache directory
+      -   id:     mount-cache-directory
+          name:   Mount cache directory
+          uses:   actions/cache@v3
+          with:
+            path:           ${{ steps.get-composer-cache-directory.outputs.dir }}
+            key:            ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+            restore-keys:   ${{ runner.os }}-composer-
+
+      # Install composer deps, if .lock file was changed
+      -   id:     install-composer-dependencies
+          name:   Install composer dependencies
+          run:    composer install --prefer-dist --no-progress --no-suggest
+          shell:  bash
 
       - name: PHP Code Standarts
         run: |
