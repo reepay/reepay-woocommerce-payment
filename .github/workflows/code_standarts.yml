@@ -23,9 +23,9 @@ jobs:
           run:    echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
           shell:  bash
 
-      # Mount cache directory
-      -   id:     mount-cache-directory
-          name:   Mount cache directory
+      # Mount composer cache directory
+      -   id:     mount-composer-cache-directory
+          name:   Mount composer cache directory
           uses:   actions/cache@v3
           with:
             path:           ${{ steps.get-composer-cache-directory.outputs.dir }}
