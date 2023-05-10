@@ -2,10 +2,9 @@ name: PHPUnit
 run-name: PHPUnit
 
 on:
-  workflow_dispatch
-#   pull_request:
-#     types: [opened, reopened, synchronize]
-#     branches: [ "master", "dev" ]
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: [ "master", "dev" ]
 
 jobs:
   run:    
