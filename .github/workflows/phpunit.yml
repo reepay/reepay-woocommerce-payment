@@ -32,7 +32,9 @@ jobs:
       run: php -v
 
     - name: Composer install
-      run: composer install --optimize-autoloader --prefer-dist
+      run: | 
+          composer update
+          composer install --optimize-autoloader --prefer-dist
 
     -   name: Set up MySQL
         run: |
