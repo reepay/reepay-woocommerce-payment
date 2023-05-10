@@ -23,7 +23,7 @@ trait TokenReepayTrait {
 	/**
 	 * Assign payment token to order.
 	 *
-	 * @param WC_Order        $order order to assign.
+	 * @param WC_Order             $order order to assign.
 	 * @param WC_Payment_Token|int $token token to assign.
 	 *
 	 * @return void
@@ -179,7 +179,6 @@ trait TokenReepayTrait {
 		if ( ! empty( $card_info['card_type'] ) ) {
 			update_post_meta( $order->get_id(), 'reepay_card_type', $card_info['card_type'] );
 		}
-
 
 		update_post_meta( $order->get_id(), '_reepay_source', $card_info );
 
