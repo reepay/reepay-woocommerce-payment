@@ -67,7 +67,7 @@ then
   zip -r -q reepay-woocommerce-payment.zip reepay-woocommerce-payment
 
   # remove the source directory
-  rm -rf ./reepay-woocommerce-payment
+#  rm -rf ./reepay-woocommerce-payment
 else
   warning "zip command not found. Create archive by yourself ./build/reepay-woocommerce-payment"
 fi
