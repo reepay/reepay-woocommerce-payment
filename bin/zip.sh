@@ -36,7 +36,7 @@ mkdir -p "$BUILD_DIR"
 if [ ! -d "./node_modules" ];
 then
   status "Installing npm dependencies... 📦"
-  npm install
+  npm ci  --ignore-scripts
 fi
 
 # Install composer no-dev dependencies.
