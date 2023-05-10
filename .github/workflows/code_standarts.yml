@@ -35,7 +35,7 @@ jobs:
       # Install composer deps, if .lock file was changed
       -   id:     install-composer-dependencies
           name:   Install composer dependencies
-          run:    composer install --prefer-dist --no-progress --no-suggest
+          run:    composer install --prefer-dist --no-progress
           shell:  bash
 
       -   name: PHP Code Standarts
