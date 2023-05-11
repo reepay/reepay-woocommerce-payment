@@ -47,5 +47,5 @@ jobs:
     -  name: Add archive to artifacts
        uses: actions/upload-artifact@v3
        with:
-         name: reepay-woocommerce-payment.zip
+         name: reepay-woocommerce-payment
          path: ./build/reepay-woocommerce-payment/

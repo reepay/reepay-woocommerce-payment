@@ -5,8 +5,6 @@
  * @package Reepay\Checkout\Functions
  */
 
-use Reepay\Checkout\Gateways;
-
 defined( 'ABSPATH' ) || exit();
 
 if ( ! function_exists( 'rp_get_order_handle' ) ) {
@@ -110,7 +108,7 @@ if ( ! function_exists( 'rp_get_order_by_session' ) ) {
 		}
 
 		clean_post_cache( $order_id );
-		return wc_get_order( $order_id );
+		return $order_id ? wc_get_order( $order_id ) : false;
 	}
 }
 
@@ -121,6 +119,6 @@ if ( ! function_exists( 'rp_is_order_paid_via_reepay' ) ) {
 	 * @param WC_Order $order order to check.
 	 */
 	function rp_is_order_paid_via_reepay( WC_Order $order ): bool {
-		return in_array( $order->get_payment_method(), Gateways::PAYMENT_METHODS, true );
+		return rp_is_reepay_payment_method( $order->get_payment_method() );
 	}
 }
