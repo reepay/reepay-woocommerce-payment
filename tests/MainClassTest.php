@@ -1,22 +1,15 @@
 <?php
 /**
- * Class SampleTest
+ * Class MainClassTest
  *
- * @package ./reepay_Woocommerce_Payment
+ * @package Reepay\Checkout
  */
 
 /**
- * Sample test case.
+ * MainClassTest.
  */
 class MainClassTest extends WP_UnitTestCase {
-
-	/**
-	 * A single example test.
-	 */
 	public function test_reepay_function() {
-		$this->assertEquals(
-			'WC_ReepayCheckout',
-			get_class( reepay() )
-		);
+		$this->assertSame( get_class( reepay() ), WC_ReepayCheckout::class );
 	}
 }

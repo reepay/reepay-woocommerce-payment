@@ -98,33 +98,32 @@ if ( ! function_exists( 'wcs_cart_only_subscriptions' ) ) {
 	 * @return bool
 	 */
 	function wcs_cart_only_subscriptions(): bool {
-		$have_product = false;
+		$only_subscriptions = true;
 		if (
 			class_exists( WC_Subscriptions_Product::class )
 			&& WC()->cart
-			&& wcs_cart_have_subscription()
 		) {
 			foreach ( WC()->cart->get_cart() as $item ) {
 				if ( ! WC_Subscriptions_Product::is_subscription( $item['data'] ) ) {
-					$have_product = true;
+					$only_subscriptions = false;
 					break;
 				}
 			}
 		} else {
-			$have_product = true;
+			$only_subscriptions = false;
 		}
 
-		return apply_filters( 'wcs_cart_only_subscriptions', ! $have_product );
+		return apply_filters( 'wcs_cart_only_subscriptions', $only_subscriptions );
 	}
 }
 
-if ( ! function_exists( 'wc_cart_only_reepay_subscriptions' ) ) {
+if ( ! function_exists( 'wcr_cart_only_reepay_subscriptions' ) ) {
 	/**
 	 * Check is Cart have only Subscription Products.
 	 *
 	 * @return bool
 	 */
-	function wc_cart_only_reepay_subscriptions(): bool {
-		return apply_filters( 'wcs_cart_only_subscriptions', false );
+	function wcr_cart_only_reepay_subscriptions(): bool {
+		return apply_filters( 'wcr_cart_only_reepay_subscriptions', false );
 	}
 }

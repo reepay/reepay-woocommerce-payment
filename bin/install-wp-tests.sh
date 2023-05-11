@@ -185,15 +185,23 @@ install_dependencies() {
     curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
     [ ! -f ./wp-config.php ] && php wp-cli.phar core config --dbname=$DB_NAME --dbuser=$DB_USER --dbpass=$DB_PASS --dbhost=$DB_HOST --dbprefix=wptests_
 
+    php wp-cli.phar config set --raw WP_DEBUG true
+    php wp-cli.phar config set --raw WP_DEBUG_LOG true
+    php wp-cli.phar config set --raw WP_DEBUG_DISPLAY true
+
     php wp-cli.phar db check
     php wp-cli.phar db import $WP_DB_DATA
     php wp-cli.phar db check
-    php wp-cli.phar option get siteurl
-#    php wp-cli.phar search-replace "http://local.wordpress.test" "$WP_SITE_URL"
-#    php wp-cli.phar theme install twentyseventeen --activate
-     php wp-cli.phar plugin install woocommerce --activate --force
-    php wp-cli.phar db check
-    php wp-cli.phar plugin install reepay-subscriptions-for-woocommerce --force
+#   php wp-cli.phar search-replace "http://local.wordpress.test" "$WP_SITE_URL"
+#   php wp-cli.phar theme install twentyseventeen --activate
+    php wp-cli.phar plugin install woocommerce --activate --force
+
+    php wp-cli.phar plugin install https://github.com/reepay/reepay-woocommerce-subscriptions/archive/refs/heads/main.zip --activate --force
+    mv ./wp-content/plugins/reepay-woocommerce-subscriptions ./wp-content/plugins/reepay-subscriptions-for-woocommerce
+
+    php wp-cli.phar plugin install https://git.one-pix.com/onepix/woocommerce-subscriptions-for-phpunit/-/archive/main/woocommerce-subscriptions-for-phpunit-main.zip --activate --force
+    mv ./wp-content/plugins/woocommerce-subscriptions-for-phpunit-main ./wp-content/plugins/woocommerce-subscriptions
+
     php wp-cli.phar plugin list
 }
 

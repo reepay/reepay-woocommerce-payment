@@ -940,7 +940,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					);
 				}
 
-				if ( wc_cart_only_reepay_subscriptions() ) {
+				if ( wcr_cart_only_reepay_subscriptions() ) {
 					$method = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/payment_method/' . $token->get_token() );
 					if ( is_wp_error( $method ) ) {
 						wc_add_notice( $method->get_error_message(), 'error' );
