@@ -127,30 +127,30 @@ class SubscriptionsTest extends WP_UnitTestCase {
 		$cart_generator = new RpTestCartGenerator();
 
 		$cart_generator->new_cart( 'simple' );
-		$this->assertFalse( wc_cart_only_reepay_subscriptions(), 'simple'  );
+		$this->assertFalse( wcr_cart_only_reepay_subscriptions(), 'simple'  );
 
 		if( RP_TEST_PLUGINS_STATE::woo_subs_activated() ) {
 			$cart_generator->new_cart( array( 'simple', 'woo_sub' ) );
-			$this->assertFalse( wc_cart_only_reepay_subscriptions(), 'simple, woo_sub'   );
+			$this->assertFalse( wcr_cart_only_reepay_subscriptions(), 'simple, woo_sub'   );
 
 			$cart_generator->new_cart( array( 'woo_sub', 'woo_sub' ) );
-			$this->assertFalse( wc_cart_only_reepay_subscriptions(), 'woo_sub, woo_sub'  );
+			$this->assertFalse( wcr_cart_only_reepay_subscriptions(), 'woo_sub, woo_sub'  );
 		}
 
 		if( RP_TEST_PLUGINS_STATE::rp_subs_activated() ) {
 			$cart_generator->new_cart( array( 'simple', 'rp_sub' ) );
-			$this->assertFalse( wc_cart_only_reepay_subscriptions(), 'simple, rp_sub'  );
+			$this->assertFalse( wcr_cart_only_reepay_subscriptions(), 'simple, rp_sub'  );
 
 			$cart_generator->new_cart( array( 'rp_sub', 'rp_sub' ) );
-			$this->assertTrue( wc_cart_only_reepay_subscriptions(), 'rp_sub, rp_sub'  );
+			$this->assertTrue( wcr_cart_only_reepay_subscriptions(), 'rp_sub, rp_sub'  );
 		}
 
 		if( RP_TEST_PLUGINS_STATE::woo_subs_activated() && RP_TEST_PLUGINS_STATE::rp_subs_activated() ) {
 			$cart_generator->new_cart( array( 'simple', 'rp_sub', 'woo_sub' )  );
-			$this->assertFalse( wc_cart_only_reepay_subscriptions(), 'simple, rp_sub, rp_sub' );
+			$this->assertFalse( wcr_cart_only_reepay_subscriptions(), 'simple, rp_sub, rp_sub' );
 
 			$cart_generator->new_cart( array( 'rp_sub', 'woo_sub' ) );
-			$this->assertFalse( wc_cart_only_reepay_subscriptions(), 'rp_sub, woo_sub'  );
+			$this->assertFalse( wcr_cart_only_reepay_subscriptions(), 'rp_sub, woo_sub'  );
 		}
 	}
 }
