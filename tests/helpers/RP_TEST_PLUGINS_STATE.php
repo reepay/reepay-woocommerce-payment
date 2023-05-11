@@ -36,12 +36,6 @@ abstract class RP_TEST_PLUGINS_STATE {
 				if( 'woo' === $plugin ) {
 					update_option( 'woocommerce_db_version', WC()->version  );
 				}
-
-				echo sprintf(
-					"Plugin %s (%s)\n",
-					$plugin,
-					self::PLUGINS[ $plugin ]
-				);
 			} else {
 				echo sprintf(
 					"Plugin %s not found\n",

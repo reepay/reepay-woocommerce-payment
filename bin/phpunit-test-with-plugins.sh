@@ -1,15 +1,15 @@
-echo 'Woo'
+echo 'Plugins: woo'
 export PHPUNIT_PLUGINS="woo"
-npm run phpunit
+php ./vendor/bin/phpunit
 
-echo 'woo,woo_subs'
+echo 'Plugins: woo,woo_subs'
 export PHPUNIT_PLUGINS="woo,woo_subs"
-npm run phpunit
+php ./vendor/bin/phpunit
 
-echo 'woo,rp_subs'
+echo 'Plugins: woo,rp_subs'
 export PHPUNIT_PLUGINS="woo,rp_subs"
-npm run phpunit
+php ./vendor/bin/phpunit
 
-echo 'woo,woo_subs,rp_sub'
+echo 'Plugins: woo,woo_subs,rp_sub'
 export PHPUNIT_PLUGINS="woo,woo_subs,rp_subs"
-npm run phpunit
+php ./vendor/bin/phpunit

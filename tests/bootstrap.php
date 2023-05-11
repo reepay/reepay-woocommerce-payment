@@ -51,5 +51,7 @@ tests_add_filter( 'plugins_loaded', function () {
 	$reepay_checkout->is_webhook_configured();
 } );
 
+tests_add_filter( 'deprecated_function_trigger_error', '__return_false' );
+
 // Start up the WP testing environment.
 require_once "{$_tests_dir}/includes/bootstrap.php";
