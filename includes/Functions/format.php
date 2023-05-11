@@ -7,19 +7,6 @@
 
 defined( 'ABSPATH' ) || exit();
 
-if ( ! function_exists( 'rp_format_price_decimals' ) ) {
-	/**
-	 * Formats a minor unit value into float with two decimals
-	 *
-	 * @param string $price_minor is the amount to format.
-	 *
-	 * @return string the nicely formatted value
-	 */
-	function rp_format_price_decimals( string $price_minor ): string {
-		return number_format( $price_minor / 100, 2, wc_get_price_decimal_separator(), '' );
-	}
-}
-
 if ( ! function_exists( 'rp_format_credit_card' ) ) {
 	/**
 	 * Formats a credit card nicely
