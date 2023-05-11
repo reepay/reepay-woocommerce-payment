@@ -25,35 +25,23 @@ if ( ! file_exists( "{$_tests_dir}/includes/functions.php" ) ) {
 // Give access to tests_add_filter() function.
 require_once "{$_tests_dir}/includes/functions.php";
 
+require_once 'helpers/RP_TEST_HELPERS.php';
+require_once 'helpers/RP_TEST_PLUGINS_STATE.php';
+require_once 'helpers/RpTestOrderGenerator.php';
+require_once 'helpers/RpTestProductGenerator.php';
+require_once 'helpers/RpTestCartGenerator.php';
+
 /**
- * Manually load the plugin being tested.
+ * Manually load Reepay plugin and dependencies.
  */
-tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
-function _manually_load_plugin() {
-	$wordpres_plugins_path = ABSPATH . 'wp-content/plugins/';
+tests_add_filter( 'muplugins_loaded', function () {
+	RP_TEST_PLUGINS_STATE::activate_plugins();
 
-	require $wordpres_plugins_path . 'woocommerce/woocommerce.php';
+	require_once dirname( dirname( __FILE__ ) ) . '/reepay-woocommerce-payment.php';
+} );
 
-	require dirname( dirname( __FILE__ ) ) . '/./reepay-woocommerce-payment.php';
-}
-
-// install WC.
-tests_add_filter( 'setup_theme', 'install_wc' );
-function install_wc() {
-	// Clean existing install first.
-	define( 'WP_UNINSTALL_PLUGIN', true );
-	define( 'WC_REMOVE_ALL_DATA', true );
-	include (ABSPATH . 'wp-content/plugins/woocommerce/uninstall.php');
-	echo esc_html( 'Installing WooCommerce...' . PHP_EOL );
-	WC_Install::install();
-	// Reload capabilities after install, see https://core.trac.wordpress.org/ticket/28374
-	$GLOBALS['wp_roles'] = null;
-	wp_roles();
-}
-
-// Init reepay.
-tests_add_filter( 'plugins_loaded', 'init_reepay' );
-function init_reepay() {
+// Init Reepay.
+tests_add_filter( 'plugins_loaded', function () {
 	$reepay_checkout = reepay()->gateways()->checkout();
 	$reepay_checkout->process_admin_options();
 	$reepay_checkout->update_option( 'enabled', 'yes' );
@@ -61,13 +49,7 @@ function init_reepay() {
 	$reepay_checkout->update_option( 'private_key_test', 'priv_2795e0868bc1609c66783e0c8d967bcf' );
 	reepay()->reset_settings();
 	$reepay_checkout->is_webhook_configured();
-}
-
-require_once 'helpers/RP_TEST_HELPERS.php';
-require_once 'helpers/RP_TEST_PLUGINS_STATE.php';
-require_once 'helpers/RpTestOrderGenerator.php';
-require_once 'helpers/RpTestProductGenerator.php';
-require_once 'helpers/RpTestCartGenerator.php';
+} );
 
 // Start up the WP testing environment.
-require "{$_tests_dir}/includes/bootstrap.php";
+require_once "{$_tests_dir}/includes/bootstrap.php";

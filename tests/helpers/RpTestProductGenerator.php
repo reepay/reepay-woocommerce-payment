@@ -34,7 +34,7 @@ class RpTestProductGenerator {
 
 		$products = array(
 			'simple'   => WC_Product_Simple::class,
-			'variable' => WC_Product_Variable::class,
+//			'variable' => WC_Product_Variable::class,
 			'woo_sub' => WC_Product_Subscription::class,
 			'rp_sub'  => WC_Product_Reepay_Simple_Subscription::class,
 		);
@@ -43,6 +43,7 @@ class RpTestProductGenerator {
 			$this->product = class_exists( $products[ $type ] ) ? new $products[ $type ] : null;
 
 			if ( ! empty( $this->product ) ) {
+				$this->product->set_regular_price( 12.23 );
 				$this->product->save();
 			}
 		} else {

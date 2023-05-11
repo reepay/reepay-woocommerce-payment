@@ -27,6 +27,7 @@
     "phpcs:full": "bash ./bin/phpcs.sh -full",
     "phpcs:fix": "bash ./bin/phpcs.sh -fix",
     "phpunit": "php ./vendor/bin/phpunit",
+    "phpunit:full": "bash ./bin/phpunit-test-with-plugins.sh",
     "phpunit:init": "bash bin/install-wp-tests.sh wp_phpunit root ''"
   },
   "repository": {

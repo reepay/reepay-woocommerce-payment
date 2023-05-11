@@ -20,7 +20,7 @@ class RpTestOrderGenerator {
 		) );
 	}
 
-	public function get_order() {
+	public function order() {
 		return $this->order;
 	}
 
@@ -52,7 +52,7 @@ class RpTestOrderGenerator {
 
 	public function add_woocommerce_subscription_product() {
 		$this->order->add_product(
-			( new RpTestProductGenerator( 'woocommerce_subscription' ) )->product()
+			( new RpTestProductGenerator( 'woo_sub' ) )->product()
 		);
 	}
 

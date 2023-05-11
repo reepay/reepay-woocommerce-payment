@@ -41,11 +41,11 @@ class RpTestCartGenerator {
 	 * @throws Exception
 	 */
 	public function add_item( string $type ): RpTestCartGenerator {
-		$product = ( new RpTestProductGenerator( $type ) )->product();
+		$product_generator = ( new RpTestProductGenerator( $type ) );
 
-		$this->product_generators[] = $product;
+		$this->product_generators[] = $product_generator;
 
-		$this->cart->add_to_cart( $product );
+		$this->cart->add_to_cart( $product_generator->product()->get_id() );
 
 		return $this;
 	}
@@ -62,6 +62,8 @@ class RpTestCartGenerator {
 		foreach ( $this->product_generators as $product_generator ) {
 			$product_generator->delete();
 		}
+
+		$this->product_generators = array();
 
 		return $this;
 	}
