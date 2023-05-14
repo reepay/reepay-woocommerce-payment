@@ -52,7 +52,7 @@ class Main {
 					'jquery',
 					'reepay-js-input-mask',
 				),
-				filemtime( reepay()->get_setting( 'js_path' ) . 'admin' . $suffix . '.js' ),
+				reepay()->get_setting( 'plugin_version' ),
 				true
 			);
 

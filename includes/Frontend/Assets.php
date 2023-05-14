@@ -43,7 +43,7 @@ class Assets {
 			self::SLUG_GLOBAL_CSS,
 			reepay()->get_setting( 'css_url' ) . 'style' . $suffix . '.css',
 			array(),
-			filemtime( reepay()->get_setting( 'css_path' ) . 'style' . $suffix . '.css' )
+			reepay()->get_setting( 'plugin_version' )
 		);
 
 		$logo_height = reepay()->get_setting( 'logo_height' );
@@ -68,7 +68,7 @@ class Assets {
 			self::SLUG_REEPAY_CDN_JS,
 			reepay()->get_setting( 'js_url' ) . 'checkout-cdn.js',
 			array(),
-			filemtime( reepay()->get_setting( 'js_path' ) . 'checkout-cdn.js' ),
+			reepay()->get_setting( 'plugin_version' ),
 			true
 		);
 
@@ -80,7 +80,7 @@ class Assets {
 				// 'wc-checkout',
 				self::SLUG_REEPAY_CDN_JS,
 			),
-			filemtime( reepay()->get_setting( 'js_path' ) . 'checkout' . $suffix . '.js' ),
+			reepay()->get_setting( 'plugin_version' ),
 			true
 		);
 
