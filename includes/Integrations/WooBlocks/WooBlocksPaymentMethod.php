@@ -82,17 +82,6 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	 * @return array
 	 */
 	public function get_payment_method_script_handles(): array {
-		static $gateway_scripts_initialized = false;
-
-		if ( ! $gateway_scripts_initialized ) {
-			wp_enqueue_style(
-				'wc-reepay-blocks',
-				reepay()->get_setting( 'css_url' ) . 'woo_blocks.css',
-				array(),
-				filemtime( reepay()->get_setting( 'css_path' ) . 'woo_blocks.css' )
-			);
-		}
-
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 		$handle = "wc-reepay-blocks-payment-method-$this->name";
 
@@ -110,7 +99,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 			$handle,
 			reepay()->get_setting( 'js_url' ) . "woo-blocks$suffix.js?name=$this->name",
 			$script_dependencies,
-			filemtime( reepay()->get_setting( 'js_path' ) . "woo-blocks$suffix.js" ),
+			reepay()->get_setting( 'plugin_version' ),
 			true
 		);
 
@@ -144,10 +133,13 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	 * @return array
 	 */
 	public function get_payment_method_data(): array {
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
 		$data = array(
 			'title'       => $this->get_setting( 'title' ),
 			'description' => $this->get_setting( 'description' ),
 			'supports'    => $this->get_supported_features(),
+			'cssPath'     => reepay()->get_setting( 'css_url' ) . 'woo_blocks' . $suffix . '.css?ver=' . reepay()->get_setting( 'plugin_version' ),
 		);
 
 		if ( in_array( 'cards', $data['supports'], true ) ) {
