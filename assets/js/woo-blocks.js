@@ -21,6 +21,10 @@ if (window.wc
 
     const settings = getSetting(PAYMENT_METHOD_NAME + '_data', {});
 
+    if (settings.cssPath && !document.getElementById('wc-reepay-blocks')) {
+        document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="${settings.cssPath}">`);
+    }
+
     const label = decodeEntities(settings.title) || __('Reepay checkout', 'reepay-checkout-gateway');
 
     if (settings.tokens) {
