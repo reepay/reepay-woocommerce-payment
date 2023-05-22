@@ -19,7 +19,7 @@ class Assets {
 
 	const SLUG_REEPAY_CDN_JS = 'reepay-checkout';
 
-	const SLUG_GLOBAL_CSS = 'wc-gateway-reepay-checkout';
+	const SLUG_CHECKOUT_CSS = 'wc-gateway-reepay-frontend';
 
 	/**
 	 * Assets constructor.
@@ -39,11 +39,11 @@ class Assets {
 	public function enqueue_payment_assets() {
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
-		wp_enqueue_style(
-			self::SLUG_GLOBAL_CSS,
-			reepay()->get_setting( 'css_url' ) . 'style' . $suffix . '.css',
+		wp_register_style(
+			self::SLUG_CHECKOUT_CSS,
+			reepay()->get_setting( 'css_url' ) . 'checkout' . $suffix . '.css',
 			array(),
-			filemtime( reepay()->get_setting( 'css_path' ) . 'style' . $suffix . '.css' )
+			reepay()->get_setting( 'plugin_version' )
 		);
 
 		$logo_height = reepay()->get_setting( 'logo_height' );
@@ -53,7 +53,7 @@ class Assets {
 				$logo_height .= 'px';
 			}
 			wp_add_inline_style(
-				self::SLUG_GLOBAL_CSS,
+				self::SLUG_CHECKOUT_CSS,
 				"
                     #payment .wc_payment_method > label:first-of-type img {
                         height: $logo_height;
@@ -68,7 +68,7 @@ class Assets {
 			self::SLUG_REEPAY_CDN_JS,
 			reepay()->get_setting( 'js_url' ) . 'checkout-cdn.js',
 			array(),
-			filemtime( reepay()->get_setting( 'js_path' ) . 'checkout-cdn.js' ),
+			reepay()->get_setting( 'plugin_version' ),
 			true
 		);
 
@@ -80,7 +80,7 @@ class Assets {
 				// 'wc-checkout',
 				self::SLUG_REEPAY_CDN_JS,
 			),
-			filemtime( reepay()->get_setting( 'js_path' ) . 'checkout' . $suffix . '.js' ),
+			reepay()->get_setting( 'plugin_version' ),
 			true
 		);
 
@@ -93,6 +93,8 @@ class Assets {
 		if ( ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() )
 			 && ! is_order_received_page()
 		) {
+			wp_enqueue_style( self::SLUG_CHECKOUT_CSS );
+
 			wp_enqueue_script( self::SLUG_REEPAY_CDN_JS );
 			wp_enqueue_script( self::SLUG_CHECKOUT_JS );
 		}

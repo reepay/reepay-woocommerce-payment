@@ -30,42 +30,49 @@ class Main {
 	 * Enqueue Scripts in admin
 	 *
 	 * @param string $hook current page hook.
-	 *
-	 * @return void
 	 */
 	public function admin_enqueue_scripts( string $hook ) {
-		if ( 'post.php' === $hook ) {
-			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-
-			wp_register_script(
-				'reepay-js-input-mask',
-				reepay()->get_setting( 'js_url' ) . 'jquery.inputmask' . $suffix . '.js',
-				array( 'jquery' ),
-				'5.0.3',
-				true
-			);
-
-			wp_enqueue_script(
-				'reepay-admin-js',
-				reepay()->get_setting( 'js_url' ) . 'admin' . $suffix . '.js',
-				array(
-					'jquery',
-					'reepay-js-input-mask',
-				),
-				filemtime( reepay()->get_setting( 'js_path' ) . 'admin' . $suffix . '.js' ),
-				true
-			);
-
-			wp_localize_script(
-				'reepay-admin-js',
-				'Reepay_Admin',
-				array(
-					'ajax_url'  => admin_url( 'admin-ajax.php' ),
-					'text_wait' => __( 'Please wait...', 'reepay-checkout-gateway' ),
-					'nonce'     => wp_create_nonce( 'reepay' ),
-				)
-			);
+		if ( 'post.php' !== $hook ) {
+			return;
 		}
+
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		wp_enqueue_style(
+			'wc-gateway-reepay-admin',
+			reepay()->get_setting( 'css_url' ) . 'admin' . $suffix . '.css',
+			array(),
+			reepay()->get_setting( 'plugin_version' )
+		);
+
+		wp_register_script(
+			'reepay-js-input-mask',
+			reepay()->get_setting( 'js_url' ) . 'jquery.inputmask' . $suffix . '.js',
+			array( 'jquery' ),
+			'5.0.3',
+			true
+		);
+
+		wp_enqueue_script(
+			'reepay-admin-js',
+			reepay()->get_setting( 'js_url' ) . 'admin' . $suffix . '.js',
+			array(
+				'jquery',
+				'reepay-js-input-mask',
+			),
+			reepay()->get_setting( 'plugin_version' ),
+			true
+		);
+
+		wp_localize_script(
+			'reepay-admin-js',
+			'Reepay_Admin',
+			array(
+				'ajax_url'  => admin_url( 'admin-ajax.php' ),
+				'text_wait' => __( 'Please wait...', 'reepay-checkout-gateway' ),
+				'nonce'     => wp_create_nonce( 'reepay' ),
+			)
+		);
 	}
 }
 
