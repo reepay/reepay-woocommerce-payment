@@ -4,16 +4,17 @@
 #Ignore node_modules
 node_modules
 
+#Ignore assets dist
+assets/dist
+
 #Ignore PHP storm config
 .idea
 
 #Ignore build
 build
 
-#Ignore all composer dependencies except autoloader
+#Ignore vendor
 vendor
-!vendor/autoload.php
-!vendor/composer
 
 #PHPunit cache
 .phpunit.result.cache

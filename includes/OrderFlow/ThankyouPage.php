@@ -54,7 +54,14 @@ class ThankyouPage {
 	 *
 	 * @return string
 	 */
-	public function override_template( string $located, string $template_name, array $args, string $template_path, string $default_path ): string {
+	public function override_template( string $located, string $template_name, $args, string $template_path, string $default_path ): string {
+		/**
+		 * ToDo return type array to $args after fix here https://wordpress.org/support/topic/wrong-default-params-on-wc_get_template/
+		 */
+		if ( ! is_array( $args ) ) {
+			return $located;
+		}
+
 		if ( strpos( $located, 'checkout/thankyou.php' ) !== false ) {
 			if ( ! isset( $args['order'] ) ) {
 				return $located;
@@ -143,7 +150,7 @@ class ThankyouPage {
 				'jquery',
 				'jquery-blockui',
 			),
-			filemtime( reepay()->get_setting( 'js_path' ) . 'thankyou' . $suffix . '.js' ),
+			reepay()->get_setting( 'plugin_version' ),
 			true
 		);
 

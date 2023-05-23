@@ -587,14 +587,14 @@ class Api {
 	 *
 	 * @param WC_Order   $order       order to charge.
 	 * @param string     $token       payment token.
-	 * @param float      $amount      amount to charge.
+	 * @param float|null $amount      amount to charge.
 	 * @param array|null $order_items order items data. @see \Reepay\Checkout\Gateways::get_order_items.
 	 * @param bool       $settle      settle payment or not.
 	 *
 	 * @return array|WP_Error
 	 * @throws Exception If charge error.
 	 */
-	public function charge( WC_Order $order, string $token, float $amount, $order_items = null, $settle = false ) {
+	public function charge( WC_Order $order, string $token, ?float $amount = null, $order_items = null, $settle = false ) {
 		$currency = $order->get_currency();
 
 		$params = array(
