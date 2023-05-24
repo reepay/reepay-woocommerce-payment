@@ -30,6 +30,10 @@ class InstantSettleTest extends WP_UnitTestCase {
 		self::$options                 = new OptionsController();
 		self::$product_generator       = new ProductGenerator();
 		self::$instant_settle_instance = new InstantSettle();
+
+		self::$instant_settle_instance::set_order_capture(
+			new OrderCaptureMock()
+		);
 	}
 
 	/**
@@ -41,25 +45,29 @@ class InstantSettleTest extends WP_UnitTestCase {
 		parent::set_up();
 	}
 
+	/**
+	 * Make sure instant settlement can be processed just once
+	 */
 	public function test_process_instant_settle_already_settled() {
-		$this->order_generator->set_meta( '_is_instant_settled', '1' );
-
 		self::$options->set_option( 'settle', array(
 			InstantSettle::SETTLE_PHYSICAL
 		) );
+
+		$this->order_generator->add_product( 'simple', array(
+			'virtual'      => true,
+			'downloadable' => true,
+		) );
+
+		self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
 
 		$order_item_id = $this->order_generator->add_product( 'simple', array(
 			'virtual'      => true,
 			'downloadable' => true,
 		) );
 
-		self::$instant_settle_instance::set_order_capture(
-			new OrderCaptureMock()
-		);
-
 		self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
 
-		(new WC_Order_Item( $order_item_id ))->get_meta( '' );
+		$this->assertEmpty( ( new WC_Order_Item_Product( $order_item_id ) )->get_meta( 'settled' ) );
 	}
 
 	/**
