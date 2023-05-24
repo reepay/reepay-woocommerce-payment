@@ -19,5 +19,8 @@
         <testsuite name="Functions tested">
             <directory suffix="Test.php">./tests/functions</directory>
         </testsuite>
+        <testsuite name="OrderFlow tested">
+            <directory suffix="Test.php">./tests/orderFlow</directory>
+        </testsuite>
 	</testsuites>
 </phpunit>
