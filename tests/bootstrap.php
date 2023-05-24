@@ -27,9 +27,11 @@ require_once "{$_tests_dir}/includes/functions.php";
 
 require_once 'helpers/RP_TEST_HELPERS.php';
 require_once 'helpers/RP_TEST_PLUGINS_STATE.php';
+
+require_once 'helpers/RpTestCartGenerator.php';
+require_once 'helpers/RpTestOptions.php';
 require_once 'helpers/RpTestOrderGenerator.php';
 require_once 'helpers/RpTestProductGenerator.php';
-require_once 'helpers/RpTestCartGenerator.php';
 
 /**
  * Manually load Reepay plugin and dependencies.
@@ -44,10 +46,14 @@ tests_add_filter( 'muplugins_loaded', function () {
 tests_add_filter( 'plugins_loaded', function () {
 	$reepay_checkout = reepay()->gateways()->checkout();
 	$reepay_checkout->process_admin_options();
-	$reepay_checkout->update_option( 'enabled', 'yes' );
-	$reepay_checkout->update_option( 'test_mode', 'yes' );
-	$reepay_checkout->update_option( 'private_key_test', 'priv_2795e0868bc1609c66783e0c8d967bcf' ); //ToDo change with env variable
-	reepay()->reset_settings();
+
+	( new RpTestOptions() )->set_options( array(
+		'enabled' => 'yes',
+		'test_mode' => 'yes',
+		'private_key_test' => 'priv_2795e0868bc1609c66783e0c8d967bcf', //ToDo change with env variable
+
+	) );
+
 	$reepay_checkout->is_webhook_configured();
 } );
 

@@ -58,11 +58,6 @@ class RpTestCartGenerator {
 
 	public function empty_cart() {
 		$this->cart = new WC_Cart();
-
-		foreach ( $this->product_generators as $product_generator ) {
-			$product_generator->delete();
-		}
-
 		$this->product_generators = array();
 
 		return $this;

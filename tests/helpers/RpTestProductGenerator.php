@@ -4,18 +4,19 @@ class RpTestProductGenerator {
 	/**
 	 * @var WC_Product|null
 	 */
-	private ?WC_Product $product;
+	private ?WC_Product $product = null;
 
 	/**
 	 * RpTestProductGenerator constructor.
 	 *
 	 * @param string $type
+	 * @param array       $data
 	 *
 	 * @throws Exception
 	 */
-	public function __construct( string $type = '' ) {
+	public function __construct( string $type = '', array $data = array() ) {
 		if ( ! empty( $type ) ) {
-			$this->generate( $type );
+			$this->generate( $type, $data );
 		}
 	}
 
@@ -23,18 +24,14 @@ class RpTestProductGenerator {
 	 * Generate new product and maybe remove previous
 	 *
 	 * @param string $type
-	 * @param bool   $remove_previous
+	 * @param array  $data
 	 *
 	 * @return WC_Product|null
 	 * @throws Exception
 	 */
-	public function generate( string $type, bool $remove_previous = true ): ?WC_Product {
-		if ( $remove_previous ) {
-			$this->delete();
-		}
-
+	public function generate( string $type, array $data = array() ): ?WC_Product {
 		$products = array(
-			'simple'   => WC_Product_Simple::class,
+			'simple'  => WC_Product_Simple::class,
 //			'variable' => WC_Product_Variable::class,
 			'woo_sub' => WC_Product_Subscription::class,
 			'rp_sub'  => WC_Product_Reepay_Simple_Subscription::class,
@@ -45,10 +42,19 @@ class RpTestProductGenerator {
 
 			if ( ! empty( $this->product ) ) {
 				$this->product->set_regular_price( 12.23 );
+
+				foreach ( $data as $key => $value ) {
+					$function = "set_$key";
+
+					if ( is_callable( array( $this->product, $function ) ) ) {
+						$this->product->{$function}( $value );
+					}
+				}
+
 				$this->product->save();
 			}
 		} else {
-			throw new Exception( 'Wrong prodct type' );
+			throw new Exception( 'Wrong product type' );
 		}
 
 		return $this->product;
@@ -59,9 +65,5 @@ class RpTestProductGenerator {
 	 */
 	public function product(): ?WC_Product {
 		return $this->product;
-	}
-
-	public function delete() {
-		$this->product && $this->product->delete( true );
 	}
 }

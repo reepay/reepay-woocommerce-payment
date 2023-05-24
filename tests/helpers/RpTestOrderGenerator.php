@@ -20,45 +20,25 @@ class RpTestOrderGenerator {
 		) );
 	}
 
-	public function order() {
+	public function order(): ?WC_Order {
 		return $this->order;
 	}
 
-	public function delete_order() {
-		$this->order->delete( true );
-		$this->delete_order_products();
-	}
-
-	private function delete_order_products() {
-		foreach ( $this->order->get_items() as $order_item ) {
-			/**
-			 * @var WC_Order_Item_Product $order_item
-			 */
-			$order_item->get_product()->delete( true );
-		}
-	}
-
-	public function add_simple_product() {
+	public function add_simple_product( array $data = array() ) {
 		$this->order->add_product(
-			( new RpTestProductGenerator( 'simple' ) )->product()
+			( new RpTestProductGenerator( 'simple', $data ) )->product()
 		);
 	}
 
-	public function add_variable_product() {
+	public function add_variable_product( array $data = array() ) {
 		$this->order->add_product(
-			( new RpTestProductGenerator( 'variable' ) )->product()
+			( new RpTestProductGenerator( 'variable', $data ) )->product()
 		);
 	}
 
-	public function add_woocommerce_subscription_product() {
+	public function add_woocommerce_subscription_product( array $data = array() ) {
 		$this->order->add_product(
-			( new RpTestProductGenerator( 'woo_sub' ) )->product()
+			( new RpTestProductGenerator( 'woo_sub', $data ) )->product()
 		);
 	}
-
-//	public function add_woo_subscription() {
-//		$product = new WC_Product_Subscription();
-//		$product->save();
-//		$this->order->add_product( $product );
-//	}
 }

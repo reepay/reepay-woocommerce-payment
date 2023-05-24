@@ -65,4 +65,16 @@ abstract class RP_TEST_PLUGINS_STATE {
 	public static function rp_subs_activated() {
 		return class_exists( 'WooCommerce_Reepay_Subscriptions', false );
 	}
+
+	/**
+	 * @param WC_Product|string $product_or_type
+	 */
+	public static function maybe_skip_test_by_product_type( $product_or_type ) {
+		$type = is_object( $product_or_type ) ? $product_or_type->get_type() : $product_or_type;
+
+		if ( ( 'woo_sub' === $type && ! RP_TEST_PLUGINS_STATE::woo_subs_activated() ) ||
+			 'rp_sub' === $type && ! RP_TEST_PLUGINS_STATE::rp_subs_activated() ) {
+			PHPUnit\Framework\Assert::markTestSkipped("$type product type not active");
+		}
+	}
 }
