@@ -10,6 +10,7 @@ namespace Reepay\Checkout\OrderFlow;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use stdClass;
 use WC_Order;
+use WC_Order_Item;
 use WC_Order_Item_Fee;
 use WC_Order_Item_Product;
 use WC_Product;
@@ -99,12 +100,13 @@ class InstantSettle {
 	 * Check if product can be settled instantly.
 	 *
 	 * @param WC_Product $product      if need check the product.
-	 * @param string[]   $settle_types settle types.
 	 *
 	 * @return bool
 	 * @see ReepayGateway::$settle
 	 */
-	public static function can_product_be_settled_instantly( WC_Product $product, array $settle_types ): bool {
+	public static function can_product_be_settled_instantly( WC_Product $product ): bool {
+		$settle_types = reepay()->get_setting( 'settle' ) ?: array();
+
 		if ( in_array( self::SETTLE_PHYSICAL, $settle_types, true ) &&
 			 ( ! wcs_is_subscription_product( $product ) &&
 			   $product->needs_shipping() &&
@@ -130,10 +132,10 @@ class InstantSettle {
 	 *
 	 * @param WC_Order $order order to get items.
 	 *
-	 * @return array
+	 * @return WC_Order_Item[]
 	 */
 	public static function get_instant_settle_items( WC_Order $order ): array {
-		$settle_types = rp_get_payment_method( $order )->settle ?: array();
+		$settle_types = reepay()->get_setting( 'settle' ) ?: array();
 		$items_data   = array();
 
 		// Walk through the order lines and check if order item is virtual, downloadable, recurring or physical.
@@ -145,7 +147,7 @@ class InstantSettle {
 			 */
 			$product = $order_item->get_product();
 
-			if ( self::can_product_be_settled_instantly( $product, $settle_types ) ) {
+			if ( self::can_product_be_settled_instantly( $product ) ) {
 				$items_data[] = $order_item;
 			}
 		}
@@ -157,7 +159,7 @@ class InstantSettle {
 		}
 
 		if ( in_array( self::SETTLE_PHYSICAL, $settle_types, true ) ) {
-			foreach ( $order->get_items( 'shipping' ) as $i => $item_shipping ) {
+			foreach ( $order->get_shipping_methods() as $i => $item_shipping ) {
 				$items_data[ $i ] = $item_shipping;
 			}
 		}
@@ -178,7 +180,7 @@ class InstantSettle {
 		$total             = 0;
 		$items_data        = array();
 
-		$settle_types = rp_get_payment_method( $order )->settle ?: array();
+		$settle_types = reepay()->get_setting( 'settle' ) ?: array();
 
 		// Walk through the order lines and check if order item is virtual, downloadable, recurring or physical.
 		foreach ( $order->get_items() as $item ) {
@@ -190,7 +192,7 @@ class InstantSettle {
 			$product        = $item->get_product();
 			$price_incl_tax = $order->get_line_subtotal( $item, true, false );
 
-			if ( self::can_product_be_settled_instantly( $product, $settle_types ) ) {
+			if ( self::can_product_be_settled_instantly( $product ) ) {
 				$is_instant_settle = true;
 				$total            += $price_incl_tax;
 				$items_data[]      = OrderCapture::get_instance()->get_item_data( $item, $order );
