@@ -41,14 +41,7 @@ class RpTestProductGenerator {
 
 			if ( ! empty( $this->product ) ) {
 				$this->product->set_regular_price( 12.23 );
-
-				foreach ( $data as $key => $value ) {
-					$function = "set_$key";
-
-					if ( is_callable( array( $this->product, $function ) ) ) {
-						$this->product->{$function}( $value );
-					}
-				}
+				$this->product->set_props($data);
 
 				$this->product->save();
 			}
