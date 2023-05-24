@@ -33,10 +33,25 @@ class InstantSettle {
 	const SETTLE_FEE       = 'fee';
 
 	/**
+	 * OrderCapture instance
+	 *
+	 * @var OrderCapture
+	 */
+	private static OrderCapture $order_capture;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		add_action( 'reepay_instant_settle', array( $this, 'maybe_settle_instantly' ), 10, 1 );
+	}
+
+	/**
+	 *
+	 * @TODO remove this static method and other static methods
+	 */
+	public static function set_order_capture( OrderCapture $order_capture ) {
+		self::$order_capture = $order_capture;
 	}
 
 	/**
@@ -64,8 +79,6 @@ class InstantSettle {
 	 * @return void
 	 */
 	public function process_instant_settle( WC_Order $order ) {
-		$order_capture = OrderCapture::get_instance();
-
 		if ( ! empty( $order->get_meta( '_is_instant_settled' ) ) ) {
 			return;
 		}
@@ -78,19 +91,19 @@ class InstantSettle {
 		if ( ! empty( $settle_items ) ) {
 			foreach ( $settle_items as $item ) {
 				if ( empty( $item->get_meta( 'settled' ) ) ) {
-					$item_data = $order_capture->get_item_data( $item, $order );
+					$item_data = self::$order_capture->get_item_data( $item, $order );
 					$total     = $item_data['amount'] * $item_data['quantity'];
 
 					if ( $total <= 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
 						WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
-					} elseif ( $total > 0 && $order_capture->check_capture_allowed( $order ) ) {
+					} elseif ( $total > 0 && self::$order_capture->check_capture_allowed( $order ) ) {
 						$items_data[] = $item_data;
 						$total_all   += $total;
 					}
 				}
 			}
 
-			$order_capture->settle_items( $order, $items_data, $total_all, $settle_items );
+			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items );
 			$order->add_meta_data( '_is_instant_settled', '1' );
 			$order->save_meta_data();
 		}
@@ -195,7 +208,7 @@ class InstantSettle {
 			if ( self::can_product_be_settled_instantly( $product ) ) {
 				$is_instant_settle = true;
 				$total            += $price_incl_tax;
-				$items_data[]      = OrderCapture::get_instance()->get_item_data( $item, $order );
+				$items_data[]      = self::$order_capture->get_item_data( $item, $order );
 			}
 		}
 
@@ -251,7 +264,7 @@ class InstantSettle {
 
 		foreach ( $order->get_items() as $item ) {
 			if ( ! empty( $item->get_meta( 'settled' ) ) ) {
-				$settled[] = OrderCapture::get_instance()->get_item_data( $item, $order );
+				$settled[] = self::$order_capture->get_item_data( $item, $order );
 			}
 		}
 

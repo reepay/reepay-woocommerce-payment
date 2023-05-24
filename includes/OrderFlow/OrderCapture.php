@@ -24,16 +24,9 @@ defined( 'ABSPATH' ) || exit();
  */
 class OrderCapture {
 	/**
-	 * Singleton instance.
-	 *
-	 * @var OrderCapture
-	 */
-	private static $instance;
-
-	/**
 	 * Constructor
 	 */
-	private function __construct() {
+	public function __construct() {
 		add_filter( 'woocommerce_order_item_get_formatted_meta_data', array( $this, 'unset_specific_order_item_meta_data' ), 10, 2 );
 
 		add_action( 'woocommerce_after_order_itemmeta', array( $this, 'add_item_capture_button' ), 10, 2 );
@@ -45,19 +38,6 @@ class OrderCapture {
 		add_action( 'admin_init', array( $this, 'process_item_capture' ) );
 
 		add_action( 'woocommerce_order_item_add_action_buttons', array( $this, 'capture_full_order_button' ), 10, 1 );
-	}
-
-	/**
-	 * Get class instance.
-	 *
-	 * @return OrderCapture
-	 */
-	public static function get_instance(): OrderCapture {
-		if ( is_null( self::$instance ) ) {
-			self::$instance = new self();
-		}
-
-		return self::$instance;
 	}
 
 	/**
