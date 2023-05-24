@@ -60,15 +60,9 @@ class InstantSettle {
 	 * @param WC_Order $order order to settle payment.
 	 */
 	public function maybe_settle_instantly( WC_Order $order ) {
-		if ( ! is_object( $order ) ) {
-			$order = wc_get_order( $order );
+		if ( rp_is_order_paid_via_reepay( $order ) ) {
+			$this->process_instant_settle( $order );
 		}
-
-		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
-			return;
-		}
-
-		$this->process_instant_settle( $order );
 	}
 
 	/**
