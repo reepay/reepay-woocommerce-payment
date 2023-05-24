@@ -22,11 +22,13 @@ class GatewaysTest extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
-		$this->order = wc_create_order( array(
-			'status'      => 'completed',
-			'created_via' => 'tests',
-			'cart_hash'   => 'cart_hash',
-		) );
+		$this->order = wc_create_order(
+			array(
+				'status'      => 'completed',
+				'created_via' => 'tests',
+				'cart_hash'   => 'cart_hash',
+			)
+		);
 	}
 
 	/**

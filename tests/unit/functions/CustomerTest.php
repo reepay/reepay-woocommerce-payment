@@ -20,7 +20,7 @@ class CustomerTest extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
-		$this->user_id = wp_create_user('test', 'test', 'test@test.com');
+		$this->user_id = wp_create_user( 'test', 'test', 'test@test.com' );
 	}
 
 	/**

@@ -17,13 +17,15 @@ class OrderGenerator {
 	}
 
 	public function generate_order( array $args = array() ) {
-		$this->order = wc_create_order( wp_parse_args(
-			$args,
-			array(
-				'status'      => 'completed',
-				'created_via' => 'tests'
+		$this->order = wc_create_order(
+			wp_parse_args(
+				$args,
+				array(
+					'status'      => 'completed',
+					'created_via' => 'tests',
+				)
 			)
-		) );
+		);
 	}
 
 	public function order(): ?WC_Order {
@@ -93,11 +95,13 @@ class OrderGenerator {
 	 */
 	public function add_fee( array $data = array() ): int {
 		$item = new WC_Order_Item_Fee();
-		$item->set_props( array(
-			'name'      => $data['name'] ?? 'Test fee',
-			'total'     => $data['amount'] ?? 0,
-			'total_tax' => $data['tax'] ?? 0,
-		) );
+		$item->set_props(
+			array(
+				'name'      => $data['name'] ?? 'Test fee',
+				'total'     => $data['amount'] ?? 0,
+				'total_tax' => $data['tax'] ?? 0,
+			)
+		);
 		$item->save();
 
 		$this->order->add_item( $item );
@@ -114,9 +118,11 @@ class OrderGenerator {
 	 */
 	public function add_shipping( array $data = array() ): int {
 		$item = new WC_Order_Item_Shipping();
-		$item->set_props( array(
-			'method_title' => $data['method_title'] ?? 'Test fee',
-		) );
+		$item->set_props(
+			array(
+				'method_title' => $data['method_title'] ?? 'Test fee',
+			)
+		);
 		$item->save();
 
 		$this->order->add_item( $item );

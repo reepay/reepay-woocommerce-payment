@@ -22,7 +22,7 @@ class OptionsController {
 	public function set_option( string $key, $value ): OptionsController {
 		$this->reepay_gateway->update_option( $key, $value );
 
-		if( $this->reset ) {
+		if ( $this->reset ) {
 			reepay()->reset_settings();
 		}
 

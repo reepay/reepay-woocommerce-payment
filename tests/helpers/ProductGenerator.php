@@ -18,7 +18,7 @@ class ProductGenerator {
 	 * RpTestProductGenerator constructor.
 	 *
 	 * @param string $type
-	 * @param array       $data
+	 * @param array  $data
 	 *
 	 * @throws Exception
 	 */
@@ -44,11 +44,11 @@ class ProductGenerator {
 		);
 
 		if ( isset( $products[ $type ] ) ) {
-			$this->product = class_exists( $products[ $type ] ) ? new $products[ $type ] : null;
+			$this->product = class_exists( $products[ $type ] ) ? new $products[ $type ]() : null;
 
 			if ( ! empty( $this->product ) ) {
 				$this->product->set_regular_price( 12.23 );
-				$this->product->set_props($data);
+				$this->product->set_props( $data );
 
 				$this->product->save();
 			}

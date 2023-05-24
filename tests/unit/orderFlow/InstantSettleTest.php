@@ -49,21 +49,30 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 * Make sure instant settlement can be processed just once
 	 */
 	public function test_process_instant_settle_already_settled() {
-		self::$options->set_option( 'settle', array(
-			InstantSettle::SETTLE_PHYSICAL
-		) );
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_PHYSICAL,
+			)
+		);
 
-		$this->order_generator->add_product( 'simple', array(
-			'virtual'      => true,
-			'downloadable' => true,
-		) );
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'      => true,
+				'downloadable' => true,
+			)
+		);
 
 		self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
 
-		$order_item_id = $this->order_generator->add_product( 'simple', array(
-			'virtual'      => true,
-			'downloadable' => true,
-		) );
+		$order_item_id = $this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'      => true,
+				'downloadable' => true,
+			)
+		);
 
 		self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
 
@@ -89,19 +98,24 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 * ["rp_sub", true, false, 0]
 	 * ["rp_sub", false, true, 0]
 	 * ["rp_sub", true, true, 0]
-	 *
 	 */
 	public function test_get_instant_settle_items_physical( string $type, bool $virtual, bool $downloadable, int $result ) {
 		PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
 
-		self::$options->set_option( 'settle', array(
-			InstantSettle::SETTLE_PHYSICAL
-		) );
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_PHYSICAL,
+			)
+		);
 
-		$this->order_generator->add_product( $type, array(
-			'virtual'      => $virtual,
-			'downloadable' => $downloadable,
-		) );
+		$this->order_generator->add_product(
+			$type,
+			array(
+				'virtual'      => $virtual,
+				'downloadable' => $downloadable,
+			)
+		);
 
 		$this->assertSame(
 			$result,
@@ -128,19 +142,24 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 * ["rp_sub", true, false, 1]
 	 * ["rp_sub", false, true, 1]
 	 * ["rp_sub", true, true, 1]
-	 *
 	 */
 	public function test_get_instant_settle_items_virtual( string $type, bool $virtual, bool $downloadable, int $result ) {
 		PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
 
-		self::$options->set_option( 'settle', array(
-			InstantSettle::SETTLE_VIRTUAL
-		) );
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_VIRTUAL,
+			)
+		);
 
-		$this->order_generator->add_product( $type, array(
-			'virtual'      => $virtual,
-			'downloadable' => $downloadable,
-		) );
+		$this->order_generator->add_product(
+			$type,
+			array(
+				'virtual'      => $virtual,
+				'downloadable' => $downloadable,
+			)
+		);
 
 		$this->assertSame(
 			$result,
@@ -156,14 +175,16 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 * ["simple", 0]
 	 * ["woo_sub", 1]
 	 * ["rp_sub", 0]
-	 *
 	 */
 	public function test_get_instant_settle_items_recurring( string $type, int $result ) {
 		PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
 
-		self::$options->set_option( 'settle', array(
-			InstantSettle::SETTLE_RECURRING
-		) );
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_RECURRING,
+			)
+		);
 
 		$this->order_generator->add_product( $type );
 
@@ -176,9 +197,12 @@ class InstantSettleTest extends WP_UnitTestCase {
 	public function test_get_instant_settle_items_fee() {
 		$this->order_generator->add_fee();
 
-		self::$options->set_option( 'settle', array(
-			InstantSettle::SETTLE_FEE
-		) );
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_FEE,
+			)
+		);
 
 		$this->assertSame(
 			1,
@@ -196,9 +220,12 @@ class InstantSettleTest extends WP_UnitTestCase {
 	public function test_get_instant_settle_items_shipping() {
 		$this->order_generator->add_shipping();
 
-		self::$options->set_option( 'settle', array(
-			InstantSettle::SETTLE_PHYSICAL
-		) );
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_PHYSICAL,
+			)
+		);
 
 		$this->assertSame(
 			1,
@@ -232,14 +259,16 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 * ["rp_sub", true, false, false]
 	 * ["rp_sub", false, true, false]
 	 * ["rp_sub", true, true, false]
-	 *
 	 */
 	public function test_can_product_be_settled_instantly_physical( string $type, bool $virtual, bool $downloadable, bool $result ) {
 		PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
 
-		self::$options->set_option( 'settle', array(
-			InstantSettle::SETTLE_PHYSICAL
-		) );
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_PHYSICAL,
+			)
+		);
 
 		$product = self::$product_generator->generate(
 			$type,
@@ -271,14 +300,16 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 * ["rp_sub", true, false, true]
 	 * ["rp_sub", false, true, true]
 	 * ["rp_sub", true, true, true]
-	 *
 	 */
 	public function test_can_product_be_settled_instantly_virtual( string $type, bool $virtual, bool $downloadable, bool $result ) {
 		PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
 
-		self::$options->set_option( 'settle', array(
-			InstantSettle::SETTLE_VIRTUAL
-		) );
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_VIRTUAL,
+			)
+		);
 
 		$product = self::$product_generator->generate(
 			$type,
@@ -299,14 +330,16 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 * ["simple", false]
 	 * ["woo_sub", true]
 	 * ["rp_sub", false]
-	 *
 	 */
 	public function test_can_product_be_settled_instantly_recurring( string $type, bool $result ) {
 		PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
 
-		self::$options->set_option( 'settle', array(
-			InstantSettle::SETTLE_RECURRING
-		) );
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_RECURRING,
+			)
+		);
 
 		$product = self::$product_generator->generate( $type );
 

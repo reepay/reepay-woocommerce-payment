@@ -27,7 +27,7 @@ class CurrencyTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @param int  $amount
+	 * @param int    $amount
 	 * @param string $currency
 	 * @param float  $result
 	 *

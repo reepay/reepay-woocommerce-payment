@@ -31,30 +31,38 @@ require_once "{$_tests_dir}/includes/functions.php";
 /**
  * Manually load Reepay plugin and dependencies.
  */
-tests_add_filter( 'muplugins_loaded', function () {
-	PLUGINS_STATE::activate_plugins();
+tests_add_filter(
+	'muplugins_loaded',
+	function () {
+		PLUGINS_STATE::activate_plugins();
 
-	require_once __DIR__ . '/../../reepay-woocommerce-payment.php';
-} );
+		require_once __DIR__ . '/../../reepay-woocommerce-payment.php';
+	}
+);
 
 // Init Reepay.
-tests_add_filter( 'plugins_loaded', function () {
-	$reepay_checkout = reepay()->gateways()->checkout();
-	$reepay_checkout->process_admin_options();
+tests_add_filter(
+	'plugins_loaded',
+	function () {
+		$reepay_checkout = reepay()->gateways()->checkout();
+		$reepay_checkout->process_admin_options();
 
-	( new OptionsController() )->set_options( array(
-		'enabled' => 'yes',
-		'test_mode' => 'yes',
-		'private_key_test' => 'priv_2795e0868bc1609c66783e0c8d967bcf', //ToDo change with env variable
+		( new OptionsController() )->set_options(
+			array(
+				'enabled'          => 'yes',
+				'test_mode'        => 'yes',
+				'private_key_test' => 'priv_2795e0868bc1609c66783e0c8d967bcf', // ToDo change with env variable
 
-	) );
+			)
+		);
 
-	$reepay_checkout->is_webhook_configured();
-} );
+		$reepay_checkout->is_webhook_configured();
+	}
+);
 
 tests_add_filter( 'deprecated_function_trigger_error', '__return_false' );
 
-include_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 // Start up the WP testing environment.
 require_once "{$_tests_dir}/includes/bootstrap.php";

@@ -19,9 +19,8 @@ class FormatTest extends WP_UnitTestCase {
 	 * ["12345678", "1234 5678"]
 	 * ["1234", "1234"]
 	 * ["", ""]
-	 *
 	 */
-	public function test_rp_format_credit_card( string $card_number, string $result) {
+	public function test_rp_format_credit_card( string $card_number, string $result ) {
 		$this->assertSame(
 			$result,
 			rp_format_credit_card( $card_number )
