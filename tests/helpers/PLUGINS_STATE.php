@@ -1,6 +1,11 @@
 <?php
 
-abstract class RP_TEST_PLUGINS_STATE {
+namespace Reepay\Checkout\Tests\Helpers;
+
+use PHPUnit\Framework\Assert;
+use WC_Product;
+
+abstract class PLUGINS_STATE {
 	const PLUGINS = array(
 		'woo'      => 'woocommerce/woocommerce.php',
 		'woo_subs' => 'woocommerce-subscriptions/woocommerce-subscriptions.php',
@@ -72,9 +77,9 @@ abstract class RP_TEST_PLUGINS_STATE {
 	public static function maybe_skip_test_by_product_type( $product_or_type ) {
 		$type = is_object( $product_or_type ) ? $product_or_type->get_type() : $product_or_type;
 
-		if ( ( 'woo_sub' === $type && ! RP_TEST_PLUGINS_STATE::woo_subs_activated() ) ||
-			 'rp_sub' === $type && ! RP_TEST_PLUGINS_STATE::rp_subs_activated() ) {
-			PHPUnit\Framework\Assert::markTestSkipped("$type product type not active");
+		if ( ( 'woo_sub' === $type && ! PLUGINS_STATE::woo_subs_activated() ) ||
+			 'rp_sub' === $type && ! PLUGINS_STATE::rp_subs_activated() ) {
+			Assert::markTestSkipped("$type product type not active");
 		}
 	}
 }

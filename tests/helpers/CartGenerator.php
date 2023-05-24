@@ -1,15 +1,14 @@
 <?php
 
-class RpTestCartGenerator {
+namespace Reepay\Checkout\Tests\Helpers;
+
+use WC_Cart;
+
+class CartGenerator {
 	/**
 	 * @var WC_Cart|null
 	 */
 	private ?WC_Cart $cart;
-
-	/**
-	 * @var RpTestProductGenerator[]
-	 */
-	private array $product_generators = array();
 
 	/**
 	 * RpTestCartGenerator constructor.
@@ -20,8 +19,6 @@ class RpTestCartGenerator {
 
 	/**
 	 * @param string|string[] $product_types
-	 *
-	 * @throws Exception
 	 */
 	public function new_cart( $product_types ) {
 		if ( ! is_array( $product_types ) ) {
@@ -37,13 +34,8 @@ class RpTestCartGenerator {
 		$this->replace_global_cart();
 	}
 
-	/**
-	 * @throws Exception
-	 */
-	public function add_item( string $type ): RpTestCartGenerator {
-		$product_generator = ( new RpTestProductGenerator( $type ) );
-
-		$this->product_generators[] = $product_generator;
+	public function add_item( string $type ): CartGenerator {
+		$product_generator = ( new ProductGenerator( $type ) );
 
 		$this->cart->add_to_cart( $product_generator->product()->get_id() );
 
@@ -58,7 +50,6 @@ class RpTestCartGenerator {
 
 	public function empty_cart() {
 		$this->cart = new WC_Cart();
-		$this->product_generators = array();
 
 		return $this;
 	}

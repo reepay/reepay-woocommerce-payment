@@ -6,13 +6,14 @@
  */
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
+use Reepay\Checkout\Tests\Helpers\HELPERS;
 
 /**
  * ApiTest.
  */
 class GatewaysClassTest extends WP_UnitTestCase {
 	public function payment_methods(): array {
-		return RP_TEST_HELPERS::get_payment_methods();
+		return HELPERS::get_payment_methods();
 	}
 
 	/**

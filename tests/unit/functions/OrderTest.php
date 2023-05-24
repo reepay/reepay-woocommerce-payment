@@ -6,6 +6,7 @@
  */
 
 use Reepay\Checkout\Gateways;
+use Reepay\Checkout\Tests\Helpers\HELPERS;
 
 /**
  * CurrencyTest.
@@ -39,7 +40,7 @@ class OrderTest extends WP_UnitTestCase {
 	}
 
 	public function payment_methods(): array {
-		return RP_TEST_HELPERS::get_payment_methods();
+		return HELPERS::get_payment_methods();
 	}
 
 	public function test_rp_get_order_handle() {

@@ -1,6 +1,14 @@
 <?php
 
-class RpTestProductGenerator {
+namespace Reepay\Checkout\Tests\Helpers;
+
+use Exception;
+use WC_Product;
+use WC_Product_Reepay_Simple_Subscription;
+use WC_Product_Simple;
+use WC_Product_Subscription;
+
+class ProductGenerator {
 	/**
 	 * @var WC_Product|null
 	 */
@@ -27,7 +35,6 @@ class RpTestProductGenerator {
 	 * @param array  $data
 	 *
 	 * @return WC_Product|null
-	 * @throws Exception
 	 */
 	public function generate( string $type, array $data = array() ): ?WC_Product {
 		$products = array(

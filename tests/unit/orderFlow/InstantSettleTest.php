@@ -6,24 +6,29 @@
  */
 
 use Reepay\Checkout\OrderFlow\InstantSettle;
-use Reepay\Checkout\OrderFlow\OrderCapture;
+
+use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
+use Reepay\Checkout\Tests\Helpers\OptionsController;
+use Reepay\Checkout\Tests\Helpers\OrderGenerator;
+use Reepay\Checkout\Tests\Helpers\ProductGenerator;
+use Reepay\Checkout\Tests\Mocks\OrderFlow\OrderCaptureMock;
 
 /**
  * InstantSettle.
  */
 class InstantSettleTest extends WP_UnitTestCase {
-	private static RpTestOptions $options;
-	private static RpTestProductGenerator $product_generator;
+	private static OptionsController $options;
+	private static ProductGenerator $product_generator;
 	private static InstantSettle $instant_settle_instance;
 
-	private RpTestOrderGenerator $order_generator;
+	private OrderGenerator $order_generator;
 
 	/**
 	 * Runs the routine before setting up all tests.
 	 */
 	public static function set_up_before_class() {
-		self::$options                 = new RpTestOptions();
-		self::$product_generator       = new RpTestProductGenerator();
+		self::$options                 = new OptionsController();
+		self::$product_generator       = new ProductGenerator();
 		self::$instant_settle_instance = new InstantSettle();
 	}
 
@@ -31,13 +36,12 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 * Runs the routine before each test is executed.
 	 */
 	public function set_up() {
-		$this->order_generator = new RpTestOrderGenerator();
+		$this->order_generator = new OrderGenerator();
 
 		parent::set_up();
 	}
 
 	public function test_process_instant_settle_already_settled() {
-		$this->markTestIncomplete();
 		$this->order_generator->set_meta( '_is_instant_settled', '1' );
 
 		self::$options->set_option( 'settle', array(
@@ -49,9 +53,8 @@ class InstantSettleTest extends WP_UnitTestCase {
 			'downloadable' => true,
 		) );
 
-
 		self::$instant_settle_instance::set_order_capture(
-
+			new OrderCaptureMock()
 		);
 
 		self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
@@ -81,7 +84,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 *
 	 */
 	public function test_get_instant_settle_items_physical( string $type, bool $virtual, bool $downloadable, int $result ) {
-		RP_TEST_PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
+		PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
 
 		self::$options->set_option( 'settle', array(
 			InstantSettle::SETTLE_PHYSICAL
@@ -120,7 +123,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 *
 	 */
 	public function test_get_instant_settle_items_virtual( string $type, bool $virtual, bool $downloadable, int $result ) {
-		RP_TEST_PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
+		PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
 
 		self::$options->set_option( 'settle', array(
 			InstantSettle::SETTLE_VIRTUAL
@@ -148,7 +151,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 *
 	 */
 	public function test_get_instant_settle_items_recurring( string $type, int $result ) {
-		RP_TEST_PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
+		PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
 
 		self::$options->set_option( 'settle', array(
 			InstantSettle::SETTLE_RECURRING
@@ -224,7 +227,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 *
 	 */
 	public function test_can_product_be_settled_instantly_physical( string $type, bool $virtual, bool $downloadable, bool $result ) {
-		RP_TEST_PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
+		PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
 
 		self::$options->set_option( 'settle', array(
 			InstantSettle::SETTLE_PHYSICAL
@@ -263,7 +266,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 *
 	 */
 	public function test_can_product_be_settled_instantly_virtual( string $type, bool $virtual, bool $downloadable, bool $result ) {
-		RP_TEST_PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
+		PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
 
 		self::$options->set_option( 'settle', array(
 			InstantSettle::SETTLE_VIRTUAL
@@ -291,7 +294,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 *
 	 */
 	public function test_can_product_be_settled_instantly_recurring( string $type, bool $result ) {
-		RP_TEST_PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
+		PLUGINS_STATE::maybe_skip_test_by_product_type( $type );
 
 		self::$options->set_option( 'settle', array(
 			InstantSettle::SETTLE_RECURRING

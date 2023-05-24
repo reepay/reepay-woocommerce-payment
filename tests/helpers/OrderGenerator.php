@@ -1,6 +1,12 @@
 <?php
 
-class RpTestOrderGenerator {
+namespace Reepay\Checkout\Tests\Helpers;
+
+use WC_Order;
+use WC_Order_Item_Fee;
+use WC_Order_Item_Shipping;
+
+class OrderGenerator {
 	/**
 	 * @var WC_Order|null
 	 */
@@ -41,7 +47,7 @@ class RpTestOrderGenerator {
 	 */
 	public function add_product( string $type, array $data = array() ): int {
 		return $this->order->add_product(
-			( new RpTestProductGenerator( $type, $data ) )->product()
+			( new ProductGenerator( $type, $data ) )->product()
 		);
 	}
 

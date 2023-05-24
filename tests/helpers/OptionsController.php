@@ -1,8 +1,10 @@
 <?php
 
+namespace Reepay\Checkout\Tests\Helpers;
+
 use Reepay\Checkout\Gateways\ReepayCheckout;
 
-class RpTestOptions {
+class OptionsController {
 	/**
 	 * @var ReepayCheckout|null
 	 */
@@ -17,7 +19,7 @@ class RpTestOptions {
 		$this->reepay_gateway = reepay()->gateways()->checkout();
 	}
 
-	public function set_option( string $key, $value ): RpTestOptions {
+	public function set_option( string $key, $value ): OptionsController {
 		$this->reepay_gateway->update_option( $key, $value );
 
 		if( $this->reset ) {

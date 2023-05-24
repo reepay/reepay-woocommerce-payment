@@ -1,8 +1,11 @@
 <?php
 
-use Reepay\Checkout\Gateways;
+namespace Reepay\Checkout\Tests\Helpers;
 
-abstract class RP_TEST_HELPERS {
+use Reepay\Checkout\Gateways;
+use WC_Gateway_COD;
+
+abstract class HELPERS {
 	/**
 	 * @param bool $only_reepay
 	 *
