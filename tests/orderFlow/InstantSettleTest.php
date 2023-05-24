@@ -6,6 +6,7 @@
  */
 
 use Reepay\Checkout\OrderFlow\InstantSettle;
+use Reepay\Checkout\OrderFlow\OrderCapture;
 
 /**
  * InstantSettle.
@@ -13,6 +14,7 @@ use Reepay\Checkout\OrderFlow\InstantSettle;
 class InstantSettleTest extends WP_UnitTestCase {
 	private static RpTestOptions $options;
 	private static RpTestProductGenerator $product_generator;
+	private static InstantSettle $instant_settle_instance;
 
 	private RpTestOrderGenerator $order_generator;
 
@@ -20,24 +22,48 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 * Runs the routine before setting up all tests.
 	 */
 	public static function set_up_before_class() {
-		self::$options           = new RpTestOptions();
-		self::$product_generator = new RpTestProductGenerator();
+		self::$options                 = new RpTestOptions();
+		self::$product_generator       = new RpTestProductGenerator();
+		self::$instant_settle_instance = new InstantSettle();
 	}
-	
+
 	/**
 	 * Runs the routine before each test is executed.
 	 */
 	public function set_up() {
-		$this->order_generator   = new RpTestOrderGenerator();
+		$this->order_generator = new RpTestOrderGenerator();
 
 		parent::set_up();
+	}
+
+	public function test_process_instant_settle_already_settled() {
+		$this->markTestIncomplete();
+		$this->order_generator->set_meta( '_is_instant_settled', '1' );
+
+		self::$options->set_option( 'settle', array(
+			InstantSettle::SETTLE_PHYSICAL
+		) );
+
+		$order_item_id = $this->order_generator->add_product( 'simple', array(
+			'virtual'      => true,
+			'downloadable' => true,
+		) );
+
+
+		self::$instant_settle_instance::set_order_capture(
+
+		);
+
+		self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
+
+		(new WC_Order_Item( $order_item_id ))->get_meta( '' );
 	}
 
 	/**
 	 * @param string $type
 	 * @param bool   $virtual
 	 * @param bool   $downloadable
-	 * @param int   $result
+	 * @param int    $result
 	 *
 	 * @testWith
 	 * ["simple", false, false, 1]
@@ -60,12 +86,12 @@ class InstantSettleTest extends WP_UnitTestCase {
 		self::$options->set_option( 'settle', array(
 			InstantSettle::SETTLE_PHYSICAL
 		) );
-		
+
 		$this->order_generator->add_product( $type, array(
 			'virtual'      => $virtual,
 			'downloadable' => $downloadable,
 		) );
-		
+
 		$this->assertSame(
 			$result,
 			count( InstantSettle::get_instant_settle_items( $this->order_generator->order() ) )
@@ -76,7 +102,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 * @param string $type
 	 * @param bool   $virtual
 	 * @param bool   $downloadable
-	 * @param int   $result
+	 * @param int    $result
 	 *
 	 * @testWith
 	 * ["simple", false, false, 0]
