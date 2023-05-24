@@ -109,19 +109,20 @@ class OrderCapture {
 		}
 
 		$settled = $item->get_meta( 'settled' );
-		$data    = $item->get_data();
 
-		if ( empty( $settled ) && floatval( $data['total'] ) > 0 && $this->check_capture_allowed( $order ) ) {
-			$order_item    = WC_Order_Factory::get_order_item( $item_id );
-			$price         = self::get_item_price( $order_item, $order );
-			$unit_price    = number_format( round( $price['with_tax'], 2 ), 2, '.', '' );
-			$instant_items = InstantSettle::get_instant_settle_items( $order );
+		if ( ! empty( $settled ) ) {
+			return;
+		}
 
-			if ( ! in_array( $item_id, $instant_items, true ) ) {
-				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="' . $item_id . '">
+		$data = $item->get_data();
+
+		if ( floatval( $data['total'] ) > 0 && $this->check_capture_allowed( $order ) ) {
+			$price      = self::get_item_price( $item_id, $order );
+			$unit_price = number_format( round( $price['with_tax'], 2 ), 2, '.', '' );
+
+			echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="' . $item_id . '">
                     ' . __( 'Capture ', 'reepay-checkout-gateway' ) . $order->get_currency() . $unit_price . '
                 </button>';
-			}
 		}
 	}
 
@@ -422,12 +423,16 @@ class OrderCapture {
 	/**
 	 * Get order item price for reepay.
 	 *
-	 * @param WC_Order_Item $order_item order item to get price and tax.
+	 * @param WC_Order_Item|int $order_item order item to get price and tax.
 	 * @param WC_Order      $order      current order.
 	 *
 	 * @return array
 	 */
-	public static function get_item_price( WC_Order_Item $order_item, WC_Order $order ): array {
+	public static function get_item_price( $order_item, WC_Order $order ): array {
+		if ( is_int( $order_item ) ) {
+			$order_item = WC_Order_Factory::get_order_item( $order_item );
+		}
+
 		$price = array();
 
 		if ( is_object( $order_item ) && get_class( $order_item ) === 'WC_Order_Item_Product' ) {
