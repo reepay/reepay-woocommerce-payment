@@ -39,8 +39,6 @@ class SubscriptionsTest extends WP_UnitTestCase {
 		if( RP_TEST_PLUGINS_STATE::rp_subs_activated() ) {
 			$this->assertFalse( wcs_is_subscription_product( $product_generator->generate( 'rp_sub' ) ), 'rp_sub' );
 		}
-
-		$product_generator->delete();
 	}
 
 	public function test_wcr_is_subscription_product() {
@@ -55,15 +53,15 @@ class SubscriptionsTest extends WP_UnitTestCase {
 		if( RP_TEST_PLUGINS_STATE::rp_subs_activated() ) {
 			$this->assertFalse( wcs_is_subscription_product( $product_generator->generate( 'rp_sub' ) ), 'rp_sub' );
 		}
-
-		$product_generator->delete();
 	}
 
 	/**
 	 * @param bool $test_val
 	 * @param bool $result
-	 * @testWith [true, true]
-	 *           [false, false]
+	 *
+	 * @testWith
+	 * [true, true]
+	 * [false, false]
 	 *
 	 */
 	public function test_wcs_is_payment_change( bool $test_val, bool $result ) {
