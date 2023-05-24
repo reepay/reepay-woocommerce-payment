@@ -32,7 +32,6 @@ class RpTestProductGenerator {
 	public function generate( string $type, array $data = array() ): ?WC_Product {
 		$products = array(
 			'simple'  => WC_Product_Simple::class,
-//			'variable' => WC_Product_Variable::class,
 			'woo_sub' => WC_Product_Subscription::class,
 			'rp_sub'  => WC_Product_Reepay_Simple_Subscription::class,
 		);

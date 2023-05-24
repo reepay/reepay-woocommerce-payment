@@ -14,7 +14,7 @@ class SubscriptionsTest extends WP_UnitTestCase {
 		$order_generator->add_simple_product();
 
 		if( RP_TEST_PLUGINS_STATE::woo_subs_activated() ) {
-			$order_generator->add_woocommerce_subscription_product();
+			$order_generator->add_woo_sub_product();
 
 			$this->assertSame(
 				order_contains_subscription( $order_generator->order() ),
@@ -23,8 +23,6 @@ class SubscriptionsTest extends WP_UnitTestCase {
 		} else {
 			$this->assertFalse( order_contains_subscription( $order_generator->order() ) );
 		}
-
-		$order_generator->delete_order();
 	}
 
 	public function test_wcs_is_subscription_product() {
