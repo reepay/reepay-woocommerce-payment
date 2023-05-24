@@ -24,6 +24,14 @@ class RpTestOrderGenerator {
 		return $this->order;
 	}
 
+	public function set_meta( string $key, $value ) {
+		$this->order->update_meta_data( $key, $value );
+	}
+
+	public function get_meta( string $key ) {
+		return $this->order->get_meta( $key );
+	}
+
 	/**
 	 * Add product to order
 	 *
