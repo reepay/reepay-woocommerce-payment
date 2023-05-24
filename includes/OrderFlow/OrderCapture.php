@@ -404,7 +404,7 @@ class OrderCapture {
 	 * Get order item price for reepay.
 	 *
 	 * @param WC_Order_Item|int $order_item order item to get price and tax.
-	 * @param WC_Order      $order      current order.
+	 * @param WC_Order          $order      current order.
 	 *
 	 * @return array
 	 */
