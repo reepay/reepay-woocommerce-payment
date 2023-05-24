@@ -81,15 +81,15 @@ class SubscriptionsTest extends WP_UnitTestCase {
 		$cart_generator->new_cart( 'simple' );
 		$this->assertFalse( wcs_cart_have_subscription(), 'simple' );
 
-//		if( RP_TEST_PLUGINS_STATE::woo_subs_activated() ) {
-//			$cart_generator->new_cart( 'woo_sub' );
-//			$this->assertTrue( wcs_cart_have_subscription(), 'woo_sub' );
-//		}
+		if( RP_TEST_PLUGINS_STATE::woo_subs_activated() ) {
+			$cart_generator->new_cart( 'woo_sub' );
+			$this->assertTrue( wcs_cart_have_subscription(), 'woo_sub' );
+		}
 
-//		if( RP_TEST_PLUGINS_STATE::rp_subs_activated() ) {
-//			$cart_generator->new_cart( 'rp_sub' );
-//			$this->assertTrue( wcs_cart_have_subscription(), 'rp_sub' );
-//		}
+		if( RP_TEST_PLUGINS_STATE::rp_subs_activated() ) {
+			$cart_generator->new_cart( 'rp_sub' );
+			$this->assertTrue( wcs_cart_have_subscription(), 'rp_sub' );
+		}
 	}
 
 	public function test_wcs_cart_only_subscriptions() {

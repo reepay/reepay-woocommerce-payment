@@ -4,7 +4,7 @@ class RpTestProductGenerator {
 	/**
 	 * @var WC_Product|null
 	 */
-	private $product;
+	private ?WC_Product $product;
 
 	/**
 	 * RpTestProductGenerator constructor.
@@ -25,9 +25,10 @@ class RpTestProductGenerator {
 	 * @param string $type
 	 * @param bool   $remove_previous
 	 *
+	 * @return WC_Product|null
 	 * @throws Exception
 	 */
-	public function generate( string $type, bool $remove_previous = true ) {
+	public function generate( string $type, bool $remove_previous = true ): ?WC_Product {
 		if ( $remove_previous ) {
 			$this->delete();
 		}
