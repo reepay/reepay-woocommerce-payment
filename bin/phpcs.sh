@@ -1,7 +1,7 @@
 #!/bin/bash
 
 standard='--standard=./ruleset.xml'
-path='./includes'
+path='./includes ./templates'
 extra='--cache --colors -p -s' #remove colors if your terminal doesn't support them
 
 #extra+=' --report=diff -vvv' #uncomment for debug

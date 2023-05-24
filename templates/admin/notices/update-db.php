@@ -1,5 +1,7 @@
 <?php
 /**
+ * DB need update notice
+ *
  * @package Reepay\Checkout
  *
  * @var string $update_page_url

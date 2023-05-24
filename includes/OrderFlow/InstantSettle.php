@@ -47,8 +47,11 @@ class InstantSettle {
 	}
 
 	/**
+	 * Set order capture instance
 	 *
 	 * @TODO remove this static method and other static methods
+	 *
+	 * @param OrderCapture $order_capture order capture class instance.
 	 */
 	public static function set_order_capture( OrderCapture $order_capture ) {
 		self::$order_capture = $order_capture;
