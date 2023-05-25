@@ -23,4 +23,9 @@
             <directory suffix="Test.php">./tests/unit/orderFlow</directory>
         </testsuite>
 	</testsuites>
+    <filter>
+        <whitelist>
+            <directory suffix=".php">./includes</directory>
+        </whitelist>
+    </filter>
 </phpunit>
