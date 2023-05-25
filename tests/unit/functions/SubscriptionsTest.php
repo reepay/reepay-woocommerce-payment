@@ -19,10 +19,10 @@ class SubscriptionsTest extends WP_UnitTestCase {
 	 */
 	public function test_order_contains_subscription() {
 		$order_generator = new OrderGenerator();
-		$order_generator->add_simple_product();
+		$order_generator->add_product('simple');
 
 		if ( PLUGINS_STATE::woo_subs_activated() ) {
-			$order_generator->add_woo_sub_product();
+			$order_generator->add_product( 'woo_sub' );
 
 			$this->assertSame(
 				order_contains_subscription( $order_generator->order() ),
