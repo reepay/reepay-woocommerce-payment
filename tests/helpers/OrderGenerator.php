@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class OrderGenerator
+ *
+ * @package Reepay\Checkout
+ */
 
 namespace Reepay\Checkout\Tests\Helpers;
 
@@ -6,17 +11,32 @@ use WC_Order;
 use WC_Order_Item_Fee;
 use WC_Order_Item_Shipping;
 
+/**
+ * Class OrderGenerator
+ */
 class OrderGenerator {
 	/**
+	 * Current order
+	 *
 	 * @var WC_Order|null
 	 */
 	private ?WC_Order $order;
 
+	/**
+	 * OrderGenerator constructor.
+	 *
+	 * @param array $args args to wc_create_order.
+	 */
 	public function __construct( array $args = array() ) {
-		$this->generate_order( $args );
+		$this->generate( $args );
 	}
 
-	public function generate_order( array $args = array() ) {
+	/**
+	 * Create order
+	 *
+	 * @param array $args args to wc_create_order.
+	 */
+	public function generate( array $args = array() ) {
 		$this->order = wc_create_order(
 			wp_parse_args(
 				$args,
@@ -28,14 +48,32 @@ class OrderGenerator {
 		);
 	}
 
+	/**
+	 * Ger order
+	 *
+	 * @return WC_Order|null
+	 */
 	public function order(): ?WC_Order {
 		return $this->order;
 	}
 
+	/**
+	 * Update meta data by key or ID, if provided.
+	 *
+	 * @param string       $key   meta key.
+	 * @param string|array $value meta value.
+	 */
 	public function set_meta( string $key, $value ) {
 		$this->order->update_meta_data( $key, $value );
 	}
 
+	/**
+	 * Get Meta Data by Key.
+	 *
+	 * @param string $key meta key.
+	 *
+	 * @return mixed
+	 */
 	public function get_meta( string $key ) {
 		return $this->order->get_meta( $key );
 	}
@@ -43,7 +81,8 @@ class OrderGenerator {
 	/**
 	 * Add product to order
 	 *
-	 * @param array $data product meta data.
+	 * @param string $type product type.
+	 * @param array  $data product meta data.
 	 *
 	 * @return int order item id
 	 */

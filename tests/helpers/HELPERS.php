@@ -1,17 +1,27 @@
 <?php
+/**
+ * Class HELPERS
+ *
+ * @package Reepay\Checkout
+ */
 
 namespace Reepay\Checkout\Tests\Helpers;
 
 use Reepay\Checkout\Gateways;
 use WC_Gateway_COD;
 
+/**
+ * Class HELPERS
+ */
 abstract class HELPERS {
 	/**
-	 * @param bool $only_reepay
+	 * Get payment methods for tests. Use as dataProvider.
+	 *
+	 * @param bool $only_reepay should add non reepay payment methods.
 	 *
 	 * @return array
 	 */
-	static function get_payment_methods( bool $only_reepay = false ): array {
+	public static function get_payment_methods( bool $only_reepay = false ): array {
 		$payment_methods = array();
 
 		foreach ( Gateways::PAYMENT_METHODS as $key => $method_name ) {

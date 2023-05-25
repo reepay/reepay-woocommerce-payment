@@ -51,8 +51,7 @@ tests_add_filter(
 			array(
 				'enabled'          => 'yes',
 				'test_mode'        => 'yes',
-				'private_key_test' => 'priv_2795e0868bc1609c66783e0c8d967bcf', // ToDo change with env variable
-
+				'private_key_test' => 'priv_2795e0868bc1609c66783e0c8d967bcf', // ToDo change with env variable.
 			)
 		);
 

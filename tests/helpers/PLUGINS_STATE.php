@@ -1,10 +1,18 @@
 <?php
+/**
+ * Class PLUGINS_STATE
+ *
+ * @package Reepay\Checkout
+ */
 
 namespace Reepay\Checkout\Tests\Helpers;
 
 use PHPUnit\Framework\Assert;
 use WC_Product;
 
+/**
+ * Class PLUGINS_STATE
+ */
 abstract class PLUGINS_STATE {
 	const PLUGINS = array(
 		'woo'      => 'woocommerce/woocommerce.php',
@@ -12,6 +20,11 @@ abstract class PLUGINS_STATE {
 		'rp_subs'  => 'reepay-subscriptions-for-woocommerce/reepay-subscriptions-for-woocommerce.php',
 	);
 
+	/**
+	 * Activate plugins. Depending on param or environment variable
+	 *
+	 * @param array $plugins plugins to activate.
+	 */
 	public static function activate_plugins( array $plugins = array() ) {
 		self::deactivate_plugins();
 
@@ -50,6 +63,9 @@ abstract class PLUGINS_STATE {
 		}
 	}
 
+	/**
+	 * Deactivate plugins. Remove from option active_plugins
+	 */
 	public static function deactivate_plugins() {
 		$all_plugins   = get_option( 'active_plugins', array() );
 		$other_plugins = array();
@@ -63,16 +79,28 @@ abstract class PLUGINS_STATE {
 		update_option( 'active_plugins', $other_plugins );
 	}
 
-	public static function woo_subs_activated() {
+	/**
+	 * Checks if Woocommerce Subscriptions plugin is active
+	 *
+	 * @return bool
+	 */
+	public static function woo_subs_activated(): bool {
 		return class_exists( 'WC_Subscriptions', false );
 	}
 
-	public static function rp_subs_activated() {
+	/**
+	 * Checks if Reepay Subscriptions plugin is active
+	 *
+	 * @return bool
+	 */
+	public static function rp_subs_activated(): bool {
 		return class_exists( 'WooCommerce_Reepay_Subscriptions', false );
 	}
 
 	/**
-	 * @param WC_Product|string $product_or_type
+	 * Skip the test depending on the type of product and active plugins
+	 *
+	 * @param WC_Product|string $product_or_type woo product or product type.
 	 */
 	public static function maybe_skip_test_by_product_type( $product_or_type ) {
 		$type = is_object( $product_or_type ) ? $product_or_type->get_type() : $product_or_type;

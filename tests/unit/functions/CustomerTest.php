@@ -10,41 +10,40 @@
  */
 class CustomerTest extends WP_UnitTestCase {
 	/**
+	 * Current user id
+	 *
 	 * @var int
 	 */
-	private $user_id;
+	private static int $user;
 
 	/**
-	 * Runs the routine before each test is executed.
+	 * Runs the routine before setting up all tests.
 	 */
-	public function set_up() {
-		parent::set_up();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
-		$this->user_id = wp_create_user( 'test', 'test', 'test@test.com' );
+		self::$user = wp_create_user( 'test', 'test', 'test@test.com' );
 	}
 
 	/**
-	 * After a test method runs, resets any state in WordPress the test method might have changed.
+	 * Test function rp_get_customer_handle_generation
 	 */
-	public function tear_down() {
-		parent::tear_down();
-
-		wp_delete_user( $this->user_id );
-	}
-
 	public function test_rp_get_customer_handle_generation() {
 		$this->assertSame(
-			"customer-$this->user_id",
-			rp_get_customer_handle( $this->user_id )
+			'customer-' . self::$user,
+			rp_get_customer_handle( self::$user )
 		);
 	}
 
+	/**
+	 * Test function rp_get_customer_handle_exists
+	 */
 	public function test_rp_get_customer_handle_exists() {
-		rp_get_customer_handle( $this->user_id );
+		rp_get_customer_handle( self::$user );
 
 		$this->assertSame(
-			"customer-$this->user_id",
-			rp_get_customer_handle( $this->user_id )
+			'customer-' . self::$user,
+			rp_get_customer_handle( self::$user )
 		);
 	}
 }

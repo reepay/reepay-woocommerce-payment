@@ -15,18 +15,44 @@ use Reepay\Checkout\Tests\Mocks\OrderFlow\OrderCaptureMock;
 
 /**
  * InstantSettle.
+ *
+ * @covers \Reepay\Checkout\OrderFlow\InstantSettle
  */
 class InstantSettleTest extends WP_UnitTestCase {
+	/**
+	 * OptionsController instance
+	 *
+	 * @var OptionsController
+	 */
 	private static OptionsController $options;
+
+	/**
+	 * ProductGenerator instance
+	 *
+	 * @var ProductGenerator
+	 */
 	private static ProductGenerator $product_generator;
+
+	/**
+	 * InstantSettle instance
+	 *
+	 * @var InstantSettle
+	 */
 	private static InstantSettle $instant_settle_instance;
 
+	/**
+	 * OrderGenerator instance
+	 *
+	 * @var OrderGenerator
+	 */
 	private OrderGenerator $order_generator;
 
 	/**
 	 * Runs the routine before setting up all tests.
 	 */
 	public static function set_up_before_class() {
+		parent::set_up_before_class();
+
 		self::$options                 = new OptionsController();
 		self::$product_generator       = new ProductGenerator();
 		self::$instant_settle_instance = new InstantSettle();
@@ -40,9 +66,9 @@ class InstantSettleTest extends WP_UnitTestCase {
 	 * Runs the routine before each test is executed.
 	 */
 	public function set_up() {
-		$this->order_generator = new OrderGenerator();
-
 		parent::set_up();
+
+		$this->order_generator = new OrderGenerator();
 	}
 
 	/**
@@ -80,10 +106,12 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @param string $type
-	 * @param bool   $virtual
-	 * @param bool   $downloadable
-	 * @param int    $result
+	 * Test get_instant_settle_items with physical product
+	 *
+	 * @param string $type product type.
+	 * @param bool   $virtual is virtual product.
+	 * @param bool   $downloadable is downloadable product.
+	 * @param int    $result expected Result.
 	 *
 	 * @testWith
 	 * ["simple", false, false, 1]
@@ -124,10 +152,12 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @param string $type
-	 * @param bool   $virtual
-	 * @param bool   $downloadable
-	 * @param int    $result
+	 * Test get_instant_settle_items with virtual product
+	 *
+	 * @param string $type product type.
+	 * @param bool   $virtual is virtual product.
+	 * @param bool   $downloadable is downloadable product.
+	 * @param int    $result expected Result.
 	 *
 	 * @testWith
 	 * ["simple", false, false, 0]
@@ -168,8 +198,10 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @param string $type
-	 * @param bool   $result
+	 * Test get_instant_settle_items with recurring product
+	 *
+	 * @param string $type product type.
+	 * @param int    $result expected Result.
 	 *
 	 * @testWith
 	 * ["simple", 0]
@@ -194,6 +226,9 @@ class InstantSettleTest extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Test get_instant_settle_items with fee order item
+	 */
 	public function test_get_instant_settle_items_fee() {
 		$this->order_generator->add_fee();
 
@@ -217,6 +252,9 @@ class InstantSettleTest extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Test get_instant_settle_items with shipping order item
+	 */
 	public function test_get_instant_settle_items_shipping() {
 		$this->order_generator->add_shipping();
 
@@ -241,10 +279,12 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @param string $type
-	 * @param bool   $virtual
-	 * @param bool   $downloadable
-	 * @param bool   $result
+	 * Test can_product_be_settled_instantly with physical product
+	 *
+	 * @param string $type product type.
+	 * @param bool   $virtual is virtual product.
+	 * @param bool   $downloadable is downloadable product.
+	 * @param bool   $result expected Result.
 	 *
 	 * @testWith
 	 * ["simple", false, false, true]
@@ -282,10 +322,12 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @param string $type
-	 * @param bool   $virtual
-	 * @param bool   $downloadable
-	 * @param bool   $result
+	 * Test can_product_be_settled_instantly with virtual product
+	 *
+	 * @param string $type product type.
+	 * @param bool   $virtual is virtual product.
+	 * @param bool   $downloadable is downloadable product.
+	 * @param bool   $result expected Result.
 	 *
 	 * @testWith
 	 * ["simple", false, false, false]
@@ -323,8 +365,10 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @param string $type
-	 * @param bool   $result
+	 * Test can_product_be_settled_instantly with recurring product
+	 *
+	 * @param string $type product type.
+	 * @param bool   $result expected Result.
 	 *
 	 * @testWith
 	 * ["simple", false]

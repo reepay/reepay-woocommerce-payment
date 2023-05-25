@@ -10,9 +10,11 @@
  */
 class CurrencyTest extends WP_UnitTestCase {
 	/**
-	 * @param float  $amount
-	 * @param string $currency
-	 * @param float  $result
+	 * Test function rp_prepare_amount
+	 *
+	 * @param float  $amount amount for calculation.
+	 * @param string $currency currency for calculation.
+	 * @param float  $result expected result.
 	 *
 	 * @testWith
 	 * [1234, "ISK", 1234]
@@ -27,9 +29,11 @@ class CurrencyTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @param int    $amount
-	 * @param string $currency
-	 * @param float  $result
+	 * Test function rp_make_initial_amount
+	 *
+	 * @param int    $amount amount for calculation.
+	 * @param string $currency currency for calculation.
+	 * @param float  $result expected result.
 	 *
 	 * @testWith
 	 * [1234, "ISK", 1234]
@@ -44,8 +48,10 @@ class CurrencyTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @param int    $multiplier
-	 * @param string $currency
+	 * Test function rp_get_currency_multiplier
+	 *
+	 * @param int    $multiplier multiplier value.
+	 * @param string $currency currency for calculation.
 	 *
 	 * @testWith
 	 * [1, "ISK"]

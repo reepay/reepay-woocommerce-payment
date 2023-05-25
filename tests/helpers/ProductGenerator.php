@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class ProductGenerator
+ *
+ * @package Reepay\Checkout
+ */
 
 namespace Reepay\Checkout\Tests\Helpers;
 
@@ -8,8 +13,13 @@ use WC_Product_Reepay_Simple_Subscription;
 use WC_Product_Simple;
 use WC_Product_Subscription;
 
+/**
+ * Class ProductGenerator
+ */
 class ProductGenerator {
 	/**
+	 * Current product
+	 *
 	 * @var WC_Product|null
 	 */
 	private ?WC_Product $product = null;
@@ -17,10 +27,8 @@ class ProductGenerator {
 	/**
 	 * RpTestProductGenerator constructor.
 	 *
-	 * @param string $type
-	 * @param array  $data
-	 *
-	 * @throws Exception
+	 * @param string $type product type.
+	 * @param array  $data product meta data.
 	 */
 	public function __construct( string $type = '', array $data = array() ) {
 		if ( ! empty( $type ) ) {
@@ -31,8 +39,8 @@ class ProductGenerator {
 	/**
 	 * Generate new product and maybe remove previous
 	 *
-	 * @param string $type
-	 * @param array  $data
+	 * @param string $type product type.
+	 * @param array  $data product meta data.
 	 *
 	 * @return WC_Product|null
 	 */
@@ -60,6 +68,8 @@ class ProductGenerator {
 	}
 
 	/**
+	 * Get product
+	 *
 	 * @return WC_Product|null
 	 */
 	public function product(): ?WC_Product {

@@ -14,7 +14,7 @@
             <file>./tests/unit/ApiConfiguredTest.php</file>
         </testsuite>
         <testsuite name="Gateways loaded">
-            <file>./tests/unit/GatewaysClassTest.php</file>
+            <file>./tests/unit/GatewaysTest.php</file>
         </testsuite>
         <testsuite name="Functions tested">
             <directory suffix="Test.php">./tests/unit/functions</directory>

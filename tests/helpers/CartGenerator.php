@@ -1,11 +1,21 @@
 <?php
+/**
+ * Class CartGenerator
+ *
+ * @package Reepay\Checkout
+ */
 
 namespace Reepay\Checkout\Tests\Helpers;
 
 use WC_Cart;
 
+/**
+ * Class CartGenerator
+ */
 class CartGenerator {
 	/**
+	 * Current cart
+	 *
 	 * @var WC_Cart|null
 	 */
 	private ?WC_Cart $cart;
@@ -14,11 +24,13 @@ class CartGenerator {
 	 * RpTestCartGenerator constructor.
 	 */
 	public function __construct() {
-		 $this->empty_cart();
+		$this->empty_cart();
 	}
 
 	/**
-	 * @param string|string[] $product_types
+	 * Create new cart with products
+	 *
+	 * @param string|string[] $product_types type of products to add to cart.
 	 */
 	public function new_cart( $product_types ) {
 		if ( ! is_array( $product_types ) ) {
@@ -28,36 +40,48 @@ class CartGenerator {
 		$this->empty_cart();
 
 		foreach ( $product_types as $product_type ) {
-			$this->add_item( $product_type );
+			$this->add_product( $product_type );
 		}
 
 		$this->replace_global_cart();
 	}
 
-	public function add_item( string $type ): CartGenerator {
-		$product_generator = ( new ProductGenerator( $type ) );
-
-		$this->cart->add_to_cart( $product_generator->product()->get_id() );
-
-		return $this;
+	/**
+	 * Add product to cart
+	 *
+	 * @param string $type product type.
+	 * @param array  $data product meta data.
+	 */
+	public function add_product( string $type, array $data = array() ) {
+		$this->cart->add_to_cart( ( new ProductGenerator( $type, $data ) )->product()->get_id() );
 	}
 
+	/**
+	 * Replace global cart with current
+	 */
 	public function replace_global_cart() {
 		WC()->cart = $this->cart;
-
-		return $this;
 	}
 
+	/**
+	 * Clear cart
+	 */
 	public function empty_cart() {
 		$this->cart = new WC_Cart();
-
-		return $this;
 	}
 
+	/**
+	 * Restore global cart
+	 */
 	public function restore_global_cart() {
 		WC()->initialize_cart();
 	}
 
+	/**
+	 * Get cart
+	 *
+	 * @return WC_Cart|null
+	 */
 	public function cart(): ?WC_Cart {
 		return $this->cart;
 	}

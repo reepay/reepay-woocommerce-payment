@@ -12,17 +12,19 @@ use Reepay\Checkout\Tests\Helpers\HELPERS;
  */
 class GatewaysTest extends WP_UnitTestCase {
 	/**
+	 * ProductGenerator instance
+	 *
 	 * @var WC_Order
 	 */
-	private $order;
+	private static WC_Order $order;
 
 	/**
-	 * Runs the routine before each test is executed.
+	 * Runs the routine before setting up all tests.
 	 */
-	public function set_up() {
-		parent::set_up();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
-		$this->order = wc_create_order(
+		self::$order = wc_create_order(
 			array(
 				'status'      => 'completed',
 				'created_via' => 'tests',
@@ -32,43 +34,34 @@ class GatewaysTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * After a test method runs, resets any state in WordPress the test method might have changed.
-	 */
-	public function tear_down() {
-		parent::tear_down();
-
-		$this->order->delete( true );
-	}
-
-	public function payment_methods(): array {
-		return HELPERS::get_payment_methods();
-	}
-
-	/**
-	 * @param string       $method_name
-	 * @param string|false $class
+	 * Test function rp_get_payment_method
 	 *
-	 * @dataProvider payment_methods
+	 * @param string       $method_name payment method name.
+	 * @param string|false $class payment method class name.
+	 *
+	 * @dataProvider \Reepay\Checkout\Tests\Helpers\HELPERS::get_payment_methods
 	 */
 	public function test_rp_get_payment_method( string $method_name, $class ) {
-		$this->order->set_payment_method( $method_name );
+		self::$order->set_payment_method( $method_name );
 
-		$payment_method = rp_get_payment_method( $this->order );
+		$payment_method = rp_get_payment_method( self::$order );
 
 		$this->assertSame(
 			$class,
 			$payment_method ? get_class( $payment_method ) : false
 		);
 
-		$this->order->set_payment_method( '' );
+		self::$order->set_payment_method( '' );
 	}
 
 	/**
-	 * @param string       $method_name
-	 * @param string|false $class
-	 * @param bool         $is_reepay
+	 * Test function rp_is_reepay_payment_method
 	 *
-	 * @dataProvider payment_methods
+	 * @param string       $method_name payment method name.
+	 * @param string|false $class payment method class name.
+	 * @param bool         $is_reepay is reepay gateway.
+	 *
+	 * @dataProvider \Reepay\Checkout\Tests\Helpers\HELPERS::get_payment_methods
 	 */
 	public function test_rp_is_reepay_payment_method( string $method_name, $class, bool $is_reepay ) {
 		$this->assertSame(
