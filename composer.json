@@ -5,7 +5,9 @@
     "license": "GPL",
     "autoload": {
         "psr-4": {
-            "Reepay\\Checkout\\": "includes/"
+            "Reepay\\Checkout\\": "includes/",
+            "Reepay\\Checkout\\Tests\\Helpers\\": "tests/helpers/",
+            "Reepay\\Checkout\\Tests\\Mocks\\": "tests/mocks/"
         }
     },
     "authors": [

@@ -8,19 +8,19 @@
 use Reepay\Checkout\Gateways\ReepayCheckout;
 
 /**
- * ApiTest.
+ * Class Gateways
+ *
+ * @covers \Reepay\Checkout\Gateways
  */
-class GatewaysClassTest extends WP_UnitTestCase {
-	public function payment_methods(): array {
-		return RP_TEST_HELPERS::get_payment_methods();
-	}
-
+class Gateways extends WP_UnitTestCase {
 	/**
-	 * @param string       $method_name
-	 * @param string|false $class
-	 * @param bool         $is_reepay
+	 * Test get_gateway
 	 *
-	 * @dataProvider payment_methods
+	 * @param string       $method_name method name.
+	 * @param string|false $class method class name.
+	 * @param bool         $is_reepay is reepay gateway.
+	 *
+	 * @dataProvider \Reepay\Checkout\Tests\Helpers\HELPERS::get_payment_methods
 	 */
 	public function test_payment_methods_loaded( string $method_name, $class, bool $is_reepay ) {
 		$gateway = reepay()->gateways()->get_gateway( $method_name );
@@ -31,6 +31,9 @@ class GatewaysClassTest extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Test checkout
+	 */
 	public function test_reepay_checkout_gateway_loaded() {
 		$this->assertSame(
 			ReepayCheckout::class,
