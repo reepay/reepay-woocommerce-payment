@@ -52,4 +52,15 @@ class OrderCaptureMock extends OrderCapture {
 		$item->update_meta_data( 'settled', $total / 100 );
 		$item->save();
 	}
+
+	/**
+	 * Check if capture is allowed
+	 *
+	 * @param WC_Order $order order to check.
+	 *
+	 * @return bool
+	 */
+	public function check_capture_allowed( WC_Order $order ): bool {
+		return true;
+	}
 }

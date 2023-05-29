@@ -58,13 +58,34 @@ class OrderGenerator {
 	}
 
 	/**
-	 * Update meta data by key or ID, if provided.
+	 * Update meta data by key
 	 *
 	 * @param string       $key   meta key.
 	 * @param string|array $value meta value.
 	 */
 	public function set_meta( string $key, $value ) {
 		$this->order->update_meta_data( $key, $value );
+		$this->order->save();
+	}
+
+	/**
+	 * Update property by key
+	 *
+	 * @param string $key   property key.
+	 * @param mixed  $value property value.
+	 */
+	public function set_prop( string $key, $value ) {
+		$this->set_props( array( $key => $value ) );
+	}
+
+	/**
+	 * Set a collection of props in one go, collect any errors, and return the result.
+	 * Only sets using public methods.
+	 *
+	 * @param array $props Key value pairs to set. Key is the prop and should map to a setter function name.
+	 */
+	public function set_props( array $props ) {
+		$this->order->set_props( $props );
 	}
 
 	/**
@@ -93,39 +114,6 @@ class OrderGenerator {
 	}
 
 	/**
-	 * Add simple product to order
-	 *
-	 * @param array $data product meta data.
-	 *
-	 * @return int order item id
-	 */
-	public function add_simple_product( array $data = array() ): int {
-		return $this->add_product( 'simple', $data );
-	}
-
-	/**
-	 * Add woocommerce subscription product to order
-	 *
-	 * @param array $data product meta data.
-	 *
-	 * @return int order item id
-	 */
-	public function add_woo_sub_product( array $data = array() ): int {
-		return $this->add_product( 'woo_sub', $data );
-	}
-
-	/**
-	 * Add reepay subscription product to order
-	 *
-	 * @param array $data product meta data.
-	 *
-	 * @return int order item id
-	 */
-	public function add_rp_sub_product( array $data = array() ): int {
-		return $this->add_product( 'rp_sub', $data );
-	}
-
-	/**
 	 * Add fee to order
 	 *
 	 * @param array $data optional. Fee data.
@@ -137,8 +125,8 @@ class OrderGenerator {
 		$item->set_props(
 			array(
 				'name'      => $data['name'] ?? 'Test fee',
-				'total'     => $data['amount'] ?? 0,
-				'total_tax' => $data['tax'] ?? 0,
+				'total'     => $data['total'] ?? 0,
+				'total_tax' => $data['total_tax'] ?? 0,
 			)
 		);
 		$item->save();
@@ -159,12 +147,15 @@ class OrderGenerator {
 		$item = new WC_Order_Item_Shipping();
 		$item->set_props(
 			array(
-				'method_title' => $data['method_title'] ?? 'Test fee',
+				'method_title' => $data['method_title'] ?? 'Test shipping method',
+				'total'        => $data['total'] ?? 0,
 			)
 		);
 		$item->save();
 
 		$this->order->add_item( $item );
+
+		$this->order->calculate_shipping();
 
 		return $item->get_id();
 	}

@@ -680,11 +680,11 @@ class Api {
 			$settle_data = InstantSettle::calculate_instant_settle( $order );
 
 			if ( ! $amount ) {
-				$amount = $settle_data->settle_amount;
+				$amount = $settle_data['settle_amount'];
 			}
 
 			if ( ! $items_data ) {
-				$items_data = $settle_data->items;
+				$items_data = $settle_data['items'];
 			}
 		}
 

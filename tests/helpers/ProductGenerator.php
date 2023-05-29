@@ -56,7 +56,16 @@ class ProductGenerator {
 
 			if ( ! empty( $this->product ) ) {
 				$this->product->set_regular_price( 12.23 );
-				$this->product->set_props( $data );
+
+				foreach ( $data as $key => $value ) {
+					$function = 'set_' . ltrim( $key, '_' );
+
+					if ( is_callable( array( $this->product, $function ) ) ) {
+						$this->product->{$function}( $value );
+					} else {
+						$this->product->update_meta_data( $key, $value );
+					}
+				}
 
 				$this->product->save();
 			}
