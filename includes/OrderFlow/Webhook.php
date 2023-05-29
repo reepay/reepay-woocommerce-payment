@@ -173,20 +173,20 @@ class Webhook {
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 
 				if ( ! empty( $invoice_data['order_lines'] ) ) {
-					foreach ( $invoice_data['order_lines'] as $invoice_lines ) {
+					foreach ( $invoice_data['order_lines'] as $invoice_line ) {
 						$is_exist = false;
 						foreach ( $order->get_items( 'fee' ) as $item ) {
-							if ( $item['name'] === $invoice_lines['ordertext'] ) {
+							if ( $item['name'] === $invoice_line['ordertext'] ) {
 								$is_exist = true;
 							}
 						}
 
 						if ( ! $is_exist ) {
-							if ( 'surcharge_fee' === $invoice_lines['origin'] ) {
+							if ( 'surcharge_fee' === $invoice_line['origin'] ) {
 								$fees_item = new WC_Order_Item_Fee();
-								$fees_item->set_name( $invoice_lines['ordertext'] );
-								$fees_item->set_amount( floatval( $invoice_lines['unit_amount'] ) / 100 );
-								$fees_item->set_total( floatval( $invoice_lines['amount'] ) / 100 );
+								$fees_item->set_name( $invoice_line['ordertext'] );
+								$fees_item->set_amount( floatval( $invoice_line['unit_amount'] ) / 100 );
+								$fees_item->set_total( floatval( $invoice_line['amount'] ) / 100 );
 								$fees_item->add_meta_data( '_is_card_fee', true );
 								$order->add_item( $fees_item );
 							}

@@ -11,6 +11,7 @@ use Exception;
 use WC_Order;
 use WC_Order_Factory;
 use WC_Order_Item;
+use WC_Order_Item_Product;
 use WC_Product;
 use WC_Reepay_Renewals;
 use WC_Subscriptions_Manager;
@@ -84,25 +85,21 @@ class OrderCapture {
 
 		$payment_method = $order->get_payment_method();
 
-		if ( strpos( $payment_method, 'reepay' ) === false ) {
+		if ( strpos( $payment_method, 'reepay' ) === false || ! empty( $item->get_meta( 'settled' ) ) ) {
 			return;
 		}
 
-		$settled = $item->get_meta( 'settled' );
-
-		if ( ! empty( $settled ) ) {
-			return;
-		}
-
-		$data = $item->get_data();
-
-		if ( floatval( $data['total'] ) > 0 && $this->check_capture_allowed( $order ) ) {
+		if ( floatval( $item->get_data()['total'] ) > 0 && $this->check_capture_allowed( $order ) ) {
 			$price      = self::get_item_price( $item_id, $order );
-			$unit_price = number_format( round( $price['with_tax'], 2 ), 2, '.', '' );
 
-			echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="' . $item_id . '">
-                    ' . __( 'Capture ', 'reepay-checkout-gateway' ) . $order->get_currency() . $unit_price . '
-                </button>';
+			reepay()->get_template(
+				'admin/capture-item-button.php',
+				array(
+					'name'           => 'line_item_capture',
+					'value'           => $item_id,
+					'text' => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $price['with_tax'] )
+				)
+			);
 		}
 	}
 
@@ -176,10 +173,14 @@ class OrderCapture {
 			$amount = $this->get_not_settled_amount( $order );
 
 			if ( $amount > 0 ) {
-				$amount = number_format( round( $amount, 2 ), 2, '.', '' );
-				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="all_items_capture" value="' . $order->get_id() . '">
-                    ' . __( 'Capture ', 'reepay-checkout-gateway' ) . $order->get_currency() . $amount . '
-                </button>';
+				reepay()->get_template(
+					'admin/capture-item-button.php',
+					array(
+						'name'           => 'all_items_capture',
+						'value'           => $order->get_id(),
+						'text' => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $amount )
+					)
+				);
 			}
 		}
 	}
@@ -413,36 +414,25 @@ class OrderCapture {
 			$order_item = WC_Order_Factory::get_order_item( $order_item );
 		}
 
-		$price = array();
+		$price = array(
+			'original' => (float) $order->get_line_total( $order_item, false, false )
+		);
 
-		if ( is_object( $order_item ) && get_class( $order_item ) === 'WC_Order_Item_Product' ) {
-			$price['original'] = $order->get_line_subtotal( $order_item, false, false );
-			if ( $order_item->get_subtotal() !== $order_item->get_total() ) {
-				$discount          = $order_item->get_subtotal() - $order_item->get_total();
-				$price['original'] = $price['original'] - $discount;
-			}
-		} else {
-			$price['original'] = $order->get_line_total( $order_item, false, false );
-		}
+		$price['with_tax'] = $price['original'];
 
-		$tax_data = wc_tax_enabled() && method_exists( $order_item, 'get_taxes' ) ? $order_item->get_taxes() : false;
-		$taxes    = method_exists( $order, 'get_taxes' ) ? $order->get_taxes() : false;
+		if ( empty( $order_item->get_meta( '_is_card_fee' ) ) ) {
+			$tax_data = wc_tax_enabled() && method_exists( $order_item, 'get_taxes' ) ? $order_item->get_taxes() : false;
+			$taxes    = method_exists( $order, 'get_taxes' ) ? $order->get_taxes() : false;
 
-		$res_tax = 0;
-		if ( ! empty( $taxes ) ) {
-			foreach ( $taxes as $tax ) {
-				$tax_item_id    = $tax->get_rate_id();
-				$tax_item_total = $tax_data['total'][ $tax_item_id ] ?? '';
-				if ( ! empty( $tax_item_total ) ) {
-					$res_tax += floatval( $tax_item_total );
+			if ( ! empty( $tax_data ) && ! empty( $taxes ) ) {
+				foreach ( $taxes as $tax ) {
+					$tax_item_id    = $tax->get_rate_id();
+					$tax_item_total = $tax_data['total'][ $tax_item_id ] ?? '';
+					if ( ! empty( $tax_item_total ) ) {
+						$price['with_tax'] += (float) $tax_item_total;
+					}
 				}
 			}
-		}
-
-		if ( ! empty( $order_item->get_meta( '_is_card_fee' ) ) ) {
-			$price['with_tax'] = $price['original'];
-		} else {
-			$price['with_tax'] = $price['original'] + $res_tax;
 		}
 
 		return $price;

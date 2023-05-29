@@ -1,6 +1,6 @@
 <?php
 /**
- * Class InstantSettle
+ * Class InstantSettleTest
  *
  * @package Reepay\Checkout
  */
@@ -14,7 +14,7 @@ use Reepay\Checkout\Tests\Helpers\ProductGenerator;
 use Reepay\Checkout\Tests\Mocks\OrderFlow\OrderCaptureMock;
 
 /**
- * InstantSettle.
+ * InstantSettleTest.
  *
  * @covers \Reepay\Checkout\OrderFlow\InstantSettle
  */

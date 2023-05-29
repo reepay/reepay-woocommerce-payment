@@ -400,18 +400,11 @@ class OrderStatuses {
 	 * @throws Exception If error with payment capture.
 	 */
 	public function order_status_changed( int $order_id, string $from, string $to, WC_Order $order ) {
-		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
-			return;
-		}
-
-		if ( order_contains_subscription( $order ) ) {
+		if ( ! rp_is_order_paid_via_reepay( $order ) || order_contains_subscription( $order ) ) {
 			return;
 		}
 
 		$gateway = rp_get_payment_method( $order );
-		if ( ! $gateway ) {
-			return;
-		}
 
 		switch ( $to ) {
 			case 'cancelled':
