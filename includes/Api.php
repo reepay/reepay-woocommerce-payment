@@ -192,15 +192,6 @@ class Api {
 	);
 
 	/**
-	 * Constructor.
-	 *
-	 * @param ReepayGateway|string $source logging source.
-	 */
-	public function __construct( $source ) {
-		$this->set_logging_source( $source );
-	}
-
-	/**
 	 * Set logging source.
 	 *
 	 * @param ReepayGateway|WC_Order|string $source logging source.
