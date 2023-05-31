@@ -27,5 +27,8 @@
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
+    },
+    "require": {
+        "psr/container": "^2.0"
     }
 }

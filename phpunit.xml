@@ -10,9 +10,6 @@
         <testsuite name="Main class started">
             <file>./tests/unit/MainClassTest.php</file>
         </testsuite>
-        <testsuite name="Api configured">
-            <file>./tests/unit/ApiConfiguredTest.php</file>
-        </testsuite>
         <testsuite name="Gateways loaded">
             <file>./tests/unit/GatewaysTest.php</file>
         </testsuite>

@@ -14,6 +14,7 @@
  */
 
 use Reepay\Checkout\Api;
+use Reepay\Checkout\DIContainer;
 use Reepay\Checkout\Gateways;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\Plugin\LifeCycle;
@@ -46,6 +47,13 @@ class WC_ReepayCheckout {
 	 * @var Gateways
 	 */
 	private $gateways = null;
+
+	/**
+	 * Dependency injection container
+	 *
+	 * @var null
+	 */
+	private $di_container = null;
 
 	/**
 	 * Constructor
@@ -208,18 +216,13 @@ class WC_ReepayCheckout {
 	 * @return Api;
 	 */
 	public function api( $source ): ?Api {
-		static $api = null;
-
-		if ( is_null( $api ) ) {
-			$api = new Api( $source );
-		} else {
-			/**
-			 * Api instance
-			 *
-			 * @var Api $api
-			 */
-			$api->set_logging_source( $source );
-		}
+		/**
+		 * Api instance
+		 *
+		 * @var Api $api
+		 */
+		$api = $this->di()->get( API::class );
+		$api->set_logging_source( $source );
 
 		return $api;
 	}
@@ -232,6 +235,20 @@ class WC_ReepayCheckout {
 	public function gateways(): ?Gateways {
 		return $this->gateways;
 	}
+
+	/**
+	 * Get dependency injection container
+	 *
+	 * @return DIContainer
+	 */
+	public function di(): DIContainer {
+		if( is_null( $this->di_container ) ) {
+			$this->di_container = new DIContainer();
+		}
+
+		return $this->di_container;
+	}
+
 	/**
 	 * WooCommerce Loaded: load classes
 	 *
