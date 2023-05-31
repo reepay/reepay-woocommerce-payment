@@ -5,6 +5,7 @@
  * @package Reepay\Checkout
  */
 
+use Reepay\Checkout\Api;
 use Reepay\Checkout\OrderFlow\InstantSettle;
 
 use Reepay\Checkout\OrderFlow\OrderCapture;
@@ -100,6 +101,78 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		$this->order_generator->set_prop( 'payment_method', 'cod' );
 
 		$this->order_generator->add_product( 'simple' );
+
+		$this->assertFalse( $this->order_capture->check_capture_allowed( $this->order_generator->order() ) );
+	}
+
+	/**
+	 * Test @see OrderCapture::check_capture_allowed with wp error from api
+	 */
+	public function test_check_capture_allowed_with_wp_error() {
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$this->order_generator->add_product( 'simple' );
+
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'get_invoice_data' ) )
+					 ->getMock();
+
+		$mock->method( 'get_invoice_data' )->willReturn( new WP_Error( 'test error' ) );
+
+		reepay()->di()->set( Api::class, $mock );
+
+		$this->assertFalse( $this->order_capture->check_capture_allowed( $this->order_generator->order() ) );
+	}
+
+	/**
+	 * Test @see OrderCapture::check_capture_allowed with allowed data from api
+	 */
+	public function test_check_capture_allowed_allowed_by_api() {
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$this->order_generator->add_product( 'simple' );
+
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'get_invoice_data' ) )
+					 ->getMock();
+
+		$mock->method( 'get_invoice_data' )->willReturn( array(
+			'authorized_amount' => 100,
+			'settled_amount'    => 10,
+		) );
+
+		reepay()->di()->set( Api::class, $mock );
+
+		$this->assertTrue( $this->order_capture->check_capture_allowed( $this->order_generator->order() ) );
+	}
+
+	/**
+	 * Test @see OrderCapture::check_capture_allowed with not allowed data from api
+	 */
+	public function test_check_capture_allowed_not_allowed_by_api() {
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$this->order_generator->add_product( 'simple' );
+
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'get_invoice_data' ) )
+					 ->getMock();
+
+		$mock->method( 'get_invoice_data' )->willReturn( array(
+			'authorized_amount' => 10,
+			'settled_amount'    => 100,
+		) );
+
+		reepay()->di()->set( Api::class, $mock );
 
 		$this->assertFalse( $this->order_capture->check_capture_allowed( $this->order_generator->order() ) );
 	}
