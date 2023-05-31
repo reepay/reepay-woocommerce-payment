@@ -77,6 +77,214 @@ class OrderCaptureTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test @see OrderCapture::complete_settle
+	 */
+	public function test_complete_settle() {
+		$total = 1000;
+
+		$order_item_id = $this->order_generator->add_product( 'simple' );
+
+		$this->order_capture->complete_settle(
+			WC_Order_Factory::get_order_item( $order_item_id ),
+			$this->order_generator->order(),
+			$total
+		);
+
+		$this->assertSame(
+			rp_make_initial_amount( $total, $this->order_generator->order()->get_currency() ),
+			(float) WC_Order_Factory::get_order_item( $order_item_id )->get_meta( 'settled' )
+		);
+	}
+
+	/**
+	 * Test @see OrderCapture::settle_item with already settled order item
+	 */
+	public function test_settle_item_already_settled() {
+		$order_item_id = $this->order_generator->add_product(
+			'simple',
+			array(),
+			array(
+				'settled' => '1'
+			)
+		);
+
+		$this->assertTrue(
+			$this->order_capture->settle_item(
+				WC_Order_Factory::get_order_item( $order_item_id ),
+				$this->order_generator->order()
+			)
+		);
+	}
+
+	/**
+	 * Test @see OrderCapture::settle_item with zero order item total
+	 */
+	public function test_settle_item_zero_total() {
+		$order_item_id = $this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => 0
+			),
+		);
+
+		$this->assertTrue(
+			$this->order_capture->settle_item(
+				WC_Order_Factory::get_order_item( $order_item_id ),
+				$this->order_generator->order()
+			)
+		);
+
+		$this->assertTrue(
+			did_action( 'reepay_order_item_settled' ) === 1,
+			'Action "reepay_order_item_settled" not fired or fired more than 1 time'
+		);
+	}
+
+	/**
+	 * Test @see OrderCapture::settle_item not allowed by api
+	 */
+	public function test_settle_item_not_allowed_by_api() {
+		$order_item_id = $this->order_generator->add_product( 'simple' );
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'get_invoice_data' ) )
+					 ->getMock();
+
+		$mock->method( 'get_invoice_data' )->willReturn( array(
+			'authorized_amount' => 10,
+			'settled_amount'    => 100,
+			'refunded_amount'   => 0,
+		) );
+
+		reepay()->di()->set( Api::class, $mock );
+
+		$this->assertFalse(
+			$this->order_capture->settle_item(
+				WC_Order_Factory::get_order_item( $order_item_id ),
+				$this->order_generator->order()
+			)
+		);
+	}
+
+	/**
+	 * Test @see OrderCapture::settle_item with api error
+	 */
+	public function test_settle_item_api_error() {
+		$order_item_id = $this->order_generator->add_product( 'simple' );
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'get_invoice_data', 'settle' ) )
+					 ->getMock();
+
+		$mock->method( 'get_invoice_data' )->willReturn( array(
+			'authorized_amount' => 100,
+			'settled_amount'    => 10,
+			'refunded_amount'   => 0,
+		) );
+
+		$mock->method( 'settle' )->willReturn( new WP_Error('Test error', 'Test error') );
+
+		reepay()->di()->set( Api::class, $mock );
+
+		$this->assertFalse(
+			$this->order_capture->settle_item(
+				WC_Order_Factory::get_order_item( $order_item_id ),
+				$this->order_generator->order()
+			)
+		);
+
+		$this->assertNotEmpty(
+			get_transient( 'reepay_api_action_error' ),
+			'Error message not set'
+		);
+	}
+
+	/**
+	 * Test @see OrderCapture::settle_item with api failed
+	 */
+	public function test_settle_item_api_failed() {
+		$order_item_id = $this->order_generator->add_product( 'simple' );
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'get_invoice_data', 'settle' ) )
+					 ->getMock();
+
+		$mock->method( 'get_invoice_data' )->willReturn( array(
+			'authorized_amount' => 100,
+			'settled_amount'    => 10,
+			'refunded_amount'   => 0,
+		) );
+
+		$mock->method( 'settle' )->willReturn( array(
+			'state' => 'failed'
+		) );
+
+		reepay()->di()->set( Api::class, $mock );
+
+		$this->assertFalse(
+			$this->order_capture->settle_item(
+				WC_Order_Factory::get_order_item( $order_item_id ),
+				$this->order_generator->order()
+			)
+		);
+
+		$this->assertNotEmpty(
+			get_transient( 'reepay_api_action_error' ),
+			'Error message not set'
+		);
+	}
+
+	/**
+	 * Test @see OrderCapture::settle_item with api success
+	 */
+	public function test_settle_item_api_success() {
+		$order_item_id = $this->order_generator->add_product( 'simple' );
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'get_invoice_data', 'settle' ) )
+					 ->getMock();
+
+		$mock->method( 'get_invoice_data' )->willReturn( array(
+			'authorized_amount' => 100,
+			'settled_amount'    => 10,
+			'refunded_amount'   => 0,
+		) );
+
+		$mock->method( 'settle' )->willReturn( array(
+			'state' => 'success'
+		) );
+
+		reepay()->di()->set( Api::class, $mock );
+
+		$this->assertTrue(
+			$this->order_capture->settle_item(
+				WC_Order_Factory::get_order_item( $order_item_id ),
+				$this->order_generator->order()
+			)
+		);
+	}
+
+	/**
 	 * Test @see OrderCapture::check_capture_allowed with reepay subscription product
 	 */
 	public function test_check_capture_allowed_with_reepay_subscription() {
@@ -145,6 +353,7 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		$mock->method( 'get_invoice_data' )->willReturn( array(
 			'authorized_amount' => 100,
 			'settled_amount'    => 10,
+			'refunded_amount'   => 0,
 		) );
 
 		reepay()->di()->set( Api::class, $mock );
@@ -170,6 +379,7 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		$mock->method( 'get_invoice_data' )->willReturn( array(
 			'authorized_amount' => 10,
 			'settled_amount'    => 100,
+			'refunded_amount'   => 0,
 		) );
 
 		reepay()->di()->set( Api::class, $mock );

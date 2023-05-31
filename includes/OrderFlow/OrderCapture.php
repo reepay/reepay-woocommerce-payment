@@ -39,6 +39,8 @@ class OrderCapture {
 		add_action( 'admin_init', array( $this, 'process_item_capture' ) );
 
 		add_action( 'woocommerce_order_item_add_action_buttons', array( $this, 'capture_full_order_button' ), 10, 1 );
+
+		add_action( 'reepay_order_item_settled', array( $this, 'activate_woocommerce_subscription' ), 10, 2 );
 	}
 
 	/**
@@ -90,14 +92,14 @@ class OrderCapture {
 		}
 
 		if ( floatval( $item->get_data()['total'] ) > 0 && $this->check_capture_allowed( $order ) ) {
-			$price      = self::get_item_price( $item_id, $order );
+			$price = self::get_item_price( $item_id, $order );
 
 			reepay()->get_template(
 				'admin/capture-item-button.php',
 				array(
-					'name'           => 'line_item_capture',
-					'value'           => $item_id,
-					'text' => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $price['with_tax'] )
+					'name'  => 'line_item_capture',
+					'value' => $item_id,
+					'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $price['with_tax'] )
 				)
 			);
 		}
@@ -176,13 +178,69 @@ class OrderCapture {
 				reepay()->get_template(
 					'admin/capture-item-button.php',
 					array(
-						'name'           => 'all_items_capture',
-						'value'           => $order->get_id(),
-						'text' => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $amount )
+						'name'  => 'all_items_capture',
+						'value' => $order->get_id(),
+						'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $amount )
 					)
 				);
 			}
 		}
+	}
+
+	/**
+	 * Activate woocommerce subscription after settle order item
+	 *
+	 * @param WC_Order_Item $item  woocommerce order item.
+	 * @param WC_Order      $order woocomemrce order.
+	 */
+	public function activate_woocommerce_subscription( WC_Order_Item $item, WC_Order $order ) {
+		if ( method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
+			WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
+		}
+	}
+
+	/**
+	 * Settle all items in order.
+	 *
+	 * @param WC_Order $order order to settle.
+	 */
+	public function multi_settle( WC_Order $order ): bool {
+		$items_data = array();
+		$line_items = array();
+		$total_all  = 0;
+
+		foreach ( $order->get_items() as $item ) {
+			if ( empty( $item->get_meta( 'settled' ) ) ) {
+				$item_data = $this->get_item_data( $item, $order );
+				$total     = $item_data['amount'] * $item_data['quantity'];
+
+				if ( $total <= 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
+					WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
+				} elseif ( $total > 0 && $this->check_capture_allowed( $order ) ) {
+					$items_data[] = $item_data;
+					$line_items[] = $item;
+					$total_all    += $total;
+				}
+			}
+		}
+
+		foreach ( $order->get_items( array( 'shipping', 'fee' ) ) as $item ) {
+			if ( empty( $item->get_meta( 'settled' ) ) ) {
+				$item_data = $this->get_item_data( $item, $order );
+				$total     = $item_data['amount'] * $item_data['quantity'];
+				if ( $total > 0 && $this->check_capture_allowed( $order ) ) {
+					$items_data[] = $item_data;
+					$line_items[] = $item;
+					$total_all    += $total;
+				}
+			}
+		}
+
+		if ( ! empty( $items_data ) ) {
+			return $this->settle_items( $order, $items_data, $total_all, $line_items );
+		}
+
+		return false;
 	}
 
 	/**
@@ -196,7 +254,7 @@ class OrderCapture {
 	 * @return bool
 	 */
 	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items ): bool {
-		unset( $_POST['post_status'] );
+		unset( $_POST['post_status'] ); // // Prevent order status changing by WooCommerce
 
 		$gateway = rp_get_payment_method( $order );
 		$result  = reepay()->api( $gateway )->settle( $order, $total_all, $items_data, $line_items );
@@ -227,50 +285,6 @@ class OrderCapture {
 	}
 
 	/**
-	 * Settle all items in order.
-	 *
-	 * @param WC_Order $order order to settle.
-	 */
-	public function multi_settle( WC_Order $order ): bool {
-		$items_data = array();
-		$line_items = array();
-		$total_all  = 0;
-
-		foreach ( $order->get_items() as $item ) {
-			if ( empty( $item->get_meta( 'settled' ) ) ) {
-				$item_data = $this->get_item_data( $item, $order );
-				$total     = $item_data['amount'] * $item_data['quantity'];
-
-				if ( $total <= 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
-					WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
-				} elseif ( $total > 0 && $this->check_capture_allowed( $order ) ) {
-					$items_data[] = $item_data;
-					$line_items[] = $item;
-					$total_all   += $total;
-				}
-			}
-		}
-
-		foreach ( $order->get_items( array( 'shipping', 'fee' ) ) as $item ) {
-			if ( empty( $item->get_meta( 'settled' ) ) ) {
-				$item_data = $this->get_item_data( $item, $order );
-				$total     = $item_data['amount'] * $item_data['quantity'];
-				if ( $total > 0 && $this->check_capture_allowed( $order ) ) {
-					$items_data[] = $item_data;
-					$line_items[] = $item;
-					$total_all   += $total;
-				}
-			}
-		}
-
-		if ( ! empty( $items_data ) ) {
-			return $this->settle_items( $order, $items_data, $total_all, $line_items );
-		}
-
-		return false;
-	}
-
-	/**
 	 * Complete settle for order item, activate associated subscription and save data to meta
 	 *
 	 * @param WC_Order_Item $item  order item to set 'settled' meta.
@@ -278,11 +292,10 @@ class OrderCapture {
 	 * @param float|int     $total settled total to set to 'settled' meta.
 	 */
 	public function complete_settle( WC_Order_Item $item, WC_Order $order, $total ) {
-		if ( method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
-			WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
-		}
-		$item->update_meta_data( 'settled', $total / 100 );
+		$item->update_meta_data( 'settled', rp_make_initial_amount( $total, $order->get_currency() ) );
 		$item->save();
+
+		do_action( 'reepay_order_item_settled', $item, $order );
 	}
 
 	/**
@@ -297,36 +310,41 @@ class OrderCapture {
 	public function settle_item( WC_Order_Item $item, WC_Order $order ): bool {
 		$settled = $item->get_meta( 'settled' );
 
-		if ( empty( $settled ) ) {
-			$item_data      = $this->get_item_data( $item, $order );
-			$line_item_data = array( $item_data );
-			$total          = $item_data['amount'] * $item_data['quantity'];
-			unset( $_POST['post_status'] );
-			$gateway = rp_get_payment_method( $order );
-			if ( $total <= 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
-				WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
-			} elseif ( $total > 0 && $this->check_capture_allowed( $order ) ) {
-				$result = reepay()->api( $gateway )->settle( $order, $total, $line_item_data, $item );
-
-				if ( is_wp_error( $result ) ) {
-					$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-					set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
-
-					return false;
-				}
-
-				if ( 'failed' === $result['state'] ) {
-					$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-					set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
-
-					return false;
-				}
-
-				if ( $result ) {
-					$this->complete_settle( $item, $order, $total );
-				}
-			}
+		if ( ! empty( $settled ) ) {
+			return true;
 		}
+
+		unset( $_POST['post_status'] ); // Prevent order status changing by WooCommerce
+
+		$item_data = $this->get_item_data( $item, $order );
+		$total     = $item_data['amount'] * $item_data['quantity'];
+
+		if ( $total <= 0 ) {
+			do_action( 'reepay_order_item_settled', $item, $order );
+
+			return true;
+		}
+
+		if ( ! $this->check_capture_allowed( $order ) ) {
+			return false;
+		}
+
+		$result = reepay()->api( $order )->settle( $order, $total, array( $item_data ), $item );
+
+		if ( is_wp_error( $result ) ) {
+			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
+			set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
+
+			return false;
+		}
+
+		if ( 'failed' === $result['state'] ) {
+			set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+
+			return false;
+		}
+
+		$this->complete_settle( $item, $order, $total );
 
 		return true;
 	}
