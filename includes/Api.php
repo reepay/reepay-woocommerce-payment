@@ -203,10 +203,20 @@ class Api {
 	/**
 	 * Set logging source.
 	 *
-	 * @param ReepayGateway|string $source logging source.
+	 * @param ReepayGateway|WC_Order|string $source logging source.
 	 */
 	public function set_logging_source( $source ) {
-		$this->logging_source = is_string( $source ) ? $source : $source->id;
+		if( is_string( $source ) ) {
+			$this->logging_source = $source;
+		} else {
+			if( is_a( $source, ReepayGateway::class ) ) {
+				$this->logging_source = $source->id;
+			} else if( is_a( $source, WC_Order::class ) ) {
+				$this->logging_source = rp_get_payment_method( $source )->id;
+			} else {
+				$this->logging_source = 'reepay';
+			}
+		}
 	}
 
 	/**

@@ -203,7 +203,7 @@ class WC_ReepayCheckout {
 	/**
 	 * Set logging source.
 	 *
-	 * @param ReepayGateway|string $source Source for logging.
+	 * @param ReepayGateway|WC_Order|string $source Source for logging.
 	 *
 	 * @return Api;
 	 */
