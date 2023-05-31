@@ -267,7 +267,6 @@ class OrderCapture {
 		}
 
 		if ( 'failed' === $result['state'] ) {
-			$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
 			set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
 
 			return false;

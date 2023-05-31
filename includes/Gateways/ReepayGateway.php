@@ -508,7 +508,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 */
 	public function capture_payment( $order, $amount = null ) {
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
-			throw new Exception( 'Order is already canceled' );
+			throw new Exception( __( 'Order is canceled', 'reepay-checkout-gateway' ) );
 		}
 
 		$result = reepay()->api( $this )->capture_payment( $order, $amount );
