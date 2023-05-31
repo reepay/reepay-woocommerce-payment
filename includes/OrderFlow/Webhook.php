@@ -144,8 +144,7 @@ class Webhook {
 				$order->set_transaction_id( $data['transaction'] );
 				$order->save();
 
-				$gateway      = rp_get_payment_method( $order );
-				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
+				$invoice_data = reepay()->api( $order )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
 					$invoice_data = array();
 				}
@@ -232,8 +231,7 @@ class Webhook {
 
 				self::lock_order( $order->get_id() );
 
-				$gateway      = rp_get_payment_method( $order );
-				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
+				$invoice_data = reepay()->api( $order )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
 					$invoice_data = array();
 				}
@@ -241,7 +239,7 @@ class Webhook {
 				$this->log( sprintf( 'WebHook: Invoice data: %s', var_export( $invoice_data, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 
 				if ( ! empty( $invoice_data['id'] ) && ! empty( $data['transaction'] ) ) {
-					$transaction = reepay()->api( $gateway )->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice_data['id'] . '/transaction/' . $data['transaction'] );
+					$transaction = reepay()->api( $order )->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice_data['id'] . '/transaction/' . $data['transaction'] );
 					$this->log( sprintf( 'WebHook: Transaction data: %s', var_export( $transaction, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 
 					if ( ! empty( $transaction['card_transaction']['card'] ) ) {
@@ -328,8 +326,7 @@ class Webhook {
 					return;
 				}
 
-				$gateway      = rp_get_payment_method( $order );
-				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
+				$invoice_data = reepay()->api( $order )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
 					$invoice_data = array();
 				}

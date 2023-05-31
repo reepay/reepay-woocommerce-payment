@@ -285,9 +285,7 @@ class OrderStatuses {
 			return;
 		}
 
-		$gateway = rp_get_payment_method( $order );
-
-		$invoice = reepay()->api( $gateway )->get_invoice_data( $order );
+		$invoice = reepay()->api( $order )->get_invoice_data( $order );
 		if ( $invoice['settled_amount'] < $invoice['authorized_amount'] ) {
 			// Use the authorized status if order has been settled partially.
 			self::set_authorized_status( $order, $note, $transaction_id );

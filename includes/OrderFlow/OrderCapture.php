@@ -344,9 +344,7 @@ class OrderCapture {
 			return false;
 		}
 
-		$gateway = rp_get_payment_method( $order );
-
-		$invoice_data = reepay()->api( $gateway )->get_invoice_data( $order );
+		$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
 
 		return ! is_wp_error( $invoice_data ) && $invoice_data['authorized_amount'] > $invoice_data['settled_amount'];
 	}

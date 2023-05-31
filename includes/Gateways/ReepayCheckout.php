@@ -653,8 +653,7 @@ class ReepayCheckout extends ReepayGateway {
 				$order = wc_get_order( $order_id );
 
 				// Get customer handle by order.
-				$gateway         = rp_get_payment_method( $order );
-				$customer_handle = reepay()->api( $gateway )->get_customer_handle( $order );
+				$customer_handle = reepay()->api( $order )->get_customer_handle( $order );
 			}
 		} else {
 			$customer_handle = rp_get_customer_handle( $user->ID );

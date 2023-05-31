@@ -204,9 +204,7 @@ class ThankyouPage {
 
 		$ret = array();
 
-		$gateway = rp_get_payment_method( $order );
-
-		$result = reepay()->api( $gateway )->get_invoice_data( $order );
+		$result = reepay()->api( $order )->get_invoice_data( $order );
 		if ( is_wp_error( $result ) ) {
 			// No information.
 			$ret = array(
@@ -275,9 +273,7 @@ class ThankyouPage {
 			return;
 		}
 
-		$gateway = rp_get_payment_method( $order );
-
-		$result = reepay()->api( $gateway )->get_invoice_by_handle( $invoice_id );
+		$result = reepay()->api( $order )->get_invoice_by_handle( $invoice_id );
 		if ( is_wp_error( $result ) ) {
 			return;
 		}
