@@ -39,14 +39,19 @@ class DIContainer implements ContainerInterface {
 	 * Set replacement of base class or interface. Clear cached object if it was created before
 	 *
 	 * @param string $base_name  base class name.
-	 * @param string $write_name write class name.
+	 * @param string|object $write write class name or class instance.
 	 */
-	public function set( string $base_name, string $write_name ) {
+	public function set( string $base_name, $write ) {
 		if ( isset( $this->cache[ $base_name ] ) ) {
 			unset( $this->cache[ $base_name ] );
 		}
 
-		$this->classes[ $base_name ] = $write_name;
+		if ( is_string( $write ) ) {
+			$this->classes[ $base_name ] = $write;
+		} else {
+			$this->classes[ $base_name ] = get_class( $write );
+			$this->cache[ $base_name ]   = $write;
+		}
 	}
 
 	/**
@@ -72,12 +77,12 @@ class DIContainer implements ContainerInterface {
 	 * @return object Entry.
 	 */
 	public function get( string $id ): object {
-		if ( isset( $this->classes[ $id ] ) ) {
-			$id = $this->classes[ $id ];
-		}
-
 		if ( isset( $this->cache[ $id ] ) ) {
 			return $this->cache[ $id ];
+		}
+
+		if ( isset( $this->classes[ $id ] ) ) {
+			$id = $this->classes[ $id ];
 		}
 
 		if ( ! $this->has( $id ) ) {
@@ -98,6 +103,7 @@ class DIContainer implements ContainerInterface {
 		$classReflector = new ReflectionClass( $id );
 
 		$constructReflector = $classReflector->getConstructor();
+
 		if ( empty( $constructReflector ) ) {
 			return new $id;
 		}

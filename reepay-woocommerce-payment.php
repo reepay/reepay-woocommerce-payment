@@ -213,9 +213,9 @@ class WC_ReepayCheckout {
 	 *
 	 * @param ReepayGateway|WC_Order|string $source Source for logging.
 	 *
-	 * @return Api;
+	 * @return Api
 	 */
-	public function api( $source ): ?Api {
+	public function api( $source ): Api {
 		/**
 		 * Api instance
 		 *
