@@ -10,7 +10,7 @@
  */
 class CustomerTest extends WP_UnitTestCase {
 	/**
-	 * Test function rp_get_customer_handle_generation
+	 * Test @see rp_get_customer_handle_generation
 	 */
 	public function test_rp_get_customer_handle_generation() {
 		$user = wp_create_user( 'test', 'test', 'test@test.com' );
@@ -22,7 +22,7 @@ class CustomerTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function rp_get_customer_handle_exists
+	 * Test @see rp_get_customer_handle_exists
 	 */
 	public function test_rp_get_customer_handle_exists() {
 		$user = wp_create_user( 'test', 'test', 'test@test.com' );

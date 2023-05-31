@@ -41,7 +41,7 @@ class OrderTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function rp_get_order_handle
+	 * Test @see rp_get_order_handle
 	 */
 	public function test_rp_get_order_handle() {
 		$this->assertSame(
@@ -79,7 +79,7 @@ class OrderTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function rp_get_order_by_handle_found
+	 * Test @see rp_get_order_by_handle_found
 	 */
 	public function test_rp_get_order_by_handle_found() {
 		$handle = 'order-1234';
@@ -98,7 +98,7 @@ class OrderTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function rp_get_order_by_handle_not_found
+	 * Test @see rp_get_order_by_handle_not_found
 	 */
 	public function test_rp_get_order_by_handle_not_found() {
 		$handle = 'order-1234';
@@ -107,7 +107,7 @@ class OrderTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function rp_get_order_by_handle_cache
+	 * Test @see rp_get_order_by_handle_cache
 	 */
 	public function test_rp_get_order_by_handle_cache() {
 		$handle = 'order-1234';
@@ -128,7 +128,7 @@ class OrderTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function rp_get_order_by_session_found
+	 * Test @see rp_get_order_by_session_found
 	 */
 	public function test_rp_get_order_by_session_found() {
 		$session_id = 'sid_1234';
@@ -147,7 +147,7 @@ class OrderTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function rp_get_order_by_session_not_found
+	 * Test @see rp_get_order_by_session_not_found
 	 */
 	public function test_rp_get_order_by_session_not_found() {
 		$session_id = 'sid_1234';
@@ -156,7 +156,7 @@ class OrderTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function rp_get_order_by_session_cache
+	 * Test @see rp_get_order_by_session_cache
 	 */
 	public function test_rp_get_order_by_session_cache() {
 		$session_id = 'sid_1234';
@@ -177,7 +177,7 @@ class OrderTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function rp_is_order_paid_via_reepay
+	 * Test @see rp_is_order_paid_via_reepay
 	 *
 	 * @param string       $method_name payment method name.
 	 * @param string|false $class payment method class name.

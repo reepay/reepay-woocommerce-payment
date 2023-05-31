@@ -72,7 +72,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test maybe_settle_instantly with reepay payment method
+	 * Test @see InstantSettle::maybe_settle_instantly with reepay payment method
 	 */
 	public function test_maybe_settle_instantly_with_reepay_payment_method() {
 		self::$options->set_option(
@@ -98,7 +98,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test maybe_settle_instantly with non reepay payment method
+	 * Test @see InstantSettle::maybe_settle_instantly with non reepay payment method
 	 */
 	public function test_maybe_settle_instantly_with_non_reepay_payment_method() {
 		self::$options->set_option(
@@ -124,7 +124,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test process_instant_settle and make sure instant settlement can be processed just once
+	 * Test @see InstantSettle::process_instant_settle and make sure instant settlement can be processed just once
 	 */
 	public function test_process_instant_settle_already_settled() {
 		self::$options->set_option(
@@ -160,7 +160,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test process_instant_settle
+	 * Test @see InstantSettle::process_instant_settle
 	 */
 	public function test_process_instant_settle() {
 		self::$options->set_option(
@@ -207,7 +207,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_instant_settle_items with physical product
+	 * Test @see InstantSettle::get_instant_settle_items with physical product
 	 *
 	 * @param string $type         product type.
 	 * @param bool   $virtual      is virtual product.
@@ -253,7 +253,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_instant_settle_items with virtual product
+	 * Test @see InstantSettle::get_instant_settle_items with virtual product
 	 *
 	 * @param string $type         product type.
 	 * @param bool   $virtual      is virtual product.
@@ -299,7 +299,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_instant_settle_items with recurring product
+	 * Test @see InstantSettle::get_instant_settle_items with recurring product
 	 *
 	 * @param string $type   product type.
 	 * @param int    $result expected Result.
@@ -328,7 +328,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_instant_settle_items with fee order item
+	 * Test @see InstantSettle::get_instant_settle_items with fee order item
 	 */
 	public function test_get_instant_settle_items_fee() {
 		$this->order_generator->add_fee();
@@ -354,7 +354,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_instant_settle_items with shipping order item
+	 * Test @see InstantSettle::get_instant_settle_items with shipping order item
 	 */
 	public function test_get_instant_settle_items_shipping() {
 		$this->order_generator->add_shipping();
@@ -380,7 +380,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test can_product_be_settled_instantly with physical product
+	 * Test @see InstantSettle::can_product_be_settled_instantly with physical product
 	 *
 	 * @param string $type         product type.
 	 * @param bool   $virtual      is virtual product.
@@ -423,7 +423,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test can_product_be_settled_instantly with virtual product
+	 * Test @see InstantSettle::can_product_be_settled_instantly with virtual product
 	 *
 	 * @param string $type         product type.
 	 * @param bool   $virtual      is virtual product.
@@ -466,7 +466,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test can_product_be_settled_instantly with recurring product
+	 * Test @see InstantSettle::can_product_be_settled_instantly with recurring product
 	 *
 	 * @param string $type   product type.
 	 * @param bool   $result expected Result.
@@ -492,7 +492,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test calculate_instant_settle
+	 * Test @see InstantSettle::calculate_instant_settle
 	 */
 	public function test_calculate_instant_settle() {
 		$prices              = array( 1.02, 2.03, 3.05, 5.07 );
@@ -555,7 +555,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test calculate_instant_settle with zero total
+	 * Test @see InstantSettle::calculate_instant_settle with zero total
 	 */
 	public function test_calculate_instant_settle_zero_total() {
 		self::$options->set_option(
@@ -580,7 +580,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_settled_items
+	 * Test @see InstantSettle::get_settled_items
 	 */
 	public function test_get_settled_items() {
 		$settled_order_items[] = WC_Order_Factory::get_order_item(

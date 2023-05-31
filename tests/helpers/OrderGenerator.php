@@ -13,6 +13,7 @@ use WC_Order_Item;
 use WC_Order_Item_Fee;
 use WC_Order_Item_Shipping;
 use WC_Order_Item_Tax;
+use WC_Tax;
 
 /**
  * Class OrderGenerator
@@ -186,20 +187,24 @@ class OrderGenerator {
 	 *
 	 * @return int order item id
 	 */
-	public function add_tax( $tax_amount, $shipping_tax_amount = 0 ): int {
+	public function add_tax( float $tax_rate, string $tax_rate_name = 'test'  ): int {
+		$tax_rate_id = WC_Tax::_insert_tax_rate( array(
+			'tax_rate'          => $tax_rate,
+			'tax_rate_name'     => $tax_rate_name,
+		) );
+
 		$item = new WC_Order_Item_Tax();
 
 		$item->set_props( array(
-			'rate_id'            => 0,
-			'tax_total'          => $tax_amount,
-			'shipping_tax_total' => $shipping_tax_amount,
-			'rate'               => 0,
+			'rate'               => $tax_rate_id,
 			'order_id'           => $this->order->get_id()
 		) );
 
 		$item->save();
 
 		$this->order->add_item( $item );
+
+		$this->order->calculate_taxes();
 
 		return $item->get_id();
 	}

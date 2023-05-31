@@ -15,7 +15,7 @@ use Reepay\Checkout\Tests\Helpers\ProductGenerator;
  */
 class SubscriptionsTest extends WP_UnitTestCase {
 	/**
-	 * Test function order_contains_subscription
+	 * Test @see order_contains_subscription
 	 */
 	public function test_order_contains_subscription() {
 		$order_generator = new OrderGenerator();
@@ -34,7 +34,7 @@ class SubscriptionsTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function wcs_is_subscription_product
+	 * Test @see wcs_is_subscription_product
 	 */
 	public function test_wcs_is_subscription_product() {
 		$product_generator = new ProductGenerator();
@@ -51,7 +51,7 @@ class SubscriptionsTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function wcr_is_subscription_product
+	 * Test @see wcr_is_subscription_product
 	 */
 	public function test_wcr_is_subscription_product() {
 		$product_generator = new ProductGenerator();
@@ -68,7 +68,7 @@ class SubscriptionsTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function wcs_is_payment_change
+	 * Test @see wcs_is_payment_change
 	 *
 	 * @param bool $test_val test value.
 	 * @param bool $result expected result.
@@ -87,7 +87,7 @@ class SubscriptionsTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function wcs_cart_have_subscription
+	 * Test @see wcs_cart_have_subscription
 	 */
 	public function test_wcs_cart_have_subscription() {
 		$cart_generator = new CartGenerator();
@@ -107,7 +107,7 @@ class SubscriptionsTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function wcs_cart_only_subscriptions
+	 * Test @see wcs_cart_only_subscriptions
 	 */
 	public function test_wcs_cart_only_subscriptions() {
 		$cart_generator = new CartGenerator();
@@ -141,7 +141,7 @@ class SubscriptionsTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function wc_cart_only_reepay_subscriptions
+	 * Test @see wc_cart_only_reepay_subscriptions
 	 */
 	public function test_wc_cart_only_reepay_subscriptions() {
 		$cart_generator = new CartGenerator();
