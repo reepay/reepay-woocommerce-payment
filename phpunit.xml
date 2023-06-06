@@ -14,13 +14,16 @@
             <file>./tests/unit/ApiConfiguredTest.php</file>
         </testsuite>
         <testsuite name="Gateways loaded">
-            <file>./tests/unit/GatewaysTest.php</file>
+            <file>./tests/unit/Gateways.php</file>
         </testsuite>
         <testsuite name="Functions tested">
             <directory suffix="Test.php">./tests/unit/functions</directory>
         </testsuite>
         <testsuite name="OrderFlow tested">
             <directory suffix="Test.php">./tests/unit/orderFlow</directory>
+        </testsuite>
+        <testsuite name="Gateways tested">
+            <directory suffix="Test.php">./tests/unit/gatewaysTests</directory>
         </testsuite>
 	</testsuites>
 </phpunit>
