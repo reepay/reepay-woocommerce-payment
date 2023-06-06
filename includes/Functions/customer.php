@@ -16,22 +16,6 @@ if ( ! function_exists( 'rp_get_customer_handle' ) ) {
 	 * @return string
 	 */
 	function rp_get_customer_handle( int $user_id ): string {
-		// Allow to pay exist orders by guests.
-		// ToDo test this case.
-		if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) {
-			$order_id = wc_get_order_id_by_order_key( $_GET['key'] );
-			if ( $order_id ) {
-				$order = wc_get_order( $order_id );
-
-				// Get customer handle by order.
-				$gateway = rp_get_payment_method( $order );
-				$handle  = reepay()->api( $gateway )->get_customer_handle( $order );
-				if ( $handle ) {
-					return $handle;
-				}
-			}
-		}
-
 		$handle = get_user_meta( $user_id, 'reepay_customer_id', true );
 
 		if ( empty( $handle ) ) {
@@ -64,12 +48,7 @@ if ( ! function_exists( 'rp_get_userid_by_handle' ) ) {
 				'count_total' => false,
 			)
 		);
-		if ( count( $users ) > 0 ) {
-			$user = array_shift( $users );
 
-			return $user->ID;
-		}
-
-		return false;
+		return ! empty( $users ) ? array_shift( $users )->ID : false;
 	}
 }

@@ -422,7 +422,7 @@ class OrderCapture {
 				$price['original'] = $price['original'] - $discount;
 			}
 		} else {
-			$price['original'] = floatval( $order->get_line_total( $order_item, false, false ) );
+			$price['original'] = $order->get_line_total( $order_item, false, false );
 		}
 
 		$tax_data = wc_tax_enabled() && method_exists( $order_item, 'get_taxes' ) ? $order_item->get_taxes() : false;

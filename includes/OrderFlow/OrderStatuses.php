@@ -440,7 +440,7 @@ class OrderStatuses {
 						}
 
 						$amount_to_capture = rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order->get_currency() );
-						$items_to_capture  = InstantSettle::calculate_instant_settle( $order )->items;
+						$items_to_capture  = InstantSettle::calculate_instant_settle( $order )['items'];
 
 						if ( ! empty( $items_to_capture ) && $amount_to_capture > 0 ) {
 							$gateway->capture_payment( $order, $amount_to_capture );
