@@ -45,31 +45,31 @@ class OrderTest extends WP_UnitTestCase {
 	 */
 	public function test_rp_get_order_handle() {
 		$this->assertSame(
-			'order-' . $this->order->get_order_number(),
+			'order-' . $this->order->get_id(),
 			rp_get_order_handle( $this->order ),
 			'Wrong order handle generated'
 		);
 
 		$this->assertSame(
-			'order-' . $this->order->get_order_number(),
+			'order-' . $this->order->get_id(),
 			$this->order->get_meta( '_reepay_order' ),
 			'Wrong order handle saved in meta'
 		);
 
 		$this->assertSame(
-			'order-' . $this->order->get_order_number(),
+			'order-' . $this->order->get_id(),
 			rp_get_order_handle( $this->order ),
 			'Wrong order handle returned'
 		);
 
 		$this->assertSame(
-			'order-' . $this->order->get_order_number() . '-' . time(),
+			'order-' . $this->order->get_id() . '-' . time(),
 			rp_get_order_handle( $this->order, true ),
 			'Wrong new unique order handle generated'
 		);
 
 		$this->assertSame(
-			'order-' . $this->order->get_order_number() . '-' . time(),
+			'order-' . $this->order->get_id() . '-' . time(),
 			$this->order->get_meta( '_reepay_order' ),
 			'Wrong unique order handle saved in meta'
 		);
