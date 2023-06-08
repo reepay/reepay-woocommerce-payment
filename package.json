@@ -26,6 +26,9 @@
     "phpcs": "bash ./bin/phpcs.sh",
     "phpcs:full": "bash ./bin/phpcs.sh -full",
     "phpcs:fix": "bash ./bin/phpcs.sh -fix",
+    "phpcs:tests": "bash ./bin/phpcs.tests.sh",
+    "phpcs:tests:full": "bash ./bin/phpcs.tests.sh -full",
+    "phpcs:tests:fix": "bash ./bin/phpcs.tests.sh -fix",
     "phpunit": "set PHPUNIT_PLUGINS=woo,woo_subs,rp_subs & php ./vendor/bin/phpunit",
     "phpunit:full": "bash ./bin/phpunit-test-with-plugins.sh",
     "phpunit:init": "bash bin/install-wp-tests.sh wp_phpunit root ''"

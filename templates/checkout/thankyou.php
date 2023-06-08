@@ -57,8 +57,8 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 			);
 
 			foreach ( $another_orders as $order_id ) {
-				if( $order->get_id() === $order_id ) {
-					continue; // Backward compatibility
+				if ( $order->get_id() === $order_id ) {
+					continue; // Backward compatibility.
 				}
 
 				reepay()->get_template(

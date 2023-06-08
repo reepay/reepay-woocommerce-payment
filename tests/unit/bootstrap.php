@@ -5,6 +5,9 @@
  * @package ./reepay_Woocommerce_Payment
  */
 
+use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
+use Reepay\Checkout\Tests\Helpers\OptionsController;
+
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 
 if ( ! $_tests_dir ) {
@@ -25,33 +28,40 @@ if ( ! file_exists( "{$_tests_dir}/includes/functions.php" ) ) {
 // Give access to tests_add_filter() function.
 require_once "{$_tests_dir}/includes/functions.php";
 
-require_once 'helpers/RP_TEST_HELPERS.php';
-require_once 'helpers/RP_TEST_PLUGINS_STATE.php';
-require_once 'helpers/RpTestOrderGenerator.php';
-require_once 'helpers/RpTestProductGenerator.php';
-require_once 'helpers/RpTestCartGenerator.php';
-
 /**
  * Manually load Reepay plugin and dependencies.
  */
-tests_add_filter( 'muplugins_loaded', function () {
-	RP_TEST_PLUGINS_STATE::activate_plugins();
+tests_add_filter(
+	'muplugins_loaded',
+	function () {
+		PLUGINS_STATE::activate_plugins();
 
-	require_once dirname( dirname( __FILE__ ) ) . '/reepay-woocommerce-payment.php';
-} );
+		require_once __DIR__ . '/../../reepay-woocommerce-payment.php';
+	}
+);
 
 // Init Reepay.
-tests_add_filter( 'plugins_loaded', function () {
-	$reepay_checkout = reepay()->gateways()->checkout();
-	$reepay_checkout->process_admin_options();
-	$reepay_checkout->update_option( 'enabled', 'yes' );
-	$reepay_checkout->update_option( 'test_mode', 'yes' );
-	$reepay_checkout->update_option( 'private_key_test', 'priv_2795e0868bc1609c66783e0c8d967bcf' );
-	reepay()->reset_settings();
-	$reepay_checkout->is_webhook_configured();
-} );
+tests_add_filter(
+	'plugins_loaded',
+	function () {
+		$reepay_checkout = reepay()->gateways()->checkout();
+		$reepay_checkout->process_admin_options();
+
+		( new OptionsController() )->set_options(
+			array(
+				'enabled'          => 'yes',
+				'test_mode'        => 'yes',
+				'private_key_test' => 'priv_2795e0868bc1609c66783e0c8d967bcf', // ToDo change with env variable.
+			)
+		);
+
+		$reepay_checkout->is_webhook_configured();
+	}
+);
 
 tests_add_filter( 'deprecated_function_trigger_error', '__return_false' );
+
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 // Start up the WP testing environment.
 require_once "{$_tests_dir}/includes/bootstrap.php";

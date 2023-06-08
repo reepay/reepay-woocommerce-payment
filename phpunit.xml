@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <phpunit
-	bootstrap="tests/bootstrap.php"
+	bootstrap="tests/unit/bootstrap.php"
 	colors="true"
 	convertErrorsToExceptions="true"
 	convertNoticesToExceptions="true"
@@ -8,16 +8,24 @@
 	>
 	<testsuites>
         <testsuite name="Main class started">
-            <file>./tests/MainClassTest.php</file>
+            <file>./tests/unit/MainClassTest.php</file>
         </testsuite>
         <testsuite name="Api configured">
-            <file>./tests/ApiConfiguredTest.php</file>
+            <file>./tests/unit/ApiConfiguredTest.php</file>
         </testsuite>
         <testsuite name="Gateways loaded">
-            <file>./tests/GatewaysClassTest.php</file>
+            <file>./tests/unit/GatewaysTest.php</file>
         </testsuite>
         <testsuite name="Functions tested">
-            <directory suffix="Test.php">./tests/functions</directory>
+            <directory suffix="Test.php">./tests/unit/functions</directory>
+        </testsuite>
+        <testsuite name="OrderFlow tested">
+            <directory suffix="Test.php">./tests/unit/orderFlow</directory>
         </testsuite>
 	</testsuites>
+    <filter>
+        <whitelist>
+            <directory suffix=".php">./includes</directory>
+        </whitelist>
+    </filter>
 </phpunit>

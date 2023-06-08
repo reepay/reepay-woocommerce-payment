@@ -1,5 +1,7 @@
 <?php
 /**
+ * Woocommerce missed notice
+ *
  * @package Reepay\Checkout
  */
 
@@ -18,20 +20,17 @@ defined( 'ABSPATH' ) || exit();
 	</p>
 	<p>
 		<?php
-		echo esc_html__(
+		_e(
 			'WooCommerce plugin is inactive or missing. Please install and active it.',
 			'reepay-checkout-gateway'
 		);
-		echo '<br />';
-		/* translators: 1: plugin name */
-		echo sprintf(
-			esc_html__(
-				'%1$s will be deactivated.',
-				'reepay-checkout-gateway'
-			),
-			'WooCommerce Reepay Checkout Gateway'
-		);
-
+		?>
+		<br />
+		<?php
+		_e(
+			'WooCommerce Reepay Checkout Gateway will be deactivated.',
+			'reepay-checkout-gateway'
+		)
 		?>
 	</p>
 </div>

@@ -644,7 +644,21 @@ class ReepayCheckout extends ReepayGateway {
 	 */
 	public function add_payment_method() {
 		$user            = get_userdata( get_current_user_id() );
-		$customer_handle = rp_get_customer_handle( $user->ID );
+		$customer_handle = '';
+
+		// Allow to pay exist orders by guests.
+		if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) {
+			$order_id = wc_get_order_id_by_order_key( $_GET['key'] );
+			if ( $order_id ) {
+				$order = wc_get_order( $order_id );
+
+				// Get customer handle by order.
+				$gateway         = rp_get_payment_method( $order );
+				$customer_handle = reepay()->api( $gateway )->get_customer_handle( $order );
+			}
+		} else {
+			$customer_handle = rp_get_customer_handle( $user->ID );
+		}
 
 		$accept_url = add_query_arg( 'action', 'reepay_card_store', admin_url( 'admin-ajax.php' ) );
 		$accept_url = apply_filters( 'woocommerce_reepay_payment_accept_url', $accept_url );

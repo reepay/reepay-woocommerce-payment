@@ -10,6 +10,7 @@ namespace Reepay\Checkout\OrderFlow;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use stdClass;
 use WC_Order;
+use WC_Order_Item;
 use WC_Order_Item_Fee;
 use WC_Order_Item_Product;
 use WC_Product;
@@ -32,10 +33,28 @@ class InstantSettle {
 	const SETTLE_FEE       = 'fee';
 
 	/**
+	 * OrderCapture instance
+	 *
+	 * @var OrderCapture
+	 */
+	private static OrderCapture $order_capture;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		add_action( 'reepay_instant_settle', array( $this, 'maybe_settle_instantly' ), 10, 1 );
+	}
+
+	/**
+	 * Set order capture instance
+	 *
+	 * @TODO remove this static method and replace other static methods with non static methods
+	 *
+	 * @param OrderCapture $order_capture order capture class instance.
+	 */
+	public static function set_order_capture( OrderCapture $order_capture ) {
+		self::$order_capture = $order_capture;
 	}
 
 	/**
@@ -44,15 +63,9 @@ class InstantSettle {
 	 * @param WC_Order $order order to settle payment.
 	 */
 	public function maybe_settle_instantly( WC_Order $order ) {
-		if ( ! is_object( $order ) ) {
-			$order = wc_get_order( $order );
+		if ( rp_is_order_paid_via_reepay( $order ) ) {
+			$this->process_instant_settle( $order );
 		}
-
-		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
-			return;
-		}
-
-		$this->process_instant_settle( $order );
 	}
 
 	/**
@@ -63,8 +76,6 @@ class InstantSettle {
 	 * @return void
 	 */
 	public function process_instant_settle( WC_Order $order ) {
-		$order_capture = OrderCapture::get_instance();
-
 		if ( ! empty( $order->get_meta( '_is_instant_settled' ) ) ) {
 			return;
 		}
@@ -77,19 +88,18 @@ class InstantSettle {
 		if ( ! empty( $settle_items ) ) {
 			foreach ( $settle_items as $item ) {
 				if ( empty( $item->get_meta( 'settled' ) ) ) {
-					$item_data = $order_capture->get_item_data( $item, $order );
+					$item_data = self::$order_capture->get_item_data( $item, $order );
 					$total     = $item_data['amount'] * $item_data['quantity'];
-
 					if ( $total <= 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
 						WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
-					} elseif ( $total > 0 && $order_capture->check_capture_allowed( $order ) ) {
+					} elseif ( $total > 0 && self::$order_capture->check_capture_allowed( $order ) ) {
 						$items_data[] = $item_data;
 						$total_all   += $total;
 					}
 				}
 			}
 
-			$order_capture->settle_items( $order, $items_data, $total_all, $settle_items );
+			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items );
 			$order->add_meta_data( '_is_instant_settled', '1' );
 			$order->save_meta_data();
 		}
@@ -99,12 +109,13 @@ class InstantSettle {
 	 * Check if product can be settled instantly.
 	 *
 	 * @param WC_Product $product      if need check the product.
-	 * @param string[]   $settle_types settle types.
 	 *
 	 * @return bool
 	 * @see ReepayGateway::$settle
 	 */
-	public static function can_product_be_settled_instantly( WC_Product $product, array $settle_types ): bool {
+	public static function can_product_be_settled_instantly( WC_Product $product ): bool {
+		$settle_types = reepay()->get_setting( 'settle' ) ?: array();
+
 		if ( in_array( self::SETTLE_PHYSICAL, $settle_types, true ) &&
 			 ( ! wcs_is_subscription_product( $product ) &&
 			   $product->needs_shipping() &&
@@ -130,10 +141,10 @@ class InstantSettle {
 	 *
 	 * @param WC_Order $order order to get items.
 	 *
-	 * @return array
+	 * @return WC_Order_Item[]
 	 */
 	public static function get_instant_settle_items( WC_Order $order ): array {
-		$settle_types = rp_get_payment_method( $order )->settle ?: array();
+		$settle_types = reepay()->get_setting( 'settle' ) ?: array();
 		$items_data   = array();
 
 		// Walk through the order lines and check if order item is virtual, downloadable, recurring or physical.
@@ -145,7 +156,7 @@ class InstantSettle {
 			 */
 			$product = $order_item->get_product();
 
-			if ( self::can_product_be_settled_instantly( $product, $settle_types ) ) {
+			if ( self::can_product_be_settled_instantly( $product ) ) {
 				$items_data[] = $order_item;
 			}
 		}
@@ -157,7 +168,7 @@ class InstantSettle {
 		}
 
 		if ( in_array( self::SETTLE_PHYSICAL, $settle_types, true ) ) {
-			foreach ( $order->get_items( 'shipping' ) as $i => $item_shipping ) {
+			foreach ( $order->get_shipping_methods() as $i => $item_shipping ) {
 				$items_data[ $i ] = $item_shipping;
 			}
 		}
@@ -170,18 +181,16 @@ class InstantSettle {
 	 *
 	 * @param WC_Order $order order to calculate settle amount.
 	 *
-	 * @return stdClass
+	 * @return array
 	 */
-	public static function calculate_instant_settle( WC_Order $order ): stdClass {
-		$is_instant_settle = false;
-		$delivery          = false;
-		$total             = 0;
-		$items_data        = array();
+	public static function calculate_instant_settle( WC_Order $order ): array {
+		$total      = 0;
+		$items_data = array();
 
-		$settle_types = rp_get_payment_method( $order )->settle ?: array();
+		$settle_types = reepay()->get_setting( 'settle' ) ?: array();
 
 		// Walk through the order lines and check if order item is virtual, downloadable, recurring or physical.
-		foreach ( $order->get_items() as $item ) {
+		foreach ( $order->get_items() as $key => $item ) {
 			/**
 			 * WC_Order_Item_Product returns not WC_Order_Item
 			 *
@@ -190,10 +199,9 @@ class InstantSettle {
 			$product        = $item->get_product();
 			$price_incl_tax = $order->get_line_subtotal( $item, true, false );
 
-			if ( self::can_product_be_settled_instantly( $product, $settle_types ) ) {
-				$is_instant_settle = true;
-				$total            += $price_incl_tax;
-				$items_data[]      = OrderCapture::get_instance()->get_item_data( $item, $order );
+			if ( self::can_product_be_settled_instantly( $product ) ) {
+				$total             += $price_incl_tax;
+				$items_data[ $key ] = self::$order_capture->get_item_data( $item, $order );
 			}
 		}
 
@@ -203,7 +211,6 @@ class InstantSettle {
 				$shipping = (float) $order->get_shipping_total();
 				$tax      = (float) $order->get_shipping_tax();
 				$total   += ( $shipping + $tax );
-				$delivery = true;
 			}
 		}
 
@@ -218,21 +225,17 @@ class InstantSettle {
 
 		// Add discounts.
 		if ( $order->get_total_discount( false ) > 0 ) {
-			$discount_with_tax = $order->get_total_discount( false );
-			$total            -= $discount_with_tax;
+			$total -= $order->get_total_discount( false );
 
 			if ( $total < 0 ) {
 				$total = 0;
 			}
 		}
 
-		$result                    = new stdClass();
-		$result->is_instant_settle = $is_instant_settle || $delivery;
-		$result->settle_amount     = $total;
-		$result->items             = $items_data;
-		$result->settings          = $settle_types;
-
-		return $result;
+		return array(
+			'settle_amount' => $total,
+			'items'         => $items_data,
+		);
 	}
 
 	/**
@@ -247,9 +250,9 @@ class InstantSettle {
 	public static function get_settled_items( WC_Order $order ): array {
 		$settled = array();
 
-		foreach ( $order->get_items() as $item ) {
+		foreach ( $order->get_items() as $key => $item ) {
 			if ( ! empty( $item->get_meta( 'settled' ) ) ) {
-				$settled[] = OrderCapture::get_instance()->get_item_data( $item, $order );
+				$settled[ $key ] = self::$order_capture->get_item_data( $item, $order );
 			}
 		}
 
