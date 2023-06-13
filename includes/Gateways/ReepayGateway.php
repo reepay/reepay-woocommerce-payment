@@ -248,15 +248,17 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 */
 	public function get_account_info( $is_test = false ) {
 		if ( $this->is_gateway_settings_page() ) {
-			$key = 'account_info';
+			$key   = 'account_info';
+			$force = true;
 
 			if ( $is_test ) {
-				$key = 'account_info_test';
+				$key   = 'account_info_test';
+				$force = false;
 			}
 
 			$account_info = get_transient( $key );
-			if ( empty( $account_info ) ) {
-				$account_info = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account' );
+			if ( empty( $account_info ) && true ) {
+				$account_info = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account', array(), $force );
 				set_transient( $key, $account_info, 5 );
 			}
 
