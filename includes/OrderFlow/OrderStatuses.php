@@ -376,12 +376,8 @@ class OrderStatuses {
 	 * @see wc_cancel_unpaid_orders()
 	 */
 	public function cancel_unpaid_order( bool $maybe_cancel, WC_Order $order ): bool {
-		if ( rp_is_order_paid_via_reepay( $order ) ) {
-			$gateway = rp_get_payment_method( $order );
-
-			if ( 'yes' !== $gateway->enable_order_autocancel ) {
-				$maybe_cancel = false;
-			}
+		if ( rp_is_order_paid_via_reepay( $order ) && 'yes' !== reepay()->get_setting( 'enable_order_autocancel' ) ) {
+			$maybe_cancel = false;
 		}
 
 		return $maybe_cancel;
