@@ -203,7 +203,13 @@ class Api {
 			if( is_a( $source, ReepayGateway::class ) ) {
 				$this->logging_source = $source->id;
 			} else if( is_a( $source, WC_Order::class ) ) {
-				$this->logging_source = rp_get_payment_method( $source )->id;
+				$payment_method = rp_get_payment_method( $source );
+
+				if( $payment_method ) {
+					$this->logging_source = rp_get_payment_method( $source )->id;
+				} else {
+					$this->logging_source = 'reepay-unknown-payment-method';
+				}
 			} else {
 				$this->logging_source = 'reepay';
 			}
@@ -675,8 +681,6 @@ class Api {
 			return new WP_Error( 0, 'Unable to get order handle' );
 		}
 
-		$is_skip = reepay()->get_setting( 'skip_order_lines' ) === 'yes';
-
 		if ( ! $amount || ! $items_data ) {
 			$settle_data = InstantSettle::calculate_instant_settle( $order );
 
@@ -689,7 +693,7 @@ class Api {
 			}
 		}
 
-		if ( $is_skip && ! empty( $amount ) ) {
+		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
 			$request_data['amount'] = $amount;
 		} else {
 			$request_data['order_lines'] = $items_data;
