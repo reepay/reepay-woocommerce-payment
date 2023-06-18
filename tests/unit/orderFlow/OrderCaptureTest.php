@@ -77,6 +77,461 @@ class OrderCaptureTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test @see OrderCapture::add_item_capture_button
+	 */
+	public function test_add_item_capture_button() {
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'get_invoice_data' ) )
+					 ->getMock();
+
+		$mock->method( 'get_invoice_data' )->willReturn( array(
+			'authorized_amount' => 100,
+			'settled_amount'    => 10,
+			'refunded_amount'   => 0,
+		) );
+
+		reepay()->di()->set( Api::class, $mock );
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$price = 10.23;
+		$qty = 2;
+
+		$order_item_id = $this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => $price
+			),
+			array(
+				'quantity' => $qty,
+			)
+		);
+
+		$this->order_generator->order()->save();
+
+		$price = OrderCapture::get_item_price( $order_item_id, $this->order_generator->order() );
+
+		$this->expectOutputString( reepay()->get_template(
+			'admin/capture-item-button.php',
+			array(
+				'name'  => 'line_item_capture',
+				'value' => $order_item_id,
+				'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $price['with_tax'] )
+			),
+			true
+		) );
+
+		$this->order_capture->add_item_capture_button( $order_item_id, WC_Order_Factory::get_order_item( $order_item_id ) );
+	}
+
+	/**
+	 * Test @see OrderCapture::capture_full_order_button with capture not allowed
+	 */
+	public function test_capture_full_order_button_with_capture_not_allowed() {
+		$this->expectOutputString( '' );
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$this->order_capture->capture_full_order_button( $this->order_generator->order() );
+	}
+
+	/**
+	 * Test @see OrderCapture::capture_full_order_button with zero settled amount
+	 */
+	public function test_capture_full_order_button_with_zero_settled_amount() {
+		$this->expectOutputString( '' );
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$price = 10.23;
+		$qty = 2;
+
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => $price
+			),
+			array(
+				'quantity' => $qty,
+				'settled'  => $price * $qty
+			)
+		);
+
+		$this->order_capture->capture_full_order_button( $this->order_generator->order() );
+	}
+
+	/**
+	 * Test @see OrderCapture::capture_full_order_button
+	 */
+	public function test_capture_full_order_button() {
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'get_invoice_data' ) )
+					 ->getMock();
+
+		$mock->method( 'get_invoice_data' )->willReturn( array(
+			'authorized_amount' => 100,
+			'settled_amount'    => 10,
+			'refunded_amount'   => 0,
+		) );
+
+		reepay()->di()->set( Api::class, $mock );
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$price = 10.23;
+		$qty = 2;
+
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => $price
+			),
+			array(
+				'quantity' => $qty,
+			)
+		);
+
+		$this->order_generator->order()->save();
+
+		$this->expectOutputString( reepay()->get_template(
+			'admin/capture-item-button.php',
+			array(
+				'name'  => 'all_items_capture',
+				'value' => $this->order_generator->order()->get_id(),
+				'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $price * $qty )
+			),
+			true
+		) );
+
+		$this->order_capture->capture_full_order_button( $this->order_generator->order() );
+	}
+
+	/**
+	 * Test @see OrderCapture::process_item_capture with one order item
+	 */
+	public function test_line_item_capture_one_line_item() {
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'get_invoice_data', 'settle' ) )
+					 ->getMock();
+
+		$mock->method( 'get_invoice_data' )->willReturn( array(
+			'authorized_amount' => 100,
+			'settled_amount'    => 10,
+			'refunded_amount'   => 0,
+		) );
+
+		$mock->method( 'settle' )->willReturn( array(
+			'state' => 'success'
+		) );
+
+		reepay()->di()->set( Api::class, $mock );
+
+		$price = 10.24;
+		$qty   = 2;
+
+		$order_item_id = $this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => $price
+			),
+			array(
+				'quantity' => $qty,
+			)
+		);
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$this->order_generator->order()->save();
+
+		$_POST['line_item_capture'] = $order_item_id;
+		$_POST['post_type']         = 'shop_order';
+		$_POST['post_ID']           = $this->order_generator->order()->get_id();
+
+		$this->order_capture->process_item_capture();
+
+		$this->assertSame(
+			$price * $qty,
+			(float) WC_Order_Factory::get_order_item( $order_item_id )->get_meta( 'settled' )
+		);
+	}
+
+	/**
+	 * Test @see OrderCapture::process_item_capture with capturing all items
+	 */
+	public function test_line_item_capture_all_line_items() {
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'get_invoice_data', 'settle' ) )
+					 ->getMock();
+
+		$mock->method( 'get_invoice_data' )->willReturn( array(
+			'authorized_amount' => 100,
+			'settled_amount'    => 10,
+			'refunded_amount'   => 0,
+		) );
+
+		$mock->method( 'settle' )->willReturn( array(
+			'state' => 'success'
+		) );
+
+		reepay()->di()->set( Api::class, $mock );
+
+		$prices = array( 1.02, 2.03, 3.05, 5.07 );
+		$qty    = 2;
+
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => $prices[0]
+			),
+			array(
+				'quantity' => $qty
+			)
+		);
+
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => $prices[1]
+			),
+			array(
+				'quantity' => $qty
+			)
+		);
+
+		$this->order_generator->add_shipping(
+			array(
+				'total' => $prices[2],
+			)
+		);
+
+		$this->order_generator->add_fee( array(
+			'total' => $prices[3]
+		) );
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$this->order_generator->order()->save();
+
+		$_POST['all_items_capture'] = 'true';
+		$_POST['post_type']         = 'shop_order';
+		$_POST['post_ID']           = $this->order_generator->order()->get_id();
+
+		$this->order_capture->process_item_capture();
+
+		$this->assertSame(
+			$prices[0] * $qty + $prices[1] * $qty + $prices[2] + $prices[3],
+			array_reduce(
+				$this->order_generator->order()->get_items( array( 'line_item', 'shipping', 'fee' ) ),
+				function ( $carry, $item ) {
+					return $carry + ( $item->get_meta( 'settled' ) ?: 0 );
+				},
+				0
+			)
+		);
+	}
+
+	/**
+	 * Test @see OrderCapture::multi_settle
+	 */
+	public function test_multi_settle() {
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'settle', 'get_invoice_data' ) )
+					 ->getMock();
+
+		$mock->method( 'settle' )->willReturn( array(
+			'state' => 'success'
+		) );
+
+		$mock->method( 'get_invoice_data' )->willReturn( array(
+			'authorized_amount' => 100,
+			'settled_amount'    => 10,
+			'refunded_amount'   => 0,
+		) );
+
+		reepay()->di()->set( Api::class, $mock );
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$prices = array( 1.02, 2.03, 3.05, 5.07 );
+		$qty    = 2;
+
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => $prices[0]
+			),
+			array(
+				'quantity' => $qty
+			)
+		);
+
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => $prices[1]
+			),
+			array(
+				'quantity' => $qty
+			)
+		);
+
+		$this->order_generator->add_shipping(
+			array(
+				'total' => $prices[2],
+			)
+		);
+
+		$this->order_generator->add_fee( array(
+			'total' => $prices[3]
+		) );
+
+		$this->order_capture->multi_settle( $this->order_generator->order() );
+
+		$this->assertSame(
+			$prices[0] * $qty + $prices[1] * $qty + $prices[2] + $prices[3],
+			array_reduce(
+				$this->order_generator->order()->get_items( array( 'line_item', 'shipping', 'fee' ) ),
+				function ( $carry, $item ) {
+					return $carry + ( $item->get_meta( 'settled' ) ?: 0 );
+				},
+				0
+			)
+		);
+	}
+
+	/**
+	 * Test @see OrderCapture::settle_items with wp error from api
+	 */
+	public function test_settle_items_with_wp_error() {
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'settle' ) )
+					 ->getMock();
+
+		$mock->method( 'settle' )->willReturn( new WP_Error( 'Test error', 'Test error' ) );
+
+		reepay()->di()->set( Api::class, $mock );
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$this->assertSame(
+			false,
+			$this->order_capture->settle_items(
+				$this->order_generator->order(),
+				array(),
+				0,
+				array()
+			)
+		);
+
+		$this->assertNotEmpty(
+			get_transient( 'reepay_api_action_error' ),
+			'Error message not set'
+		);
+	}
+
+	/**
+	 * Test @see OrderCapture::settle_items with failed status from api
+	 */
+	public function test_settle_items_with_api_failed() {
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'settle' ) )
+					 ->getMock();
+
+		$mock->method( 'settle' )->willReturn( array(
+			'state' => 'failed'
+		) );
+
+		reepay()->di()->set( Api::class, $mock );
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$this->assertSame(
+			false,
+			$this->order_capture->settle_items(
+				$this->order_generator->order(),
+				array(),
+				0,
+				array()
+			)
+		);
+
+		$this->assertNotEmpty(
+			get_transient( 'reepay_api_action_error' ),
+			'Error message not set'
+		);
+	}
+
+	/**
+	 * Test @see OrderCapture::settle_items with api success
+	 */
+	public function test_settle_items_success() {
+		$mock = $this->getMockBuilder( Api::class )
+					 ->onlyMethods( array( 'settle' ) )
+					 ->getMock();
+
+		$mock->method( 'settle' )->willReturn( array(
+			'state' => 'success'
+		) );
+
+		reepay()->di()->set( Api::class, $mock );
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$product_price = 10.23;
+
+		$order_item_id = $this->order_generator->add_product( 'simple', array(
+			'regular_price' => $product_price
+		) );
+
+		$this->assertSame(
+			true,
+			$this->order_capture->settle_items(
+				$this->order_generator->order(),
+				array(),
+				0,
+				array(
+					WC_Order_Factory::get_order_item( $order_item_id )
+				)
+			)
+		);
+
+		$this->assertSame(
+			$product_price,
+			(float) WC_Order_Factory::get_order_item( $order_item_id )->get_meta( 'settled' )
+		);
+	}
+
+	/**
 	 * Test @see OrderCapture::complete_settle
 	 */
 	public function test_complete_settle() {
