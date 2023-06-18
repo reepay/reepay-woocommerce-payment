@@ -85,9 +85,7 @@ class OrderCapture {
 		$order_id = wc_get_order_id_by_order_item_id( $item_id );
 		$order    = wc_get_order( $order_id );
 
-		$payment_method = $order->get_payment_method();
-
-		if ( strpos( $payment_method, 'reepay' ) === false || ! empty( $item->get_meta( 'settled' ) ) ) {
+		if ( ! rp_is_order_paid_via_reepay( $order ) || ! empty( $item->get_meta( 'settled' ) ) ) {
 			return;
 		}
 
@@ -106,6 +104,32 @@ class OrderCapture {
 	}
 
 	/**
+	 * Hooked to woocommerce_order_item_add_action_buttons. Print full capture button.
+	 *
+	 * @param WC_Order $order current order.
+	 */
+	public function capture_full_order_button( WC_Order $order ) {
+		if ( ! $this->check_capture_allowed( $order ) ) {
+			return;
+		}
+
+		$amount = $this->get_not_settled_amount( $order );
+
+		if ( $amount <= 0 ) {
+			return;
+		}
+
+		reepay()->get_template(
+			'admin/capture-item-button.php',
+			array(
+				'name'  => 'all_items_capture',
+				'value' => $order->get_id(),
+				'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $amount )
+			)
+		);
+	}
+
+	/**
 	 * Hooked to woocommerce_order_status_changed.
 	 *
 	 * @param int      $order_id                    current order id.
@@ -117,9 +141,7 @@ class OrderCapture {
 	 * @see WC_Order::status_transition
 	 */
 	public function capture_full_order( int $order_id, string $this_status_transition_from, string $this_status_transition_to, WC_Order $order ) {
-		$payment_method = $order->get_payment_method();
-
-		if ( strpos( $payment_method, 'reepay' ) === false ) {
+		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
 			return;
 		}
 
@@ -134,56 +156,22 @@ class OrderCapture {
 	 * Hooked to admin_init. Capture items from request
 	 */
 	public function process_item_capture() {
-		if ( isset( $_POST['line_item_capture'] ) && isset( $_POST['post_type'] ) && isset( $_POST['post_ID'] ) ) {
-			if ( 'shop_order' === $_POST['post_type'] ) {
-
-				$order = wc_get_order( $_POST['post_ID'] );
-
-				$item = WC_Order_Factory::get_order_item( $_POST['line_item_capture'] );
-				$this->settle_item( $item, $order );
-			}
-		}
-
-		if ( isset( $_POST['all_items_capture'] ) && isset( $_POST['post_type'] ) && isset( $_POST['post_ID'] ) ) {
-			if ( 'shop_order' === $_POST['post_type'] ) {
-				$order = wc_get_order( $_POST['post_ID'] );
-
-				$payment_method = $order->get_payment_method();
-
-				if ( strpos( $payment_method, 'reepay' ) === false ) {
-					return;
-				}
-
-				$this->multi_settle( $order );
-			}
-		}
-	}
-
-	/**
-	 * Hooked to woocommerce_order_item_add_action_buttons. Print full capture button.
-	 *
-	 * @param WC_Order $order current order.
-	 */
-	public function capture_full_order_button( WC_Order $order ) {
-		$payment_method = $order->get_payment_method();
-
-		if ( strpos( $payment_method, 'reepay' ) === false ) {
+		if ( ! isset( $_POST['post_type'] ) || 'shop_order' !== $_POST['post_type'] ||
+			 ! isset( $_POST['post_ID'] ) ||
+			 ( ! isset( $_POST['line_item_capture'] ) && ! isset( $_POST['all_items_capture'] ) ) ) {
 			return;
 		}
 
-		if ( $this->check_capture_allowed( $order ) ) {
-			$amount = $this->get_not_settled_amount( $order );
+		$order = wc_get_order( $_POST['post_ID'] );
 
-			if ( $amount > 0 ) {
-				reepay()->get_template(
-					'admin/capture-item-button.php',
-					array(
-						'name'  => 'all_items_capture',
-						'value' => $order->get_id(),
-						'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $amount )
-					)
-				);
-			}
+		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
+			return;
+		}
+
+		if ( isset( $_POST['line_item_capture'] ) ) {
+			$this->settle_item( WC_Order_Factory::get_order_item( $_POST['line_item_capture'] ), $order );
+		} else if ( isset( $_POST['all_items_capture'] ) ) {
+			$this->multi_settle( $order );
 		}
 	}
 
@@ -256,11 +244,10 @@ class OrderCapture {
 	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items ): bool {
 		unset( $_POST['post_status'] ); // // Prevent order status changing by WooCommerce
 
-		$gateway = rp_get_payment_method( $order );
-		$result  = reepay()->api( $gateway )->settle( $order, $total_all, $items_data, $line_items );
+		$result  = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items );
 
 		if ( is_wp_error( $result ) ) {
-			$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
+			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
 			set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
 
 			return false;
@@ -272,12 +259,10 @@ class OrderCapture {
 			return false;
 		}
 
-		if ( $result ) {
-			foreach ( $line_items as $item ) {
-				$item_data = $this->get_item_data( $item, $order );
-				$total     = $item_data['amount'] * $item_data['quantity'];
-				$this->complete_settle( $item, $order, $total );
-			}
+		foreach ( $line_items as $item ) {
+			$item_data = $this->get_item_data( $item, $order );
+			$total     = $item_data['amount'] * $item_data['quantity'];
+			$this->complete_settle( $item, $order, $total );
 		}
 
 		return true;
