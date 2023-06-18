@@ -21,27 +21,6 @@ use Reepay\Checkout\Tests\Helpers\ProductGenerator;
  */
 class OrderCaptureTest extends WP_UnitTestCase {
 	/**
-	 * OptionsController instance
-	 *
-	 * @var OptionsController
-	 */
-	private static OptionsController $options;
-
-	/**
-	 * ProductGenerator instance
-	 *
-	 * @var ProductGenerator
-	 */
-	private static ProductGenerator $product_generator;
-
-	/**
-	 * InstantSettle instance
-	 *
-	 * @var InstantSettle
-	 */
-	private static InstantSettle $instant_settle_instance;
-
-	/**
 	 * OrderGenerator instance
 	 *
 	 * @var OrderCapture
@@ -54,17 +33,6 @@ class OrderCaptureTest extends WP_UnitTestCase {
 	 * @var OrderGenerator
 	 */
 	private OrderGenerator $order_generator;
-
-	/**
-	 * Runs the routine before setting up all tests.
-	 */
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		self::$options                 = new OptionsController();
-		self::$product_generator       = new ProductGenerator();
-		self::$instant_settle_instance = new InstantSettle();
-	}
 
 	/**
 	 * Runs the routine before each test is executed.
