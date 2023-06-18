@@ -115,9 +115,7 @@ class DIContainer implements ContainerInterface {
 
 		$args = [];
 		foreach ( $constructArguments as $argument ) {
-			// Получаем тип аргумента
 			$argumentType = $argument->getType()->getName();
-			// Получаем сам аргумент по его типу из контейнера
 			$args[ $argument->getName() ] = $this->get( $argumentType );
 		}
 
