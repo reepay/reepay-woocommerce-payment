@@ -74,6 +74,8 @@ class OrderCaptureTest extends WP_UnitTestCase {
 
 		$this->order_generator = new OrderGenerator();
 		$this->order_capture   = new OrderCapture();
+
+		reepay()->di()->set( Api::class, Api::class );
 	}
 
 	/**
