@@ -90,8 +90,9 @@ class ReepayCheckout extends ReepayGateway {
 		}
 
 		// Action for "Add Payment Method".
-		add_action( 'wp_ajax_reepay_card_store', array( $this, 'reepay_card_store' ) );
-		add_action( 'wp_ajax_nopriv_reepay_card_store', array( $this, 'reepay_card_store' ) );
+
+		add_action( 'wp_ajax_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
+		add_action( 'wp_ajax_nopriv_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
 		add_action( 'wp_ajax_reepay_finalize', array( $this, 'reepay_finalize' ) );
 		add_action( 'wp_ajax_nopriv_reepay_finalize', array( $this, 'reepay_finalize' ) );
 	}
@@ -637,142 +638,6 @@ class ReepayCheckout extends ReepayGateway {
 
 			$this->save_payment_method_checkbox();
 		}
-	}
-
-	/**
-	 * Add Payment Method.
-	 */
-	public function add_payment_method() {
-		$user            = get_userdata( get_current_user_id() );
-		$customer_handle = '';
-
-		// Allow to pay exist orders by guests.
-		if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) {
-			$order_id = wc_get_order_id_by_order_key( $_GET['key'] );
-			if ( $order_id ) {
-				$order = wc_get_order( $order_id );
-
-				// Get customer handle by order.
-				$gateway         = rp_get_payment_method( $order );
-				$customer_handle = reepay()->api( $gateway )->get_customer_handle( $order );
-			}
-		} else {
-			$customer_handle = rp_get_customer_handle( $user->ID );
-		}
-
-		$accept_url = add_query_arg( 'action', 'reepay_card_store', admin_url( 'admin-ajax.php' ) );
-		$accept_url = apply_filters( 'woocommerce_reepay_payment_accept_url', $accept_url );
-		$cancel_url = wc_get_account_endpoint_url( 'payment-methods' );
-		$cancel_url = apply_filters( 'woocommerce_reepay_payment_cancel_url', $cancel_url );
-
-		$location = wc_get_base_location();
-
-		if ( empty( $customer_handle ) ) {
-			// Create reepay customer.
-			$params = array(
-				'locale'          => $this->get_language(),
-				'button_text'     => __( 'Add card', 'reepay-checkout-gateway' ),
-				'create_customer' => array(
-					'test'        => 'yes' === $this->test_mode,
-					'handle'      => $customer_handle,
-					'email'       => $user->user_email,
-					'address'     => '',
-					'address2'    => '',
-					'city'        => '',
-					'country'     => $location['country'],
-					'phone'       => '',
-					'company'     => '',
-					'vat'         => '',
-					'first_name'  => $user->first_name,
-					'last_name'   => $user->last_name,
-					'postal_code' => '',
-				),
-				'accept_url'      => $accept_url,
-				'cancel_url'      => $cancel_url,
-			);
-		} else {
-			// Use existing user.
-			$params = array(
-				'locale'      => $this->get_language(),
-				'button_text' => __( 'Add card', 'reepay-checkout-gateway' ),
-				'customer'    => $customer_handle,
-				'accept_url'  => $accept_url,
-				'cancel_url'  => $cancel_url,
-			);
-		}
-
-		if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
-			$params['payment_methods'] = $this->payment_methods;
-		}
-
-		$result = reepay()->api( $this )->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
-		if ( is_wp_error( $result ) ) {
-			if ( $result->get_error_code() === API::ERROR_CODES['Customer has been deleted'] ||
-				 $result->get_error_code() === API::ERROR_CODES['Customer not found'] ) {
-				$params = array(
-					'locale'          => $this->get_language(),
-					'button_text'     => __( 'Add card', 'reepay-checkout-gateway' ),
-					'create_customer' => array(
-						'test'        => 'yes' === $this->test_mode,
-						'handle'      => $customer_handle,
-						'email'       => $user->user_email,
-						'address'     => '',
-						'address2'    => '',
-						'city'        => '',
-						'country'     => $location['country'],
-						'phone'       => '',
-						'company'     => '',
-						'vat'         => '',
-						'first_name'  => $user->first_name,
-						'last_name'   => $user->last_name,
-						'postal_code' => '',
-					),
-					'accept_url'      => $accept_url,
-					'cancel_url'      => $cancel_url,
-				);
-
-				$result = reepay()->api( $this )->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
-
-				if ( is_wp_error( $result ) ) {
-					wc_add_notice( $result->get_error_message(), 'error' );
-					parent::add_payment_method();
-				}
-			} else {
-				wc_add_notice( $result->get_error_message(), 'error' );
-				parent::add_payment_method();
-			}
-		}
-
-		$this->log(
-			array(
-				'source' => 'add_payment_method',
-				'result' => $result,
-			)
-		);
-
-		wp_redirect( $result['url'] );
-		exit();
-	}
-
-	/**
-	 * Ajax: Add Payment Method
-	 */
-	public function reepay_card_store() {
-		$reepay_token = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
-
-		try {
-			$token = $this->add_payment_token_to_customer( get_current_user_id(), $reepay_token )['token'];
-		} catch ( Exception $e ) {
-			wc_add_notice( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ), 'error' );
-			wp_redirect( wc_get_account_endpoint_url( 'add-payment-method' ) );
-			exit();
-		}
-
-		do_action( 'woocommerce_reepay_payment_method_added', $token );
-
-		wc_add_notice( __( 'Payment method successfully added.', 'reepay-checkout-gateway' ) );
-		wp_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
-		exit();
 	}
 
 	/**
