@@ -96,7 +96,7 @@ class ThankyouPage {
 	 */
 	public function thankyou_page( int $order_id ) {
 		$order = wc_get_order( $order_id );
-		if ( ! $order ||  ! rp_is_order_paid_via_reepay( $order ) ) {
+		if ( ! $order || ! rp_is_order_paid_via_reepay( $order ) ) {
 			return;
 		}
 

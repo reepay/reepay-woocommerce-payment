@@ -15,6 +15,7 @@ defined( 'ABSPATH' ) || exit();
 
 /**
  * Class Container
+ *
  * @package Reepay\Checkout
  */
 class DIContainer implements ContainerInterface {
@@ -26,19 +27,19 @@ class DIContainer implements ContainerInterface {
 	 *
 	 * @var array
 	 */
-	private array $classes = [];
+	private array $classes = array();
 
 	/**
 	 * Array of created objects
 	 *
 	 * @var array<string, object>
 	 */
-	private array $cache = [];
+	private array $cache = array();
 
 	/**
 	 * Set replacement of base class or interface. Clear cached object if it was created before
 	 *
-	 * @param string $base_name  base class name.
+	 * @param string        $base_name  base class name.
 	 * @param string|object $write write class name or class instance.
 	 */
 	public function set( string $base_name, $write ) {
@@ -89,7 +90,7 @@ class DIContainer implements ContainerInterface {
 			return new stdClass();
 		}
 
-		return $this->prepareObject( $id );
+		return $this->prepare_object( $id );
 	}
 
 	/**
@@ -99,24 +100,24 @@ class DIContainer implements ContainerInterface {
 	 *
 	 * @return object Entry.
 	 */
-	private function prepareObject( string $id ): object {
-		$classReflector = new ReflectionClass( $id );
+	private function prepare_object( string $id ): object {
+		$class_reflector = new ReflectionClass( $id );
 
-		$constructReflector = $classReflector->getConstructor();
+		$construct_reflector = $class_reflector->getConstructor();
 
-		if ( empty( $constructReflector ) ) {
-			return new $id;
+		if ( empty( $construct_reflector ) ) {
+			return new $id();
 		}
 
-		$constructArguments = $constructReflector->getParameters();
-		if ( empty( $constructArguments ) ) {
-			return new $id;
+		$construct_arguments = $construct_reflector->getParameters();
+		if ( empty( $construct_arguments ) ) {
+			return new $id();
 		}
 
-		$args = [];
-		foreach ( $constructArguments as $argument ) {
-			$argumentType = $argument->getType()->getName();
-			$args[ $argument->getName() ] = $this->get( $argumentType );
+		$args = array();
+		foreach ( $construct_arguments as $argument ) {
+			$argument_type                = $argument->getType()->getName();
+			$args[ $argument->getName() ] = $this->get( $argument_type );
 		}
 
 		$object = new $id( ...$args );

@@ -1165,8 +1165,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			return;
 		}
 
-		$order   = wc_get_order( wc_clean( $_GET['order_id'] ) );
-		$result  = reepay()->api( $order )->get_invoice_data( $order );
+		$order  = wc_get_order( wc_clean( $_GET['order_id'] ) );
+		$result = reepay()->api( $order )->get_invoice_data( $order );
 		if ( is_wp_error( $result ) ) {
 			return;
 		}

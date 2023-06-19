@@ -97,7 +97,7 @@ class OrderCapture {
 				array(
 					'name'  => 'line_item_capture',
 					'value' => $item_id,
-					'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $price['with_tax'] )
+					'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $price['with_tax'] ),
 				)
 			);
 		}
@@ -124,7 +124,7 @@ class OrderCapture {
 			array(
 				'name'  => 'all_items_capture',
 				'value' => $order->get_id(),
-				'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $amount )
+				'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $amount ),
 			)
 		);
 	}
@@ -170,7 +170,7 @@ class OrderCapture {
 
 		if ( isset( $_POST['line_item_capture'] ) ) {
 			$this->settle_item( WC_Order_Factory::get_order_item( $_POST['line_item_capture'] ), $order );
-		} else if ( isset( $_POST['all_items_capture'] ) ) {
+		} elseif ( isset( $_POST['all_items_capture'] ) ) {
 			$this->multi_settle( $order );
 		}
 	}
@@ -207,7 +207,7 @@ class OrderCapture {
 				} elseif ( $total > 0 && $this->check_capture_allowed( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
-					$total_all    += $total;
+					$total_all   += $total;
 				}
 			}
 		}
@@ -219,7 +219,7 @@ class OrderCapture {
 				if ( $total > 0 && $this->check_capture_allowed( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
-					$total_all    += $total;
+					$total_all   += $total;
 				}
 			}
 		}
@@ -244,7 +244,7 @@ class OrderCapture {
 	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items ): bool {
 		unset( $_POST['post_status'] ); // // Prevent order status changing by WooCommerce
 
-		$result  = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items );
+		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items );
 
 		if ( is_wp_error( $result ) ) {
 			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
@@ -298,7 +298,7 @@ class OrderCapture {
 			return true;
 		}
 
-		unset( $_POST['post_status'] ); // Prevent order status changing by WooCommerce
+		unset( $_POST['post_status'] ); // Prevent order status changing by WooCommerce.
 
 		$item_data = $this->get_item_data( $item, $order );
 		$total     = $item_data['amount'] * $item_data['quantity'];
@@ -410,7 +410,7 @@ class OrderCapture {
 		}
 
 		$price = array(
-			'original' => (float) $order->get_line_total( $order_item, false, false )
+			'original' => (float) $order->get_line_total( $order_item, false, false ),
 		);
 
 		$price['with_tax'] = $price['original'];

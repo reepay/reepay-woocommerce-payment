@@ -197,15 +197,15 @@ class Api {
 	 * @param ReepayGateway|WC_Order|string $source logging source.
 	 */
 	public function set_logging_source( $source ) {
-		if( is_string( $source ) ) {
+		if ( is_string( $source ) ) {
 			$this->logging_source = $source;
 		} else {
-			if( is_a( $source, ReepayGateway::class ) ) {
+			if ( is_a( $source, ReepayGateway::class ) ) {
 				$this->logging_source = $source->id;
-			} else if( is_a( $source, WC_Order::class ) ) {
+			} elseif ( is_a( $source, WC_Order::class ) ) {
 				$payment_method = rp_get_payment_method( $source );
 
-				if( $payment_method ) {
+				if ( $payment_method ) {
 					$this->logging_source = rp_get_payment_method( $source )->id;
 				} else {
 					$this->logging_source = 'reepay-unknown-payment-method';
