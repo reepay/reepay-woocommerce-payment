@@ -34,7 +34,7 @@ class GatewaysTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function rp_get_payment_method
+	 * Test @see rp_get_payment_method
 	 *
 	 * @param string       $method_name payment method name.
 	 * @param string|false $class payment method class name.
@@ -55,7 +55,7 @@ class GatewaysTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function rp_is_reepay_payment_method
+	 * Test @see rp_is_reepay_payment_method
 	 *
 	 * @param string       $method_name payment method name.
 	 * @param string|false $class payment method class name.
