@@ -108,12 +108,16 @@ class InstantSettle {
 	/**
 	 * Check if product can be settled instantly.
 	 *
-	 * @param WC_Product $product      if need check the product.
+	 * @param WC_Product|bool $product      if need check the product.
 	 *
 	 * @return bool
 	 * @see ReepayGateway::$settle
 	 */
-	public static function can_product_be_settled_instantly( WC_Product $product ): bool {
+	public static function can_product_be_settled_instantly( $product ): bool {
+		if ( empty( $product ) ) {
+			return false;
+		}
+
 		$settle_types = reepay()->get_setting( 'settle' ) ?: array();
 
 		if ( in_array( self::SETTLE_PHYSICAL, $settle_types, true ) &&
