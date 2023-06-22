@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Reepay\Checkout\Api;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -63,6 +65,9 @@ class MobilepaySubscriptions extends ReepayGateway {
 		parent::__construct();
 
 		$this->apply_parent_settings();
+
+		add_action( 'wp_ajax_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
+		add_action( 'wp_ajax_nopriv_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
 	}
 
 	/**
