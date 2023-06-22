@@ -11,6 +11,7 @@ use Exception;
 use WC_Order;
 use WC_Order_Factory;
 use WC_Order_Item;
+use WC_Order_Item_Product;
 use WC_Product;
 use WC_Reepay_Renewals;
 use WC_Subscriptions_Manager;
@@ -38,6 +39,8 @@ class OrderCapture {
 		add_action( 'admin_init', array( $this, 'process_item_capture' ) );
 
 		add_action( 'woocommerce_order_item_add_action_buttons', array( $this, 'capture_full_order_button' ), 10, 1 );
+
+		add_action( 'reepay_order_item_settled', array( $this, 'activate_woocommerce_subscription' ), 10, 2 );
 	}
 
 	/**
@@ -82,28 +85,48 @@ class OrderCapture {
 		$order_id = wc_get_order_id_by_order_item_id( $item_id );
 		$order    = wc_get_order( $order_id );
 
-		$payment_method = $order->get_payment_method();
-
-		if ( strpos( $payment_method, 'reepay' ) === false ) {
+		if ( ! rp_is_order_paid_via_reepay( $order ) || ! empty( $item->get_meta( 'settled' ) ) ) {
 			return;
 		}
 
-		$settled = $item->get_meta( 'settled' );
+		if ( floatval( $item->get_data()['total'] ) > 0 && $this->check_capture_allowed( $order ) ) {
+			$price = self::get_item_price( $item_id, $order );
 
-		if ( ! empty( $settled ) ) {
+			reepay()->get_template(
+				'admin/capture-item-button.php',
+				array(
+					'name'  => 'line_item_capture',
+					'value' => $item_id,
+					'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $price['with_tax'] ),
+				)
+			);
+		}
+	}
+
+	/**
+	 * Hooked to woocommerce_order_item_add_action_buttons. Print full capture button.
+	 *
+	 * @param WC_Order $order current order.
+	 */
+	public function capture_full_order_button( WC_Order $order ) {
+		if ( ! $this->check_capture_allowed( $order ) ) {
 			return;
 		}
 
-		$data = $item->get_data();
+		$amount = $this->get_not_settled_amount( $order );
 
-		if ( floatval( $data['total'] ) > 0 && $this->check_capture_allowed( $order ) ) {
-			$price      = self::get_item_price( $item_id, $order );
-			$unit_price = number_format( round( $price['with_tax'], 2 ), 2, '.', '' );
-
-			echo '<button type="submit" class="button save_order button-primary capture-item-button" name="line_item_capture" value="' . $item_id . '">
-                    ' . __( 'Capture ', 'reepay-checkout-gateway' ) . $order->get_currency() . $unit_price . '
-                </button>';
+		if ( $amount <= 0 ) {
+			return;
 		}
+
+		reepay()->get_template(
+			'admin/capture-item-button.php',
+			array(
+				'name'  => 'all_items_capture',
+				'value' => $order->get_id(),
+				'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $amount ),
+			)
+		);
 	}
 
 	/**
@@ -118,9 +141,7 @@ class OrderCapture {
 	 * @see WC_Order::status_transition
 	 */
 	public function capture_full_order( int $order_id, string $this_status_transition_from, string $this_status_transition_to, WC_Order $order ) {
-		$payment_method = $order->get_payment_method();
-
-		if ( strpos( $payment_method, 'reepay' ) === false ) {
+		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
 			return;
 		}
 
@@ -135,94 +156,35 @@ class OrderCapture {
 	 * Hooked to admin_init. Capture items from request
 	 */
 	public function process_item_capture() {
-		if ( isset( $_POST['line_item_capture'] ) && isset( $_POST['post_type'] ) && isset( $_POST['post_ID'] ) ) {
-			if ( 'shop_order' === $_POST['post_type'] ) {
-
-				$order = wc_get_order( $_POST['post_ID'] );
-
-				$item = WC_Order_Factory::get_order_item( $_POST['line_item_capture'] );
-				$this->settle_item( $item, $order );
-			}
-		}
-
-		if ( isset( $_POST['all_items_capture'] ) && isset( $_POST['post_type'] ) && isset( $_POST['post_ID'] ) ) {
-			if ( 'shop_order' === $_POST['post_type'] ) {
-				$order = wc_get_order( $_POST['post_ID'] );
-
-				$payment_method = $order->get_payment_method();
-
-				if ( strpos( $payment_method, 'reepay' ) === false ) {
-					return;
-				}
-
-				$this->multi_settle( $order );
-			}
-		}
-	}
-
-	/**
-	 * Hooked to woocommerce_order_item_add_action_buttons. Print full capture button.
-	 *
-	 * @param WC_Order $order current order.
-	 */
-	public function capture_full_order_button( WC_Order $order ) {
-		$payment_method = $order->get_payment_method();
-
-		if ( strpos( $payment_method, 'reepay' ) === false ) {
+		if ( ! isset( $_POST['post_type'] ) || 'shop_order' !== $_POST['post_type'] ||
+			 ! isset( $_POST['post_ID'] ) ||
+			 ( ! isset( $_POST['line_item_capture'] ) && ! isset( $_POST['all_items_capture'] ) ) ) {
 			return;
 		}
 
-		if ( $this->check_capture_allowed( $order ) ) {
-			$amount = $this->get_not_settled_amount( $order );
+		$order = wc_get_order( $_POST['post_ID'] );
 
-			if ( $amount > 0 ) {
-				$amount = number_format( round( $amount, 2 ), 2, '.', '' );
-				echo '<button type="submit" class="button save_order button-primary capture-item-button" name="all_items_capture" value="' . $order->get_id() . '">
-                    ' . __( 'Capture ', 'reepay-checkout-gateway' ) . $order->get_currency() . $amount . '
-                </button>';
-			}
+		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
+			return;
+		}
+
+		if ( isset( $_POST['line_item_capture'] ) ) {
+			$this->settle_item( WC_Order_Factory::get_order_item( $_POST['line_item_capture'] ), $order );
+		} elseif ( isset( $_POST['all_items_capture'] ) ) {
+			$this->multi_settle( $order );
 		}
 	}
 
 	/**
-	 * Settle order items.
+	 * Activate woocommerce subscription after settle order item
 	 *
-	 * @param WC_Order        $order      order to settle.
-	 * @param array[]         $items_data items data from self::get_item_data.
-	 * @param float           $total_all  order total amount ot settle.
-	 * @param WC_Order_Item[] $line_items order line items.
-	 *
-	 * @return bool
+	 * @param WC_Order_Item $item  woocommerce order item.
+	 * @param WC_Order      $order woocomemrce order.
 	 */
-	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items ): bool {
-		unset( $_POST['post_status'] );
-
-		$gateway = rp_get_payment_method( $order );
-		$result  = reepay()->api( $gateway )->settle( $order, $total_all, $items_data, $line_items );
-
-		if ( is_wp_error( $result ) ) {
-			$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-			set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
-
-			return false;
+	public function activate_woocommerce_subscription( WC_Order_Item $item, WC_Order $order ) {
+		if ( method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
+			WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 		}
-
-		if ( 'failed' === $result['state'] ) {
-			$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-			set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
-
-			return false;
-		}
-
-		if ( $result ) {
-			foreach ( $line_items as $item ) {
-				$item_data = $this->get_item_data( $item, $order );
-				$total     = $item_data['amount'] * $item_data['quantity'];
-				$this->complete_settle( $item, $order, $total );
-			}
-		}
-
-		return true;
 	}
 
 	/**
@@ -270,6 +232,43 @@ class OrderCapture {
 	}
 
 	/**
+	 * Settle order items.
+	 *
+	 * @param WC_Order        $order      order to settle.
+	 * @param array[]         $items_data items data from self::get_item_data.
+	 * @param float           $total_all  order total amount ot settle.
+	 * @param WC_Order_Item[] $line_items order line items.
+	 *
+	 * @return bool
+	 */
+	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items ): bool {
+		unset( $_POST['post_status'] ); // // Prevent order status changing by WooCommerce
+
+		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items );
+
+		if ( is_wp_error( $result ) ) {
+			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
+			set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
+
+			return false;
+		}
+
+		if ( 'failed' === $result['state'] ) {
+			set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+
+			return false;
+		}
+
+		foreach ( $line_items as $item ) {
+			$item_data = $this->get_item_data( $item, $order );
+			$total     = $item_data['amount'] * $item_data['quantity'];
+			$this->complete_settle( $item, $order, $total );
+		}
+
+		return true;
+	}
+
+	/**
 	 * Complete settle for order item, activate associated subscription and save data to meta
 	 *
 	 * @param WC_Order_Item $item  order item to set 'settled' meta.
@@ -277,11 +276,10 @@ class OrderCapture {
 	 * @param float|int     $total settled total to set to 'settled' meta.
 	 */
 	public function complete_settle( WC_Order_Item $item, WC_Order $order, $total ) {
-		if ( method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
-			WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
-		}
-		$item->update_meta_data( 'settled', $total / 100 );
+		$item->update_meta_data( 'settled', rp_make_initial_amount( $total, $order->get_currency() ) );
 		$item->save();
+
+		do_action( 'reepay_order_item_settled', $item, $order );
 	}
 
 	/**
@@ -296,36 +294,41 @@ class OrderCapture {
 	public function settle_item( WC_Order_Item $item, WC_Order $order ): bool {
 		$settled = $item->get_meta( 'settled' );
 
-		if ( empty( $settled ) ) {
-			$item_data      = $this->get_item_data( $item, $order );
-			$line_item_data = array( $item_data );
-			$total          = $item_data['amount'] * $item_data['quantity'];
-			unset( $_POST['post_status'] );
-			$gateway = rp_get_payment_method( $order );
-			if ( $total <= 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
-				WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
-			} elseif ( $total > 0 && $this->check_capture_allowed( $order ) ) {
-				$result = reepay()->api( $gateway )->settle( $order, $total, $line_item_data, $item );
-
-				if ( is_wp_error( $result ) ) {
-					$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-					set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
-
-					return false;
-				}
-
-				if ( 'failed' === $result['state'] ) {
-					$gateway->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-					set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
-
-					return false;
-				}
-
-				if ( $result ) {
-					$this->complete_settle( $item, $order, $total );
-				}
-			}
+		if ( ! empty( $settled ) ) {
+			return true;
 		}
+
+		unset( $_POST['post_status'] ); // Prevent order status changing by WooCommerce.
+
+		$item_data = $this->get_item_data( $item, $order );
+		$total     = $item_data['amount'] * $item_data['quantity'];
+
+		if ( $total <= 0 ) {
+			do_action( 'reepay_order_item_settled', $item, $order );
+
+			return true;
+		}
+
+		if ( ! $this->check_capture_allowed( $order ) ) {
+			return false;
+		}
+
+		$result = reepay()->api( $order )->settle( $order, $total, array( $item_data ), $item );
+
+		if ( is_wp_error( $result ) ) {
+			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
+			set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
+
+			return false;
+		}
+
+		if ( 'failed' === $result['state'] ) {
+			set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+
+			return false;
+		}
+
+		$this->complete_settle( $item, $order, $total );
 
 		return true;
 	}
@@ -338,19 +341,12 @@ class OrderCapture {
 	 * @return bool
 	 */
 	public function check_capture_allowed( WC_Order $order ): bool {
-		$payment_method = $order->get_payment_method();
-
-		if ( class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
+		if ( ! rp_is_order_paid_via_reepay( $order ) ||
+			 class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
 			return false;
 		}
 
-		if ( strpos( $payment_method, 'reepay' ) === false ) {
-			return false;
-		}
-
-		$gateway = rp_get_payment_method( $order );
-
-		$invoice_data = reepay()->api( $gateway )->get_invoice_data( $order );
+		$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
 
 		return ! is_wp_error( $invoice_data ) && $invoice_data['authorized_amount'] > $invoice_data['settled_amount'];
 	}
@@ -413,36 +409,25 @@ class OrderCapture {
 			$order_item = WC_Order_Factory::get_order_item( $order_item );
 		}
 
-		$price = array();
+		$price = array(
+			'original' => (float) $order->get_line_total( $order_item, false, false ),
+		);
 
-		if ( is_object( $order_item ) && get_class( $order_item ) === 'WC_Order_Item_Product' ) {
-			$price['original'] = $order->get_line_subtotal( $order_item, false, false );
-			if ( $order_item->get_subtotal() !== $order_item->get_total() ) {
-				$discount          = $order_item->get_subtotal() - $order_item->get_total();
-				$price['original'] = $price['original'] - $discount;
-			}
-		} else {
-			$price['original'] = $order->get_line_total( $order_item, false, false );
-		}
+		$price['with_tax'] = $price['original'];
 
-		$tax_data = wc_tax_enabled() && method_exists( $order_item, 'get_taxes' ) ? $order_item->get_taxes() : false;
-		$taxes    = method_exists( $order, 'get_taxes' ) ? $order->get_taxes() : false;
+		if ( empty( $order_item->get_meta( '_is_card_fee' ) ) ) {
+			$tax_data = wc_tax_enabled() && method_exists( $order_item, 'get_taxes' ) ? $order_item->get_taxes() : false;
+			$taxes    = method_exists( $order, 'get_taxes' ) ? $order->get_taxes() : false;
 
-		$res_tax = 0;
-		if ( ! empty( $taxes ) ) {
-			foreach ( $taxes as $tax ) {
-				$tax_item_id    = $tax->get_rate_id();
-				$tax_item_total = $tax_data['total'][ $tax_item_id ] ?? '';
-				if ( ! empty( $tax_item_total ) ) {
-					$res_tax += floatval( $tax_item_total );
+			if ( ! empty( $tax_data ) && ! empty( $taxes ) ) {
+				foreach ( $taxes as $tax ) {
+					$tax_item_id    = $tax->get_rate_id();
+					$tax_item_total = $tax_data['total'][ $tax_item_id ] ?? '';
+					if ( ! empty( $tax_item_total ) ) {
+						$price['with_tax'] += (float) $tax_item_total;
+					}
 				}
 			}
-		}
-
-		if ( ! empty( $order_item->get_meta( '_is_card_fee' ) ) ) {
-			$price['with_tax'] = $price['original'];
-		} else {
-			$price['with_tax'] = $price['original'] + $res_tax;
 		}
 
 		return $price;

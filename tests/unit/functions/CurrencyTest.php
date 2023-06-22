@@ -10,7 +10,7 @@
  */
 class CurrencyTest extends WP_UnitTestCase {
 	/**
-	 * Test function rp_prepare_amount
+	 * Test @see rp_prepare_amount
 	 *
 	 * @param float  $amount amount for calculation.
 	 * @param string $currency currency for calculation.
@@ -29,7 +29,7 @@ class CurrencyTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function rp_make_initial_amount
+	 * Test @see rp_make_initial_amount
 	 *
 	 * @param int    $amount amount for calculation.
 	 * @param string $currency currency for calculation.
@@ -48,7 +48,7 @@ class CurrencyTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test function rp_get_currency_multiplier
+	 * Test @see rp_get_currency_multiplier
 	 *
 	 * @param int    $multiplier multiplier value.
 	 * @param string $currency currency for calculation.

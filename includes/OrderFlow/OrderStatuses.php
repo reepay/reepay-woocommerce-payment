@@ -285,9 +285,7 @@ class OrderStatuses {
 			return;
 		}
 
-		$gateway = rp_get_payment_method( $order );
-
-		$invoice = reepay()->api( $gateway )->get_invoice_data( $order );
+		$invoice = reepay()->api( $order )->get_invoice_data( $order );
 		if ( $invoice['settled_amount'] < $invoice['authorized_amount'] ) {
 			// Use the authorized status if order has been settled partially.
 			self::set_authorized_status( $order, $note, $transaction_id );
@@ -378,12 +376,8 @@ class OrderStatuses {
 	 * @see wc_cancel_unpaid_orders()
 	 */
 	public function cancel_unpaid_order( bool $maybe_cancel, WC_Order $order ): bool {
-		if ( rp_is_order_paid_via_reepay( $order ) ) {
-			$gateway = rp_get_payment_method( $order );
-
-			if ( 'yes' !== $gateway->enable_order_autocancel ) {
-				$maybe_cancel = false;
-			}
+		if ( rp_is_order_paid_via_reepay( $order ) && 'yes' !== reepay()->get_setting( 'enable_order_autocancel' ) ) {
+			$maybe_cancel = false;
 		}
 
 		return $maybe_cancel;
@@ -400,18 +394,11 @@ class OrderStatuses {
 	 * @throws Exception If error with payment capture.
 	 */
 	public function order_status_changed( int $order_id, string $from, string $to, WC_Order $order ) {
-		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
-			return;
-		}
-
-		if ( order_contains_subscription( $order ) ) {
+		if ( ! rp_is_order_paid_via_reepay( $order ) || order_contains_subscription( $order ) ) {
 			return;
 		}
 
 		$gateway = rp_get_payment_method( $order );
-		if ( ! $gateway ) {
-			return;
-		}
 
 		switch ( $to ) {
 			case 'cancelled':

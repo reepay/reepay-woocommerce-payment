@@ -4,7 +4,7 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: reepay
  * Author URI: http://reepay.com
- * Version: 1.4.68
+ * Version: 1.4.69
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -14,6 +14,7 @@
  */
 
 use Reepay\Checkout\Api;
+use Reepay\Checkout\DIContainer;
 use Reepay\Checkout\Gateways;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\Plugin\LifeCycle;
@@ -46,6 +47,13 @@ class WC_ReepayCheckout {
 	 * @var Gateways
 	 */
 	private $gateways = null;
+
+	/**
+	 * Dependency injection container
+	 *
+	 * @var null
+	 */
+	private $di_container = null;
 
 	/**
 	 * Constructor
@@ -203,23 +211,18 @@ class WC_ReepayCheckout {
 	/**
 	 * Set logging source.
 	 *
-	 * @param ReepayGateway|string $source Source for logging.
+	 * @param ReepayGateway|WC_Order|string $source Source for logging.
 	 *
-	 * @return Api;
+	 * @return Api
 	 */
-	public function api( $source ): ?Api {
-		static $api = null;
-
-		if ( is_null( $api ) ) {
-			$api = new Api( $source );
-		} else {
-			/**
-			 * Api instance
-			 *
-			 * @var Api $api
-			 */
-			$api->set_logging_source( $source );
-		}
+	public function api( $source ): Api {
+		/**
+		 * Api instance
+		 *
+		 * @var Api $api
+		 */
+		$api = $this->di()->get( API::class );
+		$api->set_logging_source( $source );
 
 		return $api;
 	}
@@ -232,6 +235,20 @@ class WC_ReepayCheckout {
 	public function gateways(): ?Gateways {
 		return $this->gateways;
 	}
+
+	/**
+	 * Get dependency injection container
+	 *
+	 * @return DIContainer
+	 */
+	public function di(): DIContainer {
+		if( is_null( $this->di_container ) ) {
+			$this->di_container = new DIContainer();
+		}
+
+		return $this->di_container;
+	}
+
 	/**
 	 * WooCommerce Loaded: load classes
 	 *

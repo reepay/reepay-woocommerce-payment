@@ -10,7 +10,7 @@
  */
 class FormatTest extends WP_UnitTestCase {
 	/**
-	 * Test function rp_format_credit_card
+	 * Test @see rp_format_credit_card
 	 *
 	 * @param string $card_number card number.
 	 * @param string $result expected result.

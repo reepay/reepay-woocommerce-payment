@@ -44,18 +44,11 @@ tests_add_filter(
 tests_add_filter(
 	'plugins_loaded',
 	function () {
-		$reepay_checkout = reepay()->gateways()->checkout();
-		$reepay_checkout->process_admin_options();
+		reepay()->gateways()->checkout()->process_admin_options();
 
-		( new OptionsController() )->set_options(
-			array(
-				'enabled'          => 'yes',
-				'test_mode'        => 'yes',
-				'private_key_test' => 'priv_2795e0868bc1609c66783e0c8d967bcf', // ToDo change with env variable.
-			)
-		);
+		( new OptionsController() )->set_option( 'enabled', 'yes' );
 
-		$reepay_checkout->is_webhook_configured();
+		reepay()->di()->set( \Reepay\Checkout\Api::class, \Reepay\Checkout\Tests\Mocks\ApiMock::class );
 	}
 );
 

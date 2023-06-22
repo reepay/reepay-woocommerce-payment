@@ -8,8 +8,12 @@
 namespace Reepay\Checkout\Tests\Helpers;
 
 use WC_Order;
+use WC_Order_Factory;
+use WC_Order_Item;
 use WC_Order_Item_Fee;
 use WC_Order_Item_Shipping;
+use WC_Order_Item_Tax;
+use WC_Tax;
 
 /**
  * Class OrderGenerator
@@ -102,15 +106,21 @@ class OrderGenerator {
 	/**
 	 * Add product to order
 	 *
-	 * @param string $type product type.
-	 * @param array  $data product meta data.
+	 * @param string $type            product type.
+	 * @param array  $product_data    product meta data.
+	 * @param array  $order_item_data order item meta data.
 	 *
 	 * @return int order item id
 	 */
-	public function add_product( string $type, array $data = array() ): int {
-		return $this->order->add_product(
-			( new ProductGenerator( $type, $data ) )->product()
+	public function add_product( string $type, array $product_data = array(), array $order_item_data = array() ): int {
+		$order_item_id = $this->order->add_product(
+			( new ProductGenerator( $type, $product_data ) )->product(),
+			$order_item_data['quantity'] ?? 1
 		);
+
+		$this->add_data_to_order_item( $order_item_id, $order_item_data );
+
+		return $order_item_id;
 	}
 
 	/**
@@ -122,14 +132,19 @@ class OrderGenerator {
 	 */
 	public function add_fee( array $data = array() ): int {
 		$item = new WC_Order_Item_Fee();
-		$item->set_props(
-			array(
-				'name'      => $data['name'] ?? 'Test fee',
-				'total'     => $data['total'] ?? 0,
-				'total_tax' => $data['total_tax'] ?? 0,
+		$item->save();
+
+		$this->add_data_to_order_item(
+			$item,
+			wp_parse_args(
+				$data,
+				array(
+					'name'      => 'Test fee',
+					'total'     => 0,
+					'total_tax' => 0,
+				)
 			)
 		);
-		$item->save();
 
 		$this->order->add_item( $item );
 
@@ -145,18 +160,78 @@ class OrderGenerator {
 	 */
 	public function add_shipping( array $data = array() ): int {
 		$item = new WC_Order_Item_Shipping();
-		$item->set_props(
-			array(
-				'method_title' => $data['method_title'] ?? 'Test shipping method',
-				'total'        => $data['total'] ?? 0,
+		$item->save();
+
+		$this->add_data_to_order_item(
+			$item,
+			wp_parse_args(
+				$data,
+				array(
+					'method_title' => 'Test shipping method',
+					'total'        => 0,
+				)
 			)
 		);
-		$item->save();
 
 		$this->order->add_item( $item );
 
 		$this->order->calculate_shipping();
 
 		return $item->get_id();
+	}
+
+	/**
+	 * Add shipping to order
+	 *
+	 * @param array $data optional. Shipping data.
+	 *
+	 * @return int order item id
+	 */
+	public function add_tax( float $tax_rate, string $tax_rate_name = 'test'  ): int {
+		$tax_rate_id = WC_Tax::_insert_tax_rate( array(
+			'tax_rate'          => $tax_rate,
+			'tax_rate_name'     => $tax_rate_name,
+		) );
+
+		$item = new WC_Order_Item_Tax();
+
+		$item->set_props( array(
+			'rate'               => $tax_rate_id,
+			'order_id'           => $this->order->get_id()
+		) );
+
+		$item->save();
+
+		$this->order->add_item( $item );
+
+		$this->order->calculate_taxes();
+
+		return $item->get_id();
+	}
+
+	/**
+	 * @param WC_Order_Item|int $order_item
+	 * @param array             $data
+	 */
+	protected function add_data_to_order_item( $order_item, array $data ) {
+		if ( empty( $data ) ) {
+			return;
+		}
+
+		if ( is_int( $order_item ) ) {
+			$order_item = WC_Order_Factory::get_order_item( $order_item );
+		}
+
+		foreach ( $data as $key => $value ) {
+			$function = 'set_' . ltrim( $key, '_' );
+
+			if ( is_callable( array( $order_item, $function ) ) ) {
+				$order_item->{$function}( $value );
+			} else {
+				$order_item->update_meta_data( $key, $value );
+			}
+		}
+
+		$order_item->save();
 	}
 }
