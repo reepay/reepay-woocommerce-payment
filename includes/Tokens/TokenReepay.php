@@ -59,7 +59,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 		$reepay_logo_url  = reepay()->get_setting( 'images_url' ) . $type . '.png';
 		$reepay_logo_path = reepay()->get_setting( 'images_path' ) . $type . '.png';
 		if ( file_exists( $reepay_logo_path ) ) {
-			$img = $reepay_logo_url;
+			$img   = $reepay_logo_url;
 			$style = 'style="width: 46px; height: 24px;"';
 		}
 
