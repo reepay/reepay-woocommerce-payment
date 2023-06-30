@@ -270,6 +270,8 @@ class WC_ReepayCheckout {
 		new Reepay\Checkout\Integrations\Main();
 
 		new Reepay\Checkout\Frontend\Main();
+
+		new Reepay\Checkout\ReepayCustomer();
 	}
 }
 
