@@ -1,18 +1,31 @@
 <?php
-
+/**
+ * Reepay customer class
+ *
+ * @package Reepay\Checkout
+ */
 
 namespace Reepay\Checkout;
-
 
 use Exception;
 use WC_Customer;
 
+/**
+ * Class ReepayCustomer
+ *
+ * @package Reepay\Checkout
+ */
 class ReepayCustomer {
+	/**
+	 * ReepayCustomer constructor.
+	 */
 	public function __construct() {
 		add_action( 'user_register', array( $this, 'set_reepay_handle' ), 10, 1 );
 	}
 
 	/**
+	 * Set reepay user handle after registration
+	 *
 	 * @param int $user_id registered customer id.
 	 */
 	public function set_reepay_handle( int $user_id ) {
