@@ -203,7 +203,7 @@ class Webhook {
 					throw new Exception( 'Missing Invoice parameter' );
 				}
 
-				$order = rp_get_order_by_handle( $data['invoice'] ) ?: rp_get_order_by_subscription_handle( $data['subscription'] ?: '');
+				$order = rp_get_order_by_subscription_handle( $data['subscription'] ?: '');
 				if ( ! $order ) {
 					$this->log( sprintf( 'WebHook: Order is not found. Invoice: %s', $data['invoice'] ) );
 
@@ -215,7 +215,8 @@ class Webhook {
 					$order = wc_get_order( $order->get_id() );
 				}
 
-				if ( $order->has_status( REEPAY_STATUS_SETTLED ) ) {
+				//Subscription order settled and invoice order created.
+				if ( $order->has_status( REEPAY_STATUS_SETTLED ) && ! empty( rp_get_order_by_handle( $data['invoice'] ) ) ) {
 					$this->log(
 						sprintf(
 							'WebHook: Event type: %s success. But the order had status early: %s',
