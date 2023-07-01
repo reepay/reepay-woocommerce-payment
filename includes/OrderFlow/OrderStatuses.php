@@ -286,6 +286,11 @@ class OrderStatuses {
 		}
 
 		$invoice = reepay()->api( $order )->get_invoice_data( $order );
+
+		if( is_wp_error( $invoice ) ) {
+			return;
+		}
+
 		if ( $invoice['settled_amount'] < $invoice['authorized_amount'] ) {
 			// Use the authorized status if order has been settled partially.
 			self::set_authorized_status( $order, $note, $transaction_id );
