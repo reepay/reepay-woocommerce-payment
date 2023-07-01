@@ -127,3 +127,15 @@ if ( ! function_exists( 'wcr_cart_only_reepay_subscriptions' ) ) {
 		return apply_filters( 'wcr_cart_only_reepay_subscriptions', false );
 	}
 }
+
+if ( ! function_exists( 'rp_get_order_by_subscription_handle' ) ) {
+	/**
+	 * @param string $handle
+	 *
+	 * @return WC_Order|false
+	 */
+	function rp_get_order_by_subscription_handle( string $handle ) {
+		return class_exists( WC_Reepay_Renewals::class, false ) ?
+			WC_Reepay_Renewals::get_order_by_subscription_handle( $handle ) : false;
+	}
+}
