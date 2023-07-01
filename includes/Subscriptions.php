@@ -489,21 +489,21 @@ class Subscriptions {
 	 * @throws Exception Never, just for phpcs.
 	 */
 	public function create_sub_invoice( int $order_id, string $this_status_transition_from, string $this_status_transition_to, WC_Order $instance ) {
-		$order = wc_get_order( $order_id );
-		$gateway       = rp_get_payment_method( $order );
-		
-		if ( ! empty( $gateway ) ) {
-			$order_data = reepay()->api( $gateway )->get_invoice_data( $order );
+		$renewal_order = wc_get_order( $order_id );
+		$renewal_sub   = get_post_meta( $order_id, '_subscription_renewal', true );
+		$gateway       = rp_get_payment_method( $renewal_order );
+		if ( ! empty( $renewal_sub ) && ! empty( $gateway ) ) {
+			$order_data = reepay()->api( $gateway )->get_invoice_data( $renewal_order );
+			if ( is_wp_error( $order_data ) && $renewal_order->get_total() > 0 ) {
 
-			if ( is_wp_error( $order_data ) && $order->get_total() > 0 ) {
 				if ( 'pending' === $this_status_transition_from &&
 					 REEPAY_STATUS_AUTHORIZED === $this_status_transition_to ) {
-					self::scheduled_subscription_payment( $order->get_total(), $order );
+					self::scheduled_subscription_payment( $renewal_order->get_total(), $renewal_order );
 				}
 
 				if ( 'pending' === $this_status_transition_from &&
 					 REEPAY_STATUS_SETTLED === $this_status_transition_to ) {
-					self::scheduled_subscription_payment( $order->get_total(), $order, true );
+					self::scheduled_subscription_payment( $renewal_order->get_total(), $renewal_order, true );
 				}
 			}
 		}
