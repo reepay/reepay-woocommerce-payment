@@ -141,9 +141,9 @@ class SubscriptionsTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test @see wc_cart_only_reepay_subscriptions
+	 * Test @see wcr_cart_only_reepay_subscriptions
 	 */
-	public function test_wc_cart_only_reepay_subscriptions() {
+	public function test_wcr_cart_only_reepay_subscriptions() {
 		$cart_generator = new CartGenerator();
 
 		$cart_generator->new_cart( 'simple' );

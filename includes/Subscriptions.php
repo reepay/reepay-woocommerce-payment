@@ -479,7 +479,7 @@ class Subscriptions {
 	// phpcs:enable
 
 	/**
-	 * Create new invoice after woocommerce_order_status_changed
+	 * Create new invoice after woocommerce_order_status_changed for woocommerce subscriptions
 	 *
 	 * @param int      $order_id                    current order id.
 	 * @param string   $this_status_transition_from old status.

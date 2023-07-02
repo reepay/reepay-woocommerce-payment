@@ -222,16 +222,21 @@ class Api {
 	 * @param string $method http method.
 	 * @param string $url    request url.
 	 * @param array  $params request params.
+	 * @param bool   $force_live request params.
 	 *
 	 * @return array|mixed|object|WP_Error
 	 */
-	public function request( string $method, string $url, $params = array() ) {
+	public function request( string $method, string $url, $params = array(), $force_live = false ) {
 		$start = microtime( true );
 		if ( reepay()->get_setting( 'debug' ) === 'yes' ) {
 			$this->log( sprintf( 'Request: %s %s %s', $method, $url, wp_json_encode( $params, JSON_PRETTY_PRINT ) ) );
 		}
 
-		$key = reepay()->get_setting( 'test_mode' ) === 'yes' ? reepay()->get_setting( 'private_key_test' ) : reepay()->get_setting( 'private_key' );
+		if ( reepay()->get_setting( 'test_mode' ) === 'yes' && ! $force_live ) {
+			$key = reepay()->get_setting( 'private_key_test' );
+		} else {
+			$key = reepay()->get_setting( 'private_key' );
+		}
 
 		$args = array(
 			'headers' => array(

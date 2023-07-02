@@ -386,7 +386,7 @@ class Webhook {
 					throw new Exception( 'Missing Invoice parameter' );
 				}
 
-				$order = rp_get_order_by_handle( $data['invoice'] );
+				$order = rp_get_order_by_subscription_handle( $data['subscription'] );
 				if ( ! $order ) {
 					$this->log( sprintf( 'WebHook: Order is not found. Invoice: %s', $data['invoice'] ) );
 					do_action( 'reepay_webhook_invoice_created', $data );

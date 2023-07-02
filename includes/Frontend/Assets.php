@@ -55,7 +55,7 @@ class Assets {
 			wp_add_inline_style(
 				self::SLUG_CHECKOUT_CSS,
 				"
-                    #payment .wc_payment_method > label:first-of-type img {
+                    #payment li > label:first-of-type img {
                         height: $logo_height;
                         max-height: $logo_height;
                         list-style: none;
