@@ -33,14 +33,14 @@ class ReepayCheckout extends ReepayGateway {
 	 *
 	 * @var string
 	 */
-	private $logging_source;
+	private string $logging_source;
 
 	/**
 	 * Payment methods.
 	 *
-	 * @var array|null
+	 * @var array
 	 */
-	public $payment_methods = null;
+	public array $payment_methods = array();
 
 	/**
 	 * ReepayCheckout constructor.

@@ -28,7 +28,7 @@ class ThankyouPage {
 	 *
 	 * @var string
 	 */
-	private $logging_source = 'reepay-thankyou';
+	private string $logging_source = 'reepay-thankyou';
 
 	/**
 	 * Constructor
@@ -53,6 +53,7 @@ class ThankyouPage {
 	 * @param string $default_path  Default path.
 	 *
 	 * @return string
+	 * @noinspection PhpMissingParamTypeInspection
 	 */
 	public function override_template( string $located, string $template_name, $args, string $template_path, string $default_path ): string {
 		/**

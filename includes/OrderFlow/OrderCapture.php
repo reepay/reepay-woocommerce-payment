@@ -356,7 +356,7 @@ class OrderCapture {
 	 *
 	 * @param WC_Order $order order to get.
 	 *
-	 * @return int|mixed
+	 * @return float|int
 	 */
 	public function get_not_settled_amount( WC_Order $order ) {
 		$amount = 0;
@@ -403,6 +403,7 @@ class OrderCapture {
 	 * @param WC_Order          $order      current order.
 	 *
 	 * @return array
+	 * @noinspection PhpCastIsUnnecessaryInspection
 	 */
 	public static function get_item_price( $order_item, WC_Order $order ): array {
 		if ( is_int( $order_item ) ) {
@@ -410,6 +411,7 @@ class OrderCapture {
 		}
 
 		$price = array(
+			//get_line_total can return string.
 			'original' => (float) $order->get_line_total( $order_item, false, false ),
 		);
 
