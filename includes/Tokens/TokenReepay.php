@@ -182,7 +182,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 * @return array                           Filtered item.
 	 * @throws Exception If unable to save token.
 	 */
-	public static function add_reepay_cards_to_list( array $tokens, int $customer_id, string $gateway_id ) {
+	public static function add_reepay_cards_to_list( array $tokens, int $customer_id, string $gateway_id ): array {
 		if ( 'reepay_checkout' === $gateway_id ) {
 			$reepay_user_id = rp_get_customer_handle( $customer_id );
 			if ( ! empty( $reepay_user_id ) ) {

@@ -28,7 +28,7 @@ class Webhook {
 	 *
 	 * @var string
 	 */
-	private $logging_source = 'reepay-webhook';
+	private string $logging_source = 'reepay-webhook';
 
 	/**
 	 * Constructor.

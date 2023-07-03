@@ -22,16 +22,16 @@ class ApplePay extends ReepayGateway {
 	 *
 	 * @var array
 	 */
-	public $logos = array(
+	public array $logos = array(
 		'applepay',
 	);
 
 	/**
 	 * Payment methods.
 	 *
-	 * @var array|null
+	 * @var array
 	 */
-	public $payment_methods = array(
+	public array $payment_methods = array(
 		'applepay',
 	);
 
