@@ -171,7 +171,7 @@ class ReepayCheckout extends ReepayGateway {
 					'title'       => __( 'Test Private Key', 'reepay-checkout-gateway' ),
 					'type'        => 'text',
 					'description' => __( 'Insert your private key from your Reepay test account', 'reepay-checkout-gateway' ),
-					'default'     => $this->private_key_test,
+					'default'     => '',
 				),
 				'verify_key_test'            => array(
 					'type' => 'verify_key',
