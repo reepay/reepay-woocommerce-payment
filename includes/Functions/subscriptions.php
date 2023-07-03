@@ -130,7 +130,11 @@ if ( ! function_exists( 'wcr_cart_only_reepay_subscriptions' ) ) {
 
 if ( ! function_exists( 'rp_get_order_by_subscription_handle' ) ) {
 	/**
-	 * @param string $handle
+	 * Get order by subscription handle
+	 *
+	 * @see WC_Reepay_Renewals::get_order_by_subscription_handle
+	 *
+	 * @param string $handle reepay subscription handle.
 	 *
 	 * @return WC_Order|false
 	 */

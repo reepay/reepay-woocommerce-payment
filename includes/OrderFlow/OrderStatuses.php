@@ -287,7 +287,7 @@ class OrderStatuses {
 
 		$invoice = reepay()->api( $order )->get_invoice_data( $order );
 
-		if( is_wp_error( $invoice ) ) {
+		if ( is_wp_error( $invoice ) ) {
 			return;
 		}
 

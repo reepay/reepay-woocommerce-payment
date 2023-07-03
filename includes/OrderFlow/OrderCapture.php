@@ -411,7 +411,7 @@ class OrderCapture {
 		}
 
 		$price = array(
-			//get_line_total can return string.
+			// get_line_total can return string.
 			'original' => (float) $order->get_line_total( $order_item, false, false ),
 		);
 
