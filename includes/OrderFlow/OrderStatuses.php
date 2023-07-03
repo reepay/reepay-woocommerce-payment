@@ -77,6 +77,9 @@ class OrderStatuses {
 		add_action( 'woocommerce_order_status_changed', array( $this, 'order_status_changed' ), 10, 4 );
 	}
 
+	/**
+	 * Init status variables
+	 */
 	public static function init_statuses() {
 		self::$status_sync       = reepay()->get_setting( 'enable_sync' ) === 'yes';
 		self::$status_created    = str_replace( 'wc-', '', reepay()->get_setting( 'status_created' ) ) ?: 'pending';
