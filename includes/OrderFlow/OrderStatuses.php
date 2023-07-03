@@ -66,8 +66,6 @@ class OrderStatuses {
 
 		add_filter( 'reepay_authorized_order_status', array( $this, 'reepay_authorized_order_status' ), 10, 2 );
 
-		add_filter( 'reepay_settled_order_status', array( $this, 'reepay_settled_order_status' ), 10, 2 );
-
 		add_filter( 'wc_order_is_editable', array( $this, 'is_editable' ), 10, 2 );
 
 		add_filter( 'woocommerce_order_is_paid', array( $this, 'is_paid' ), 10, 2 );
@@ -200,7 +198,9 @@ class OrderStatuses {
 		if ( rp_is_order_paid_via_reepay( $order ) ) {
 			$status = apply_filters(
 				'reepay_settled_order_status',
-				$order->needs_processing() ? 'processing' : 'completed',
+				self::$status_sync ?
+					self::$status_settled :
+					( $order->needs_processing() ? 'processing' : 'completed' ),
 				$order
 			);
 		}
@@ -245,23 +245,6 @@ class OrderStatuses {
 			} elseif ( self::$status_sync ) {
 				$status = self::$status_authorized;
 			}
-		}
-
-		return $status;
-	}
-
-	/**
-	 * Get a status for Settled payments.
-	 *
-	 * @param string   $status default status.
-	 * @param WC_Order $order  current order.
-	 *
-	 * @return string
-	 */
-	public function reepay_settled_order_status( string $status, WC_Order $order ): string {
-		if ( rp_is_order_paid_via_reepay( $order ) && self::$status_sync ) {
-
-			$status = self::$status_settled;
 		}
 
 		return $status;
@@ -377,10 +360,9 @@ class OrderStatuses {
 	 * @return bool
 	 */
 	public function is_editable( bool $is_editable, WC_Order $order ): bool {
-		if ( rp_is_order_paid_via_reepay( $order ) ) {
-			if ( in_array( $order->get_status(), array( self::$status_created, self::$status_authorized ), true ) ) {
-				$is_editable = true;
-			}
+		if ( rp_is_order_paid_via_reepay( $order )
+			 && in_array( $order->get_status(), array( self::$status_created, self::$status_authorized ), true ) ) {
+			$is_editable = true;
 		}
 
 		return $is_editable;
