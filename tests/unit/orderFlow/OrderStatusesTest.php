@@ -1,6 +1,6 @@
-<?php
+	<?php
 /**
- * Class OrderCaptureTest
+ * Class OrderStatusesTest
  *
  * @package Reepay\Checkout
  */
@@ -16,9 +16,9 @@ use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\ProductGenerator;
 
 /**
- * OrderCaptureTest.
+ * OrderStatusesTest.
  *
- * @covers \Reepay\Checkout\OrderFlow\OrderCapture
+ * @covers \Reepay\Checkout\OrderFlow\OrderStatuses
  */
 class OrderStatusesTest extends WP_UnitTestCase {
 	/**
@@ -43,7 +43,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	private static InstantSettle $instant_settle_instance;
 
 	/**
-	 * OrderGenerator instance
+	 * OrderCapture instance
 	 *
 	 * @var OrderCapture
 	 */
