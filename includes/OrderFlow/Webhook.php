@@ -125,7 +125,7 @@ class Webhook {
 					$order = wc_get_order( $order->get_id() );
 				}
 
-				if ( $order->has_status( REEPAY_STATUS_AUTHORIZED ) ) {
+				if ( $order->has_status( OrderStatuses::$status_authorized ) ) {
 					$this->log(
 						sprintf(
 							'WebHook: Event type: %s success. But the order had status early: %s',
@@ -215,7 +215,7 @@ class Webhook {
 					$order = wc_get_order( $order->get_id() );
 				}
 
-				if ( $order->has_status( REEPAY_STATUS_SETTLED ) ) {
+				if ( $order->has_status( OrderStatuses::$status_settled ) ) {
 					$this->log(
 						sprintf(
 							'WebHook: Event type: %s success. But the order had status early: %s',
