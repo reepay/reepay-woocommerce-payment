@@ -31,14 +31,14 @@ class Api {
 	 *
 	 * @var string
 	 */
-	private $logging_source;
+	private string $logging_source;
 
 	/**
 	 * If repeated request after "Request rate limit exceeded"
 	 *
 	 * @var bool
 	 */
-	private $request_retry = false;
+	private bool $request_retry = false;
 
 	const ERROR_CODES = array(
 		'Ok'                                              => 0,

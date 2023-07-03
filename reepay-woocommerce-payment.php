@@ -51,7 +51,7 @@ class WC_ReepayCheckout {
 	/**
 	 * Dependency injection container
 	 *
-	 * @var null
+	 * @var DIContainer
 	 */
 	private $di_container = null;
 

@@ -25,7 +25,7 @@ class MetaBoxes {
 	 *
 	 * @var string
 	 */
-	private $dashboard_url = 'https://app.reepay.com/#/rp/';
+	private string $dashboard_url = 'https://app.reepay.com/#/rp/';
 
 	/**
 	 * MetaBoxes constructor.

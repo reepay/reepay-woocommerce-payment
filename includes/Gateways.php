@@ -69,7 +69,7 @@ class Gateways {
 	 *
 	 * @var array
 	 */
-	private $gateways = array();
+	private array $gateways = array();
 
 	/**
 	 * Gateways constructor.
