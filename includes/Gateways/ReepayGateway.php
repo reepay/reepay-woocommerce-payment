@@ -467,8 +467,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$urls = array();
 
 			foreach ( $request['urls'] as $url ) {
-				if ( strpos( $url, $webhook_url ) === false || // either another site or exact url match.
-					 $url === $webhook_url ||
+				if ( ( strpos( $url, $webhook_url ) === false || // either another site or exact url match.
+					 $url === $webhook_url ) &&
 					 strpos( $url, 'WC_Gateway_Reepay_Checkout' ) === false ) {
 					$urls[] = $url;
 				} else {
