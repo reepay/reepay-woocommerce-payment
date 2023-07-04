@@ -169,7 +169,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 		add_filter( 'woocommerce_payment_methods_list_item', array( __CLASS__, 'wc_get_account_saved_payment_methods_list_item' ), 10, 2 );
 		add_action( 'woocommerce_account_payment_methods_column_method', __CLASS__ . '::wc_account_payment_methods_column_method', 10, 1 );
 		add_filter( 'woocommerce_payment_gateway_get_saved_payment_method_option_html', __CLASS__ . '::wc_get_saved_payment_method_option_html', 10, 3 );
-		add_filter( 'woocommerce_get_customer_payment_tokens', __CLASS__ . '::add_reepay_cards_to_list', 10, 3 );
+		add_filter( 'woocommerce_get_customer_payment_tokens', __CLASS__ . '::add_reepay_cards_to_list', 1000, 3 );
 	}
 
 	/**
@@ -182,7 +182,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 * @return array                           Filtered item.
 	 * @throws Exception If unable to save token.
 	 */
-	public static function add_reepay_cards_to_list( array $tokens, int $customer_id, string $gateway_id ): array {
+	public static function add_reepay_cards_to_list( array $tokens, int $customer_id, string $gateway_id = '' ): array {
 		/**
 		 * Gateway id is optional. For getting tokens for a specific gateway
 		 *
