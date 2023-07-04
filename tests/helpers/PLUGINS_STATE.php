@@ -20,6 +20,8 @@ abstract class PLUGINS_STATE {
 		'rp_subs'  => 'reepay-subscriptions-for-woocommerce/reepay-subscriptions-for-woocommerce.php',
 	);
 
+	const DEFAULT_PLUGINS_SET = array( 'woo', 'woo_subs', 'rp_subs' );
+
 	/**
 	 * Activate plugins. Depending on param or environment variable
 	 *
@@ -32,11 +34,13 @@ abstract class PLUGINS_STATE {
 			$env_plugins = getenv( 'PHPUNIT_PLUGINS' );
 
 			if ( empty( $env_plugins ) ) {
-				$plugins = array( 'woo', 'woo_subs', 'rp_subs' );
+				$plugins = self::DEFAULT_PLUGINS_SET;
 			} else {
 				$plugins = explode( ',', $env_plugins );
 			}
 		}
+
+		echo 'Additional plugins: ' . implode( ', ', $plugins ) . "\n";
 
 		$wordpres_plugins_path = ABSPATH . 'wp-content/plugins/';
 		$active_plugins        = get_option( 'active_plugins', array() );
