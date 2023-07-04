@@ -47,6 +47,7 @@ class OrderGenerator {
 				array(
 					'status'      => 'completed',
 					'created_via' => 'tests',
+					'customer_id' => get_current_user_id() ?: 1
 				)
 			)
 		);
@@ -121,14 +122,49 @@ class OrderGenerator {
 	 * @return int order item id
 	 */
 	public function add_product( string $type, array $product_data = array(), array $order_item_data = array() ): int {
-		$order_item_id = $this->order->add_product(
-			( new ProductGenerator( $type, $product_data ) )->product(),
-			$order_item_data['quantity'] ?? 1
-		);
+		$product_generator = ( new ProductGenerator( $type, $product_data ) );
+
+		$order_item_id = $this->order->add_product( $product_generator->product(), $order_item_data['quantity'] ?? 1 );
 
 		$this->add_data_to_order_item( $order_item_id, $order_item_data );
 
+		if( 'woo_sub' === $type ) {
+			$this->generate_woo_subscription( $product_generator->product() );
+		}
+
 		return $order_item_id;
+	}
+
+	private function generate_woo_subscription( $product ) {
+		$sub = wcs_create_subscription( array(
+			'order_id'         => $this->order->get_id(),
+			'status'           => 'pending', // Status should be initially set to pending to match how normal checkout process goes
+			'billing_period'   => 'Day',
+			'billing_interval' => 1
+		) );
+
+		if( is_wp_error( $sub ) ) {
+			throw new Exception( $sub->get_error_message() );
+		}
+
+		// Add product to subscription
+		$sub->add_product( $product, 1 );
+
+		$dates = array(
+			'trial_end'    => gmdate( 'Y-m-d H:i:s', 0 ),
+			'next_payment' => gmdate( 'Y-m-d H:i:s', strtotime("+1 week") ),
+			'end'          => gmdate( 'Y-m-d H:i:s', strtotime("+2 week") ),
+		);
+
+		$sub->update_dates( $dates );
+		$sub->calculate_totals();
+
+		// Update order status with custom note
+		$this->order->update_status( 'completed', '', true );
+		// Also update subscription status to active from pending (and add note)
+		$sub->update_status( 'active', '', true );
+
+		return $sub;
 	}
 
 	/**
