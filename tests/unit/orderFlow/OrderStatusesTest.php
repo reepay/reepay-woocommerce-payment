@@ -217,4 +217,16 @@ class OrderStatusesTest extends WP_UnitTestCase {
 			$this->order_generator->order()->get_status()
 		);
 	}
+
+	/**
+	 * Test @see OrderStatuses::reepay_authorized_order_status with non reepay payment method
+	 */
+	public function test_reepay_authorized_order_status_with_non_reepay_gateway() {
+		$status = 'default_status';
+
+		$this->assertSame(
+			$status,
+			self::$order_statuses->reepay_authorized_order_status( $status, $this->order_generator->order() )
+		);
+	}
 }
