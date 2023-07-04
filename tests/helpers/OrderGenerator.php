@@ -158,9 +158,7 @@ class OrderGenerator {
 
 		$sub->update_dates( $dates );
 		$sub->calculate_totals();
-
-		// Update order status with custom note
-		$this->order->update_status( 'completed', '', true );
+		
 		// Also update subscription status to active from pending (and add note)
 		$sub->update_status( 'active', '', true );
 
