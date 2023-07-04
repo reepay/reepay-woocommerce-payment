@@ -138,7 +138,7 @@ class OrderGenerator {
 	private function generate_woo_subscription( $product ) {
 		$sub = wcs_create_subscription( array(
 			'order_id'         => $this->order->get_id(),
-			'status'           => 'pending', // Status should be initially set to pending to match how normal checkout process goes
+			'status'           => 'pending', // Status should be initially set to pending to match how normal checkout process goes.
 			'billing_period'   => 'Day',
 			'billing_interval' => 1
 		) );
@@ -147,7 +147,7 @@ class OrderGenerator {
 			throw new Exception( $sub->get_error_message() );
 		}
 
-		// Add product to subscription
+		// Add product to subscription.
 		$sub->add_product( $product, 1 );
 
 		$dates = array(
@@ -158,8 +158,7 @@ class OrderGenerator {
 
 		$sub->update_dates( $dates );
 		$sub->calculate_totals();
-		
-		// Also update subscription status to active from pending (and add note)
+
 		$sub->update_status( 'active', '', true );
 
 		return $sub;
