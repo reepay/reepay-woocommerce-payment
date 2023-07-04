@@ -198,7 +198,9 @@ class TokenReepay extends WC_Payment_Token_CC {
 			return $tokens;
 		}
 
-		$tokens = array();
+		if ( reepay()->gateways()->checkout()->id === $gateway_id ) {
+			$tokens = array(); //Only Reepay tokens if Reepay gateway specified
+		}
 
 		foreach ( $reepay_cards as $card_info ) {
 			$token = TokenReepayTrait::get_payment_token( $card_info['id'] );
@@ -224,14 +226,14 @@ class TokenReepay extends WC_Payment_Token_CC {
 					$token->set_masked_card( $card_info['masked_card'] );
 					$token->set_gateway_id( reepay()->gateways()->checkout()->id );
 				}
+
+				// Save Credit Card.
+				if ( ! $token->save() ) {
+					throw new Exception( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ) );
+				}
 			}
 
-			// Save Credit Card.
-			if ( ! $token->save() ) {
-				throw new Exception( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ) );
-			}
-
-			$tokens[] = $token;
+			$tokens[ $token->get_id() ] = $token;
 		}
 
 		return $tokens;
