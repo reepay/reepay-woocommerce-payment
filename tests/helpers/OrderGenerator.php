@@ -97,6 +97,7 @@ class OrderGenerator {
 	 */
 	public function set_props( array $props ) {
 		$this->order->set_props( $props );
+		$this->order->save();
 	}
 
 	/**
