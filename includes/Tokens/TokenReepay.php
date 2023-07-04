@@ -183,7 +183,12 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 * @throws Exception If unable to save token.
 	 */
 	public static function add_reepay_cards_to_list( array $tokens, int $customer_id, string $gateway_id ): array {
-		if ( reepay()->gateways()->checkout()->id !== $gateway_id ) {
+		/**
+		 * Gateway id is optional. For getting tokens for a specific gateway
+		 *
+		 * @see WC_Payment_Tokens::get_customer_tokens
+		 */
+		if ( ! empty( $gateway_id ) && reepay()->gateways()->checkout()->id !== $gateway_id ) {
 			return $tokens;
 		}
 
@@ -207,6 +212,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 				$token->set_gateway_id( $gateway_id );
 				$token->set_token( $card_info['id'] );
 				$token->set_user_id( $customer_id );
+				$token->set_gateway_id( reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id );
 			} else {
 				$expiry_date = explode( '-', $card_info['exp_date'] );
 
@@ -219,6 +225,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 				$token->set_card_type( $card_info['card_type'] );
 				$token->set_user_id( $customer_id );
 				$token->set_masked_card( $card_info['masked_card'] );
+				$token->set_gateway_id( reepay()->gateways()->checkout()->id );
 			}
 
 			// Save Credit Card.
