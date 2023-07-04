@@ -62,6 +62,13 @@ class OrderGenerator {
 	}
 
 	/**
+	 * Set order, update data from db
+	 */
+	public function reset_order() {
+		$this->order = wc_get_order( $this->order->get_id() ) ?: null;
+	}
+
+	/**
 	 * Update meta data by key
 	 *
 	 * @param string       $key   meta key.
