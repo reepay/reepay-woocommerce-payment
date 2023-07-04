@@ -28,7 +28,7 @@ class ThankyouPage {
 	 *
 	 * @var string
 	 */
-	private $logging_source = 'reepay-thankyou';
+	private string $logging_source = 'reepay-thankyou';
 
 	/**
 	 * Constructor
@@ -53,6 +53,7 @@ class ThankyouPage {
 	 * @param string $default_path  Default path.
 	 *
 	 * @return string
+	 * @noinspection PhpMissingParamTypeInspection
 	 */
 	public function override_template( string $located, string $template_name, $args, string $template_path, string $default_path ): string {
 		/**
@@ -295,7 +296,7 @@ class ThankyouPage {
 				);
 				break;
 			case 'authorized':
-				if ( $order->get_status() === REEPAY_STATUS_AUTHORIZED ) {
+				if ( $order->get_status() === OrderStatuses::$status_authorized ) {
 					$this->log( sprintf( 'accept_url: Order #%s has been authorized before', $order->get_id() ) );
 
 					return;
@@ -316,7 +317,7 @@ class ThankyouPage {
 				$this->log( sprintf( 'accept_url: Order #%s has been marked as authorized', $order->get_id() ) );
 				break;
 			case 'settled':
-				if ( $order->get_status() === REEPAY_STATUS_SETTLED ) {
+				if ( $order->get_status() === OrderStatuses::$status_settled ) {
 					$this->log( sprintf( 'accept_url: Order #%s has been settled before', $order->get_id() ) );
 
 					return;

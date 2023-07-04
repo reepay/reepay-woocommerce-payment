@@ -77,7 +77,7 @@ class DIContainer implements ContainerInterface {
 	 *
 	 * @return object Entry.
 	 */
-	public function get( string $id ): object {
+	public function get( string $id ) {
 		if ( isset( $this->cache[ $id ] ) ) {
 			return $this->cache[ $id ];
 		}

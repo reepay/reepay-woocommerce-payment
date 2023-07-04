@@ -51,7 +51,7 @@ class WC_ReepayCheckout {
 	/**
 	 * Dependency injection container
 	 *
-	 * @var null
+	 * @var DIContainer
 	 */
 	private $di_container = null;
 
@@ -270,6 +270,8 @@ class WC_ReepayCheckout {
 		new Reepay\Checkout\Integrations\Main();
 
 		new Reepay\Checkout\Frontend\Main();
+
+		new Reepay\Checkout\ReepayCustomer();
 	}
 }
 
