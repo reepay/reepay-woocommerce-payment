@@ -217,7 +217,7 @@ trait TokenReepayTrait {
 	 *
 	 * @param string $token token string.
 	 *
-	 * @return null|bool|WC_Payment_Token
+	 * @return WC_Payment_Token|null
 	 */
 	public static function get_payment_token( string $token ) {
 		global $wpdb;
@@ -225,7 +225,7 @@ trait TokenReepayTrait {
 		$token_id = wp_cache_get( $token, 'reepay_tokens' );
 
 		if ( ! empty( $token_id ) ) {
-			return $token_id;
+			return WC_Payment_Tokens::get( $token_id );
 		}
 
 		$token_id = $wpdb->get_var( //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
@@ -236,10 +236,10 @@ trait TokenReepayTrait {
 		);
 
 		if ( ! $token_id ) {
-			return false;
+			return null;
 		}
 
-		wp_cache_set( $token, 'reepay_tokens' );
+		wp_cache_set( $token, $token_id, 'reepay_tokens' );
 
 		return WC_Payment_Tokens::get( $token_id );
 	}
