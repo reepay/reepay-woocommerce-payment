@@ -17,11 +17,7 @@ if ( ! function_exists( 'order_contains_subscription ' ) ) {
 	 * @see wcs_order_contains_subscription()
 	 */
 	function order_contains_subscription( WC_Order $order ): bool {
-		if ( ! function_exists( 'wcs_order_contains_subscription' ) ) {
-			return false;
-		}
-
-		return wcs_order_contains_subscription( $order );
+		return function_exists( 'wcs_order_contains_subscription' ) && wcs_order_contains_subscription( $order );
 	}
 }
 
