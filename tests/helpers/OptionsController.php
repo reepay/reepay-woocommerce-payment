@@ -8,6 +8,7 @@
 namespace Reepay\Checkout\Tests\Helpers;
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
+use Reepay\Checkout\OrderFlow\OrderStatuses;
 
 /**
  * Class OptionsController
@@ -65,6 +66,8 @@ class OptionsController {
 		}
 
 		reepay()->reset_settings();
+		OrderStatuses::init_statuses();
+
 		$this->reset = true;
 	}
 
