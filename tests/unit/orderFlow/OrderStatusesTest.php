@@ -193,19 +193,15 @@ class OrderStatusesTest extends WP_UnitTestCase {
 
 	/**
 	 * Test @see OrderStatuses::payment_complete
+	 *
+	 * @dataProvider \Reepay\Checkout\Tests\Helpers\HELPERS::get_order_statuses()
 	 */
-	public function test_payment_complete() {
+	public function test_payment_complete( string $expected_status ) {
 		if ( PLUGINS_STATE::rp_subs_activated() ) {
 			$this->markTestSkipped( 'Reepay subscriptions activated. It\'s changing default function behavior via filter' );
 		}
 
-		$this->order_generator->set_props(
-			array(
-				'payment_method' => reepay()->gateways()->checkout(),
-			)
-		);
-
-		$expected_status = 'pending';
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
 
 		self::$options->set_options( array(
 			'enable_sync' => 'yes',
