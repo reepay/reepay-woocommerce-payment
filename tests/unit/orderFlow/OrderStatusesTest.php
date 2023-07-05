@@ -116,21 +116,21 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test @see OrderStatuses::add_valid_order_statuses with non reepay payment method
+	 * Test @see OrderStatuses::add_valid_order_statuses_for_payment_complete with non reepay payment method
 	 */
-	public function test_add_valid_order_statuses_with_non_reepay_gateway() {
+	public function test_add_valid_order_statuses_for_payment_complete_with_non_reepay_gateway() {
 		$statuses = array( '1', '2' );
 
 		$this->assertSame(
 			$statuses,
-			$this->order_statuses ->add_valid_order_statuses( $statuses, $this->order_generator->order() )
+			$this->order_statuses ->add_valid_order_statuses_for_payment_complete( $statuses, $this->order_generator->order() )
 		);
 	}
 
 	/**
-	 * Test @see OrderStatuses::add_valid_order_statuses with reepay payment method
+	 * Test @see OrderStatuses::add_valid_order_statuses_for_payment_complete with disabled sync
 	 */
-	public function test_add_valid_order_statuses_with_reepay_gateway() {
+	public function test_add_valid_order_statuses_for_payment_complete_with_disabled_sync() {
 		$statuses = array( '1', '2' );
 
 		$this->order_generator->set_prop(
@@ -138,14 +138,39 @@ class OrderStatusesTest extends WP_UnitTestCase {
 			reepay()->gateways()->checkout()
 		);
 
+		self::$options->set_options( array(
+			'enable_sync' => 'no',
+		) );
+
 		$this->assertSame(
-			array_merge( $statuses, array( OrderStatuses::$status_authorized, OrderStatuses::$status_settled ) ),
-			$this->order_statuses ->add_valid_order_statuses( $statuses, $this->order_generator->order() )
+			$statuses,
+			$this->order_statuses ->add_valid_order_statuses_for_payment_complete( $statuses, $this->order_generator->order() )
 		);
 	}
 
 	/**
-	 * Test @see OrderStatuses::add_valid_order_statuses with non reepay payment method
+	 * Test @see OrderStatuses::add_valid_order_statuses_for_payment_complete with disabled sync
+	 */
+	public function test_add_valid_order_statuses_for_payment_complete() {
+		$statuses = array( '1', '2' );
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		self::$options->set_options( array(
+			'enable_sync' => 'yes',
+		) );
+
+		$this->assertSame(
+			array_merge( $statuses, array( OrderStatuses::$status_authorized, OrderStatuses::$status_settled ) ),
+			$this->order_statuses ->add_valid_order_statuses_for_payment_complete( $statuses, $this->order_generator->order() )
+		);
+	}
+
+	/**
+	 * Test @see OrderStatuses::add_valid_order_statuses_for_payment_complete with non reepay payment method
 	 */
 	public function test_payment_complete_order_status_with_non_reepay_gateway() {
 		$status = 'default_status';
@@ -157,14 +182,15 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test @see OrderStatuses::add_valid_order_statuses with disabled status sync
+	 * Test @param bool $needs_processing order needs processing.
 	 *
-	 * @param bool $needs_processing order needs processing.
 	 * @param string $status expected status.
 	 *
 	 * @testWith
 	 * [true, "processing"]
 	 * [false, "completed"]
+	 *@see OrderStatuses::add_valid_order_statuses_for_payment_complete with disabled status sync
+	 *
 	 */
 	public function test_payment_complete_order_status_with_disabled_status_sync( bool $needs_processing, string $status ) {
 		if ( PLUGINS_STATE::rp_subs_activated() ) {
@@ -190,7 +216,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test @see OrderStatuses::add_valid_order_statuses with status sync
+	 * Test @see OrderStatuses::add_valid_order_statuses_for_payment_complete with status sync
 	 */
 	public function test_payment_complete_order_status_with_status_syncs() {
 		if ( PLUGINS_STATE::rp_subs_activated() ) {

@@ -296,7 +296,7 @@ class ThankyouPage {
 				);
 				break;
 			case 'authorized':
-				if ( $order->get_status() === OrderStatuses::$status_authorized ) {
+				if( $order->has_status( OrderStatuses::$status_sync_enabled ? OrderStatuses::$status_authorized : 'on-hold' ) ) {
 					$this->log( sprintf( 'accept_url: Order #%s has been authorized before', $order->get_id() ) );
 
 					return;

@@ -498,12 +498,14 @@ class Subscriptions {
 			if ( is_wp_error( $order_data ) && $renewal_order->get_total() > 0 ) {
 
 				if ( 'pending' === $this_status_transition_from &&
-					 OrderStatuses::$status_authorized === $this_status_transition_to ) {
+					 ( ( OrderStatuses::$status_sync_enabled && OrderStatuses::$status_authorized === $this_status_transition_to ) ||
+					   'on-hold' === $this_status_transition_to ) ) {
 					self::scheduled_subscription_payment( $renewal_order->get_total(), $renewal_order );
 				}
 
 				if ( 'pending' === $this_status_transition_from &&
-					 OrderStatuses::$status_settled === $this_status_transition_to ) {
+					 ( ( OrderStatuses::$status_sync_enabled && OrderStatuses::$status_settled === $this_status_transition_to ) ||
+					   'processing' === $this_status_transition_to ) ) {
 					self::scheduled_subscription_payment( $renewal_order->get_total(), $renewal_order, true );
 				}
 			}
