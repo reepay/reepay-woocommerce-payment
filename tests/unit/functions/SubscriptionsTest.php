@@ -28,6 +28,10 @@ class SubscriptionsTest extends WP_UnitTestCase {
 	 * Test @see order_contains_subscription with woo subscription
 	 */
 	public function test_order_contains_subscription_woo_subscription() {
+		if ( ! PLUGINS_STATE::woo_subs_activated() ) {
+			$this->markTestSkipped( 'Woocommerce subscriptions not activated' );
+		}
+
 		$order_generator = new OrderGenerator();
 		$order_generator->add_product('woo_sub');
 

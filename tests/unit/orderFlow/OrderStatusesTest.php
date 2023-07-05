@@ -260,6 +260,10 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	 * Test @see OrderStatuses::get_authorized_order_status with woo subscription
 	 */
 	public function test_get_authorized_order_status_with_woo_subscription() {
+		if ( ! PLUGINS_STATE::woo_subs_activated() ) {
+			$this->markTestSkipped( 'Woocommerce subscriptions not activated' );
+		}
+
 		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
 		$this->order_generator->add_product( 'woo_sub' );
 
