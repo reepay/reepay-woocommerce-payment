@@ -87,11 +87,7 @@ class OrderStatuses {
 	 * Add complete payment hook for all statuses
 	 */
 	public function plugins_loaded() {
-		if ( ! function_exists( 'wc_get_order_statuses' ) ) {
-			return;
-		}
-
-		foreach ( wc_get_order_statuses() as $status => $label ) {
+		foreach ( array_keys( wc_get_order_statuses() ) as $status ) {
 			$status = str_replace( 'wc-', '', $status );
 			add_action( 'woocommerce_payment_complete_order_status_' . $status, array( $this, 'payment_complete' ), 10, 1 );
 		}
