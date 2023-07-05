@@ -1,6 +1,6 @@
 <?php
 /**
- * Class HELPERS
+ * Class DataProvider
  *
  * @package Reepay\Checkout
  */
@@ -13,7 +13,7 @@ use WC_Gateway_COD;
 /**
  * Class HELPERS
  */
-abstract class HELPERS {
+abstract class DataProvider {
 	/**
 	 * Get payment methods for tests. Use as dataProvider.
 	 *
@@ -21,7 +21,7 @@ abstract class HELPERS {
 	 *
 	 * @return array
 	 */
-	public static function get_payment_methods( bool $only_reepay = false ): array {
+	public static function payment_methods( bool $only_reepay = false ): array {
 		$payment_methods = array();
 
 		foreach ( Gateways::PAYMENT_METHODS as $key => $method_name ) {
@@ -42,7 +42,7 @@ abstract class HELPERS {
 	 *
 	 * @return string[]
 	 */
-	public static function get_order_statuses(): array {
+	public static function order_statuses(): array {
 		return array_reduce( array_keys( wc_get_order_statuses() ), function ( array $carry, string $status ) {
 			$status           = str_replace( 'wc-', '', $status );
 			$carry[ $status ] = array( $status );

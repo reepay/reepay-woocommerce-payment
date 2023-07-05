@@ -183,7 +183,7 @@ class OrderTest extends WP_UnitTestCase {
 	 * @param string|false $class payment method class name.
 	 * @param bool         $is_reepay is reepay gateway.
 	 *
-	 * @dataProvider \Reepay\Checkout\Tests\Helpers\HELPERS::get_payment_methods
+	 * @dataProvider \Reepay\Checkout\Tests\Helpers\DataProvider::payment_methods
 	 */
 	public function test_rp_is_order_paid_via_reepay( string $method_name, $class, bool $is_reepay ) {
 		$this->order->set_payment_method( $method_name );

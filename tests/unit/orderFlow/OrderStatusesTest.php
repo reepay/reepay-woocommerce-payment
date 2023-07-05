@@ -92,7 +92,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	/**
 	 * Test @see OrderStatuses::plugins_loaded()
 	 *
-	 * @dataProvider \Reepay\Checkout\Tests\Helpers\HELPERS::get_order_statuses()
+	 * @dataProvider \Reepay\Checkout\Tests\Helpers\DataProvider::order_statuses()
 	 */
 	public function test_payment_complete_action_setted( string $status ) {
 		remove_all_actions( 'plugins_loaded' );
@@ -211,7 +211,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	/**
 	 * Test @see OrderStatuses::payment_complete
 	 *
-	 * @dataProvider \Reepay\Checkout\Tests\Helpers\HELPERS::get_order_statuses()
+	 * @dataProvider \Reepay\Checkout\Tests\Helpers\DataProvider::order_statuses()
 	 */
 	public function test_payment_complete( string $expected_status ) {
 		if ( PLUGINS_STATE::rp_subs_activated() ) {
@@ -282,7 +282,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	/**
 	 * Test @see OrderStatuses::get_authorized_order_status with reepay order status sync
 	 *
-	 * @dataProvider \Reepay\Checkout\Tests\Helpers\HELPERS::get_order_statuses()
+	 * @dataProvider \Reepay\Checkout\Tests\Helpers\DataProvider::order_statuses()
 	 */
 	public function test_get_authorized_order_status_with_sync( string $sync_status ) {
 		$status = 'default_status';
