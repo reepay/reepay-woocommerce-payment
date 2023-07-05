@@ -23,6 +23,13 @@ defined( 'ABSPATH' ) || exit();
  */
 class OrderStatuses {
 	/**
+	 * Is sync enabled
+	 *
+	 * @var bool
+	 */
+	public static bool $status_sync;
+
+	/**
 	 * Order created status
 	 *
 	 * @var string
@@ -70,6 +77,7 @@ class OrderStatuses {
 	 * Init status variables
 	 */
 	public static function init_statuses() {
+		self::$status_sync       = reepay()->get_setting( 'enable_sync' ) === 'yes';
 		self::$status_created    = str_replace( 'wc-', '', reepay()->get_setting( 'status_created' ) ) ?: 'pending';
 		self::$status_authorized = str_replace( 'wc-', '', reepay()->get_setting( 'status_authorized' ) ) ?: 'on-hold';
 		self::$status_settled    = str_replace( 'wc-', '', reepay()->get_setting( 'status_settled' ) ) ?: 'processing';
@@ -95,6 +103,14 @@ class OrderStatuses {
 	public function form_fields( array $form_fields ): array {
 		$form_fields['hr_sync'] = array(
 			'type' => 'separator',
+		);
+
+		$form_fields['enable_sync'] = array(
+			'title'       => __( 'Sync statuses', 'reepay-checkout-gateway' ),
+			'type'        => 'checkbox',
+			'label'       => __( 'Enable sync', 'reepay-checkout-gateway' ),
+			'description' => __( '2-way synchronization of order statuses in Woocommerce with invoice statuses in Reepay', 'reepay-checkout-gateway' ),
+			'default'     => 'yes',
 		);
 
 		$pending_statuses = wc_get_order_statuses();
@@ -174,7 +190,13 @@ class OrderStatuses {
 	 */
 	public function payment_complete_order_status( string $status, int $order_id, WC_Order $order ) {
 		if ( rp_is_order_paid_via_reepay( $order ) ) {
-			$status = apply_filters( 'reepay_settled_order_status', self::$status_settled, $order );
+			$status = apply_filters(
+				'reepay_settled_order_status',
+				self::$status_sync ?
+					self::$status_settled :
+					( $order->needs_processing() ? 'processing' : 'completed' ),
+				$order
+			);
 		}
 
 		return $status;
@@ -211,7 +233,7 @@ class OrderStatuses {
 	 * @return string
 	 */
 	public static function get_authorized_order_status( WC_Order $order, string $default = 'on-hold' ): string {
-		if ( rp_is_order_paid_via_reepay( $order ) && ! order_contains_subscription( $order ) ) {
+		if ( rp_is_order_paid_via_reepay( $order ) && ! order_contains_subscription( $order ) && self::$status_sync ) {
 			return self::$status_authorized;
 		}
 
