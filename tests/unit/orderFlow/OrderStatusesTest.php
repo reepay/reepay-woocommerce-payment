@@ -47,7 +47,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	 *
 	 * @var OrderStatuses
 	 */
-	private static OrderStatuses $order_statuses;
+	private OrderStatuses $order_statuses;
 
 	/**
 	 * OrderCapture instance
@@ -72,7 +72,6 @@ class OrderStatusesTest extends WP_UnitTestCase {
 		self::$options                 = new OptionsController();
 		self::$product_generator       = new ProductGenerator();
 		self::$instant_settle_instance = new InstantSettle();
-		self::$order_statuses          = new OrderStatuses();
 	}
 
 	/**
@@ -83,10 +82,28 @@ class OrderStatusesTest extends WP_UnitTestCase {
 
 		$this->order_generator = new OrderGenerator();
 		$this->order_capture   = new OrderCapture();
+		$this->order_statuses          = new OrderStatuses();
 
 		new OrderStatuses();
 
 		reepay()->di()->set( Api::class, Api::class );
+	}
+
+	/**
+	 * Test @see OrderStatuses::plugins_loaded()
+	 *
+	 * @dataProvider \Reepay\Checkout\Tests\Helpers\HELPERS::get_order_statuses()
+	 */
+	public function test_payment_complete_action_setted( string $status ) {
+		remove_all_actions( 'plugins_loaded' );
+		
+		$order_statuses = new OrderStatuses();
+
+		do_action( 'plugins_loaded' );
+
+		$this->assertTrue(
+			has_action( 'woocommerce_payment_complete_order_status_' . $status, array( $order_statuses, 'payment_complete' ) ) > 0
+		);
 	}
 
 	/**
@@ -97,7 +114,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 
 		$this->assertSame(
 			$statuses,
-			self::$order_statuses->add_valid_order_statuses( $statuses, $this->order_generator->order() )
+			$this->order_statuses ->add_valid_order_statuses( $statuses, $this->order_generator->order() )
 		);
 	}
 
@@ -114,7 +131,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 
 		$this->assertSame(
 			array_merge( $statuses, array( OrderStatuses::$status_authorized, OrderStatuses::$status_settled ) ),
-			self::$order_statuses->add_valid_order_statuses( $statuses, $this->order_generator->order() )
+			$this->order_statuses ->add_valid_order_statuses( $statuses, $this->order_generator->order() )
 		);
 	}
 
@@ -126,7 +143,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 
 		$this->assertSame(
 			$status,
-			self::$order_statuses->payment_complete_order_status( $status, $this->order_generator->order()->get_id(), $this->order_generator->order() )
+			$this->order_statuses ->payment_complete_order_status( $status, $this->order_generator->order()->get_id(), $this->order_generator->order() )
 		);
 	}
 
@@ -159,7 +176,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 
 		$this->assertSame(
 			$status,
-			self::$order_statuses->payment_complete_order_status( $status, $this->order_generator->order()->get_id(), $this->order_generator->order() )
+			$this->order_statuses ->payment_complete_order_status( $status, $this->order_generator->order()->get_id(), $this->order_generator->order() )
 		);
 	}
 
@@ -187,7 +204,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 
 		$this->assertSame(
 			$expected_status,
-			self::$order_statuses->payment_complete_order_status( $default_status, $this->order_generator->order()->get_id(), $this->order_generator->order() )
+			$this->order_statuses ->payment_complete_order_status( $default_status, $this->order_generator->order()->get_id(), $this->order_generator->order() )
 		);
 	}
 
@@ -208,7 +225,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 			'status_settled' => $expected_status
 		) );
 
-		self::$order_statuses->payment_complete( $this->order_generator->order()->get_id() );
+		$this->order_statuses ->payment_complete( $this->order_generator->order()->get_id() );
 
 		$this->order_generator->reset_order();
 
@@ -219,14 +236,68 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test @see OrderStatuses::reepay_authorized_order_status with non reepay payment method
+	 * Test @see OrderStatuses::get_authorized_order_status with non reepay payment method
 	 */
-	public function test_reepay_authorized_order_status_with_non_reepay_gateway() {
+	public function test_get_authorized_order_status_with_non_reepay_gateway() {
 		$status = 'default_status';
 
 		$this->assertSame(
 			$status,
-			self::$order_statuses->reepay_authorized_order_status( $status, $this->order_generator->order() )
+			$this->order_statuses ->get_authorized_order_status( $this->order_generator->order(), $status )
+		);
+	}
+
+	/**
+	 * Test @see OrderStatuses::get_authorized_order_status with woo subscription
+	 */
+	public function test_get_authorized_order_status_with_woo_subscription() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+		$this->order_generator->add_product( 'woo_sub' );
+
+		$this->assertSame(
+			'on-hold',
+			$this->order_statuses ->get_authorized_order_status( $this->order_generator->order() )
+		);
+	}
+
+	/**
+	 * Test @see OrderStatuses::get_authorized_order_status without reepay order status sync
+	 */
+	public function test_get_authorized_order_status_without_sync() {
+		$status = 'default_status';
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+		$this->order_generator->add_product( 'simple' );
+
+		self::$options->set_options( array(
+			'enable_sync'    => 'no',
+		) );
+
+		$this->assertSame(
+			$status,
+			$this->order_statuses ->get_authorized_order_status( $this->order_generator->order(), $status )
+		);
+	}
+
+	/**
+	 * Test @see OrderStatuses::get_authorized_order_status with reepay order status sync
+	 *
+	 * @dataProvider \Reepay\Checkout\Tests\Helpers\HELPERS::get_order_statuses()
+	 */
+	public function test_get_authorized_order_status_with_sync( string $sync_status ) {
+		$status = 'default_status';
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+		$this->order_generator->add_product( 'simple' );
+
+		self::$options->set_options( array(
+			'enable_sync'    => 'yes',
+			'status_authorized' => $sync_status
+		) );
+
+		$this->assertSame(
+			$sync_status,
+			$this->order_statuses ->get_authorized_order_status( $this->order_generator->order(), $status )
 		);
 	}
 }
