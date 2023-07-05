@@ -82,11 +82,20 @@ class OrderStatusesTest extends WP_UnitTestCase {
 
 		$this->order_generator = new OrderGenerator();
 		$this->order_capture   = new OrderCapture();
-		$this->order_statuses          = new OrderStatuses();
+		$this->order_statuses  = new OrderStatuses();
+	}
+
+	/**
+	 * Test function added to filter woocommerce_settings_api_form_fields_reepay_checkout @see OrderStatuses::form_fields()
+	 */
+	public function test_form_fields_filter() {
+		$filter_name = 'woocommerce_settings_api_form_fields_reepay_checkout';
+
+		remove_all_actions( $filter_name );
 
 		new OrderStatuses();
 
-		reepay()->di()->set( Api::class, Api::class );
+		$this->assertNotEmpty( apply_filters( $filter_name, array() ) );
 	}
 
 	/**
