@@ -64,8 +64,6 @@ class OrderStatuses {
 
 		add_action( 'woocommerce_payment_complete', array( $this, 'payment_complete' ), 10, 1 );
 
-		add_filter( 'reepay_authorized_order_status', array( $this, 'reepay_authorized_order_status' ), 10, 2 );
-
 		add_filter( 'wc_order_is_editable', array( $this, 'is_editable' ), 10, 2 );
 
 		add_filter( 'woocommerce_order_is_paid', array( $this, 'is_paid' ), 10, 2 );
@@ -233,21 +231,17 @@ class OrderStatuses {
 	/**
 	 * Get a status for Authorized payments.
 	 *
-	 * @param string   $status default status.
 	 * @param WC_Order $order  current order.
+	 * @param string   $default default status.
 	 *
 	 * @return string
 	 */
-	public function reepay_authorized_order_status( string $status, WC_Order $order ): string {
-		if ( rp_is_order_paid_via_reepay( $order ) ) {
-			if ( order_contains_subscription( $order ) ) {
-				$status = 'on-hold';
-			} elseif ( self::$status_sync ) {
-				$status = self::$status_authorized;
-			}
+	public static function get_authorized_order_status( WC_Order $order, string $default = 'on-hold' ): string {
+		if ( rp_is_order_paid_via_reepay( $order ) && ! order_contains_subscription( $order ) && self::$status_sync ) {
+			return self::$status_authorized;
 		}
 
-		return $status;
+		return $default;
 	}
 
 	/**
@@ -261,7 +255,7 @@ class OrderStatuses {
 	 * @throws WC_Data_Exception Throws exception when invalid data sent to update_order_status.
 	 */
 	public static function set_authorized_status( WC_Order $order, ?string $note, ?string $transaction_id ) {
-		$authorized_status = apply_filters( 'reepay_authorized_order_status', 'on-hold', $order );
+		$authorized_status = self::get_authorized_order_status( $order );
 
 		if ( ! empty( $order->get_meta( '_reepay_state_authorized' ) ) || $order->get_status() === $authorized_status ) {
 			return;
