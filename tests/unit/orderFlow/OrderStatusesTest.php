@@ -157,39 +157,6 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test @see OrderStatuses::add_valid_order_statuses with disabled status sync
-	 *
-	 * @param bool $needs_processing order needs processing.
-	 * @param string $status expected status.
-	 *
-	 * @testWith
-	 * [true, "processing"]
-	 * [false, "completed"]
-	 */
-	public function test_payment_complete_order_status_with_disabled_status_sync( bool $needs_processing, string $status ) {
-		if ( PLUGINS_STATE::rp_subs_activated() ) {
-			$this->markTestSkipped( 'Reepay subscriptions activated. It\'s changing default function behavior via filter' );
-		}
-
-		set_transient( 'wc_order_' . $this->order_generator->order()->get_id() . '_needs_processing', $needs_processing ? '1' : '0' );
-
-		$this->order_generator->set_props(
-			array(
-				'payment_method' => reepay()->gateways()->checkout(),
-			)
-		);
-
-		self::$options->set_options( array(
-			'enable_sync' => 'no',
-		) );
-
-		$this->assertSame(
-			$status,
-			$this->order_statuses ->payment_complete_order_status( $status, $this->order_generator->order()->get_id(), $this->order_generator->order() )
-		);
-	}
-
-	/**
 	 * Test @see OrderStatuses::add_valid_order_statuses with status sync
 	 */
 	public function test_payment_complete_order_status_with_status_syncs() {
@@ -207,7 +174,6 @@ class OrderStatusesTest extends WP_UnitTestCase {
 		);
 
 		self::$options->set_options( array(
-			'enable_sync' => 'yes',
 			'status_settled' => $expected_status
 		) );
 
@@ -230,7 +196,6 @@ class OrderStatusesTest extends WP_UnitTestCase {
 		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
 
 		self::$options->set_options( array(
-			'enable_sync' => 'yes',
 			'status_settled' => $expected_status
 		) );
 
@@ -274,25 +239,6 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test @see OrderStatuses::get_authorized_order_status without reepay order status sync
-	 */
-	public function test_get_authorized_order_status_without_sync() {
-		$status = 'default_status';
-
-		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
-		$this->order_generator->add_product( 'simple' );
-
-		self::$options->set_options( array(
-			'enable_sync'    => 'no',
-		) );
-
-		$this->assertSame(
-			$status,
-			$this->order_statuses ->get_authorized_order_status( $this->order_generator->order(), $status )
-		);
-	}
-
-	/**
 	 * Test @see OrderStatuses::get_authorized_order_status with reepay order status sync
 	 *
 	 * @dataProvider \Reepay\Checkout\Tests\Helpers\DataProvider::order_statuses()
@@ -304,7 +250,6 @@ class OrderStatusesTest extends WP_UnitTestCase {
 		$this->order_generator->add_product( 'simple' );
 
 		self::$options->set_options( array(
-			'enable_sync'    => 'yes',
 			'status_authorized' => $sync_status
 		) );
 
