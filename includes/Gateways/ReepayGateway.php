@@ -414,7 +414,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public static function get_webhook_url(): string {
 		$default_wc_api_url = WC()->api_request_url( '' );
 
-		if ( class_exists( SitePress::class ) && !is_multisite() ) {
+		if ( class_exists( SitePress::class ) && ! is_multisite() ) {
 			$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
 			$languages = wp_list_pluck( $languages, 'default_locale' );
 
@@ -427,7 +427,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				}
 			}
 		}
-
 
 		return $default_wc_api_url . 'WC_Gateway_Reepay/';
 	}

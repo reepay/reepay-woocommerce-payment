@@ -199,7 +199,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 		}
 
 		if ( reepay()->gateways()->checkout()->id === $gateway_id ) {
-			$tokens = array(); //Only Reepay tokens if Reepay gateway specified
+			$tokens = array(); // Only Reepay tokens if Reepay gateway specified.
 		}
 
 		foreach ( $reepay_cards as $card_info ) {
