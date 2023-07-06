@@ -20,7 +20,7 @@ class ReepayCustomer {
 	 * ReepayCustomer constructor.
 	 */
 	public function __construct() {
-		add_action( 'user_register', array( $this, 'set_reepay_handle' ), 10, 1 );
+		add_action( 'user_register', array( $this, 'set_reepay_handle' ), 1000, 1 );
 	}
 
 	/**
@@ -29,10 +29,6 @@ class ReepayCustomer {
 	 * @param int $user_id registered customer id.
 	 */
 	public function set_reepay_handle( int $user_id ) {
-		if ( ! empty( get_user_meta( $user_id, 'reepay_customer_id' ) ) ) {
-			return;
-		}
-
 		try {
 			$customer = new WC_Customer( $user_id );
 		} catch ( Exception $e ) {
