@@ -10,6 +10,7 @@ namespace Reepay\Checkout;
 use DOMDocument;
 use DOMElement;
 use Exception;
+use Reepay\Checkout\OrderFlow\OrderStatuses;
 use Reepay\Checkout\Tokens\TokenReepay;
 use WC_Order;
 use WC_Order_Refund;
@@ -479,7 +480,7 @@ class Subscriptions {
 	// phpcs:enable
 
 	/**
-	 * Create new invoice after woocommerce_order_status_changed
+	 * Create new invoice after woocommerce_order_status_changed for woocommerce subscriptions
 	 *
 	 * @param int      $order_id                    current order id.
 	 * @param string   $this_status_transition_from old status.
@@ -497,12 +498,12 @@ class Subscriptions {
 			if ( is_wp_error( $order_data ) && $renewal_order->get_total() > 0 ) {
 
 				if ( 'pending' === $this_status_transition_from &&
-					 REEPAY_STATUS_AUTHORIZED === $this_status_transition_to ) {
+					 OrderStatuses::$status_authorized === $this_status_transition_to ) {
 					self::scheduled_subscription_payment( $renewal_order->get_total(), $renewal_order );
 				}
 
 				if ( 'pending' === $this_status_transition_from &&
-					 REEPAY_STATUS_SETTLED === $this_status_transition_to ) {
+					 OrderStatuses::$status_settled === $this_status_transition_to ) {
 					self::scheduled_subscription_payment( $renewal_order->get_total(), $renewal_order, true );
 				}
 			}

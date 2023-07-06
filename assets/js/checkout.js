@@ -1,31 +1,22 @@
-/* global wc_checkout_params */
+/* global jQuery */
 /* global Reepay */
 
 // Preload ModalCheckout
 window.rp = new Reepay.ModalCheckout();
 
 jQuery(function ($) {
-    'use strict';
-
-    // wc_checkout_params is required to continue, ensure the object exists
-    if (typeof wc_checkout_params === 'undefined') {
-        return false;
-    }
-
     jQuery('form.checkout').on('checkout_place_order_success', function (e, result) {
-
-        if (result.hasOwnProperty('is_reepay_checkout')) {
-            try {
-                wc_reepay.buildModalCheckout(result.reepay.id, result.accept_url);
-            } catch (e) {
-                console.warn(e);
-
-                return false;
-            }
+        if (!result.hasOwnProperty('is_reepay_checkout')) {
+            return true;
         }
 
+        try {
+            wc_reepay.buildModalCheckout(result.reepay.id, result.accept_url);
+        } catch (e) {
+            console.warn(e);
+        }
 
-        return true;
+        return false;
     });
 
     $(document).ready(function () {
@@ -52,6 +43,8 @@ wc_reepay = {
      * @param accept_url
      */
     buildModalCheckout: function (reepay_id, accept_url) {
+        setTimeout(() => jQuery('.woocommerce-error').remove())
+
         if (WC_Gateway_Reepay_Checkout.payment_type === 'WINDOW') {
             new Reepay.WindowCheckout(reepay_id); // redirect to payment page
             return;
@@ -89,18 +82,19 @@ wc_reepay = {
 
     throw_error: function (errorThrown) {
         jQuery(function ($) {
-            var form = $('form.checkout');
-            form.removeClass('processing').unblock();
+            const $form = $('form.checkout');
+            $form.removeClass('processing').unblock();
             $('.woocommerce-NoticeGroup').remove();
-            var message = '<div class="woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout"><ul class="woocommerce-error" role="alert"><li>' + errorThrown + '</li></ul></div>';
-            form.before(message);
-            var scrollElement = $('.woocommerce-NoticeGroup-updateOrderReview, .woocommerce-NoticeGroup-checkout');
-            if (!scrollElement.length) {
-                scrollElement = $('.form.checkout');
+            $form.before('<div class="woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout"><ul class="woocommerce-error" role="alert"><li>' + errorThrown + '</li></ul></div>');
+
+            let $scrollElement = $('.woocommerce-NoticeGroup-updateOrderReview, .woocommerce-NoticeGroup-checkout');
+            if (!$scrollElement.length) {
+                $scrollElement = $('.form.checkout');
             }
-            if (scrollElement.length) {
+
+            if ($scrollElement.length) {
                 $('html, body').animate({
-                    scrollTop: (scrollElement.offset().top - 100)
+                    scrollTop: ($scrollElement.offset().top - 100)
                 }, 1000);
             }
         });

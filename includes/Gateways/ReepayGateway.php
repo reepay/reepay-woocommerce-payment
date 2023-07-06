@@ -43,21 +43,21 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @var string
 	 */
-	public $test_mode = 'yes';
+	public string $test_mode = 'yes';
 
 	/**
 	 * Private key
 	 *
 	 * @var string
 	 */
-	public $private_key;
+	public string $private_key;
 
 	/**
 	 * Test private key
 	 *
 	 * @var string
 	 */
-	public $private_key_test;
+	public string $private_key_test;
 
 	/**
 	 * Public key
@@ -65,14 +65,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @var string
 	 */
 
-	public $public_key;
+	public string $public_key;
 
 	/**
 	 * Settle options
 	 *
 	 * @var string[]
 	 */
-	public $settle = array(
+	public array $settle = array(
 		InstantSettle::SETTLE_VIRTUAL,
 		InstantSettle::SETTLE_PHYSICAL,
 		InstantSettle::SETTLE_RECURRING,
@@ -84,21 +84,21 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @var string
 	 */
-	public $debug = 'yes';
+	public string $debug = 'yes';
 
 	/**
 	 * Reepay checkout language
 	 *
 	 * @var string
 	 */
-	public $language = 'en_US';
+	public string $language = 'en_US';
 
 	/**
 	 * Available payment logos
 	 *
 	 * @var array
 	 */
-	public $logos = array(
+	public array $logos = array(
 		'dankort',
 		'visa',
 		'mastercard',
@@ -119,63 +119,63 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @var string
 	 */
-	public $payment_type = 'OVERLAY';
+	public string $payment_type = 'OVERLAY';
 
 	/**
 	 * Save card token
 	 *
 	 * @var string
 	 */
-	public $save_cc = 'yes';
+	public string $save_cc = 'yes';
 
 	/**
 	 * Skip order lines to Reepay and use order totals instead
 	 *
 	 * @var string
 	 */
-	public $skip_order_lines = 'no';
+	public string $skip_order_lines = 'no';
 
 	/**
 	 * If automatically cancel unpaid orders should be ignored
 	 *
 	 * @var string
 	 */
-	public $enable_order_autocancel = 'no';
+	public string $enable_order_autocancel = 'no';
 
 	/**
 	 * Email address for notification about failed webhooks
 	 *
 	 * @var string
 	 */
-	public $failed_webhooks_email = '';
+	public string $failed_webhooks_email = '';
 
 	/**
 	 * If webhooks have been configured
 	 *
 	 * @var string
 	 */
-	public $is_webhook_configured = 'no';
+	public string $is_webhook_configured = 'no';
 
 	/**
 	 * Order handle failover.
 	 *
 	 * @var string
 	 */
-	public $handle_failover = 'yes';
+	public string $handle_failover = 'yes';
 
 	/**
 	 * Payment methods.
 	 *
-	 * @var array|null
+	 * @var array
 	 */
-	public $payment_methods = array();
+	public array $payment_methods = array();
 
 	/**
 	 * Logging source
 	 *
 	 * @var string
 	 */
-	private $logging_source;
+	private string $logging_source;
 
 	/**
 	 * ReepayGateway constructor.
@@ -394,7 +394,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 
 			$account_info = get_transient( $key );
-			if ( empty( $account_info ) && true ) {
+			if ( empty( $account_info ) ) {
 				$account_info = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account', array(), $force );
 				set_transient( $key, $account_info, 5 );
 			}
@@ -414,18 +414,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public static function get_webhook_url(): string {
 		$default_wc_api_url = WC()->api_request_url( '' );
 
-		if ( class_exists( SitePress::class ) ) {
+		if ( class_exists( SitePress::class ) && ! is_multisite() ) {
 			$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
 			$languages = wp_list_pluck( $languages, 'default_locale' );
-		} else {
-			$languages = get_available_languages();
-		}
 
-		if ( ! empty( $languages ) ) {
-			foreach ( $languages as $available_language ) {
-				$lang = explode( '_', $available_language );
-				if ( stripos( $default_wc_api_url, '/' . $lang[0] . '/' ) !== false ) {
-					$default_wc_api_url = str_replace( '/' . $lang[0] . '/', '/', $default_wc_api_url );
+			if ( ! empty( $languages ) ) {
+				foreach ( $languages as $available_language ) {
+					$lang = explode( '_', $available_language );
+					if ( stripos( $default_wc_api_url, '/' . $lang[0] . '/' ) !== false ) {
+						$default_wc_api_url = str_replace( '/' . $lang[0] . '/', '/', $default_wc_api_url );
+					}
 				}
 			}
 		}
@@ -467,8 +465,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$urls = array();
 
 			foreach ( $request['urls'] as $url ) {
-				if ( strpos( $url, $webhook_url ) === false || // either another site or exact url match.
-					 $url === $webhook_url ) {
+				if ( ( strpos( $url, $webhook_url ) === false || // either another site or exact url match.
+					 $url === $webhook_url ) &&
+					 strpos( $url, 'WC_Gateway_Reepay_Checkout' ) === false ) {
 					$urls[] = $url;
 				} else {
 					$exist_waste_urls = true;
@@ -929,7 +928,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 		}
 
-		$customer_handle = reepay()->api( $this )->get_customer_handle_by_order( $order );
+		$customer_handle = get_user_meta( $order->get_customer_id(), 'reepay_customer_id' ) ?: reepay()->api( $this )->get_customer_handle_by_order( $order );
 
 		$data = array(
 			'country'         => $country,

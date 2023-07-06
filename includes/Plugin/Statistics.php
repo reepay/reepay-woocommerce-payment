@@ -24,23 +24,23 @@ class Statistics {
 	/**
 	 * Class instance
 	 *
-	 * @var Statistics
+	 * @var Statistics|null
 	 */
-	private static $instance;
+	private static ?Statistics $instance = null;
 
 	/**
 	 * Path to main plugin file
 	 *
 	 * @var string
 	 */
-	private static $plugin_file;
+	private static string $plugin_file;
 
 	/**
 	 * Logging source
 	 *
 	 * @var string
 	 */
-	private $logging_source = 'reepay-statistics';
+	private string $logging_source = 'reepay-statistics';
 
 	/**
 	 * Constructor

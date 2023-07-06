@@ -28,7 +28,7 @@ class Webhook {
 	 *
 	 * @var string
 	 */
-	private $logging_source = 'reepay-webhook';
+	private string $logging_source = 'reepay-webhook';
 
 	/**
 	 * Constructor.
@@ -101,7 +101,7 @@ class Webhook {
 
 		$this->log(
 			sprintf(
-				'WebHook %1$s: Invoice settled: %2$s',
+				'WebHook %1$s: Data: %2$s',
 				$data['event_type'],
 				var_export( $data, true ) //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 			)
@@ -125,7 +125,7 @@ class Webhook {
 					$order = wc_get_order( $order->get_id() );
 				}
 
-				if ( $order->has_status( REEPAY_STATUS_AUTHORIZED ) ) {
+				if ( $order->has_status( OrderStatuses::$status_authorized ) ) {
 					$this->log(
 						sprintf(
 							'WebHook: Event type: %s success. But the order had status early: %s',
@@ -215,7 +215,7 @@ class Webhook {
 					$order = wc_get_order( $order->get_id() );
 				}
 
-				if ( $order->has_status( REEPAY_STATUS_SETTLED ) ) {
+				if ( $order->has_status( OrderStatuses::$status_settled ) ) {
 					$this->log(
 						sprintf(
 							'WebHook: Event type: %s success. But the order had status early: %s',
@@ -382,11 +382,12 @@ class Webhook {
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			case 'invoice_created':
-				if ( ! isset( $data['invoice'] ) ) {
-					throw new Exception( 'Missing Invoice parameter' );
+				if ( ! isset( $data['invoice'] ) || ! isset( $data['subscription'] ) ) {
+					$this->log( $data );
+					throw new Exception( 'Missing invoice or subscription parameter' );
 				}
 
-				$order = rp_get_order_by_handle( $data['invoice'] );
+				$order = rp_get_order_by_subscription_handle( $data['subscription'] );
 				if ( ! $order ) {
 					$this->log( sprintf( 'WebHook: Order is not found. Invoice: %s', $data['invoice'] ) );
 					do_action( 'reepay_webhook_invoice_created', $data );
