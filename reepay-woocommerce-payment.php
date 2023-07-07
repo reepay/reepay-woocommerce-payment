@@ -119,11 +119,11 @@ class WC_ReepayCheckout {
 			}
 
 			if ( isset( $gateway_settings['private_key'] ) ) {
-				$gateway_settings['private_key'] = apply_filters( 'woocommerce_reepay_private_key', $gateway_settings['private_key'] ?? '' );
+				$gateway_settings['private_key'] = apply_filters( 'woocommerce_reepay_private_key', $gateway_settings['private_key'] );
 			}
 
 			if ( isset( $gateway_settings['private_key_test'] ) ) {
-				$gateway_settings['private_key_test'] = apply_filters( 'woocommerce_reepay_private_key_test', $gateway_settings['private_key_test'] ?? '' );
+				$gateway_settings['private_key_test'] = apply_filters( 'woocommerce_reepay_private_key_test', $gateway_settings['private_key_test'] );
 			}
 
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -150,24 +150,24 @@ class WC_ReepayCheckout {
 				'images_url'              => plugin_dir_url( __FILE__ ) . 'assets/images/',
 				'images_path'             => plugin_dir_path( __FILE__ ) . 'assets/images/',
 
-				'private_key'             => $gateway_settings['private_key'] ?? '',
-				'private_key_test'        => $gateway_settings['private_key_test'] ?? '',
-				'test_mode'               => $gateway_settings['test_mode'] ?? '',
-				'settle'                  => $gateway_settings['settle'] ?? array(),
-				'language'                => $gateway_settings['language'] ?? '',
-				'debug'                   => $gateway_settings['debug'] ?? '',
-				'payment_type'            => $gateway_settings['payment_type'] ?? '',
-				'skip_order_lines'        => $gateway_settings['skip_order_lines'] ?? '',
-				'enable_order_autocancel' => $gateway_settings['enable_order_autocancel'] ?? '',
-				'is_webhook_configured'   => $gateway_settings['is_webhook_configured'] ?? '',
-				'handle_failover'         => $gateway_settings['handle_failover'] ?? '',
-				'payment_button_text'     => $gateway_settings['payment_button_text'] ?? '',
+				'private_key'             => ! empty( $gateway_settings['private_key'] ) ? $gateway_settings['private_key'] : '',
+				'private_key_test'        => ! empty( $gateway_settings['private_key_test'] ) ? $gateway_settings['private_key_test'] : '',
+				'test_mode'               => ! empty( $gateway_settings['test_mode'] ) ? $gateway_settings['test_mode'] : '',
+				'settle'                  => ! empty( $gateway_settings['settle'] ) ? $gateway_settings['settle'] : array(),
+				'language'                => ! empty( $gateway_settings['language'] ) ? $gateway_settings['language'] : '',
+				'debug'                   => ! empty( $gateway_settings['debug'] ) ? $gateway_settings['debug'] : '',
+				'payment_type'            => ! empty( $gateway_settings['payment_type'] ) ? $gateway_settings['payment_type'] : '',
+				'skip_order_lines'        => ! empty( $gateway_settings['skip_order_lines'] ) ? $gateway_settings['skip_order_lines'] : '',
+				'enable_order_autocancel' => ! empty( $gateway_settings['enable_order_autocancel'] ) ? $gateway_settings['enable_order_autocancel'] : '',
+				'is_webhook_configured'   => ! empty( $gateway_settings['is_webhook_configured'] ) ? $gateway_settings['is_webhook_configured'] : '',
+				'handle_failover'         => ! empty( $gateway_settings['handle_failover'] ) ? $gateway_settings['handle_failover'] : '',
+				'payment_button_text'     => ! empty( $gateway_settings['payment_button_text'] ) ? $gateway_settings['payment_button_text'] : '',
 
-				'enable_sync'             => $gateway_settings['enable_sync'] ?? '',
-				'status_created'          => $gateway_settings['status_created'] ?? '',
-				'status_authorized'       => $gateway_settings['status_authorized'] ?? '',
-				'status_settled'          => $gateway_settings['status_settled'] ?? '',
-				'logo_height'         	  => $gateway_settings['logo_height'] ?? '',
+				'enable_sync'       => ! empty( $gateway_settings['enable_sync'] ) ? $gateway_settings['enable_sync'] : '',
+				'status_created'    => ! empty( $gateway_settings['status_created'] ) ? $gateway_settings['status_created'] : '',
+				'status_authorized' => ! empty( $gateway_settings['status_authorized'] ) ? $gateway_settings['status_authorized'] : '',
+				'status_settled'    => ! empty( $gateway_settings['status_settled'] ) ? $gateway_settings['status_settled'] : '',
+				'logo_height'       => ! empty( $gateway_settings['logo_height'] ) ? $gateway_settings['logo_height'] : '',
 			);
 		}
 
