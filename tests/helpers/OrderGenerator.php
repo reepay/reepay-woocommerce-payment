@@ -47,6 +47,7 @@ class OrderGenerator {
 				array(
 					'status'      => 'completed',
 					'created_via' => 'tests',
+					'customer_id' => get_current_user_id() ?: 1,
 				)
 			)
 		);
@@ -59,6 +60,13 @@ class OrderGenerator {
 	 */
 	public function order(): ?WC_Order {
 		return $this->order;
+	}
+
+	/**
+	 * Set order, update data from db
+	 */
+	public function reset_order() {
+		$this->order = wc_get_order( $this->order->get_id() ) ?: null;
 	}
 
 	/**
@@ -90,6 +98,7 @@ class OrderGenerator {
 	 */
 	public function set_props( array $props ) {
 		$this->order->set_props( $props );
+		$this->order->save();
 	}
 
 	/**
@@ -113,14 +122,48 @@ class OrderGenerator {
 	 * @return int order item id
 	 */
 	public function add_product( string $type, array $product_data = array(), array $order_item_data = array() ): int {
-		$order_item_id = $this->order->add_product(
-			( new ProductGenerator( $type, $product_data ) )->product(),
-			$order_item_data['quantity'] ?? 1
-		);
+		$product_generator = ( new ProductGenerator( $type, $product_data ) );
+
+		$order_item_id = $this->order->add_product( $product_generator->product(), $order_item_data['quantity'] ?? 1 );
 
 		$this->add_data_to_order_item( $order_item_id, $order_item_data );
 
+		if ( 'woo_sub' === $type ) {
+			$this->generate_woo_subscription( $product_generator->product() );
+		}
+
 		return $order_item_id;
+	}
+
+	private function generate_woo_subscription( $product ) {
+		$sub = wcs_create_subscription(
+			array(
+				'order_id'         => $this->order->get_id(),
+				'status'           => 'pending', // Status should be initially set to pending to match how normal checkout process goes.
+				'billing_period'   => 'Day',
+				'billing_interval' => 1,
+			)
+		);
+
+		if ( is_wp_error( $sub ) ) {
+			throw new Exception( $sub->get_error_message() );
+		}
+
+		// Add product to subscription.
+		$sub->add_product( $product, 1 );
+
+		$dates = array(
+			'trial_end'    => gmdate( 'Y-m-d H:i:s', 0 ),
+			'next_payment' => gmdate( 'Y-m-d H:i:s', strtotime( '+1 week' ) ),
+			'end'          => gmdate( 'Y-m-d H:i:s', strtotime( '+2 week' ) ),
+		);
+
+		$sub->update_dates( $dates );
+		$sub->calculate_totals();
+
+		$sub->update_status( 'active', '', true );
+
+		return $sub;
 	}
 
 	/**
@@ -183,22 +226,27 @@ class OrderGenerator {
 	/**
 	 * Add shipping to order
 	 *
-	 * @param array $data optional. Shipping data.
+	 * @param float  $tax_rate tax rate.
+	 * @param string $tax_rate_name tax rate name.
 	 *
 	 * @return int order item id
 	 */
-	public function add_tax( float $tax_rate, string $tax_rate_name = 'test'  ): int {
-		$tax_rate_id = WC_Tax::_insert_tax_rate( array(
-			'tax_rate'          => $tax_rate,
-			'tax_rate_name'     => $tax_rate_name,
-		) );
+	public function add_tax( float $tax_rate, string $tax_rate_name = 'test' ): int {
+		$tax_rate_id = WC_Tax::_insert_tax_rate(
+			array(
+				'tax_rate'      => $tax_rate,
+				'tax_rate_name' => $tax_rate_name,
+			)
+		);
 
 		$item = new WC_Order_Item_Tax();
 
-		$item->set_props( array(
-			'rate'               => $tax_rate_id,
-			'order_id'           => $this->order->get_id()
-		) );
+		$item->set_props(
+			array(
+				'rate'     => $tax_rate_id,
+				'order_id' => $this->order->get_id(),
+			)
+		);
 
 		$item->save();
 
@@ -210,8 +258,10 @@ class OrderGenerator {
 	}
 
 	/**
-	 * @param WC_Order_Item|int $order_item
-	 * @param array             $data
+	 * Add meta data to order item
+	 *
+	 * @param WC_Order_Item|int $order_item order item.
+	 * @param array             $data data to add.
 	 */
 	protected function add_data_to_order_item( $order_item, array $data ) {
 		if ( empty( $data ) ) {
