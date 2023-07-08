@@ -19,7 +19,7 @@ class SubscriptionsTest extends WP_UnitTestCase {
 	 */
 	public function test_order_contains_subscription_simple_product() {
 		$order_generator = new OrderGenerator();
-		$order_generator->add_product('simple');
+		$order_generator->add_product( 'simple' );
 
 		$this->assertFalse( order_contains_subscription( $order_generator->order() ) );
 	}
@@ -33,7 +33,7 @@ class SubscriptionsTest extends WP_UnitTestCase {
 		}
 
 		$order_generator = new OrderGenerator();
-		$order_generator->add_product('woo_sub');
+		$order_generator->add_product( 'woo_sub' );
 
 		$this->assertTrue( order_contains_subscription( $order_generator->order() ) );
 	}
@@ -43,7 +43,7 @@ class SubscriptionsTest extends WP_UnitTestCase {
 	 */
 	public function test_order_contains_subscription_reepay_subscription() {
 		$order_generator = new OrderGenerator();
-		$order_generator->add_product('rp_sub');
+		$order_generator->add_product( 'rp_sub' );
 
 		$this->assertFalse( order_contains_subscription( $order_generator->order() ) );
 	}

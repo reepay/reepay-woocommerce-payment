@@ -43,11 +43,15 @@ abstract class DataProvider {
 	 * @return string[]
 	 */
 	public static function order_statuses(): array {
-		return array_reduce( array_keys( wc_get_order_statuses() ), function ( array $carry, string $status ) {
-			$status           = str_replace( 'wc-', '', $status );
-			$carry[ $status ] = array( $status );
+		return array_reduce(
+			array_keys( wc_get_order_statuses() ),
+			function ( array $carry, string $status ) {
+				$status           = str_replace( 'wc-', '', $status );
+				$carry[ $status ] = array( $status );
 
-			return $carry;
-		}, array() );
+				return $carry;
+			},
+			array()
+		);
 	}
 }
