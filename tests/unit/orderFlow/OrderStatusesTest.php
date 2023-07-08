@@ -339,4 +339,138 @@ class OrderStatusesTest extends WP_UnitTestCase {
 			$this->order_statuses ->get_authorized_order_status( $this->order_generator->order(), $status )
 		);
 	}
+	/**
+	 * Test @see OrderStatuses::is_editable
+	 *
+	 * @testWith
+	 * [false, false, false, false, false, false]
+	 * [false, false, false, false, true, false]
+	 * [false, false, false, true, false, false]
+	 * [false, false, true, false, false, false]
+	 * [false, false, true, false, true, false]
+	 * [false, false, true, true, false, false]
+	 * [false, false, false, false, false, false]
+	 * [false, false, false, false, true, false]
+	 * [false, true, false, true, false, false]
+	 * [false, true, true, false, false, false]
+	 * [false, true, true, false, true, true]
+	 * [false, true, true, true, false, true]
+	 * [true, true, false, false, false, true]
+	 * [true, true, false, false, true, true]
+	 * [true, false, false, true, false, true]
+	 * [true, false, true, false, false, true]
+	 * [true, false, true, false, true, true]
+	 * [true, false, true, true, false, true]
+	 * [true, true, false, false, false, true]
+	 * [true, true, false, false, true, true]
+	 * [true, true, false, true, false, true]
+	 * [true, true, true, false, false, true]
+	 * [true, true, true, false, true, true]
+	 * [true, true, true, true, false, true]
+	 */
+	public function test_is_editable( bool $default_value, bool $status_sync_enabled, bool $paid_via_reepay, bool $order_has_settled_status, bool $order_has_authorized_status, bool $expected_value ) {
+		if ( $order_has_settled_status && $order_has_authorized_status ) {
+			$this->markTestSkipped( '$order_has_settled_status and $order_has_authorized_status are the same true' );
+		}
+
+		$status_settled = 'pending';
+		$status_authorized = 'processing';
+		$order_status = 'completed';
+
+		if ( $order_has_settled_status ) {
+			$order_status = $status_settled;
+		} else if ( $order_has_authorized_status ) {
+			$order_status = $status_authorized;
+		}
+
+		$this->order_generator->set_prop( 'status', $order_status );
+
+		if( $paid_via_reepay ) {
+			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+		}
+
+		self::$options->set_options( array(
+			'enable_sync'    => $status_sync_enabled ? 'yes' : 'no',
+			'status_settled'    => $status_settled,
+			'status_authorized'    => $status_authorized,
+		) );
+
+		$this->assertSame(
+			$expected_value,
+			$this->order_statuses->is_editable( $default_value, $this->order_generator->order() ),
+			var_export( func_get_args(), true )
+		);
+	}
+
+	/**
+	 * Test @see OrderStatuses::is_paid
+	 *
+	 * @testWith
+	 * [false, false, false, false, false]
+	 * [false, false, false, true, false]
+	 * [false, false, true, false, false]
+	 * [false, false, true, true, false]
+	 * [false, true, false, false, false]
+	 * [false, true, false, true, false]
+	 * [false, true, true, false, false]
+	 * [false, true, true, true, true]
+	 * [true, false, false, false, true]
+	 * [true, false, false, true, true]
+	 * [true, false, true, false, true]
+	 * [true, false, true, true, true]
+	 * [true, true, false, false, true]
+	 * [true, true, false, true, true]
+	 * [true, true, true, false, true]
+	 * [true, true, true, true, true]
+	 */
+	public function test_is_paid( bool $default_value, bool $status_sync_enabled, bool $paid_via_reepay, bool $order_has_settled_status, bool $expected_value ) {
+		$status_settled = 'pending';
+		$status_not_settled = 'completed';
+
+		self::$options->set_options( array(
+			'enable_sync'    => $status_sync_enabled ? 'yes' : 'no',
+			'status_settled'    =>$status_settled,
+		) );
+
+		if( $paid_via_reepay ) {
+			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+		}
+
+		$this->order_generator->set_prop( 'status', $order_has_settled_status ? $status_settled : $status_not_settled );
+
+		$this->assertSame(
+			$expected_value,
+			$this->order_statuses->is_paid( $default_value, $this->order_generator->order() ),
+			var_export( func_get_args(), true )
+		);
+	}
+
+	/**
+	 * Test @see OrderStatuses::cancel_unpaid_order
+	 *
+	 * @testWith
+	 * [false, false, false, false]
+	 * [false, false, true, false]
+	 * [false, true, false, false]
+	 * [false, true, true, false]
+	 * [true, false, false, true]
+	 * [true, false, true, true]
+	 * [true, true, false, false]
+	 * [true, true, true, true]
+	 */
+	public function test_cancel_unpaid_order( bool $default_value, bool $paid_via_reepay, bool $enabled_order_autocancel, bool $expected_value ) {
+		if( $paid_via_reepay ) {
+			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+		}
+
+		self::$options->set_options( array(
+			'enable_order_autocancel'    => $enabled_order_autocancel ? 'yes' : 'no',
+		) );
+
+		$this->assertSame(
+			$expected_value,
+			$this->order_statuses->cancel_unpaid_order( $default_value, $this->order_generator->order() ),
+			var_export( func_get_args(), true )
+		);
+	}
 }

@@ -343,9 +343,10 @@ class OrderStatuses {
 	 * @return bool
 	 */
 	public function is_editable( bool $is_editable, WC_Order $order ): bool {
-		if ( self::$status_sync_enabled &&
-			 rp_is_order_paid_via_reepay( $order )
-			 && in_array( $order->get_status(), array( self::$status_created, self::$status_authorized ), true ) ) {
+		if ( ! $is_editable &&
+			 self::$status_sync_enabled &&
+			 rp_is_order_paid_via_reepay( $order ) &&
+			 in_array( $order->get_status(), array( self::$status_created, self::$status_authorized ), true ) ) {
 			$is_editable = true;
 		}
 
@@ -361,9 +362,10 @@ class OrderStatuses {
 	 * @return bool
 	 */
 	public function is_paid( bool $is_paid, WC_Order $order ): bool {
-		if ( OrderStatuses::$status_sync_enabled &&
+		if ( ! $is_paid &&
+			 OrderStatuses::$status_sync_enabled &&
 			 rp_is_order_paid_via_reepay( $order ) &&
-			 in_array( $order->get_status(), array( self::$status_settled ), true )
+			 $order->get_status() === self::$status_settled
 		) {
 			$is_paid = true;
 		}
@@ -381,7 +383,7 @@ class OrderStatuses {
 	 * @see wc_cancel_unpaid_orders()
 	 */
 	public function cancel_unpaid_order( bool $maybe_cancel, WC_Order $order ): bool {
-		if ( rp_is_order_paid_via_reepay( $order ) && 'yes' !== reepay()->get_setting( 'enable_order_autocancel' ) ) {
+		if ( $maybe_cancel && rp_is_order_paid_via_reepay( $order ) && 'yes' !== reepay()->get_setting( 'enable_order_autocancel' ) ) {
 			$maybe_cancel = false;
 		}
 
