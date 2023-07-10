@@ -6,13 +6,11 @@
  */
 
 use Reepay\Checkout\Api;
-use Reepay\Checkout\OrderFlow\InstantSettle;
 
 use Reepay\Checkout\OrderFlow\OrderCapture;
-use Reepay\Checkout\Tests\Helpers\OptionsController;
 use Reepay\Checkout\Tests\Helpers\OrderGenerator;
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
-use Reepay\Checkout\Tests\Helpers\ProductGenerator;
+use PHPUnit\Framework\MockObject\MockObject;
 
 /**
  * OrderCaptureTest.
@@ -35,6 +33,13 @@ class OrderCaptureTest extends WP_UnitTestCase {
 	private OrderGenerator $order_generator;
 
 	/**
+	 * Api class mock
+	 *
+	 * @var Api|MockObject
+	 */
+	private Api $api_mock;
+
+	/**
 	 * Runs the routine before each test is executed.
 	 */
 	public function set_up() {
@@ -43,24 +48,21 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		$this->order_generator = new OrderGenerator();
 		$this->order_capture   = new OrderCapture();
 
-		reepay()->di()->set( Api::class, Api::class );
+		$this->api_mock = $this->getMockBuilder( Api::class )->getMock();
+		reepay()->di()->set( Api::class, $this->api_mock );
 	}
 
 	/**
 	 * Test @see OrderCapture::add_item_capture_button
 	 */
 	public function test_add_item_capture_button() {
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'get_invoice_data' ) )
-					 ->getMock();
-
-		$mock->method( 'get_invoice_data' )->willReturn( array(
-			'authorized_amount' => 100,
-			'settled_amount'    => 10,
-			'refunded_amount'   => 0,
-		) );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 10,
+				'refunded_amount'   => 0,
+			)
+		);
 
 		$this->order_generator->set_prop(
 			'payment_method',
@@ -68,12 +70,12 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		);
 
 		$price = 10.23;
-		$qty = 2;
+		$qty   = 2;
 
 		$order_item_id = $this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => $price
+				'regular_price' => $price,
 			),
 			array(
 				'quantity' => $qty,
@@ -84,15 +86,17 @@ class OrderCaptureTest extends WP_UnitTestCase {
 
 		$price = OrderCapture::get_item_price( $order_item_id, $this->order_generator->order() );
 
-		$this->expectOutputString( reepay()->get_template(
-			'admin/capture-item-button.php',
-			array(
-				'name'  => 'line_item_capture',
-				'value' => $order_item_id,
-				'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $price['with_tax'] )
-			),
-			true
-		) );
+		$this->expectOutputString(
+			reepay()->get_template(
+				'admin/capture-item-button.php',
+				array(
+					'name'  => 'line_item_capture',
+					'value' => $order_item_id,
+					'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $price['with_tax'] ),
+				),
+				true
+			)
+		);
 
 		$this->order_capture->add_item_capture_button( $order_item_id, WC_Order_Factory::get_order_item( $order_item_id ) );
 	}
@@ -101,12 +105,20 @@ class OrderCaptureTest extends WP_UnitTestCase {
 	 * Test @see OrderCapture::capture_full_order_button with capture not allowed
 	 */
 	public function test_capture_full_order_button_with_capture_not_allowed() {
-		$this->expectOutputString( '' );
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 10,
+				'refunded_amount'   => 0,
+			)
+		);
 
 		$this->order_generator->set_prop(
 			'payment_method',
 			reepay()->gateways()->checkout()
 		);
+
+		$this->expectOutputString( '' );
 
 		$this->order_capture->capture_full_order_button( $this->order_generator->order() );
 	}
@@ -115,7 +127,13 @@ class OrderCaptureTest extends WP_UnitTestCase {
 	 * Test @see OrderCapture::capture_full_order_button with zero settled amount
 	 */
 	public function test_capture_full_order_button_with_zero_settled_amount() {
-		$this->expectOutputString( '' );
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 10,
+				'refunded_amount'   => 0,
+			)
+		);
 
 		$this->order_generator->set_prop(
 			'payment_method',
@@ -123,18 +141,20 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		);
 
 		$price = 10.23;
-		$qty = 2;
+		$qty   = 2;
 
 		$this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => $price
+				'regular_price' => $price,
 			),
 			array(
 				'quantity' => $qty,
-				'settled'  => $price * $qty
+				'settled'  => $price * $qty,
 			)
 		);
+
+		$this->expectOutputString( '' );
 
 		$this->order_capture->capture_full_order_button( $this->order_generator->order() );
 	}
@@ -143,17 +163,13 @@ class OrderCaptureTest extends WP_UnitTestCase {
 	 * Test @see OrderCapture::capture_full_order_button
 	 */
 	public function test_capture_full_order_button() {
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'get_invoice_data' ) )
-					 ->getMock();
-
-		$mock->method( 'get_invoice_data' )->willReturn( array(
-			'authorized_amount' => 100,
-			'settled_amount'    => 10,
-			'refunded_amount'   => 0,
-		) );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 10,
+				'refunded_amount'   => 0,
+			)
+		);
 
 		$this->order_generator->set_prop(
 			'payment_method',
@@ -161,12 +177,12 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		);
 
 		$price = 10.23;
-		$qty = 2;
+		$qty   = 2;
 
 		$this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => $price
+				'regular_price' => $price,
 			),
 			array(
 				'quantity' => $qty,
@@ -175,15 +191,17 @@ class OrderCaptureTest extends WP_UnitTestCase {
 
 		$this->order_generator->order()->save();
 
-		$this->expectOutputString( reepay()->get_template(
-			'admin/capture-item-button.php',
-			array(
-				'name'  => 'all_items_capture',
-				'value' => $this->order_generator->order()->get_id(),
-				'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $price * $qty )
-			),
-			true
-		) );
+		$this->expectOutputString(
+			reepay()->get_template(
+				'admin/capture-item-button.php',
+				array(
+					'name'  => 'all_items_capture',
+					'value' => $this->order_generator->order()->get_id(),
+					'text'  => __( 'Capture', 'reepay-checkout-gateway' ) . ' ' . wc_price( $price * $qty ),
+				),
+				true
+			)
+		);
 
 		$this->order_capture->capture_full_order_button( $this->order_generator->order() );
 	}
@@ -192,21 +210,19 @@ class OrderCaptureTest extends WP_UnitTestCase {
 	 * Test @see OrderCapture::process_item_capture with one order item
 	 */
 	public function test_line_item_capture_one_line_item() {
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'get_invoice_data', 'settle' ) )
-					 ->getMock();
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 10,
+				'refunded_amount'   => 0,
+			)
+		);
 
-		$mock->method( 'get_invoice_data' )->willReturn( array(
-			'authorized_amount' => 100,
-			'settled_amount'    => 10,
-			'refunded_amount'   => 0,
-		) );
-
-		$mock->method( 'settle' )->willReturn( array(
-			'state' => 'success'
-		) );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'settle' )->willReturn(
+			array(
+				'state' => 'success',
+			)
+		);
 
 		$price = 10.24;
 		$qty   = 2;
@@ -214,7 +230,7 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		$order_item_id = $this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => $price
+				'regular_price' => $price,
 			),
 			array(
 				'quantity' => $qty,
@@ -244,21 +260,19 @@ class OrderCaptureTest extends WP_UnitTestCase {
 	 * Test @see OrderCapture::process_item_capture with capturing all items
 	 */
 	public function test_line_item_capture_all_line_items() {
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'get_invoice_data', 'settle' ) )
-					 ->getMock();
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 10,
+				'refunded_amount'   => 0,
+			)
+		);
 
-		$mock->method( 'get_invoice_data' )->willReturn( array(
-			'authorized_amount' => 100,
-			'settled_amount'    => 10,
-			'refunded_amount'   => 0,
-		) );
-
-		$mock->method( 'settle' )->willReturn( array(
-			'state' => 'success'
-		) );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'settle' )->willReturn(
+			array(
+				'state' => 'success',
+			)
+		);
 
 		$prices = array( 1.02, 2.03, 3.05, 5.07 );
 		$qty    = 2;
@@ -266,20 +280,20 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		$this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => $prices[0]
+				'regular_price' => $prices[0],
 			),
 			array(
-				'quantity' => $qty
+				'quantity' => $qty,
 			)
 		);
 
 		$this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => $prices[1]
+				'regular_price' => $prices[1],
 			),
 			array(
-				'quantity' => $qty
+				'quantity' => $qty,
 			)
 		);
 
@@ -289,9 +303,11 @@ class OrderCaptureTest extends WP_UnitTestCase {
 			)
 		);
 
-		$this->order_generator->add_fee( array(
-			'total' => $prices[3]
-		) );
+		$this->order_generator->add_fee(
+			array(
+				'total' => $prices[3],
+			)
+		);
 
 		$this->order_generator->set_prop(
 			'payment_method',
@@ -322,21 +338,19 @@ class OrderCaptureTest extends WP_UnitTestCase {
 	 * Test @see OrderCapture::multi_settle
 	 */
 	public function test_multi_settle() {
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'settle', 'get_invoice_data' ) )
-					 ->getMock();
+		$this->api_mock->method( 'settle' )->willReturn(
+			array(
+				'state' => 'success',
+			)
+		);
 
-		$mock->method( 'settle' )->willReturn( array(
-			'state' => 'success'
-		) );
-
-		$mock->method( 'get_invoice_data' )->willReturn( array(
-			'authorized_amount' => 100,
-			'settled_amount'    => 10,
-			'refunded_amount'   => 0,
-		) );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 10,
+				'refunded_amount'   => 0,
+			)
+		);
 
 		$this->order_generator->set_prop(
 			'payment_method',
@@ -349,20 +363,20 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		$this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => $prices[0]
+				'regular_price' => $prices[0],
 			),
 			array(
-				'quantity' => $qty
+				'quantity' => $qty,
 			)
 		);
 
 		$this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => $prices[1]
+				'regular_price' => $prices[1],
 			),
 			array(
-				'quantity' => $qty
+				'quantity' => $qty,
 			)
 		);
 
@@ -372,9 +386,11 @@ class OrderCaptureTest extends WP_UnitTestCase {
 			)
 		);
 
-		$this->order_generator->add_fee( array(
-			'total' => $prices[3]
-		) );
+		$this->order_generator->add_fee(
+			array(
+				'total' => $prices[3],
+			)
+		);
 
 		$this->order_capture->multi_settle( $this->order_generator->order() );
 
@@ -394,13 +410,7 @@ class OrderCaptureTest extends WP_UnitTestCase {
 	 * Test @see OrderCapture::settle_items with wp error from api
 	 */
 	public function test_settle_items_with_wp_error() {
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'settle' ) )
-					 ->getMock();
-
-		$mock->method( 'settle' )->willReturn( new WP_Error( 'Test error', 'Test error' ) );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'settle' )->willReturn( new WP_Error( 'Test error', 'Test error' ) );
 
 		$this->order_generator->set_prop(
 			'payment_method',
@@ -427,15 +437,11 @@ class OrderCaptureTest extends WP_UnitTestCase {
 	 * Test @see OrderCapture::settle_items with failed status from api
 	 */
 	public function test_settle_items_with_api_failed() {
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'settle' ) )
-					 ->getMock();
-
-		$mock->method( 'settle' )->willReturn( array(
-			'state' => 'failed'
-		) );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'settle' )->willReturn(
+			array(
+				'state' => 'failed',
+			)
+		);
 
 		$this->order_generator->set_prop(
 			'payment_method',
@@ -462,15 +468,11 @@ class OrderCaptureTest extends WP_UnitTestCase {
 	 * Test @see OrderCapture::settle_items with api success
 	 */
 	public function test_settle_items_success() {
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'settle' ) )
-					 ->getMock();
-
-		$mock->method( 'settle' )->willReturn( array(
-			'state' => 'success'
-		) );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'settle' )->willReturn(
+			array(
+				'state' => 'success',
+			)
+		);
 
 		$this->order_generator->set_prop(
 			'payment_method',
@@ -479,9 +481,12 @@ class OrderCaptureTest extends WP_UnitTestCase {
 
 		$product_price = 10.23;
 
-		$order_item_id = $this->order_generator->add_product( 'simple', array(
-			'regular_price' => $product_price
-		) );
+		$order_item_id = $this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => $product_price,
+			)
+		);
 
 		$this->assertSame(
 			true,
@@ -490,7 +495,7 @@ class OrderCaptureTest extends WP_UnitTestCase {
 				array(),
 				0,
 				array(
-					WC_Order_Factory::get_order_item( $order_item_id )
+					WC_Order_Factory::get_order_item( $order_item_id ),
 				)
 			)
 		);
@@ -529,7 +534,7 @@ class OrderCaptureTest extends WP_UnitTestCase {
 			'simple',
 			array(),
 			array(
-				'settled' => '1'
+				'settled' => '1',
 			)
 		);
 
@@ -548,7 +553,7 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		$order_item_id = $this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => 0
+				'regular_price' => 0,
 			),
 		);
 
@@ -576,17 +581,13 @@ class OrderCaptureTest extends WP_UnitTestCase {
 			reepay()->gateways()->checkout()
 		);
 
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'get_invoice_data' ) )
-					 ->getMock();
-
-		$mock->method( 'get_invoice_data' )->willReturn( array(
-			'authorized_amount' => 10,
-			'settled_amount'    => 100,
-			'refunded_amount'   => 0,
-		) );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 10,
+				'settled_amount'    => 100,
+				'refunded_amount'   => 0,
+			)
+		);
 
 		$this->assertFalse(
 			$this->order_capture->settle_item(
@@ -607,19 +608,15 @@ class OrderCaptureTest extends WP_UnitTestCase {
 			reepay()->gateways()->checkout()
 		);
 
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'get_invoice_data', 'settle' ) )
-					 ->getMock();
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 10,
+				'refunded_amount'   => 0,
+			)
+		);
 
-		$mock->method( 'get_invoice_data' )->willReturn( array(
-			'authorized_amount' => 100,
-			'settled_amount'    => 10,
-			'refunded_amount'   => 0,
-		) );
-
-		$mock->method( 'settle' )->willReturn( new WP_Error('Test error', 'Test error') );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'settle' )->willReturn( new WP_Error( 'Test error', 'Test error' ) );
 
 		$this->assertFalse(
 			$this->order_capture->settle_item(
@@ -645,21 +642,19 @@ class OrderCaptureTest extends WP_UnitTestCase {
 			reepay()->gateways()->checkout()
 		);
 
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'get_invoice_data', 'settle' ) )
-					 ->getMock();
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 10,
+				'refunded_amount'   => 0,
+			)
+		);
 
-		$mock->method( 'get_invoice_data' )->willReturn( array(
-			'authorized_amount' => 100,
-			'settled_amount'    => 10,
-			'refunded_amount'   => 0,
-		) );
-
-		$mock->method( 'settle' )->willReturn( array(
-			'state' => 'failed'
-		) );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'settle' )->willReturn(
+			array(
+				'state' => 'failed',
+			)
+		);
 
 		$this->assertFalse(
 			$this->order_capture->settle_item(
@@ -685,21 +680,19 @@ class OrderCaptureTest extends WP_UnitTestCase {
 			reepay()->gateways()->checkout()
 		);
 
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'get_invoice_data', 'settle' ) )
-					 ->getMock();
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 10,
+				'refunded_amount'   => 0,
+			)
+		);
 
-		$mock->method( 'get_invoice_data' )->willReturn( array(
-			'authorized_amount' => 100,
-			'settled_amount'    => 10,
-			'refunded_amount'   => 0,
-		) );
-
-		$mock->method( 'settle' )->willReturn( array(
-			'state' => 'success'
-		) );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'settle' )->willReturn(
+			array(
+				'state' => 'success',
+			)
+		);
 
 		$this->assertTrue(
 			$this->order_capture->settle_item(
@@ -749,13 +742,7 @@ class OrderCaptureTest extends WP_UnitTestCase {
 
 		$this->order_generator->add_product( 'simple' );
 
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'get_invoice_data' ) )
-					 ->getMock();
-
-		$mock->method( 'get_invoice_data' )->willReturn( new WP_Error( 'test error' ) );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'get_invoice_data' )->willReturn( new WP_Error( 'test error' ) );
 
 		$this->assertFalse( $this->order_capture->check_capture_allowed( $this->order_generator->order() ) );
 	}
@@ -771,17 +758,13 @@ class OrderCaptureTest extends WP_UnitTestCase {
 
 		$this->order_generator->add_product( 'simple' );
 
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'get_invoice_data' ) )
-					 ->getMock();
-
-		$mock->method( 'get_invoice_data' )->willReturn( array(
-			'authorized_amount' => 100,
-			'settled_amount'    => 10,
-			'refunded_amount'   => 0,
-		) );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 10,
+				'refunded_amount'   => 0,
+			)
+		);
 
 		$this->assertTrue( $this->order_capture->check_capture_allowed( $this->order_generator->order() ) );
 	}
@@ -797,17 +780,13 @@ class OrderCaptureTest extends WP_UnitTestCase {
 
 		$this->order_generator->add_product( 'simple' );
 
-		$mock = $this->getMockBuilder( Api::class )
-					 ->onlyMethods( array( 'get_invoice_data' ) )
-					 ->getMock();
-
-		$mock->method( 'get_invoice_data' )->willReturn( array(
-			'authorized_amount' => 10,
-			'settled_amount'    => 100,
-			'refunded_amount'   => 0,
-		) );
-
-		reepay()->di()->set( Api::class, $mock );
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 10,
+				'settled_amount'    => 100,
+				'refunded_amount'   => 0,
+			)
+		);
 
 		$this->assertFalse( $this->order_capture->check_capture_allowed( $this->order_generator->order() ) );
 	}
@@ -822,20 +801,20 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		$this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => $prices[0]
+				'regular_price' => $prices[0],
 			),
 			array(
-				'quantity' => $qty
+				'quantity' => $qty,
 			)
 		);
 
 		$this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => $prices[1]
+				'regular_price' => $prices[1],
 			),
 			array(
-				'quantity' => $qty
+				'quantity' => $qty,
 			)
 		);
 
@@ -845,9 +824,11 @@ class OrderCaptureTest extends WP_UnitTestCase {
 			)
 		);
 
-		$this->order_generator->add_fee( array(
-			'total' => $prices[3]
-		) );
+		$this->order_generator->add_fee(
+			array(
+				'total' => $prices[3],
+			)
+		);
 
 		$this->assertSame(
 			$prices[0] * $qty + $prices[1] * $qty + $prices[2] + $prices[3],
@@ -865,36 +846,38 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		$this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => $prices[0]
+				'regular_price' => $prices[0],
 			),
 			array(
 				'quantity' => $qty,
-				'settled'  => '1'
+				'settled'  => '1',
 			)
 		);
 
 		$this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => $prices[1]
+				'regular_price' => $prices[1],
 			),
 			array(
 				'quantity' => $qty,
-				'settled'  => '1'
+				'settled'  => '1',
 			)
 		);
 
 		$this->order_generator->add_shipping(
 			array(
 				'total'   => $prices[2],
-				'settled' => '1'
+				'settled' => '1',
 			)
 		);
 
-		$this->order_generator->add_fee( array(
-			'total'   => $prices[3],
-			'settled' => '1'
-		) );
+		$this->order_generator->add_fee(
+			array(
+				'total'   => $prices[3],
+				'settled' => '1',
+			)
+		);
 
 		$this->assertSame(
 			0,
@@ -912,10 +895,10 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		$order_item_id = $this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => $price
+				'regular_price' => $price,
 			),
 			array(
-				'quantity' => $qty
+				'quantity' => $qty,
 			)
 		);
 
@@ -949,10 +932,10 @@ class OrderCaptureTest extends WP_UnitTestCase {
 			'simple',
 			array(
 				'name'          => $product_name,
-				'regular_price' => $price
+				'regular_price' => $price,
 			),
 			array(
-				'quantity' => $qty
+				'quantity' => $qty,
 			)
 		);
 
@@ -980,10 +963,10 @@ class OrderCaptureTest extends WP_UnitTestCase {
 		$order_item_id = $this->order_generator->add_product(
 			'simple',
 			array(
-				'regular_price' => $price
+				'regular_price' => $price,
 			),
 			array(
-				'quantity' => $qty
+				'quantity' => $qty,
 			)
 		);
 
@@ -1008,10 +991,10 @@ class OrderCaptureTest extends WP_UnitTestCase {
 			'simple',
 			array(
 				'regular_price' => $price,
-				'sale_price'    => $sale_price
+				'sale_price'    => $sale_price,
 			),
 			array(
-				'quantity' => $qty
+				'quantity' => $qty,
 			)
 		);
 
@@ -1039,10 +1022,10 @@ class OrderCaptureTest extends WP_UnitTestCase {
 			'simple',
 			array(
 				'regular_price' => $price,
-				'sale_price'    => $sale_price
+				'sale_price'    => $sale_price,
 			),
 			array(
-				'quantity' => $qty
+				'quantity' => $qty,
 			)
 		);
 

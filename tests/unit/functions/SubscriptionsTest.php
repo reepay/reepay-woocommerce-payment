@@ -15,22 +15,37 @@ use Reepay\Checkout\Tests\Helpers\ProductGenerator;
  */
 class SubscriptionsTest extends WP_UnitTestCase {
 	/**
-	 * Test @see order_contains_subscription
+	 * Test @see order_contains_subscription with simple product
 	 */
-	public function test_order_contains_subscription() {
+	public function test_order_contains_subscription_simple_product() {
 		$order_generator = new OrderGenerator();
-		$order_generator->add_product('simple');
+		$order_generator->add_product( 'simple' );
 
-		if ( PLUGINS_STATE::woo_subs_activated() ) {
-			$order_generator->add_product( 'woo_sub' );
+		$this->assertFalse( order_contains_subscription( $order_generator->order() ) );
+	}
 
-			$this->assertSame(
-				order_contains_subscription( $order_generator->order() ),
-				wcs_order_contains_subscription( $order_generator->order() )
-			);
-		} else {
-			$this->assertFalse( order_contains_subscription( $order_generator->order() ) );
+	/**
+	 * Test @see order_contains_subscription with woo subscription
+	 */
+	public function test_order_contains_subscription_woo_subscription() {
+		if ( ! PLUGINS_STATE::woo_subs_activated() ) {
+			$this->markTestSkipped( 'Woocommerce subscriptions not activated' );
 		}
+
+		$order_generator = new OrderGenerator();
+		$order_generator->add_product( 'woo_sub' );
+
+		$this->assertTrue( order_contains_subscription( $order_generator->order() ) );
+	}
+
+	/**
+	 * Test @see order_contains_subscription with reepay subscription
+	 */
+	public function test_order_contains_subscription_reepay_subscription() {
+		$order_generator = new OrderGenerator();
+		$order_generator->add_product( 'rp_sub' );
+
+		$this->assertFalse( order_contains_subscription( $order_generator->order() ) );
 	}
 
 	/**

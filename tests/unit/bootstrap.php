@@ -47,8 +47,6 @@ tests_add_filter(
 		reepay()->gateways()->checkout()->process_admin_options();
 
 		( new OptionsController() )->set_option( 'enabled', 'yes' );
-
-		reepay()->di()->set( \Reepay\Checkout\Api::class, \Reepay\Checkout\Tests\Mocks\ApiMock::class );
 	}
 );
 

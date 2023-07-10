@@ -5,7 +5,7 @@
  * @package Reepay\Checkout
  */
 
-use Reepay\Checkout\Tests\Helpers\HELPERS;
+use Reepay\Checkout\Tests\Helpers\DataProvider;
 
 /**
  * CurrencyTest.
@@ -39,7 +39,7 @@ class GatewaysTest extends WP_UnitTestCase {
 	 * @param string       $method_name payment method name.
 	 * @param string|false $class payment method class name.
 	 *
-	 * @dataProvider \Reepay\Checkout\Tests\Helpers\HELPERS::get_payment_methods
+	 * @dataProvider \Reepay\Checkout\Tests\Helpers\DataProvider::payment_methods
 	 */
 	public function test_rp_get_payment_method( string $method_name, $class ) {
 		self::$order->set_payment_method( $method_name );
@@ -61,7 +61,7 @@ class GatewaysTest extends WP_UnitTestCase {
 	 * @param string|false $class payment method class name.
 	 * @param bool         $is_reepay is reepay gateway.
 	 *
-	 * @dataProvider \Reepay\Checkout\Tests\Helpers\HELPERS::get_payment_methods
+	 * @dataProvider \Reepay\Checkout\Tests\Helpers\DataProvider::payment_methods
 	 */
 	public function test_rp_is_reepay_payment_method( string $method_name, $class, bool $is_reepay ) {
 		$this->assertSame(

@@ -125,7 +125,7 @@ class Webhook {
 					$order = wc_get_order( $order->get_id() );
 				}
 
-				if ( $order->has_status( OrderStatuses::$status_authorized ) ) {
+				if ( $order->has_status( OrderStatuses::$status_sync_enabled ? OrderStatuses::$status_authorized : 'on-hold' ) ) {
 					$this->log(
 						sprintf(
 							'WebHook: Event type: %s success. But the order had status early: %s',

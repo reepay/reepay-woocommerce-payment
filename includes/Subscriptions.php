@@ -303,7 +303,6 @@ class Subscriptions {
 		// Lookup token.
 		try {
 			$token = $gateway::get_payment_token_order( $renewal_order );
-
 			// Try to find token in parent orders.
 			if ( ! $token ) {
 				// Get Subscriptions.
@@ -326,14 +325,29 @@ class Subscriptions {
 				if ( empty( $token ) ) {
 					// Get Subscriptions.
 					$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
+
 					foreach ( $subscriptions as $subscription ) {
 						$token = $subscription->get_meta( '_reepay_token' );
-						if ( empty( $reepay_token ) ) {
+						if ( empty( $token ) ) {
 							$order = $subscription->get_parent();
 							if ( $order ) {
 								$token = $order->get_meta( '_reepay_token' );
-
-								break;
+								if ( empty( $token ) ) {
+									$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+									if ( ! empty( $invoice_data ) ) {
+										if ( ! empty( $invoice_data['recurring_payment_method'] ) ) {
+											$token = $invoice_data['recurring_payment_method'];
+											break;
+										} elseif ( ! empty( $invoice_data['transactions'] ) ) {
+											foreach ( $invoice_data['transactions'] as $transaction ) {
+												if ( ! empty( $transaction['payment_method'] ) ) {
+													$token = $transaction['payment_method'];
+													break;
+												}
+											}
+										}
+									}
+								}
 							}
 						}
 					}
@@ -498,12 +512,14 @@ class Subscriptions {
 			if ( is_wp_error( $order_data ) && $renewal_order->get_total() > 0 ) {
 
 				if ( 'pending' === $this_status_transition_from &&
-					 OrderStatuses::$status_authorized === $this_status_transition_to ) {
+					 ( ( OrderStatuses::$status_sync_enabled && OrderStatuses::$status_authorized === $this_status_transition_to ) ||
+					   'on-hold' === $this_status_transition_to ) ) {
 					self::scheduled_subscription_payment( $renewal_order->get_total(), $renewal_order );
 				}
 
 				if ( 'pending' === $this_status_transition_from &&
-					 OrderStatuses::$status_settled === $this_status_transition_to ) {
+					 ( ( OrderStatuses::$status_sync_enabled && OrderStatuses::$status_settled === $this_status_transition_to ) ||
+					   'processing' === $this_status_transition_to ) ) {
 					self::scheduled_subscription_payment( $renewal_order->get_total(), $renewal_order, true );
 				}
 			}
