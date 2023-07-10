@@ -44,7 +44,9 @@ class ThankyouPage {
 	}
 
 	/**
-	 * Override "checkout/thankyou.php" template
+	 * Override "checkout/thankyou.php" template.
+	 *
+	 * Some plugins send variables with the wrong types to this filter, so the types have been removed to avoid errors.
 	 *
 	 * @param string $located       path for inclusion.
 	 * @param string $template_name Template name.
@@ -55,11 +57,8 @@ class ThankyouPage {
 	 * @return string
 	 * @noinspection PhpMissingParamTypeInspection
 	 */
-	public function override_template( string $located, string $template_name, $args, string $template_path, string $default_path ): string {
-		/**
-		 * ToDo return type array to $args after fix here https://wordpress.org/support/topic/wrong-default-params-on-wc_get_template/
-		 */
-		if ( ! is_array( $args ) ) {
+	public function override_template( $located, $template_name, $args, $template_path, $default_path ): string {
+		if ( ! is_array( $args ) || ! is_string( $template_path ) ) {
 			return $located;
 		}
 
@@ -296,7 +295,7 @@ class ThankyouPage {
 				);
 				break;
 			case 'authorized':
-				if( $order->has_status( OrderStatuses::$status_sync_enabled ? OrderStatuses::$status_authorized : 'on-hold' ) ) {
+				if ( $order->has_status( OrderStatuses::$status_sync_enabled ? OrderStatuses::$status_authorized : 'on-hold' ) ) {
 					$this->log( sprintf( 'accept_url: Order #%s has been authorized before', $order->get_id() ) );
 
 					return;
