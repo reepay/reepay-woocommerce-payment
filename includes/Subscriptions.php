@@ -303,7 +303,6 @@ class Subscriptions {
 		// Lookup token.
 		try {
 			$token = $gateway::get_payment_token_order( $renewal_order );
-
 			// Try to find token in parent orders.
 			if ( ! $token ) {
 				// Get Subscriptions.
@@ -326,14 +325,29 @@ class Subscriptions {
 				if ( empty( $token ) ) {
 					// Get Subscriptions.
 					$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
+
 					foreach ( $subscriptions as $subscription ) {
 						$token = $subscription->get_meta( '_reepay_token' );
-						if ( empty( $reepay_token ) ) {
+						if ( empty( $token ) ) {
 							$order = $subscription->get_parent();
 							if ( $order ) {
 								$token = $order->get_meta( '_reepay_token' );
-
-								break;
+								if ( empty( $token ) ) {
+									$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+									if ( ! empty( $invoice_data ) ) {
+										if ( ! empty( $invoice_data['recurring_payment_method'] ) ) {
+											$token = $invoice_data['recurring_payment_method'];
+											break;
+										} elseif ( ! empty( $invoice_data['transactions'] ) ) {
+											foreach ( $invoice_data['transactions'] as $transaction ) {
+												if ( ! empty( $transaction['payment_method'] ) ) {
+													$token = $transaction['payment_method'];
+													break;
+												}
+											}
+										}
+									}
+								}
 							}
 						}
 					}
