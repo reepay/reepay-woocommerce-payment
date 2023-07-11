@@ -414,18 +414,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public static function get_webhook_url(): string {
 		$default_wc_api_url = WC()->api_request_url( '' );
 
-		if ( class_exists( SitePress::class ) ) {
+		if ( class_exists( SitePress::class ) && ! is_multisite() ) {
 			$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
 			$languages = wp_list_pluck( $languages, 'default_locale' );
-		} else {
-			$languages = get_available_languages();
-		}
 
-		if ( ! empty( $languages ) ) {
-			foreach ( $languages as $available_language ) {
-				$lang = explode( '_', $available_language );
-				if ( stripos( $default_wc_api_url, '/' . $lang[0] . '/' ) !== false ) {
-					$default_wc_api_url = str_replace( '/' . $lang[0] . '/', '/', $default_wc_api_url );
+			if ( ! empty( $languages ) ) {
+				foreach ( $languages as $available_language ) {
+					$lang = explode( '_', $available_language );
+					if ( stripos( $default_wc_api_url, '/' . $lang[0] . '/' ) !== false ) {
+						$default_wc_api_url = str_replace( '/' . $lang[0] . '/', '/', $default_wc_api_url );
+					}
 				}
 			}
 		}
@@ -467,8 +465,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$urls = array();
 
 			foreach ( $request['urls'] as $url ) {
-				if ( strpos( $url, $webhook_url ) === false || // either another site or exact url match.
-					 $url === $webhook_url ) {
+				if ( ( strpos( $url, $webhook_url ) === false || // either another site or exact url match.
+					 $url === $webhook_url ) &&
+					 strpos( $url, 'WC_Gateway_Reepay_Checkout' ) === false ) {
 					$urls[] = $url;
 				} else {
 					$exist_waste_urls = true;
@@ -929,7 +928,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 		}
 
-		$customer_handle = reepay()->api( $this )->get_customer_handle_by_order( $order );
+		$customer_handle = get_user_meta( $order->get_customer_id(), 'reepay_customer_id', true ) ?: reepay()->api( $this )->get_customer_handle_by_order( $order );
 
 		$data = array(
 			'country'         => $country,

@@ -101,7 +101,7 @@ class Webhook {
 
 		$this->log(
 			sprintf(
-				'WebHook %1$s: Invoice settled: %2$s',
+				'WebHook %1$s: Data: %2$s',
 				$data['event_type'],
 				var_export( $data, true ) //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 			)
@@ -382,8 +382,9 @@ class Webhook {
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			case 'invoice_created':
-				if ( ! isset( $data['invoice'] ) ) {
-					throw new Exception( 'Missing Invoice parameter' );
+				if ( ! isset( $data['invoice'] ) || ! isset( $data['subscription'] ) ) {
+					$this->log( $data );
+					throw new Exception( 'Missing invoice or subscription parameter' );
 				}
 
 				$order = rp_get_order_by_subscription_handle( $data['subscription'] );

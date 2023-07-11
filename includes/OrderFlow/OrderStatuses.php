@@ -205,7 +205,8 @@ class OrderStatuses {
 		$order = wc_get_order( $order_id );
 
 		if ( self::$status_sync_enabled && rp_is_order_paid_via_reepay( $order ) ) {
-			$status = apply_filters( 'reepay_settled_order_status',
+			$status = apply_filters(
+				'reepay_settled_order_status',
 				self::$status_settled,
 				$order
 			);
@@ -226,7 +227,7 @@ class OrderStatuses {
 	 * @return string
 	 */
 	public static function get_authorized_order_status( WC_Order $order, string $default = 'on-hold' ): string {
-		if ( self::$status_sync_enabled  && rp_is_order_paid_via_reepay( $order ) && ! order_contains_subscription( $order ) ) {
+		if ( self::$status_sync_enabled && rp_is_order_paid_via_reepay( $order ) && ! order_contains_subscription( $order ) ) {
 			return self::$status_authorized;
 		}
 
@@ -363,7 +364,7 @@ class OrderStatuses {
 	 */
 	public function is_paid( bool $is_paid, WC_Order $order ): bool {
 		if ( ! $is_paid &&
-			 OrderStatuses::$status_sync_enabled &&
+			 self::$status_sync_enabled &&
 			 rp_is_order_paid_via_reepay( $order ) &&
 			 $order->get_status() === self::$status_settled
 		) {

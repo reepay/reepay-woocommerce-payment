@@ -5,7 +5,7 @@
  * @package Reepay\Checkout
  */
 
-namespace Reepay\Checkout;
+namespace Reepay\Checkout\Actions;
 
 use DOMDocument;
 use DOMElement;
@@ -75,6 +75,8 @@ class Subscriptions {
 		add_filter( 'woocommerce_payment_gateway_save_new_payment_method_option_html', array( $this, 'save_new_payment_method_option_html' ), 10, 2 );
 
 		add_action( 'woocommerce_order_status_changed', array( $this, 'create_sub_invoice' ), 10, 4 );
+
+		add_action( 'updated_post_meta', array( $this, 'sync_reepay_token_meta' ), 10, 4 );
 	}
 
 	/**
@@ -303,7 +305,6 @@ class Subscriptions {
 		// Lookup token.
 		try {
 			$token = $gateway::get_payment_token_order( $renewal_order );
-
 			// Try to find token in parent orders.
 			if ( ! $token ) {
 				// Get Subscriptions.
@@ -326,14 +327,29 @@ class Subscriptions {
 				if ( empty( $token ) ) {
 					// Get Subscriptions.
 					$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
+
 					foreach ( $subscriptions as $subscription ) {
 						$token = $subscription->get_meta( '_reepay_token' );
-						if ( empty( $reepay_token ) ) {
+						if ( empty( $token ) ) {
 							$order = $subscription->get_parent();
 							if ( $order ) {
 								$token = $order->get_meta( '_reepay_token' );
-
-								break;
+								if ( empty( $token ) ) {
+									$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+									if ( ! empty( $invoice_data ) ) {
+										if ( ! empty( $invoice_data['recurring_payment_method'] ) ) {
+											$token = $invoice_data['recurring_payment_method'];
+											break;
+										} elseif ( ! empty( $invoice_data['transactions'] ) ) {
+											foreach ( $invoice_data['transactions'] as $transaction ) {
+												if ( ! empty( $transaction['payment_method'] ) ) {
+													$token = $transaction['payment_method'];
+													break;
+												}
+											}
+										}
+									}
+								}
 							}
 						}
 					}
@@ -510,6 +526,19 @@ class Subscriptions {
 				}
 			}
 		}
+	}
 
+	/**
+	 * Set 'reepay_token' to '_reepay_token' meta
+	 *
+	 * @param int    $meta_id meta id.
+	 * @param int    $post_id post id.
+	 * @param string $meta_key meta key.
+	 * @param mixed  $meta_value meta value.
+	 */
+	public function sync_reepay_token_meta( int $meta_id, int $post_id, string $meta_key, $meta_value ) {
+		if( 'reepay_token' === $meta_key ) {
+			update_post_meta( $post_id, '_reepay_token', $meta_value );
+		}
 	}
 }
