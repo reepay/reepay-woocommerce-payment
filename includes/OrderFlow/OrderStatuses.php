@@ -54,7 +54,7 @@ class OrderStatuses {
 	 * Constructor
 	 */
 	public function __construct() {
-		add_filter( 'woocommerce_settings_api_form_fields_reepay_checkout', array( $this, 'form_fields' ), 10, 2 );
+		add_filter( 'reepay_checkout_form_fields', array( $this, 'form_fields' ), 10, 2 );
 
 		add_filter( 'woocommerce_valid_order_statuses_for_payment_complete', array( $this, 'add_valid_order_statuses_for_payment_complete' ), 10, 2 );
 
@@ -319,20 +319,12 @@ class OrderStatuses {
 	 * @throws WC_Data_Exception Throws exception when invalid data sent to set_transaction_id.
 	 */
 	public static function update_order_status( WC_Order $order, string $new_status, $note = '', $transaction_id = null, $manual = false ) {
-		remove_action( 'woocommerce_process_shop_order_meta', 'WC_Meta_Box_Order_Data::save', 40 );
-
-		// Disable status change hook.
-		remove_action( 'woocommerce_order_status_changed', array( __CLASS__, 'order_status_changed' ) );
-
 		if ( ! empty( $transaction_id ) ) {
 			$order->set_transaction_id( $transaction_id );
 		}
 
 		$order->set_status( $new_status, $note, $manual );
 		$order->save();
-
-		// Enable status change hook.
-		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'order_status_changed' ), 10, 4 );
 	}
 
 	/**
