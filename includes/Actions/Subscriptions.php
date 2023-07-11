@@ -5,7 +5,7 @@
  * @package Reepay\Checkout
  */
 
-namespace Reepay\Checkout;
+namespace Reepay\Checkout\Actions;
 
 use DOMDocument;
 use DOMElement;
