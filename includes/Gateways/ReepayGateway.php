@@ -1084,21 +1084,27 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 						wc_add_notice( $method->get_error_message(), 'error' );
 
 						return false;
-					} elseif ( ! empty( $method ) && 'active' === $method['state'] ) {
+					} elseif ( ! empty( $method ) ) {
 
-						$data = array(
-							'payment_method' => $method['id'],
-							'customer'       => $method['customer'],
-						);
+						if ( 'active' === $method['state'] ) {
+							$data = array(
+								'payment_method' => $method['id'],
+								'customer'       => $method['customer'],
+							);
 
-						do_action( 'reepay_create_subscription', $data, $order );
+							do_action( 'reepay_create_subscription', $data, $order );
 
-						try {
-							foreach ( $order->get_meta( '_reepay_another_orders' ) ?: array() as $order_id ) {
-								$this->reepay_save_card_info( wc_get_order( $order_id ), $token->get_token() );
+							try {
+								foreach ( $order->get_meta( '_reepay_another_orders' ) ?: array() as $order_id ) {
+									$this->reepay_save_card_info( wc_get_order( $order_id ), $token->get_token() );
+								}
+							} catch ( Exception $e ) {
+								wc_get_order( $order_id )->add_order_note( $e->getMessage() );
 							}
-						} catch ( Exception $e ) {
-							wc_get_order( $order_id )->add_order_note( $e->getMessage() );
+						} else {
+							wc_add_notice( __( 'You payment method has failed, please choose another or add new', 'error' ), 'error' );
+
+							return false;
 						}
 					}
 				} elseif ( wcs_cart_have_subscription() ) {
