@@ -537,7 +537,7 @@ class Subscriptions {
 	 * @param mixed  $meta_value meta value.
 	 */
 	public function sync_reepay_token_meta( int $meta_id, int $post_id, string $meta_key, $meta_value ) {
-		if( 'reepay_token' === $meta_key ) {
+		if ( 'reepay_token' === $meta_key ) {
 			update_post_meta( $post_id, '_reepay_token', $meta_value );
 		}
 	}
