@@ -277,11 +277,8 @@ class OrderStatuses {
 	 * @throws WC_Data_Exception If cannot change order status.
 	 */
 	public static function set_settled_status( WC_Order $order, ?string $note, ?string $transaction_id ) {
-		if ( ! rp_is_reepay_payment_method( $order->get_payment_method() ) ) {
-			return;
-		}
-
-		if ( '1' === $order->get_meta( '_reepay_state_settled' ) ) {
+		if ( ! rp_is_reepay_payment_method( $order->get_payment_method() ) ||
+			 '1' === $order->get_meta( '_reepay_state_settled' )) {
 			return;
 		}
 
