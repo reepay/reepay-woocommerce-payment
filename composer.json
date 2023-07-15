@@ -29,6 +29,5 @@
         }
     },
     "require": {
-        "psr/container": "^2.0"
     }
 }
