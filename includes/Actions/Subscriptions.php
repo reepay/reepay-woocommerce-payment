@@ -255,7 +255,7 @@ class Subscriptions {
 			$token   = $gateway::get_payment_token( $tokens[0] );
 
 			if ( empty( $token ) ) {
-				$token = $gateway->add_payment_token_to_order( $subscription,  $tokens[0] );
+				$token = $gateway->add_payment_token_to_order( $subscription, $tokens[0] );
 			}
 
 			if ( $token->get_user_id() !== $subscription->get_user_id() ) {

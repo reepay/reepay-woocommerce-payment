@@ -122,7 +122,7 @@ class OrderGenerator {
 	 * @return int order item id
 	 */
 	public function add_product( string $type, array $product_data = array(), array $order_item_data = array() ): int {
-		$product_generator = ( new ProductGenerator( $type, $product_data ) );
+		$product_generator = new ProductGenerator( $type, $product_data );
 
 		$order_item_id = $this->order->add_product( $product_generator->product(), $order_item_data['quantity'] ?? 1 );
 
@@ -150,7 +150,7 @@ class OrderGenerator {
 		}
 
 		// Add product to subscription.
-		$sub->add_product( $product, 1 );
+		$sub->add_product( $product );
 
 		$dates = array(
 			'trial_end'    => gmdate( 'Y-m-d H:i:s', 0 ),

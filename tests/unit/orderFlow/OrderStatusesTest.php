@@ -5,7 +5,6 @@
  * @package Reepay\Checkout
  */
 
-use Reepay\Checkout\Api;
 use Reepay\Checkout\OrderFlow\InstantSettle;
 
 use Reepay\Checkout\OrderFlow\OrderCapture;
@@ -83,13 +82,19 @@ class OrderStatusesTest extends WP_UnitTestCase {
 		$this->order_generator = new OrderGenerator();
 		$this->order_capture   = new OrderCapture();
 		$this->order_statuses  = new OrderStatuses();
+
+		self::$options->set_options(
+			array(
+				'enable_sync' => 'no',
+			)
+		);
 	}
 
 	/**
 	 * Test function added to filter woocommerce_settings_api_form_fields_reepay_checkout @see OrderStatuses::form_fields()
 	 */
 	public function test_form_fields_filter() {
-		$filter_name = 'woocommerce_settings_api_form_fields_reepay_checkout';
+		$filter_name = 'reepay_checkout_form_fields';
 
 		remove_all_actions( $filter_name );
 
@@ -340,7 +345,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	 *
 	 * @dataProvider \Reepay\Checkout\Tests\Helpers\DataProvider::order_statuses()
 	 */
-	public function test_get_authorized_order_status_with_sync( string $sync_status ) {
+	public function testget_authorized_order_status_with_sync( string $sync_status ) {
 		$status = 'default_status';
 
 		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
@@ -358,6 +363,56 @@ class OrderStatusesTest extends WP_UnitTestCase {
 			$this->order_statuses->get_authorized_order_status( $this->order_generator->order(), $status )
 		);
 	}
+
+	/**
+	 * Test @see OrderStatuses::set_authorized_status with _reepay_state_authorized meta
+	 */
+	public function test_set_authorized_status_already_authorized() {
+		$this->order_generator->set_meta('_reepay_state_authorized', 1);
+
+
+	}
+
+	/**
+	 * Test @see OrderStatuses::set_authorized_status with _reepay_state_authorized meta
+	 */
+	public function test_set_authorized_status_already_authorized2() {
+		self::$options->set_options(
+			array(
+				'enable_sync'       => 'yes',
+				'status_authorized' => 'completed',
+			)
+		);
+	}
+
+	/**
+	 * Test @see OrderStatuses::set_settled_status
+	 */
+	public function test_set_settled_status() {
+
+	}
+
+	/**
+	 * Test @see OrderStatuses::update_order_status
+	 */
+	public function test_update_order_status() {
+		$order_status   = 'completed';
+		$transaction_id = 'transaction_id_123';
+
+		OrderStatuses::update_order_status(
+			$this->order_generator->order(),
+			$order_status,
+			'',
+			$transaction_id,
+			true
+		);
+
+		$this->order_generator->reset_order();
+
+		$this->assertSame( $order_status, $this->order_generator->order()->get_status() );
+		$this->assertSame( $transaction_id, $this->order_generator->order()->get_transaction_id() );
+	}
+
 	/**
 	 * Test @see OrderStatuses::is_editable
 	 *
