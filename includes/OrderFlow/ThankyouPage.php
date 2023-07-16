@@ -33,7 +33,6 @@ class ThankyouPage {
 	 */
 	public function __construct() {
 		add_filter( 'wc_get_template', array( $this, 'override_template_thankyou_template' ), 5, 20 );
-		add_action( 'woocommerce_before_thankyou', array( $this, 'thankyou_page' ) );
 
 		add_action( 'wp_enqueue_scripts', array( $this, 'thankyou_scripts' ) );
 
@@ -69,33 +68,6 @@ class ThankyouPage {
 		}
 
 		return $located;
-	}
-
-	/**
-	 * Thank you page
-	 *
-	 * @param int $order_id current order id.
-	 *
-	 * @return void
-	 */
-	public function thankyou_page( int $order_id ) {
-		$order = wc_get_order( $order_id );
-		if ( ! $order || ! rp_is_order_paid_via_reepay( $order ) ) {
-			return;
-		}
-
-		$gateway = rp_get_payment_method( $order );
-
-		if ( abs( $order->get_total() ) < 0.01 ) {
-			$order->payment_complete();
-		}
-
-		// Update the order status if webhook wasn't configured.
-		if ( 'no' === $gateway->is_webhook_configured
-			 && ! empty( $_GET['invoice'] )
-		) {
-			$this->process_order_confirmation( wc_clean( $_GET['invoice'] ) );
-		}
 	}
 
 	/**
@@ -224,99 +196,5 @@ class ThankyouPage {
 		}
 
 		wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', $ret ?? array(), $order->get_id() ) );
-	}
-
-	/**
-	 * Process the order confirmation using accept_url.
-	 *
-	 * @param string $invoice_id invoice id.
-	 *
-	 * @return void
-	 */
-	private function process_order_confirmation( string $invoice_id ) {
-		$this->log( sprintf( 'accept_url: Processing status update %s', $invoice_id ) );
-
-		$order = rp_get_order_by_handle( $invoice_id );
-		if ( ! $order ) {
-			$this->log( sprintf( 'accept_url: Order is not found. Invoice: %s', $invoice_id ) );
-
-			return;
-		}
-
-		$result = reepay()->api( $order )->get_invoice_by_handle( $invoice_id );
-		if ( is_wp_error( $result ) ) {
-			return;
-		}
-
-		$this->log( sprintf( 'accept_url: invoice state: %s. Invoice ID: %s ', $result['state'], $invoice_id ) );
-
-		switch ( $result['state'] ) {
-			case 'pending':
-				OrderStatuses::update_order_status(
-					$order,
-					'pending',
-					sprintf(
-					// translators: %1$s order amount, %2$s transaction id.
-						__( 'Transaction is pending. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
-						wc_price( rp_make_initial_amount( $result['amount'], $result['currency'] ) ),
-						$result['transaction']
-					),
-					$result['transaction']
-				);
-				break;
-			case 'authorized':
-				if ( $order->has_status( OrderStatuses::$status_sync_enabled ? OrderStatuses::$status_authorized : 'on-hold' ) ) {
-					$this->log( sprintf( 'accept_url: Order #%s has been authorized before', $order->get_id() ) );
-
-					return;
-				}
-
-				OrderStatuses::set_authorized_status(
-					$order,
-					sprintf(
-					// translators: %s order amount.
-						__( 'Payment has been authorized. Amount: %s.', 'reepay-checkout-gateway' ),
-						wc_price( rp_make_initial_amount( $result['amount'], $result['currency'] ) )
-					),
-					null
-				);
-
-				do_action( 'reepay_instant_settle', $order );
-
-				$this->log( sprintf( 'accept_url: Order #%s has been marked as authorized', $order->get_id() ) );
-				break;
-			case 'settled':
-				if ( $order->get_status() === OrderStatuses::$status_settled ) {
-					$this->log( sprintf( 'accept_url: Order #%s has been settled before', $order->get_id() ) );
-
-					return;
-				}
-
-				OrderStatuses::set_settled_status(
-					$order,
-					sprintf(
-					// translators: %s order amount.
-						__( 'Payment has been settled. Amount: %s.', 'reepay-checkout-gateway' ),
-						wc_price( rp_make_initial_amount( $result['amount'], $result['currency'] ) )
-					),
-					null
-				);
-
-				$this->log( sprintf( 'accept_url: Order #%s has been marked as settled', $order->get_id() ) );
-
-				break;
-			case 'cancelled':
-				$order->update_status( 'cancelled', __( 'Cancelled.', 'reepay-checkout-gateway' ) );
-
-				$this->log( sprintf( 'accept_url: Order #%s has been marked as cancelled', $order->get_id() ) );
-
-				break;
-			case 'failed':
-				$order->update_status( 'failed', __( 'Failed.', 'reepay-checkout-gateway' ) );
-
-				$this->log( sprintf( 'accept_url: Order #%s has been marked as failed', $order->get_id() ) );
-
-				break;
-		}
 	}
 }
