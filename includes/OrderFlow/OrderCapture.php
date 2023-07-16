@@ -202,7 +202,7 @@ class OrderCapture {
 				$item_data = $this->get_item_data( $item, $order );
 				$total     = $item_data['amount'] * $item_data['quantity'];
 
-				if ( $total <= 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
+				if ( $total <= 0 && method_exists( $item, 'get_product' ) && $item->get_product() && wcs_is_subscription_product( $item->get_product() ) ) {
 					WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 				} elseif ( $total > 0 && $this->check_capture_allowed( $order ) ) {
 					$items_data[] = $item_data;

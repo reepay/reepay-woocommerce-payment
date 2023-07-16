@@ -61,6 +61,8 @@ class MetaBoxes {
 
 		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && 0 !== $post->post_parent ) {
 			$subscription = get_post_meta( $post->post_parent, '_reepay_subscription_handle', true );
+		} elseif ( ! empty( get_post_meta( $post->ID, '_reepay_subscription_handle_parent', true ) ) ) {
+			$subscription = get_post_meta( $post->ID, '_reepay_subscription_handle_parent', true );
 		} else {
 			$subscription = get_post_meta( $post->ID, '_reepay_subscription_handle', true );
 		}
@@ -78,7 +80,7 @@ class MetaBoxes {
 			)
 		);
 
-		if ( empty( $subscription ) || ( 0 !== $post->post_parent ) ) {
+		if ( empty( $subscription ) || ( 0 !== $post->post_parent || ! empty( get_post_meta( $post->ID, '_reepay_renewal', true ) ) ) ) {
 			add_meta_box(
 				'reepay_checkout_invoice',
 				__( 'Invoice', 'reepay-checkout-gateway' ),
@@ -180,6 +182,9 @@ class MetaBoxes {
 		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && 0 !== $post->post_parent ) {
 			$handle = get_post_meta( $post->post_parent, '_reepay_subscription_handle', true );
 			$plan   = get_post_meta( $post->post_parent, '_reepay_subscription_plan', true );
+		} elseif ( get_post_meta( $post->ID, '_reepay_renewal', true ) ) {
+			$handle = get_post_meta( $post->ID, '_reepay_subscription_handle_parent', true );
+			$plan   = get_post_meta( $post->ID, '_reepay_subscription_plan', true );
 		} else {
 			$handle = get_post_meta( $post->ID, '_reepay_subscription_handle', true );
 			$plan   = get_post_meta( $post->ID, '_reepay_subscription_plan', true );

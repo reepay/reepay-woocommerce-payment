@@ -10,6 +10,7 @@ namespace Reepay\Checkout\Actions;
 use DOMDocument;
 use DOMElement;
 use Exception;
+use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\OrderFlow\OrderStatuses;
 use Reepay\Checkout\Tokens\TokenReepay;
 use WC_Order;
@@ -252,8 +253,9 @@ class Subscriptions {
 
 			$gateway = rp_get_payment_method( $subscription );
 			$token   = $gateway::get_payment_token( $tokens[0] );
-			if ( ! $token ) {
-				throw new Exception( 'This "Reepay Token" value not found.' );
+
+			if ( empty( $token ) ) {
+				$token = $gateway->add_payment_token_to_order( $subscription,  $tokens[0] );
 			}
 
 			if ( $token->get_user_id() !== $subscription->get_user_id() ) {
@@ -277,15 +279,8 @@ class Subscriptions {
 			 'post_meta' === $meta_table && '_reepay_token' === $meta_key ) {
 			// Add tokens.
 			foreach ( explode( ',', $meta_value ) as $reepay_token ) {
-				// Get Token ID.
-				$gateway = rp_get_payment_method( $subscription );
-				$token   = $gateway::get_payment_token( $reepay_token );
-				if ( ! $token ) {
-					// Create Payment Token.
-					$token = $gateway->add_payment_token_to_order( $subscription, $reepay_token );
-				}
-
-				$gateway::assign_payment_token( $subscription, $token );
+				ReepayGateway::assign_payment_token( $subscription, $reepay_token );
+				update_post_meta( $subscription->get_id(), 'reepay_token', $reepay_token );
 			}
 		}
 	}
@@ -355,17 +350,13 @@ class Subscriptions {
 					}
 				}
 
-				// Save token.
 				if ( ! empty( $token ) ) {
 					$token = $gateway->add_payment_token_to_order( $renewal_order, $token );
-					if ( $token ) {
-						$gateway::assign_payment_token( $renewal_order, $token );
-					}
 				}
 			}
 
-			if ( ! $token ) {
-				throw new Exception( 'Payment token isn\'t exists' );
+			if ( empty( $token ) ) {
+				throw new Exception( 'Payment token does not exist' );
 			}
 
 			if ( empty( $token->get_token() ) ) {
@@ -537,7 +528,7 @@ class Subscriptions {
 	 * @param mixed  $meta_value meta value.
 	 */
 	public function sync_reepay_token_meta( int $meta_id, int $post_id, string $meta_key, $meta_value ) {
-		if( 'reepay_token' === $meta_key ) {
+		if ( 'reepay_token' === $meta_key ) {
 			update_post_meta( $post_id, '_reepay_token', $meta_value );
 		}
 	}

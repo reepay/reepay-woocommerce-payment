@@ -204,8 +204,8 @@ class InstantSettle {
 			$price_incl_tax = $order->get_line_subtotal( $item, true, false );
 
 			if ( self::can_product_be_settled_instantly( $product ) ) {
-				$total             += $price_incl_tax;
-				$items_data[ $key ] = self::$order_capture->get_item_data( $item, $order );
+				$total       += $price_incl_tax;
+				$items_data[] = self::$order_capture->get_item_data( $item, $order );
 			}
 		}
 
