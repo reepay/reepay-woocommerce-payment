@@ -283,7 +283,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 			try {
 				$token = new TokenReepay( $method['method']['id'] );
 				echo $token->get_display_name();
-			} catch (Exception $e) {
+			} catch ( Exception $e ) {
 				_e( 'Token not found', 'reepay-checkout-gateway' );
 			}
 
