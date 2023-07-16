@@ -501,7 +501,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 		self::$options->set_options(
 			array(
 				'enable_sync'       => 'yes',
-				'status_authorized' => $expected_status,
+				'status_settled' => $expected_status,
 			)
 		);
 
