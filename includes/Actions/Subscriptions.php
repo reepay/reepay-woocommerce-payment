@@ -10,6 +10,7 @@ namespace Reepay\Checkout\Actions;
 use DOMDocument;
 use DOMElement;
 use Exception;
+use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\OrderFlow\OrderStatuses;
 use Reepay\Checkout\Tokens\TokenReepay;
 use WC_Order;
@@ -278,15 +279,8 @@ class Subscriptions {
 			 'post_meta' === $meta_table && '_reepay_token' === $meta_key ) {
 			// Add tokens.
 			foreach ( explode( ',', $meta_value ) as $reepay_token ) {
-				// Get Token ID.
-				$gateway = rp_get_payment_method( $subscription );
-				$token   = $gateway::get_payment_token( $reepay_token );
-				if ( ! $token ) {
-					// Create Payment Token.
-					$token = $gateway->add_payment_token_to_order( $subscription, $reepay_token );
-				}
-
-				$gateway::assign_payment_token( $subscription, $token );
+				ReepayGateway::assign_payment_token( $subscription, $reepay_token );
+				update_post_meta( $subscription->get_id(), 'reepay_token', $reepay_token );
 			}
 		}
 	}

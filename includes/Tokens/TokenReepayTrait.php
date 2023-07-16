@@ -129,7 +129,7 @@ trait TokenReepayTrait {
 		$card_info       = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
 
 		if ( is_wp_error( $card_info ) || empty( $card_info ) ) {
-			throw new Exception( __( 'Reepay error. Try again or contact us.', 'reepay-checkout-gateway' ) );
+			throw new Exception( __( 'Card not found', 'reepay-checkout-gateway' ) );
 		}
 
 		if ( 'ms_' === substr( $card_info['id'], 0, 3 ) ) {
