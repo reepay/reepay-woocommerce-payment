@@ -313,7 +313,6 @@ class OrderStatuses {
 	 * @param bool        $manual         Is this a manual order status change.
 	 *
 	 * @return void
-	 * @throws WC_Data_Exception Throws exception when invalid data sent to set_transaction_id.
 	 */
 	public static function update_order_status( WC_Order $order, string $new_status, $note = '', $transaction_id = null, $manual = false ) {
 		if ( ! empty( $transaction_id ) ) {
