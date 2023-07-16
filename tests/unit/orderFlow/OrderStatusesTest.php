@@ -94,7 +94,7 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	 * Test function added to filter woocommerce_settings_api_form_fields_reepay_checkout @see OrderStatuses::form_fields()
 	 */
 	public function test_form_fields_filter() {
-		$filter_name = 'woocommerce_settings_api_form_fields_reepay_checkout';
+		$filter_name = 'reepay_checkout_form_fields';
 
 		remove_all_actions( $filter_name );
 
@@ -365,10 +365,24 @@ class OrderStatusesTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test @see OrderStatuses::set_authorized_status
+	 * Test @see OrderStatuses::set_authorized_status with _reepay_state_authorized meta
 	 */
-	public function test_set_authorized_status() {
+	public function test_set_authorized_status_already_authorized() {
+		$this->order_generator->set_meta('_reepay_state_authorized', 1);
 
+
+	}
+
+	/**
+	 * Test @see OrderStatuses::set_authorized_status with _reepay_state_authorized meta
+	 */
+	public function test_set_authorized_status_already_authorized2() {
+		self::$options->set_options(
+			array(
+				'enable_sync'       => 'yes',
+				'status_authorized' => 'completed',
+			)
+		);
 	}
 
 	/**
