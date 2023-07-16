@@ -63,7 +63,8 @@ class OrderGenerator {
 	}
 
 	/**
-	 * Set order, update data from db
+	 * Set order, update data from db.
+	 * For tests in which the order id is passed not the order instance
 	 */
 	public function reset_order() {
 		$this->order = wc_get_order( $this->order->get_id() ) ?: null;
@@ -283,5 +284,21 @@ class OrderGenerator {
 		}
 
 		$order_item->save();
+	}
+
+	/**
+	 * Check if order note with such content exists
+	 *
+	 * @param string $note_content note content
+	 *
+	 * @return bool
+	 */
+	public function note_exists( string $note_content ): bool {
+		return array_any(
+			wc_get_order_notes( array( 'order_id' => $this->order->get_id() ) ),
+			function ($comment) use ( $note_content ) {
+				return $note_content === $comment->content;
+			}
+		);
 	}
 }
