@@ -365,7 +365,7 @@ class Subscriptions {
 			}
 
 			if ( ! $token ) {
-				throw new Exception( 'Payment token isn\'t exists' );
+				throw new Exception( 'Payment token does not exist' );
 			}
 
 			if ( empty( $token->get_token() ) ) {
