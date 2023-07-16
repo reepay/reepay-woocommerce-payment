@@ -134,14 +134,14 @@ trait TokenReepayTrait {
 
 		if ( 'ms_' === substr( $card_info['id'], 0, 3 ) ) {
 			$token = new TokenReepayMS();
-			$token->set_gateway_id( $this->id );
+			$token->set_gateway_id( reepay()->gateways()->get_gateway('reepay_mobilepay_subscriptions')->id );
 			$token->set_token( $reepay_token );
 			$token->set_user_id( $customer_id );
 		} else {
 			$expiry_date = explode( '-', $card_info['exp_date'] );
 
 			$token = new TokenReepay();
-			$token->set_gateway_id( $this->id );
+			$token->set_gateway_id( reepay()->gateways()->checkout()->id );
 			$token->set_token( $reepay_token );
 			$token->set_last4( substr( $card_info['masked_card'], - 4 ) );
 			$token->set_expiry_year( 2000 + $expiry_date[1] );

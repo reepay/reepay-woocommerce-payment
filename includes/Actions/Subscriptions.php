@@ -252,8 +252,9 @@ class Subscriptions {
 
 			$gateway = rp_get_payment_method( $subscription );
 			$token   = $gateway::get_payment_token( $tokens[0] );
-			if ( ! $token ) {
-				throw new Exception( 'This "Reepay Token" value not found.' );
+
+			if ( empty( $token ) ) {
+				$token = $gateway->add_payment_token_to_order( $subscription,  $tokens[0] );
 			}
 
 			if ( $token->get_user_id() !== $subscription->get_user_id() ) {
@@ -355,16 +356,12 @@ class Subscriptions {
 					}
 				}
 
-				// Save token.
 				if ( ! empty( $token ) ) {
 					$token = $gateway->add_payment_token_to_order( $renewal_order, $token );
-					if ( $token ) {
-						$gateway::assign_payment_token( $renewal_order, $token );
-					}
 				}
 			}
 
-			if ( ! $token ) {
+			if ( empty( $token ) ) {
 				throw new Exception( 'Payment token does not exist' );
 			}
 
