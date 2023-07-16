@@ -237,21 +237,20 @@ class OrderStatuses {
 	/**
 	 * Set Authorized Status.
 	 *
-	 * @param WC_Order    $order          order to set.
-	 * @param string|null $note           order note.
-	 * @param string|null $transaction_id transaction id to set.
+	 * @param WC_Order $order          order to set.
+	 * @param string   $note           order note.
+	 * @param string   $transaction_id transaction id to set.
 	 *
-	 * @return void
-	 * @throws WC_Data_Exception Throws exception when invalid data sent to update_order_status.
+	 * @return bool
 	 */
-	public static function set_authorized_status( WC_Order $order, ?string $note, ?string $transaction_id ) {
+	public static function set_authorized_status( WC_Order $order, string $note = '', string $transaction_id = '' ): bool {
 		$authorized_status = self::get_authorized_order_status( $order );
 
 		if ( ! empty( $order->get_meta( '_reepay_state_authorized' ) ) || $order->get_status() === $authorized_status ) {
-			return;
+			return false;
 		}
 
-		if ( ! empty( $order->get_meta( '_order_stock_reduced' ) ) ) {
+		if ( empty( $order->get_meta( '_order_stock_reduced' ) ) ) {
 			wc_reduce_stock_levels( $order->get_id() );
 		}
 
@@ -264,6 +263,8 @@ class OrderStatuses {
 
 		$order->update_meta_data( '_reepay_state_authorized', 1 );
 		$order->save_meta_data();
+
+		return true;
 	}
 
 	/**
