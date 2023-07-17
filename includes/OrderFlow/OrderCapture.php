@@ -417,7 +417,7 @@ class OrderCapture {
 
 		$price['with_tax'] = $price['original'];
 
-		if ( empty( $order_item->get_meta( '_is_card_fee' ) ) ) {
+		if ( ! empty( $order_item ) && ! is_array( $order_item ) && empty( $order_item->get_meta( '_is_card_fee' ) ) ) {
 			$tax_data = wc_tax_enabled() && method_exists( $order_item, 'get_taxes' ) ? $order_item->get_taxes() : false;
 			$taxes    = method_exists( $order, 'get_taxes' ) ? $order->get_taxes() : false;
 
