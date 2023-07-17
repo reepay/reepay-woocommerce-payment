@@ -361,7 +361,7 @@ class Webhook {
 					);
 
 					if ( $refund ) {
-						$credit_note_ids = array_merge( $credit_note_ids, $credit_note_id );
+						$credit_note_ids[] = $credit_note_id;
 						$order->update_meta_data( '_reepay_credit_note_ids', $credit_note_ids );
 						$order->save_meta_data();
 

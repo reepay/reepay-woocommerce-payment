@@ -7,7 +7,6 @@
 
 namespace Reepay\Checkout;
 
-use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use stdClass;
 
@@ -18,7 +17,7 @@ defined( 'ABSPATH' ) || exit();
  *
  * @package Reepay\Checkout
  */
-class DIContainer implements ContainerInterface {
+class DIContainer {
 	/**
 	 * Array of classes for replacement with child classes or implementing interfaces
 	 * Parent class name => Child class name
@@ -66,7 +65,7 @@ class DIContainer implements ContainerInterface {
 	 *
 	 * @return bool
 	 */
-	public function has( string $id ): bool {
+	public function has( $id ): bool {
 		return isset( $this->classes[ $id ] ) || class_exists( $id );
 	}
 
@@ -77,7 +76,7 @@ class DIContainer implements ContainerInterface {
 	 *
 	 * @return object Entry.
 	 */
-	public function get( string $id ) {
+	public function get( $id ) {
 		if ( isset( $this->cache[ $id ] ) ) {
 			return $this->cache[ $id ];
 		}
