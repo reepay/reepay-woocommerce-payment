@@ -71,7 +71,6 @@ class OrderStatusesTest extends WP_UnitTestCase {
 
 		self::$options                 = new OptionsController();
 		self::$product_generator       = new ProductGenerator();
-		self::$instant_settle_instance = new InstantSettle();
 	}
 
 	/**
