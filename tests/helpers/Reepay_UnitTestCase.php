@@ -7,8 +7,11 @@
 
 namespace Reepay\Checkout\Tests\Helpers;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\OrderFlow\InstantSettle;
+use Reepay\Checkout\OrderFlow\OrderCapture;
+use Reepay\Checkout\OrderFlow\OrderStatuses;
 use Reepay\Checkout\Tests\Mocks\OrderFlow\OrderCaptureMock;
 use WP_UnitTestCase;
 
@@ -21,28 +24,56 @@ class Reepay_UnitTestCase extends WP_UnitTestCase {
 	 *
 	 * @var OptionsController
 	 */
-	private static OptionsController $options;
+	protected static OptionsController $options;
 
 	/**
 	 * ProductGenerator instance
 	 *
 	 * @var ProductGenerator
 	 */
-	private static ProductGenerator $product_generator;
+	protected static ProductGenerator $product_generator;
 
 	/**
 	 * InstantSettle instance
 	 *
 	 * @var InstantSettle
 	 */
-	private static InstantSettle $instant_settle_instance;
+	protected static InstantSettle $instant_settle_instance;
+
+	/**
+	 * OrderCapture instance
+	 *
+	 * @var OrderStatuses
+	 */
+	protected OrderStatuses $order_statuses;
+
+	/**
+	 * OrderCapture instance
+	 *
+	 * @var OrderCapture
+	 */
+	protected OrderCapture $order_capture;
 
 	/**
 	 * OrderGenerator instance
 	 *
 	 * @var OrderGenerator
 	 */
-	private OrderGenerator $order_generator;
+	protected OrderGenerator $order_generator;
+
+	/**
+	 * ProductGenerator instance
+	 *
+	 * @var CartGenerator
+	 */
+	protected CartGenerator $cart_generator;
+
+	/**
+	 * Api class mock
+	 *
+	 * @var Api|MockObject
+	 */
+	protected Api $api_mock;
 
 	/**
 	 * Runs the routine before setting up all tests.
@@ -65,7 +96,16 @@ class Reepay_UnitTestCase extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
+		$this->order_statuses  = new OrderStatuses();
+		$this->order_capture   = new OrderCapture();
 		$this->order_generator = new OrderGenerator();
+		$this->cart_generator  = new CartGenerator();
+
+		self::$options->set_options(
+			array(
+				'enable_sync' => 'no',
+			)
+		);
 
 		$this->api_mock = $this->getMockBuilder( Api::class )->getMock();
 		reepay()->di()->set( Api::class, $this->api_mock );
