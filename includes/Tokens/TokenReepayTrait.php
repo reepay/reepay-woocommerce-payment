@@ -11,6 +11,7 @@ use Exception;
 use WC_Order;
 use WC_Payment_Token;
 use WC_Payment_Tokens;
+use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -247,5 +248,40 @@ trait TokenReepayTrait {
 		wp_cache_set( $token, $token_id, 'reepay_tokens' );
 
 		return WC_Payment_Tokens::get( $token_id );
+	}
+
+	/**
+	 * @param WC_Payment_Token $token
+	 *
+	 * @return bool
+	 */
+	public static function delete_card( WC_Payment_Token $token ): bool {
+		$result = reepay()->api( 'api-delete-card' )->delete_payment_method( $token->get_token() );
+
+		if( is_wp_error( $result ) ) {
+			return false;
+		}
+
+		WC_Payment_Tokens::delete( $token->get_id() );
+
+		return true;
+	}
+
+	/**
+	 * Check if $token is Reepay token
+	 *
+	 * @param WC_Payment_Token|null $token
+	 *
+	 * @return bool
+	 */
+	public static function is_reepay_token( ?WC_Payment_Token $token ): bool {
+		if ( is_null( $token ) ) {
+			return false;
+		}
+
+		return in_array( $token->get_gateway_id(), array(
+			reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id,
+			reepay()->gateways()->checkout()->id
+		) );
 	}
 }

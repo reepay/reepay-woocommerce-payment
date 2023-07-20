@@ -992,6 +992,18 @@ class Api {
 	}
 
 	/**
+	 * Delete payment method in Reepay
+	 *
+	 * @param string $id payment method id
+	 */
+	public function delete_payment_method( string $id ) {
+		return $this->request(
+			'DELETE',
+			"https://api.reepay.com/v1/payment_method/$id"
+		);
+	}
+
+	/**
 	 * Get Customer Cards from Reepay
 	 *
 	 * @param string      $customer_handle reepay customer handle.
