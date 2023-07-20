@@ -270,9 +270,9 @@ class OrderStatuses {
 	/**
 	 * Set Settled Status.
 	 *
-	 * @param WC_Order    $order          order to set.
-	 * @param string $note           order note.
-	 * @param string $transaction_id transaction id to set.
+	 * @param WC_Order $order          order to set.
+	 * @param string   $note           order note.
+	 * @param string   $transaction_id transaction id to set.
 	 *
 	 * @return bool
 	 */

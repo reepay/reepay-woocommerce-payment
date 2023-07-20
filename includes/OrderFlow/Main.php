@@ -23,7 +23,7 @@ class Main {
 		OrderStatuses::init_statuses();
 
 		new InstantSettle();
-		InstantSettle::set_order_capture( new OrderCapture() ); //todo replace with DI container
+		InstantSettle::set_order_capture( new OrderCapture() ); // todo replace with DI container.
 
 		new ThankyouPage();
 		new Webhook();

@@ -994,7 +994,7 @@ class Api {
 	/**
 	 * Delete payment method in Reepay
 	 *
-	 * @param string $id payment method id
+	 * @param string $id payment method id.
 	 */
 	public function delete_payment_method( string $id ) {
 		return $this->request(
