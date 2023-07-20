@@ -106,10 +106,8 @@ class ThankyouPage {
 			$order->payment_complete();
 		}
 
-		// Update the order status if webhook wasn't configured.
-		if ( 'no' === $gateway->is_webhook_configured
-			 && ! empty( $_GET['invoice'] )
-		) {
+		// Update the order status if webhook wasn't configured. ToDo Maybe remove
+		if ( ! empty( $_GET['invoice'] ) ) {
 			$this->process_order_confirmation( wc_clean( $_GET['invoice'] ) );
 		}
 	}

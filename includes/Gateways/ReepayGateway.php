@@ -50,14 +50,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @var string
 	 */
-	public string $private_key;
+	public string $private_key = '';
 
 	/**
 	 * Test private key
 	 *
 	 * @var string
 	 */
-	public string $private_key_test;
+	public string $private_key_test = '';
 
 	/**
 	 * Public key
@@ -65,7 +65,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @var string
 	 */
 
-	public string $public_key;
+	public string $public_key = '';
 
 	/**
 	 * Settle options
@@ -148,13 +148,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @var string
 	 */
 	public string $failed_webhooks_email = '';
-
-	/**
-	 * If webhooks have been configured
-	 *
-	 * @var string
-	 */
-	public string $is_webhook_configured = 'no';
 
 	/**
 	 * Order handle failover.
@@ -1403,17 +1396,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Apply settings from Reepay Checkout Gateway to other gateways. Use it in constructor
 	 */
 	protected function apply_parent_settings() {
-		$this->private_key             = reepay()->get_setting( 'private_key' );
-		$this->private_key_test        = reepay()->get_setting( 'private_key_test' );
-		$this->test_mode               = reepay()->get_setting( 'test_mode' );
-		$this->settle                  = reepay()->get_setting( 'settle' );
-		$this->language                = reepay()->get_setting( 'language' );
-		$this->debug                   = reepay()->get_setting( 'debug' );
-		$this->payment_type            = reepay()->get_setting( 'payment_type' );
-		$this->skip_order_lines        = reepay()->get_setting( 'skip_order_lines' );
-		$this->enable_order_autocancel = reepay()->get_setting( 'enable_order_autocancel' );
-		$this->is_webhook_configured   = reepay()->get_setting( 'is_webhook_configured' );
-		$this->handle_failover         = reepay()->get_setting( 'handle_failover' );
+		$this->private_key             = (string) reepay()->get_setting( 'private_key' );
+		$this->private_key_test        = (string) reepay()->get_setting( 'private_key_test' );
+		$this->test_mode               = (string) reepay()->get_setting( 'test_mode' );
+		$this->settle                  = (array) reepay()->get_setting( 'settle' );
+		$this->language                = (string) reepay()->get_setting( 'language' );
+		$this->debug                   = (string) reepay()->get_setting( 'debug' );
+		$this->payment_type            = (string) reepay()->get_setting( 'payment_type' );
+		$this->skip_order_lines        = (string) reepay()->get_setting( 'skip_order_lines' );
+		$this->enable_order_autocancel = (string) reepay()->get_setting( 'enable_order_autocancel' );
+		$this->handle_failover         = (string) reepay()->get_setting( 'handle_failover' );
 	}
 
 	/**
