@@ -609,6 +609,8 @@ class ReepayCheckout extends ReepayGateway {
 		$this->private_key_test = $this->settings['private_key_test'] ?? $this->private_key_test;
 		$this->test_mode        = $this->settings['test_mode'] ?? $this->test_mode;
 
+		reepay()->reset_settings();
+
 		parent::is_webhook_configured();
 
 		return true;
