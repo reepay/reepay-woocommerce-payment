@@ -624,8 +624,9 @@ class ReepayCheckout extends ReepayGateway {
 		parent::payment_fields();
 
 		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription.
-		if ( ( 'yes' === $this->save_cc && ! is_add_payment_method_page() ) ||
-			 ( wcs_cart_have_subscription() || wcs_is_payment_change() )
+		if ( 'yes' === $this->save_cc ||
+			 wcs_cart_have_subscription() ||
+			 wcs_is_payment_change()
 		) {
 			$this->tokenization_script();
 
