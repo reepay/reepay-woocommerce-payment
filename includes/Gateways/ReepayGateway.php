@@ -472,8 +472,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				 in_array( $webhook_url, $urls, true )
 				 && ( empty( $alert_email ) || in_array( $alert_email, $alert_emails, true ) )
 			) {
-				$this->update_option( 'is_webhook_configured', 'yes' );
-
 				return true;
 			}
 
@@ -505,7 +503,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					)
 				);
 
-				$this->update_option( 'is_webhook_configured', 'yes' );
 				WC_Admin_Settings::add_message( __( 'Reepay: WebHook has been successfully created/updated', 'reepay-checkout-gateway' ) );
 
 				return true;
@@ -517,11 +514,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					)
 				);
 
-				$this->update_option( 'is_webhook_configured', 'no' );
 				WC_Admin_Settings::add_error( __( 'Reepay: WebHook creation/update has been failed', 'reepay-checkout-gateway' ) );
 			}
 		} catch ( Exception $e ) {
-			$this->update_option( 'is_webhook_configured', 'no' );
 			WC_Admin_Settings::add_error( __( 'Unable to retrieve the webhook settings. Wrong api credentials?', 'reepay-checkout-gateway' ) );
 		}
 
