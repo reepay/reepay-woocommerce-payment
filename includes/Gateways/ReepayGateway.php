@@ -507,7 +507,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$this->log(
 				array(
 					'source' => 'WebHook creation/update has been failed',
-					'error' => $e->getMessage()
+					'error'  => $e->getMessage(),
 				)
 			);
 

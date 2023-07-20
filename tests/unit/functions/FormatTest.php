@@ -5,10 +5,12 @@
  * @package Reepay\Checkout
  */
 
+use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
+
 /**
  * CurrencyTest.
  */
-class FormatTest extends WP_UnitTestCase {
+class FormatTest extends Reepay_UnitTestCase {
 	/**
 	 * Test @see rp_format_credit_card
 	 *

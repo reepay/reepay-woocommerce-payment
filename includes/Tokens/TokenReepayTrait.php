@@ -251,14 +251,16 @@ trait TokenReepayTrait {
 	}
 
 	/**
-	 * @param WC_Payment_Token $token
+	 * Delete Reepay payment method and WooCommerce token
+	 *
+	 * @param WC_Payment_Token $token token to delete.
 	 *
 	 * @return bool
 	 */
 	public static function delete_card( WC_Payment_Token $token ): bool {
 		$result = reepay()->api( 'api-delete-card' )->delete_payment_method( $token->get_token() );
 
-		if( is_wp_error( $result ) ) {
+		if ( is_wp_error( $result ) ) {
 			return false;
 		}
 
@@ -270,7 +272,7 @@ trait TokenReepayTrait {
 	/**
 	 * Check if $token is Reepay token
 	 *
-	 * @param WC_Payment_Token|null $token
+	 * @param WC_Payment_Token|null $token token to check.
 	 *
 	 * @return bool
 	 */
@@ -279,9 +281,13 @@ trait TokenReepayTrait {
 			return false;
 		}
 
-		return in_array( $token->get_gateway_id(), array(
-			reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id,
-			reepay()->gateways()->checkout()->id
-		) );
+		return in_array(
+			$token->get_gateway_id(),
+			array(
+				reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id,
+				reepay()->gateways()->checkout()->id,
+			),
+			true
+		);
 	}
 }
