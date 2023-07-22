@@ -95,11 +95,9 @@ class ThankyouPage {
 			return;
 		}
 
-		global $wp;
-
 		$order_key = isset( $_GET['key'] ) ? wc_clean( wp_unslash( $_GET['key'] ) ) : '';
 
-		$order = wc_get_order( absint( $wp->query_vars['order-received'] ) );
+		$order = wc_get_order( get_query_var( 'order-received', 0 ) );
 
 		if ( empty( $order )
 			 || ! $order->key_is_valid( $order_key )
