@@ -89,7 +89,7 @@ trait TokenReepayTrait {
 	 * @throws Exception If invalid token or order.
 	 */
 	protected function reepay_save_card_info( WC_Order $order, string $reepay_token ) {
-		$customer_handle = get_user_meta( $order->get_customer_id(), 'reepay_customer_id', true );
+		$customer_handle = rp_get_customer_handle( $order->get_customer_id() );
 		$card_info       = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
 
 		if ( is_wp_error( $card_info ) ) {
@@ -126,7 +126,7 @@ trait TokenReepayTrait {
 	 * @throws Exception If invalid token or order.
 	 */
 	public function add_payment_token_to_customer( int $customer_id, string $reepay_token ): array {
-		$customer_handle = get_user_meta( $customer_id, 'reepay_customer_id', true );
+		$customer_handle = rp_get_customer_handle( $customer_id );
 		$card_info       = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
 
 		if ( is_wp_error( $card_info ) || empty( $card_info ) ) {

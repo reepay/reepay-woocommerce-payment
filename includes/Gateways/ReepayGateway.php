@@ -912,7 +912,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 		}
 
-		$customer_handle = get_user_meta( $order->get_customer_id(), 'reepay_customer_id', true ) ?: reepay()->api( $this )->get_customer_handle_by_order( $order );
+		$customer_handle = rp_get_customer_handle( $order->get_customer_id() );
 
 		$data = array(
 			'country'         => $country,
