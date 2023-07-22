@@ -5,6 +5,8 @@
  * @package Reepay\Checkout\Functions
  */
 
+use Reepay\Checkout\Actions\ReepayCustomer;
+
 defined( 'ABSPATH' ) || exit();
 
 if ( ! function_exists( 'rp_get_customer_handle' ) ) {
@@ -19,8 +21,12 @@ if ( ! function_exists( 'rp_get_customer_handle' ) ) {
 		$handle = get_user_meta( $user_id, 'reepay_customer_id', true );
 
 		if ( empty( $handle ) ) {
-			$handle = 'customer-' . $user_id;
-			update_user_meta( $user_id, 'reepay_customer_id', $handle );
+			$handle = ReepayCustomer::set_reepay_handle( $user_id );
+
+			if( empty( $handle ) ) {
+				$handle = 'customer-' . $user_id;
+				update_user_meta( $user_id, 'reepay_customer_id', $handle );
+			}
 		}
 
 		return $handle;
