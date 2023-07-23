@@ -12,7 +12,6 @@ use Reepay\Checkout\Api;
 use Reepay\Checkout\OrderFlow\InstantSettle;
 use Reepay\Checkout\OrderFlow\OrderCapture;
 use Reepay\Checkout\OrderFlow\OrderStatuses;
-use Reepay\Checkout\Tests\Mocks\ApiMock;
 use Reepay\Checkout\Tests\Mocks\OrderFlow\OrderCaptureMock;
 
 /**
@@ -71,9 +70,9 @@ trait Reepay_UnitTestCase_Trait {
 	/**
 	 * Api class mock
 	 *
-	 * @var ApiMock|MockObject
+	 * @var Api|MockObject
 	 */
-	protected ApiMock $api_mock;
+	protected Api $api_mock;
 
 	/**
 	 * Runs the routine before setting up all tests.
@@ -107,7 +106,7 @@ trait Reepay_UnitTestCase_Trait {
 			)
 		);
 
-		$this->api_mock = $this->getMockBuilder( ApiMock::class )->getMock();
+		$this->api_mock = $this->getMockBuilder( Api::class )->getMock();
 		reepay()->di()->set( Api::class, $this->api_mock );
 	}
 }
