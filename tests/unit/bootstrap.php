@@ -45,8 +45,6 @@ tests_add_filter(
 tests_add_filter(
 	'plugins_loaded',
 	function () {
-		reepay()->gateways()->checkout()->process_admin_options();
-
 		( new OptionsController() )->set_option( 'enabled', 'yes' );
 	}
 );
