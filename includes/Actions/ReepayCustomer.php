@@ -26,16 +26,16 @@ class ReepayCustomer {
 	/**
 	 * Action user_register
 	 *
-	 * @param int $user_id
+	 * @param int $user_id registered customer id.
 	 */
 	public function user_register( int $user_id ) {
 		self::set_reepay_handle( $user_id );
 	}
 
 	/**
-	 * Set reepay user handle after registration
+	 * Set reepay user handle
 	 *
-	 * @param int $user_id registered customer id.
+	 * @param int $user_id user id to set handle.
 	 */
 	public static function set_reepay_handle( int $user_id ): string {
 		try {

@@ -135,7 +135,7 @@ class MetaBoxes {
 		$template_args = array(
 			'email'  => get_post_meta( $post->ID, '_billing_email', true ),
 			'handle' => $handle,
-			'link'   => $this->dashboard_url . 'customers/customers/customer/' . $handle
+			'link'   => $this->dashboard_url . 'customers/customers/customer/' . $handle,
 		);
 
 		reepay()->get_template(

@@ -23,7 +23,7 @@ if ( ! function_exists( 'rp_get_customer_handle' ) ) {
 		if ( empty( $handle ) ) {
 			$handle = ReepayCustomer::set_reepay_handle( $user_id );
 
-			if( empty( $handle ) ) {
+			if ( empty( $handle ) ) {
 				$handle = 'customer-' . $user_id;
 				update_user_meta( $user_id, 'reepay_customer_id', $handle );
 			}
