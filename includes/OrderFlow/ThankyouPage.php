@@ -153,7 +153,7 @@ class ThankyouPage {
 			wp_send_json_error( 'Invalid order' );
 		}
 
-		if( class_exists( WC_Subscriptions_Product::class, false ) ) {
+		if ( class_exists( WC_Subscriptions_Product::class, false ) ) {
 			foreach ( $order->get_items() as $item ) {
 				/**
 				 * WC_Order_Item_Product returns not WC_Order_Item
