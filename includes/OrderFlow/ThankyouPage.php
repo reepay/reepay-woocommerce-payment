@@ -108,7 +108,7 @@ class ThankyouPage {
 
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
-		wp_register_script(
+		wp_enqueue_script(
 			'wc-gateway-reepay-thankyou',
 			reepay()->get_setting( 'js_url' ) . 'thankyou' . $suffix . '.js',
 			array(
@@ -133,8 +133,6 @@ class ThankyouPage {
 				),
 			)
 		);
-
-		wp_enqueue_script( 'wc-gateway-reepay-thankyou' );
 	}
 
 	/**
@@ -146,27 +144,31 @@ class ThankyouPage {
 		$order_id  = isset( $_POST['order_id'] ) ? wc_clean( $_POST['order_id'] ) : '';
 		$order_key = isset( $_POST['order_key'] ) ? wc_clean( $_POST['order_key'] ) : '';
 
-		$order = wc_get_order( $order_id );
-		if ( ! $order->get_id() || ! $order->key_is_valid( $order_key ) ) {
+		if ( empty( $order_id ) || empty( $order_key ) ) {
 			wp_send_json_error( 'Invalid order' );
-
-			return;
 		}
 
-		foreach ( $order->get_items() as $item ) {
-			/**
-			 * WC_Order_Item_Product returns not WC_Order_Item
-			 *
-			 * @var WC_Order_Item_Product $item
-			 */
-			if ( class_exists( WC_Subscriptions_Product::class ) && WC_Subscriptions_Product::is_subscription( $item->get_product() ) ) {
-				if ( .0 === $order->get_total() ) {
-					$ret = array(
-						'state'   => 'paid',
-						'message' => 'Subscription is activated in trial',
-					);
+		$order = wc_get_order( $order_id );
+		if ( empty( $order ) || ! $order->key_is_valid( $order_key ) ) {
+			wp_send_json_error( 'Invalid order' );
+		}
 
-					wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', $ret, $order->get_id() ) );
+		if( class_exists( WC_Subscriptions_Product::class, false ) ) {
+			foreach ( $order->get_items() as $item ) {
+				/**
+				 * WC_Order_Item_Product returns not WC_Order_Item
+				 *
+				 * @var WC_Order_Item_Product $item
+				 */
+				if ( wcs_is_subscription_product( $item->get_product() ) ) {
+					if ( $order->get_total() <= 0 ) {
+						$ret = array(
+							'state'   => 'paid',
+							'message' => 'Subscription is activated in trial',
+						);
+
+						wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', $ret, $order->get_id() ) );
+					}
 				}
 			}
 		}
@@ -174,6 +176,7 @@ class ThankyouPage {
 		$ret = array();
 
 		$result = reepay()->api( $order )->get_invoice_data( $order );
+
 		if ( is_wp_error( $result ) ) {
 			// No information.
 			$ret = array(
