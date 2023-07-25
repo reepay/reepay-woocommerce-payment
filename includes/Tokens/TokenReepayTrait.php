@@ -129,6 +129,8 @@ trait TokenReepayTrait {
 		$customer_handle = rp_get_customer_handle( $customer_id );
 		$card_info       = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
 
+		$this->log( sprintf( 'Card receiving data: %s', wp_json_encode( $card_info, JSON_PRETTY_PRINT ) ) );
+
 		if ( is_wp_error( $card_info ) || empty( $card_info ) ) {
 			throw new Exception( __( 'Card not found', 'reepay-checkout-gateway' ) );
 		}
@@ -136,7 +138,7 @@ trait TokenReepayTrait {
 		if ( 'ms_' === substr( $card_info['id'], 0, 3 ) ) {
 			$token = new TokenReepayMS();
 			$token->set_gateway_id( reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id );
-			$token->set_token( $reepay_token );
+			$token->set_token( $card_info['id'] );
 			$token->set_user_id( $customer_id );
 		} else {
 			$expiry_date = explode( '-', $card_info['exp_date'] );
