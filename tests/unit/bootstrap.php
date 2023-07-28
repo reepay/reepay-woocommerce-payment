@@ -27,6 +27,7 @@ if ( ! file_exists( "{$_tests_dir}/includes/functions.php" ) ) {
 
 // Give access to tests_add_filter() function.
 require_once "{$_tests_dir}/includes/functions.php";
+require_once __DIR__ . '/../helpers/functions.php';
 
 /**
  * Manually load Reepay plugin and dependencies.
@@ -44,18 +45,7 @@ tests_add_filter(
 tests_add_filter(
 	'plugins_loaded',
 	function () {
-		$reepay_checkout = reepay()->gateways()->checkout();
-		$reepay_checkout->process_admin_options();
-
-		( new OptionsController() )->set_options(
-			array(
-				'enabled'          => 'yes',
-				'test_mode'        => 'yes',
-				'private_key_test' => 'priv_2795e0868bc1609c66783e0c8d967bcf', // ToDo change with env variable.
-			)
-		);
-
-		$reepay_checkout->is_webhook_configured();
+		( new OptionsController() )->set_option( 'enabled', 'yes' );
 	}
 );
 

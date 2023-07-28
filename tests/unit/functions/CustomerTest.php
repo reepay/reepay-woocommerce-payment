@@ -5,45 +5,58 @@
  * @package Reepay\Checkout
  */
 
+use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
+
 /**
  * CurrencyTest.
  */
-class CustomerTest extends WP_UnitTestCase {
+class CustomerTest extends Reepay_UnitTestCase {
 	/**
-	 * Current user id
-	 *
-	 * @var int
-	 */
-	private static int $user;
-
-	/**
-	 * Runs the routine before setting up all tests.
-	 */
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		self::$user = wp_create_user( 'test', 'test', 'test@test.com' );
-	}
-
-	/**
-	 * Test function rp_get_customer_handle_generation
+	 * Test @see rp_get_customer_handle_generation
 	 */
 	public function test_rp_get_customer_handle_generation() {
+		$user = wp_create_user( 'test', 'test', 'test@test.com' );
+
 		$this->assertSame(
-			'customer-' . self::$user,
-			rp_get_customer_handle( self::$user )
+			'customer-' . $user,
+			rp_get_customer_handle( $user )
 		);
 	}
 
 	/**
-	 * Test function rp_get_customer_handle_exists
+	 * Test @see rp_get_customer_handle_exists
 	 */
 	public function test_rp_get_customer_handle_exists() {
-		rp_get_customer_handle( self::$user );
+		$user = wp_create_user( 'test', 'test', 'test@test.com' );
+
+		rp_get_customer_handle( $user );
 
 		$this->assertSame(
-			'customer-' . self::$user,
-			rp_get_customer_handle( self::$user )
+			'customer-' . $user,
+			rp_get_customer_handle( $user )
+		);
+	}
+
+	/**
+	 * Test rp_get_userid_by_handle with guest handle
+	 */
+	public function test_rp_get_userid_by_handle_guest() {
+		$this->assertSame(
+			0,
+			rp_get_userid_by_handle( 'guest-0' )
+		);
+	}
+
+	/**
+	 * Test rp_get_userid_by_handle with customer handle
+	 */
+	public function test_rp_get_userid_by_handle_customer() {
+		$user = wp_create_user( 'test', 'test', 'test@test.com' );
+		rp_get_customer_handle( $user );
+
+		$this->assertSame(
+			$user,
+			rp_get_userid_by_handle( "customer-$user" )
 		);
 	}
 }

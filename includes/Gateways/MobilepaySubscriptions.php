@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Reepay\Checkout\Api;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -20,16 +22,16 @@ class MobilepaySubscriptions extends ReepayGateway {
 	 *
 	 * @var array
 	 */
-	public $logos = array(
+	public array $logos = array(
 		'mobilepay',
 	);
 
 	/**
 	 * Payment methods.
 	 *
-	 * @var array|null
+	 * @var array
 	 */
-	public $payment_methods = array(
+	public array $payment_methods = array(
 		'mobilepay_subscriptions',
 	);
 
@@ -63,6 +65,9 @@ class MobilepaySubscriptions extends ReepayGateway {
 		parent::__construct();
 
 		$this->apply_parent_settings();
+
+		add_action( 'wp_ajax_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
+		add_action( 'wp_ajax_nopriv_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
 	}
 
 	/**
@@ -84,14 +89,8 @@ class MobilepaySubscriptions extends ReepayGateway {
 	public function payment_fields() {
 		parent::payment_fields();
 
-		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription.
-		if ( ! is_add_payment_method_page()
-			 || wcs_cart_have_subscription()
-			 || wcs_is_payment_change()
-		) {
-			$this->tokenization_script();
-			$this->saved_payment_methods();
-			$this->save_payment_method_checkbox();
-		}
+		$this->tokenization_script();
+		$this->saved_payment_methods();
+		$this->save_payment_method_checkbox();
 	}
 }

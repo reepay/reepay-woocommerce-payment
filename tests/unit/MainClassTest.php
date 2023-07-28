@@ -5,14 +5,16 @@
  * @package Reepay\Checkout
  */
 
+use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
+
 /**
  * Class MainClassTest
  */
-class MainClassTest extends WP_UnitTestCase {
+class MainClassTest extends Reepay_UnitTestCase {
 	/**
 	 * Test main plugin function. Checks that there is no infinite recursion.
 	 */
 	public function test_reepay_function() {
-		$this->assertSame( get_class( reepay() ), WC_ReepayCheckout::class );
+		$this->assertSame( WC_ReepayCheckout::class, get_class( reepay() ) );
 	}
 }

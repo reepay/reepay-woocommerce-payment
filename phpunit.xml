@@ -10,9 +10,6 @@
         <testsuite name="Main class started">
             <file>./tests/unit/MainClassTest.php</file>
         </testsuite>
-        <testsuite name="Api configured">
-            <file>./tests/unit/ApiConfiguredTest.php</file>
-        </testsuite>
         <testsuite name="Gateways loaded">
             <file>./tests/unit/Gateways.php</file>
         </testsuite>
@@ -26,4 +23,9 @@
             <directory suffix="Test.php">./tests/unit/gatewaysTests</directory>
         </testsuite>
 	</testsuites>
+    <filter>
+        <whitelist>
+            <directory suffix=".php">./includes</directory>
+        </whitelist>
+    </filter>
 </phpunit>

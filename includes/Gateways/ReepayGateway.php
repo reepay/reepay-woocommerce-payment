@@ -43,21 +43,21 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @var string
 	 */
-	public $test_mode = 'yes';
+	public string $test_mode = 'yes';
 
 	/**
 	 * Private key
 	 *
 	 * @var string
 	 */
-	public $private_key;
+	public string $private_key = '';
 
 	/**
 	 * Test private key
 	 *
 	 * @var string
 	 */
-	public $private_key_test;
+	public string $private_key_test = '';
 
 	/**
 	 * Public key
@@ -65,14 +65,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @var string
 	 */
 
-	public $public_key;
+	public string $public_key = '';
 
 	/**
 	 * Settle options
 	 *
 	 * @var string[]
 	 */
-	public $settle = array(
+	public array $settle = array(
 		InstantSettle::SETTLE_VIRTUAL,
 		InstantSettle::SETTLE_PHYSICAL,
 		InstantSettle::SETTLE_RECURRING,
@@ -84,21 +84,21 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @var string
 	 */
-	public $debug = 'yes';
+	public string $debug = 'yes';
 
 	/**
 	 * Reepay checkout language
 	 *
 	 * @var string
 	 */
-	public $language = 'en_US';
+	public string $language = 'en_US';
 
 	/**
 	 * Available payment logos
 	 *
 	 * @var array
 	 */
-	public $logos = array(
+	public array $logos = array(
 		'dankort',
 		'visa',
 		'mastercard',
@@ -119,63 +119,56 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @var string
 	 */
-	public $payment_type = 'OVERLAY';
+	public string $payment_type = 'OVERLAY';
 
 	/**
 	 * Save card token
 	 *
 	 * @var string
 	 */
-	public $save_cc = 'yes';
+	public string $save_cc = 'yes';
 
 	/**
 	 * Skip order lines to Reepay and use order totals instead
 	 *
 	 * @var string
 	 */
-	public $skip_order_lines = 'no';
+	public string $skip_order_lines = 'no';
 
 	/**
 	 * If automatically cancel unpaid orders should be ignored
 	 *
 	 * @var string
 	 */
-	public $enable_order_autocancel = 'no';
+	public string $enable_order_autocancel = 'no';
 
 	/**
 	 * Email address for notification about failed webhooks
 	 *
 	 * @var string
 	 */
-	public $failed_webhooks_email = '';
-
-	/**
-	 * If webhooks have been configured
-	 *
-	 * @var string
-	 */
-	public $is_webhook_configured = 'no';
+	public string $failed_webhooks_email = '';
 
 	/**
 	 * Order handle failover.
 	 *
 	 * @var string
 	 */
-	public $handle_failover = 'yes';
+	public string $handle_failover = 'yes';
 
 	/**
 	 * Payment methods.
 	 *
-	 * @var array|null
+	 * @var array
 	 */
-	public $payment_methods = array();
+	public array $payment_methods = array();
 
 	/**
 	 * Logging source
 	 *
 	 * @var string
 	 */
-	private $logging_source;
+	private string $logging_source;
 
 	/**
 	 * ReepayGateway constructor.
@@ -202,6 +195,143 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		add_action( 'woocommerce_checkout_create_order_line_item', array( $this, 'action_checkout_create_order_line_item' ), 10, 4 );
 
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
+
+	}
+
+	/**
+	 * Add Payment Method.
+	 */
+	public function add_payment_method() {
+		$user            = get_userdata( get_current_user_id() );
+		$customer_handle = '';
+
+		// Allow to pay exist orders by guests.
+		if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) {
+			$order_id = wc_get_order_id_by_order_key( $_GET['key'] );
+			if ( $order_id ) {
+				$order = wc_get_order( $order_id );
+
+				// Get customer handle by order.
+				$gateway         = rp_get_payment_method( $order );
+				$customer_handle = reepay()->api( $gateway )->get_customer_handle( $order );
+			}
+		} else {
+			$customer_handle = rp_get_customer_handle( $user->ID );
+		}
+
+		$accept_url = add_query_arg( 'action', 'reepay_card_store_' . $this->id, admin_url( 'admin-ajax.php' ) );
+		$accept_url = apply_filters( 'woocommerce_reepay_payment_accept_url', $accept_url );
+		$cancel_url = wc_get_account_endpoint_url( 'payment-methods' );
+		$cancel_url = apply_filters( 'woocommerce_reepay_payment_cancel_url', $cancel_url );
+
+		$location = wc_get_base_location();
+
+		if ( empty( $customer_handle ) ) {
+			// Create reepay customer.
+			$params = array(
+				'locale'          => $this->get_language(),
+				'button_text'     => __( 'Add card', 'reepay-checkout-gateway' ),
+				'create_customer' => array(
+					'test'        => 'yes' === $this->test_mode,
+					'handle'      => $customer_handle,
+					'email'       => $user->user_email,
+					'address'     => '',
+					'address2'    => '',
+					'city'        => '',
+					'country'     => $location['country'],
+					'phone'       => '',
+					'company'     => '',
+					'vat'         => '',
+					'first_name'  => $user->first_name,
+					'last_name'   => $user->last_name,
+					'postal_code' => '',
+				),
+				'accept_url'      => $accept_url,
+				'cancel_url'      => $cancel_url,
+			);
+		} else {
+			// Use existing user.
+			$params = array(
+				'locale'      => $this->get_language(),
+				'button_text' => __( 'Add card', 'reepay-checkout-gateway' ),
+				'customer'    => $customer_handle,
+				'accept_url'  => $accept_url,
+				'cancel_url'  => $cancel_url,
+			);
+		}
+
+		if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
+			$params['payment_methods'] = $this->payment_methods;
+		}
+
+		$result = reepay()->api( $this )->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
+		if ( is_wp_error( $result ) ) {
+			if ( $result->get_error_code() === API::ERROR_CODES['Customer has been deleted'] ||
+				 $result->get_error_code() === API::ERROR_CODES['Customer not found'] ) {
+				$params = array(
+					'locale'          => $this->get_language(),
+					'button_text'     => __( 'Add card', 'reepay-checkout-gateway' ),
+					'create_customer' => array(
+						'test'        => 'yes' === $this->test_mode,
+						'handle'      => $customer_handle,
+						'email'       => $user->user_email,
+						'address'     => '',
+						'address2'    => '',
+						'city'        => '',
+						'country'     => $location['country'],
+						'phone'       => '',
+						'company'     => '',
+						'vat'         => '',
+						'first_name'  => $user->first_name,
+						'last_name'   => $user->last_name,
+						'postal_code' => '',
+					),
+					'accept_url'      => $accept_url,
+					'cancel_url'      => $cancel_url,
+				);
+
+				$result = reepay()->api( $this )->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
+
+				if ( is_wp_error( $result ) ) {
+					wc_add_notice( $result->get_error_message(), 'error' );
+					parent::add_payment_method();
+				}
+			} else {
+				wc_add_notice( $result->get_error_message(), 'error' );
+				parent::add_payment_method();
+			}
+		}
+
+		$this->log(
+			array(
+				'source' => 'add_payment_method',
+				'result' => $result,
+			)
+		);
+
+		wp_redirect( $result['url'] );
+		exit();
+	}
+
+	/**
+	 * Ajax: Add Payment Method
+	 */
+	public function reepay_card_store() {
+		$reepay_token = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
+
+		try {
+			$token = $this->add_payment_token_to_customer( get_current_user_id(), $reepay_token )['token'];
+		} catch ( Exception $e ) {
+			wc_add_notice( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ), 'error' );
+			wp_redirect( wc_get_account_endpoint_url( 'add-payment-method' ) );
+			exit();
+		}
+
+		do_action( 'woocommerce_reepay_payment_method_added', $token );
+
+		wc_add_notice( __( 'Payment method successfully added.', 'reepay-checkout-gateway' ) );
+		wp_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
+		exit();
 	}
 
 	/**
@@ -248,15 +378,17 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 */
 	public function get_account_info( $is_test = false ) {
 		if ( $this->is_gateway_settings_page() ) {
-			$key = 'account_info';
+			$key   = 'account_info';
+			$force = true;
 
 			if ( $is_test ) {
-				$key = 'account_info_test';
+				$key   = 'account_info_test';
+				$force = false;
 			}
 
 			$account_info = get_transient( $key );
 			if ( empty( $account_info ) ) {
-				$account_info = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account' );
+				$account_info = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account', array(), $force );
 				set_transient( $key, $account_info, 5 );
 			}
 
@@ -275,18 +407,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public static function get_webhook_url(): string {
 		$default_wc_api_url = WC()->api_request_url( '' );
 
-		if ( class_exists( SitePress::class ) ) {
+		if ( class_exists( SitePress::class ) && ! is_multisite() ) {
 			$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
 			$languages = wp_list_pluck( $languages, 'default_locale' );
-		} else {
-			$languages = get_available_languages();
-		}
 
-		if ( ! empty( $languages ) ) {
-			foreach ( $languages as $available_language ) {
-				$lang = explode( '_', $available_language );
-				if ( stripos( $default_wc_api_url, '/' . $lang[0] . '/' ) !== false ) {
-					$default_wc_api_url = str_replace( '/' . $lang[0] . '/', '/', $default_wc_api_url );
+			if ( ! empty( $languages ) ) {
+				foreach ( $languages as $available_language ) {
+					$lang = explode( '_', $available_language );
+					if ( stripos( $default_wc_api_url, '/' . $lang[0] . '/' ) !== false ) {
+						$default_wc_api_url = str_replace( '/' . $lang[0] . '/', '/', $default_wc_api_url );
+					}
 				}
 			}
 		}
@@ -304,16 +434,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 */
 	public function is_webhook_configured(): bool {
 		try {
-			$request = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
-			if ( is_wp_error( $request ) ) {
-				if ( ! empty( $request->get_error_code() ) ) {
-					throw new Exception( $request->get_error_message(), intval( $request->get_error_code() ) );
+			$response = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
+			if ( is_wp_error( $response ) ) {
+				if ( ! empty( $response->get_error_code() ) ) {
+					throw new Exception( $response->get_error_message(), intval( $response->get_error_code() ) );
 				}
 			}
 
 			$webhook_url = self::get_webhook_url();
 
-			$alert_emails = $request['alert_emails'];
+			$alert_emails = $response['alert_emails'];
 
 			// The webhook settings of the payment plugin.
 			$alert_email = '';
@@ -327,9 +457,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			$urls = array();
 
-			foreach ( $request['urls'] as $url ) {
-				if ( strpos( $url, $webhook_url ) === false || // either another site or exact url match.
-					 $url === $webhook_url ) {
+			foreach ( $response['urls'] as $url ) {
+				if ( ( strpos( $url, $webhook_url ) === false || // either another site or exact url match.
+					 $url === $webhook_url ) &&
+					 strpos( $url, 'WC_Gateway_Reepay_Checkout' ) === false ) {
 					$urls[] = $url;
 				} else {
 					$exist_waste_urls = true;
@@ -341,60 +472,51 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				 in_array( $webhook_url, $urls, true )
 				 && ( empty( $alert_email ) || in_array( $alert_email, $alert_emails, true ) )
 			) {
-				$this->update_option( 'is_webhook_configured', 'yes' );
-
 				return true;
 			}
 
 			// Update the webhook settings.
-			try {
-				if ( ! in_array( $webhook_url, $urls, true ) ) {
-					$urls[] = $webhook_url;
-				}
-
-				if ( ! empty( $alert_email ) && is_email( $alert_email ) ) {
-					$alert_emails[] = $alert_email;
-				}
-
-				$data = array(
-					'urls'         => array_unique( $urls ),
-					'disabled'     => false,
-					'alert_emails' => array_unique( $alert_emails ),
-				);
-
-				$request = reepay()->api( $this )->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
-				if ( is_wp_error( $request ) ) {
-					throw new Exception( $request->get_error_message(), $request->get_error_code() );
-				}
-
-				$this->log(
-					array(
-						'source' => 'WebHook has been successfully created/updated',
-						$request,
-					)
-				);
-
-				$this->update_option( 'is_webhook_configured', 'yes' );
-				WC_Admin_Settings::add_message( __( 'Reepay: WebHook has been successfully created/updated', 'reepay-checkout-gateway' ) );
-
-				return true;
-			} catch ( Exception $e ) {
-				$this->log(
-					array(
-						'source' => 'WebHook creation/update has been failed',
-						$request,
-					)
-				);
-
-				$this->update_option( 'is_webhook_configured', 'no' );
-				WC_Admin_Settings::add_error( __( 'Reepay: WebHook creation/update has been failed', 'reepay-checkout-gateway' ) );
+			if ( ! in_array( $webhook_url, $urls, true ) ) {
+				$urls[] = $webhook_url;
 			}
+
+			if ( ! empty( $alert_email ) && is_email( $alert_email ) ) {
+				$alert_emails[] = $alert_email;
+			}
+
+			$data = array(
+				'urls'         => array_unique( $urls ),
+				'disabled'     => false,
+				'alert_emails' => array_unique( $alert_emails ),
+			);
+
+			$response = reepay()->api( $this )->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
+			if ( is_wp_error( $response ) ) {
+				throw new Exception( $response->get_error_message(), $response->get_error_code() );
+			}
+
+			$this->log(
+				array(
+					'source' => 'WebHook has been successfully created/updated',
+					$response,
+				)
+			);
+
+			WC_Admin_Settings::add_message( __( 'Reepay: WebHook has been successfully created/updated', 'reepay-checkout-gateway' ) );
 		} catch ( Exception $e ) {
-			$this->update_option( 'is_webhook_configured', 'no' );
+			$this->log(
+				array(
+					'source' => 'WebHook creation/update has been failed',
+					'error'  => $e->getMessage(),
+				)
+			);
+
 			WC_Admin_Settings::add_error( __( 'Unable to retrieve the webhook settings. Wrong api credentials?', 'reepay-checkout-gateway' ) );
+
+			return false;
 		}
 
-		return false;
+		return true;
 	}
 
 	/**
@@ -508,7 +630,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 */
 	public function capture_payment( $order, $amount = null ) {
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
-			throw new Exception( 'Order is already canceled' );
+			throw new Exception( __( 'Order is canceled', 'reepay-checkout-gateway' ) );
 		}
 
 		$result = reepay()->api( $this )->capture_payment( $order, $amount );
@@ -790,7 +912,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 		}
 
-		$customer_handle = reepay()->api( $this )->get_customer_handle_by_order( $order );
+		$customer_handle = rp_get_customer_handle( $order->get_customer_id() );
 
 		$data = array(
 			'country'         => $country,
@@ -946,21 +1068,27 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 						wc_add_notice( $method->get_error_message(), 'error' );
 
 						return false;
-					} elseif ( ! empty( $method ) && 'active' === $method['state'] ) {
+					} elseif ( ! empty( $method ) ) {
 
-						$data = array(
-							'payment_method' => $method['id'],
-							'customer'       => $method['customer'],
-						);
+						if ( 'active' === $method['state'] ) {
+							$data = array(
+								'payment_method' => $method['id'],
+								'customer'       => $method['customer'],
+							);
 
-						do_action( 'reepay_create_subscription', $data, $order );
+							do_action( 'reepay_create_subscription', $data, $order );
 
-						try {
-							foreach ( $order->get_meta( '_reepay_another_orders' ) ?: array() as $order_id ) {
-								$this->reepay_save_card_info( wc_get_order( $order_id ), $token->get_token() );
+							try {
+								foreach ( $order->get_meta( '_reepay_another_orders' ) ?: array() as $order_id ) {
+									$this->reepay_save_card_info( wc_get_order( $order_id ), $token->get_token() );
+								}
+							} catch ( Exception $e ) {
+								wc_get_order( $order_id )->add_order_note( $e->getMessage() );
 							}
-						} catch ( Exception $e ) {
-							wc_get_order( $order_id )->add_order_note( $e->getMessage() );
+						} else {
+							wc_add_notice( __( 'You payment method has failed, please choose another or add new', 'error' ), 'error' );
+
+							return false;
 						}
 					}
 				} elseif ( wcs_cart_have_subscription() ) {
@@ -1165,9 +1293,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			return;
 		}
 
-		$order   = wc_get_order( wc_clean( $_GET['order_id'] ) );
-		$gateway = rp_get_payment_method( $order );
-		$result  = reepay()->api( $gateway )->get_invoice_data( $order );
+		$order  = wc_get_order( wc_clean( $_GET['order_id'] ) );
+		$result = reepay()->api( $order )->get_invoice_data( $order );
 		if ( is_wp_error( $result ) ) {
 			return;
 		}
@@ -1260,17 +1387,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Apply settings from Reepay Checkout Gateway to other gateways. Use it in constructor
 	 */
 	protected function apply_parent_settings() {
-		$this->private_key             = reepay()->get_setting( 'private_key' );
-		$this->private_key_test        = reepay()->get_setting( 'private_key_test' );
-		$this->test_mode               = reepay()->get_setting( 'test_mode' );
-		$this->settle                  = reepay()->get_setting( 'settle' );
-		$this->language                = reepay()->get_setting( 'language' );
-		$this->debug                   = reepay()->get_setting( 'debug' );
-		$this->payment_type            = reepay()->get_setting( 'payment_type' );
-		$this->skip_order_lines        = reepay()->get_setting( 'skip_order_lines' );
-		$this->enable_order_autocancel = reepay()->get_setting( 'enable_order_autocancel' );
-		$this->is_webhook_configured   = reepay()->get_setting( 'is_webhook_configured' );
-		$this->handle_failover         = reepay()->get_setting( 'handle_failover' );
+		$this->private_key             = (string) reepay()->get_setting( 'private_key' );
+		$this->private_key_test        = (string) reepay()->get_setting( 'private_key_test' );
+		$this->test_mode               = (string) reepay()->get_setting( 'test_mode' );
+		$this->settle                  = (array) reepay()->get_setting( 'settle' );
+		$this->language                = (string) reepay()->get_setting( 'language' );
+		$this->debug                   = (string) reepay()->get_setting( 'debug' );
+		$this->payment_type            = (string) reepay()->get_setting( 'payment_type' );
+		$this->skip_order_lines        = (string) reepay()->get_setting( 'skip_order_lines' );
+		$this->enable_order_autocancel = (string) reepay()->get_setting( 'enable_order_autocancel' );
+		$this->handle_failover         = (string) reepay()->get_setting( 'handle_failover' );
 	}
 
 	/**

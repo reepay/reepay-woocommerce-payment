@@ -28,7 +28,7 @@ class Webhook {
 	 *
 	 * @var string
 	 */
-	private $logging_source = 'reepay-webhook';
+	private string $logging_source = 'reepay-webhook';
 
 	/**
 	 * Constructor.
@@ -101,7 +101,7 @@ class Webhook {
 
 		$this->log(
 			sprintf(
-				'WebHook %1$s: Invoice settled: %2$s',
+				'WebHook %1$s: Data: %2$s',
 				$data['event_type'],
 				var_export( $data, true ) //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 			)
@@ -125,7 +125,7 @@ class Webhook {
 					$order = wc_get_order( $order->get_id() );
 				}
 
-				if ( $order->has_status( REEPAY_STATUS_AUTHORIZED ) ) {
+				if ( $order->has_status( OrderStatuses::$status_sync_enabled ? OrderStatuses::$status_authorized : 'on-hold' ) ) {
 					$this->log(
 						sprintf(
 							'WebHook: Event type: %s success. But the order had status early: %s',
@@ -144,8 +144,7 @@ class Webhook {
 				$order->set_transaction_id( $data['transaction'] );
 				$order->save();
 
-				$gateway      = rp_get_payment_method( $order );
-				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
+				$invoice_data = reepay()->api( $order )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
 					$invoice_data = array();
 				}
@@ -173,20 +172,20 @@ class Webhook {
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 
 				if ( ! empty( $invoice_data['order_lines'] ) ) {
-					foreach ( $invoice_data['order_lines'] as $invoice_lines ) {
+					foreach ( $invoice_data['order_lines'] as $invoice_line ) {
 						$is_exist = false;
 						foreach ( $order->get_items( 'fee' ) as $item ) {
-							if ( $item['name'] === $invoice_lines['ordertext'] ) {
+							if ( $item['name'] === $invoice_line['ordertext'] ) {
 								$is_exist = true;
 							}
 						}
 
 						if ( ! $is_exist ) {
-							if ( 'surcharge_fee' === $invoice_lines['origin'] ) {
+							if ( 'surcharge_fee' === $invoice_line['origin'] ) {
 								$fees_item = new WC_Order_Item_Fee();
-								$fees_item->set_name( $invoice_lines['ordertext'] );
-								$fees_item->set_amount( floatval( $invoice_lines['unit_amount'] ) / 100 );
-								$fees_item->set_total( floatval( $invoice_lines['amount'] ) / 100 );
+								$fees_item->set_name( $invoice_line['ordertext'] );
+								$fees_item->set_amount( floatval( $invoice_line['unit_amount'] ) / 100 );
+								$fees_item->set_total( floatval( $invoice_line['amount'] ) / 100 );
 								$fees_item->add_meta_data( '_is_card_fee', true );
 								$order->add_item( $fees_item );
 							}
@@ -216,7 +215,7 @@ class Webhook {
 					$order = wc_get_order( $order->get_id() );
 				}
 
-				if ( $order->has_status( REEPAY_STATUS_SETTLED ) ) {
+				if ( $order->has_status( OrderStatuses::$status_settled ) ) {
 					$this->log(
 						sprintf(
 							'WebHook: Event type: %s success. But the order had status early: %s',
@@ -232,8 +231,7 @@ class Webhook {
 
 				self::lock_order( $order->get_id() );
 
-				$gateway      = rp_get_payment_method( $order );
-				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
+				$invoice_data = reepay()->api( $order )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
 					$invoice_data = array();
 				}
@@ -241,7 +239,7 @@ class Webhook {
 				$this->log( sprintf( 'WebHook: Invoice data: %s', var_export( $invoice_data, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 
 				if ( ! empty( $invoice_data['id'] ) && ! empty( $data['transaction'] ) ) {
-					$transaction = reepay()->api( $gateway )->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice_data['id'] . '/transaction/' . $data['transaction'] );
+					$transaction = reepay()->api( $order )->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice_data['id'] . '/transaction/' . $data['transaction'] );
 					$this->log( sprintf( 'WebHook: Transaction data: %s', var_export( $transaction, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 
 					if ( ! empty( $transaction['card_transaction']['card'] ) ) {
@@ -328,8 +326,7 @@ class Webhook {
 					return;
 				}
 
-				$gateway      = rp_get_payment_method( $order );
-				$invoice_data = reepay()->api( $gateway )->get_invoice_by_handle( $data['invoice'] );
+				$invoice_data = reepay()->api( $order )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
 					$invoice_data = array();
 				}
@@ -364,7 +361,7 @@ class Webhook {
 					);
 
 					if ( $refund ) {
-						$credit_note_ids = array_merge( $credit_note_ids, $credit_note_id );
+						$credit_note_ids[] = $credit_note_id;
 						$order->update_meta_data( '_reepay_credit_note_ids', $credit_note_ids );
 						$order->save_meta_data();
 
@@ -385,11 +382,12 @@ class Webhook {
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			case 'invoice_created':
-				if ( ! isset( $data['invoice'] ) ) {
-					throw new Exception( 'Missing Invoice parameter' );
+				if ( ! isset( $data['invoice'] ) || ! isset( $data['subscription'] ) ) {
+					$this->log( $data );
+					throw new Exception( 'Missing invoice or subscription parameter' );
 				}
 
-				$order = rp_get_order_by_handle( $data['invoice'] );
+				$order = rp_get_order_by_subscription_handle( $data['subscription'] );
 				if ( ! $order ) {
 					$this->log( sprintf( 'WebHook: Order is not found. Invoice: %s', $data['invoice'] ) );
 					do_action( 'reepay_webhook_invoice_created', $data );

@@ -5,11 +5,13 @@
  * @package Reepay\Checkout
  */
 
-namespace Reepay\Checkout;
+namespace Reepay\Checkout\Actions;
 
 use DOMDocument;
 use DOMElement;
 use Exception;
+use Reepay\Checkout\Gateways\ReepayGateway;
+use Reepay\Checkout\OrderFlow\OrderStatuses;
 use Reepay\Checkout\Tokens\TokenReepay;
 use WC_Order;
 use WC_Order_Refund;
@@ -74,6 +76,8 @@ class Subscriptions {
 		add_filter( 'woocommerce_payment_gateway_save_new_payment_method_option_html', array( $this, 'save_new_payment_method_option_html' ), 10, 2 );
 
 		add_action( 'woocommerce_order_status_changed', array( $this, 'create_sub_invoice' ), 10, 4 );
+
+		add_action( 'updated_post_meta', array( $this, 'sync_reepay_token_meta' ), 10, 4 );
 	}
 
 	/**
@@ -249,8 +253,9 @@ class Subscriptions {
 
 			$gateway = rp_get_payment_method( $subscription );
 			$token   = $gateway::get_payment_token( $tokens[0] );
-			if ( ! $token ) {
-				throw new Exception( 'This "Reepay Token" value not found.' );
+
+			if ( empty( $token ) ) {
+				$token = $gateway->add_payment_token_to_order( $subscription, $tokens[0] );
 			}
 
 			if ( $token->get_user_id() !== $subscription->get_user_id() ) {
@@ -274,15 +279,8 @@ class Subscriptions {
 			 'post_meta' === $meta_table && '_reepay_token' === $meta_key ) {
 			// Add tokens.
 			foreach ( explode( ',', $meta_value ) as $reepay_token ) {
-				// Get Token ID.
-				$gateway = rp_get_payment_method( $subscription );
-				$token   = $gateway::get_payment_token( $reepay_token );
-				if ( ! $token ) {
-					// Create Payment Token.
-					$token = $gateway->add_payment_token_to_order( $subscription, $reepay_token );
-				}
-
-				$gateway::assign_payment_token( $subscription, $token );
+				ReepayGateway::assign_payment_token( $subscription, $reepay_token );
+				update_post_meta( $subscription->get_id(), 'reepay_token', $reepay_token );
 			}
 		}
 	}
@@ -302,7 +300,6 @@ class Subscriptions {
 		// Lookup token.
 		try {
 			$token = $gateway::get_payment_token_order( $renewal_order );
-
 			// Try to find token in parent orders.
 			if ( ! $token ) {
 				// Get Subscriptions.
@@ -325,30 +322,41 @@ class Subscriptions {
 				if ( empty( $token ) ) {
 					// Get Subscriptions.
 					$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
+
 					foreach ( $subscriptions as $subscription ) {
 						$token = $subscription->get_meta( '_reepay_token' );
-						if ( empty( $reepay_token ) ) {
+						if ( empty( $token ) ) {
 							$order = $subscription->get_parent();
 							if ( $order ) {
 								$token = $order->get_meta( '_reepay_token' );
-
-								break;
+								if ( empty( $token ) ) {
+									$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+									if ( ! empty( $invoice_data ) ) {
+										if ( ! empty( $invoice_data['recurring_payment_method'] ) ) {
+											$token = $invoice_data['recurring_payment_method'];
+											break;
+										} elseif ( ! empty( $invoice_data['transactions'] ) ) {
+											foreach ( $invoice_data['transactions'] as $transaction ) {
+												if ( ! empty( $transaction['payment_method'] ) ) {
+													$token = $transaction['payment_method'];
+													break;
+												}
+											}
+										}
+									}
+								}
 							}
 						}
 					}
 				}
 
-				// Save token.
 				if ( ! empty( $token ) ) {
 					$token = $gateway->add_payment_token_to_order( $renewal_order, $token );
-					if ( $token ) {
-						$gateway::assign_payment_token( $renewal_order, $token );
-					}
 				}
 			}
 
-			if ( ! $token ) {
-				throw new Exception( 'Payment token isn\'t exists' );
+			if ( empty( $token ) ) {
+				throw new Exception( 'Payment token does not exist' );
 			}
 
 			if ( empty( $token->get_token() ) ) {
@@ -479,7 +487,7 @@ class Subscriptions {
 	// phpcs:enable
 
 	/**
-	 * Create new invoice after woocommerce_order_status_changed
+	 * Create new invoice after woocommerce_order_status_changed for woocommerce subscriptions
 	 *
 	 * @param int      $order_id                    current order id.
 	 * @param string   $this_status_transition_from old status.
@@ -497,16 +505,31 @@ class Subscriptions {
 			if ( is_wp_error( $order_data ) && $renewal_order->get_total() > 0 ) {
 
 				if ( 'pending' === $this_status_transition_from &&
-					 REEPAY_STATUS_AUTHORIZED === $this_status_transition_to ) {
+					 ( ( OrderStatuses::$status_sync_enabled && OrderStatuses::$status_authorized === $this_status_transition_to ) ||
+					   'on-hold' === $this_status_transition_to ) ) {
 					self::scheduled_subscription_payment( $renewal_order->get_total(), $renewal_order );
 				}
 
 				if ( 'pending' === $this_status_transition_from &&
-					 REEPAY_STATUS_SETTLED === $this_status_transition_to ) {
+					 ( ( OrderStatuses::$status_sync_enabled && OrderStatuses::$status_settled === $this_status_transition_to ) ||
+					   'processing' === $this_status_transition_to ) ) {
 					self::scheduled_subscription_payment( $renewal_order->get_total(), $renewal_order, true );
 				}
 			}
 		}
+	}
 
+	/**
+	 * Set 'reepay_token' to '_reepay_token' meta
+	 *
+	 * @param int    $meta_id meta id.
+	 * @param int    $post_id post id.
+	 * @param string $meta_key meta key.
+	 * @param mixed  $meta_value meta value.
+	 */
+	public function sync_reepay_token_meta( int $meta_id, int $post_id, string $meta_key, $meta_value ) {
+		if ( 'reepay_token' === $meta_key ) {
+			update_post_meta( $post_id, '_reepay_token', $meta_value );
+		}
 	}
 }

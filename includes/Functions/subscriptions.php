@@ -17,11 +17,7 @@ if ( ! function_exists( 'order_contains_subscription ' ) ) {
 	 * @see wcs_order_contains_subscription()
 	 */
 	function order_contains_subscription( WC_Order $order ): bool {
-		if ( ! function_exists( 'wcs_order_contains_subscription' ) ) {
-			return false;
-		}
-
-		return wcs_order_contains_subscription( $order );
+		return function_exists( 'wcs_order_contains_subscription' ) && wcs_order_contains_subscription( $order );
 	}
 }
 
@@ -125,5 +121,21 @@ if ( ! function_exists( 'wcr_cart_only_reepay_subscriptions' ) ) {
 	 */
 	function wcr_cart_only_reepay_subscriptions(): bool {
 		return apply_filters( 'wcr_cart_only_reepay_subscriptions', false );
+	}
+}
+
+if ( ! function_exists( 'rp_get_order_by_subscription_handle' ) ) {
+	/**
+	 * Get order by subscription handle
+	 *
+	 * @see WC_Reepay_Renewals::get_order_by_subscription_handle
+	 *
+	 * @param string $handle reepay subscription handle.
+	 *
+	 * @return WC_Order|false
+	 */
+	function rp_get_order_by_subscription_handle( string $handle ) {
+		return class_exists( WC_Reepay_Renewals::class, false ) ?
+			WC_Reepay_Renewals::get_order_by_subscription_handle( $handle ) : false;
 	}
 }

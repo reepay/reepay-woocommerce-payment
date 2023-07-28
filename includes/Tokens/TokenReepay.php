@@ -7,10 +7,12 @@
 
 namespace Reepay\Checkout\Tokens;
 
+use Exception;
 use WC_HTTPS;
 use WC_Payment_Gateway;
 use WC_Payment_Token;
 use WC_Payment_Token_CC;
+use Reepay\Checkout\Tokens\TokenReepayTrait;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -52,6 +54,14 @@ class TokenReepay extends WC_Payment_Token_CC {
 		$style = '';
 
 		if ( $this->get_card_type() === 'visa_dk' ) {
+			$style = 'style="width: 46px; height: 24px;"';
+		}
+
+		$type             = $this->get_card_type();
+		$reepay_logo_url  = reepay()->get_setting( 'images_url' ) . $type . '.png';
+		$reepay_logo_path = reepay()->get_setting( 'images_path' ) . $type . '.png';
+		if ( file_exists( $reepay_logo_path ) ) {
+			$img   = $reepay_logo_url;
 			$style = 'style="width: 46px; height: 24px;"';
 		}
 
@@ -202,8 +212,12 @@ class TokenReepay extends WC_Payment_Token_CC {
 		}
 
 		if ( rp_is_reepay_payment_method( $method['method']['gateway'] ) ) {
-			$token = new TokenReepay( $method['method']['id'] );
-			echo $token->get_display_name();
+			try {
+				$token = new TokenReepay( $method['method']['id'] );
+				echo $token->get_display_name();
+			} catch ( Exception $e ) {
+				_e( 'Token not found', 'reepay-checkout-gateway' );
+			}
 
 			return;
 		}

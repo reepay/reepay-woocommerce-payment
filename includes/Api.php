@@ -31,14 +31,14 @@ class Api {
 	 *
 	 * @var string
 	 */
-	private $logging_source;
+	private string $logging_source;
 
 	/**
 	 * If repeated request after "Request rate limit exceeded"
 	 *
 	 * @var bool
 	 */
-	private $request_retry = false;
+	private bool $request_retry = false;
 
 	const ERROR_CODES = array(
 		'Ok'                                              => 0,
@@ -192,21 +192,28 @@ class Api {
 	);
 
 	/**
-	 * Constructor.
-	 *
-	 * @param ReepayGateway|string $source logging source.
-	 */
-	public function __construct( $source ) {
-		$this->set_logging_source( $source );
-	}
-
-	/**
 	 * Set logging source.
 	 *
-	 * @param ReepayGateway|string $source logging source.
+	 * @param ReepayGateway|WC_Order|string $source logging source.
 	 */
 	public function set_logging_source( $source ) {
-		$this->logging_source = is_string( $source ) ? $source : $source->id;
+		if ( is_string( $source ) ) {
+			$this->logging_source = $source;
+		} else {
+			if ( is_a( $source, ReepayGateway::class ) ) {
+				$this->logging_source = $source->id;
+			} elseif ( is_a( $source, WC_Order::class ) ) {
+				$payment_method = rp_get_payment_method( $source );
+
+				if ( $payment_method ) {
+					$this->logging_source = rp_get_payment_method( $source )->id;
+				} else {
+					$this->logging_source = 'reepay-unknown-payment-method';
+				}
+			} else {
+				$this->logging_source = 'reepay';
+			}
+		}
 	}
 
 	/**
@@ -215,16 +222,21 @@ class Api {
 	 * @param string $method http method.
 	 * @param string $url    request url.
 	 * @param array  $params request params.
+	 * @param bool   $force_live request params.
 	 *
 	 * @return array|mixed|object|WP_Error
 	 */
-	public function request( string $method, string $url, $params = array() ) {
+	public function request( string $method, string $url, $params = array(), $force_live = false ) {
 		$start = microtime( true );
 		if ( reepay()->get_setting( 'debug' ) === 'yes' ) {
 			$this->log( sprintf( 'Request: %s %s %s', $method, $url, wp_json_encode( $params, JSON_PRETTY_PRINT ) ) );
 		}
 
-		$key = reepay()->get_setting( 'test_mode' ) === 'yes' ? reepay()->get_setting( 'private_key_test' ) : reepay()->get_setting( 'private_key' );
+		if ( reepay()->get_setting( 'test_mode' ) === 'yes' && ! $force_live ) {
+			$key = reepay()->get_setting( 'private_key_test' );
+		} else {
+			$key = reepay()->get_setting( 'private_key' );
+		}
 
 		$args = array(
 			'headers' => array(
@@ -674,21 +686,19 @@ class Api {
 			return new WP_Error( 0, 'Unable to get order handle' );
 		}
 
-		$is_skip = reepay()->get_setting( 'skip_order_lines' ) === 'yes';
-
 		if ( ! $amount || ! $items_data ) {
 			$settle_data = InstantSettle::calculate_instant_settle( $order );
 
 			if ( ! $amount ) {
-				$amount = $settle_data->settle_amount;
+				$amount = $settle_data['settle_amount'];
 			}
 
 			if ( ! $items_data ) {
-				$items_data = $settle_data->items;
+				$items_data = $settle_data['items'];
 			}
 		}
 
-		if ( $is_skip && ! empty( $amount ) ) {
+		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
 			$request_data['amount'] = $amount;
 		} else {
 			$request_data['order_lines'] = $items_data;
@@ -979,6 +989,18 @@ class Api {
 			default:
 				throw new Exception( 'Generic error' );
 		}
+	}
+
+	/**
+	 * Delete payment method in Reepay
+	 *
+	 * @param string $id payment method id.
+	 */
+	public function delete_payment_method( string $id ) {
+		return $this->request(
+			'DELETE',
+			"https://api.reepay.com/v1/payment_method/$id"
+		);
 	}
 
 	/**

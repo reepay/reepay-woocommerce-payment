@@ -23,27 +23,46 @@ defined( 'ABSPATH' ) || exit();
  */
 class OrderStatuses {
 	/**
+	 * Is sync enabled
+	 *
+	 * @var bool
+	 */
+	public static bool $status_sync_enabled;
+
+	/**
+	 * Order created status
+	 *
+	 * @var string
+	 */
+	public static string $status_created;
+
+	/**
+	 * Order authorized status
+	 *
+	 * @var string
+	 */
+	public static string $status_authorized;
+
+	/**
+	 * Order settled status
+	 *
+	 * @var string
+	 */
+	public static string $status_settled;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
-		define( 'REEPAY_STATUS_SYNC', reepay()->get_setting( 'enable_sync' ) === 'yes' );
-		define( 'REEPAY_STATUS_CREATED', str_replace( 'wc-', '', reepay()->get_setting( 'status_created' ) ) ?: 'pending' );
-		define( 'REEPAY_STATUS_AUTHORIZED', str_replace( 'wc-', '', reepay()->get_setting( 'status_authorized' ) ) ?: 'on-hold' );
-		define( 'REEPAY_STATUS_SETTLED', str_replace( 'wc-', '', reepay()->get_setting( 'status_settled' ) ) ?: 'processing' );
+		add_filter( 'reepay_checkout_form_fields', array( $this, 'form_fields' ), 10, 2 );
 
-		add_filter( 'woocommerce_settings_api_form_fields_reepay_checkout', array( $this, 'form_fields' ), 10, 2 );
-
-		add_filter( 'woocommerce_valid_order_statuses_for_payment_complete', array( $this, 'add_valid_order_statuses' ), 10, 2 );
+		add_filter( 'woocommerce_valid_order_statuses_for_payment_complete', array( $this, 'add_valid_order_statuses_for_payment_complete' ), 10, 2 );
 
 		add_filter( 'woocommerce_payment_complete_order_status', array( $this, 'payment_complete_order_status' ), 10, 3 );
 
 		add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 10 );
 
 		add_action( 'woocommerce_payment_complete', array( $this, 'payment_complete' ), 10, 1 );
-
-		add_filter( 'reepay_authorized_order_status', array( $this, 'reepay_authorized_order_status' ), 10, 2 );
-
-		add_filter( 'reepay_settled_order_status', array( $this, 'reepay_settled_order_status' ), 10, 2 );
 
 		add_filter( 'wc_order_is_editable', array( $this, 'is_editable' ), 10, 2 );
 
@@ -55,14 +74,20 @@ class OrderStatuses {
 	}
 
 	/**
+	 * Init status variables
+	 */
+	public static function init_statuses() {
+		self::$status_sync_enabled = reepay()->get_setting( 'enable_sync' ) === 'yes';
+		self::$status_created      = str_replace( 'wc-', '', reepay()->get_setting( 'status_created' ) ) ?: 'pending';
+		self::$status_authorized   = str_replace( 'wc-', '', reepay()->get_setting( 'status_authorized' ) ) ?: 'on-hold';
+		self::$status_settled      = str_replace( 'wc-', '', reepay()->get_setting( 'status_settled' ) ) ?: 'processing';
+	}
+
+	/**
 	 * Add complete payment hook for all statuses
 	 */
 	public function plugins_loaded() {
-		if ( ! function_exists( 'wc_get_order_statuses' ) ) {
-			return;
-		}
-
-		foreach ( wc_get_order_statuses() as $status => $label ) {
+		foreach ( array_keys( wc_get_order_statuses() ) as $status ) {
 			$status = str_replace( 'wc-', '', $status );
 			add_action( 'woocommerce_payment_complete_order_status_' . $status, array( $this, 'payment_complete' ), 10, 1 );
 		}
@@ -146,9 +171,9 @@ class OrderStatuses {
 	 *
 	 * @return array
 	 */
-	public function add_valid_order_statuses( array $statuses, WC_Order $order ): array {
-		if ( rp_is_order_paid_via_reepay( $order ) ) {
-			$statuses = array_merge( $statuses, array( REEPAY_STATUS_AUTHORIZED, REEPAY_STATUS_SETTLED ) );
+	public function add_valid_order_statuses_for_payment_complete( array $statuses, WC_Order $order ): array {
+		if ( self::$status_sync_enabled && rp_is_order_paid_via_reepay( $order ) ) {
+			$statuses = array_merge( $statuses, array( self::$status_authorized, self::$status_settled ) );
 		}
 
 		return $statuses;
@@ -164,12 +189,8 @@ class OrderStatuses {
 	 * @return mixed|string
 	 */
 	public function payment_complete_order_status( string $status, int $order_id, WC_Order $order ) {
-		if ( rp_is_order_paid_via_reepay( $order ) ) {
-			$status = apply_filters(
-				'reepay_settled_order_status',
-				$order->needs_processing() ? 'processing' : 'completed',
-				$order
-			);
+		if ( self::$status_sync_enabled && rp_is_order_paid_via_reepay( $order ) ) {
+			$status = apply_filters( 'reepay_settled_order_status', self::$status_settled, $order );
 		}
 
 		return $status;
@@ -183,10 +204,10 @@ class OrderStatuses {
 	public function payment_complete( int $order_id ) {
 		$order = wc_get_order( $order_id );
 
-		if ( rp_is_order_paid_via_reepay( $order ) ) {
+		if ( self::$status_sync_enabled && rp_is_order_paid_via_reepay( $order ) ) {
 			$status = apply_filters(
 				'reepay_settled_order_status',
-				REEPAY_STATUS_SETTLED,
+				self::$status_settled,
 				$order
 			);
 
@@ -200,58 +221,36 @@ class OrderStatuses {
 	/**
 	 * Get a status for Authorized payments.
 	 *
-	 * @param string   $status default status.
 	 * @param WC_Order $order  current order.
+	 * @param string   $default default status.
 	 *
 	 * @return string
 	 */
-	public function reepay_authorized_order_status( string $status, WC_Order $order ): string {
-		if ( rp_is_order_paid_via_reepay( $order ) ) {
-			if ( order_contains_subscription( $order ) ) {
-				$status = 'on-hold';
-			} elseif ( REEPAY_STATUS_SYNC ) {
-				$status = REEPAY_STATUS_AUTHORIZED;
-			}
+	public static function get_authorized_order_status( WC_Order $order, string $default = 'on-hold' ): string {
+		if ( self::$status_sync_enabled && rp_is_order_paid_via_reepay( $order ) && ! order_contains_subscription( $order ) ) {
+			return self::$status_authorized;
 		}
 
-		return $status;
-	}
-
-	/**
-	 * Get a status for Settled payments.
-	 *
-	 * @param string   $status default status.
-	 * @param WC_Order $order  current order.
-	 *
-	 * @return string
-	 */
-	public function reepay_settled_order_status( string $status, WC_Order $order ): string {
-		if ( rp_is_order_paid_via_reepay( $order ) && REEPAY_STATUS_SYNC ) {
-
-			$status = REEPAY_STATUS_SETTLED;
-		}
-
-		return $status;
+		return $default;
 	}
 
 	/**
 	 * Set Authorized Status.
 	 *
-	 * @param WC_Order    $order          order to set.
-	 * @param string|null $note           order note.
-	 * @param string|null $transaction_id transaction id to set.
+	 * @param WC_Order $order          order to set.
+	 * @param string   $note           order note.
+	 * @param string   $transaction_id transaction id to set.
 	 *
-	 * @return void
-	 * @throws WC_Data_Exception Throws exception when invalid data sent to update_order_status.
+	 * @return bool
 	 */
-	public static function set_authorized_status( WC_Order $order, ?string $note, ?string $transaction_id ) {
-		$authorized_status = apply_filters( 'reepay_authorized_order_status', 'on-hold', $order );
+	public static function set_authorized_status( WC_Order $order, string $note = '', string $transaction_id = '' ): bool {
+		$authorized_status = self::get_authorized_order_status( $order );
 
 		if ( ! empty( $order->get_meta( '_reepay_state_authorized' ) ) || $order->get_status() === $authorized_status ) {
-			return;
+			return false;
 		}
 
-		if ( ! empty( $order->get_meta( '_order_stock_reduced' ) ) ) {
+		if ( empty( $order->get_meta( '_order_stock_reduced' ) ) ) {
 			wc_reduce_stock_levels( $order->get_id() );
 		}
 
@@ -264,30 +263,30 @@ class OrderStatuses {
 
 		$order->update_meta_data( '_reepay_state_authorized', 1 );
 		$order->save_meta_data();
+
+		return true;
 	}
 
 	/**
 	 * Set Settled Status.
 	 *
-	 * @param WC_Order    $order          order to set.
-	 * @param string|null $note           order note.
-	 * @param string|null $transaction_id transaction id to set.
+	 * @param WC_Order $order          order to set.
+	 * @param string   $note           order note.
+	 * @param string   $transaction_id transaction id to set.
 	 *
-	 * @return void
-	 * @throws WC_Data_Exception If cannot change order status.
+	 * @return bool
 	 */
-	public static function set_settled_status( WC_Order $order, ?string $note, ?string $transaction_id ) {
-		if ( ! rp_is_reepay_payment_method( $order->get_payment_method() ) ) {
-			return;
+	public static function set_settled_status( WC_Order $order, string $note = '', string $transaction_id = '' ): bool {
+		if ( ! rp_is_reepay_payment_method( $order->get_payment_method() ) || ! empty( $order->get_meta( '_reepay_state_settled' ) ) ) {
+			return false;
 		}
 
-		if ( '1' === $order->get_meta( '_reepay_state_settled' ) ) {
-			return;
+		$invoice = reepay()->api( $order )->get_invoice_data( $order );
+
+		if ( is_wp_error( $invoice ) ) {
+			return false;
 		}
 
-		$gateway = rp_get_payment_method( $order );
-
-		$invoice = reepay()->api( $gateway )->get_invoice_data( $order );
 		if ( $invoice['settled_amount'] < $invoice['authorized_amount'] ) {
 			// Use the authorized status if order has been settled partially.
 			self::set_authorized_status( $order, $note, $transaction_id );
@@ -298,9 +297,11 @@ class OrderStatuses {
 				$order->add_order_note( $note );
 			}
 
-			$order->update_meta_data( '_reepay_state_settled', '1' );
+			$order->update_meta_data( '_reepay_state_settled', 1 );
 			$order->save_meta_data();
 		}
+
+		return true;
 	}
 
 	/**
@@ -313,23 +314,14 @@ class OrderStatuses {
 	 * @param bool        $manual         Is this a manual order status change.
 	 *
 	 * @return void
-	 * @throws WC_Data_Exception Throws exception when invalid data sent to set_transaction_id.
 	 */
 	public static function update_order_status( WC_Order $order, string $new_status, $note = '', $transaction_id = null, $manual = false ) {
-		remove_action( 'woocommerce_process_shop_order_meta', 'WC_Meta_Box_Order_Data::save', 40 );
-
-		// Disable status change hook.
-		remove_action( 'woocommerce_order_status_changed', array( __CLASS__, 'order_status_changed' ) );
-
 		if ( ! empty( $transaction_id ) ) {
 			$order->set_transaction_id( $transaction_id );
 		}
 
 		$order->set_status( $new_status, $note, $manual );
 		$order->save();
-
-		// Enable status change hook.
-		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'order_status_changed' ), 10, 4 );
 	}
 
 	/**
@@ -341,10 +333,11 @@ class OrderStatuses {
 	 * @return bool
 	 */
 	public function is_editable( bool $is_editable, WC_Order $order ): bool {
-		if ( rp_is_order_paid_via_reepay( $order ) ) {
-			if ( in_array( $order->get_status(), array( REEPAY_STATUS_CREATED, REEPAY_STATUS_AUTHORIZED ), true ) ) {
-				$is_editable = true;
-			}
+		if ( ! $is_editable &&
+			 self::$status_sync_enabled &&
+			 rp_is_order_paid_via_reepay( $order ) &&
+			 in_array( $order->get_status(), array( self::$status_created, self::$status_authorized ), true ) ) {
+			$is_editable = true;
 		}
 
 		return $is_editable;
@@ -359,8 +352,10 @@ class OrderStatuses {
 	 * @return bool
 	 */
 	public function is_paid( bool $is_paid, WC_Order $order ): bool {
-		if ( rp_is_order_paid_via_reepay( $order )
-			 && in_array( $order->get_status(), array( REEPAY_STATUS_SETTLED ), true )
+		if ( ! $is_paid &&
+			 self::$status_sync_enabled &&
+			 rp_is_order_paid_via_reepay( $order ) &&
+			 $order->get_status() === self::$status_settled
 		) {
 			$is_paid = true;
 		}
@@ -378,12 +373,8 @@ class OrderStatuses {
 	 * @see wc_cancel_unpaid_orders()
 	 */
 	public function cancel_unpaid_order( bool $maybe_cancel, WC_Order $order ): bool {
-		if ( rp_is_order_paid_via_reepay( $order ) ) {
-			$gateway = rp_get_payment_method( $order );
-
-			if ( 'yes' !== $gateway->enable_order_autocancel ) {
-				$maybe_cancel = false;
-			}
+		if ( $maybe_cancel && rp_is_order_paid_via_reepay( $order ) && 'yes' !== reepay()->get_setting( 'enable_order_autocancel' ) ) {
+			$maybe_cancel = false;
 		}
 
 		return $maybe_cancel;
@@ -400,18 +391,11 @@ class OrderStatuses {
 	 * @throws Exception If error with payment capture.
 	 */
 	public function order_status_changed( int $order_id, string $from, string $to, WC_Order $order ) {
-		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
-			return;
-		}
-
-		if ( order_contains_subscription( $order ) ) {
+		if ( ! rp_is_order_paid_via_reepay( $order ) || order_contains_subscription( $order ) ) {
 			return;
 		}
 
 		$gateway = rp_get_payment_method( $order );
-		if ( ! $gateway ) {
-			return;
-		}
 
 		switch ( $to ) {
 			case 'cancelled':
@@ -429,7 +413,7 @@ class OrderStatuses {
 					}
 				}
 				break;
-			case REEPAY_STATUS_SETTLED:
+			case self::$status_sync_enabled ? self::$status_settled : 'processing':
 				// Capture payment.
 				$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
 				if ( ( '1' === $value || false === $value ) && $gateway->can_capture( $order ) ) {
@@ -440,7 +424,7 @@ class OrderStatuses {
 						}
 
 						$amount_to_capture = rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order->get_currency() );
-						$items_to_capture  = InstantSettle::calculate_instant_settle( $order )->items;
+						$items_to_capture  = InstantSettle::calculate_instant_settle( $order )['items'];
 
 						if ( ! empty( $items_to_capture ) && $amount_to_capture > 0 ) {
 							$gateway->capture_payment( $order, $amount_to_capture );

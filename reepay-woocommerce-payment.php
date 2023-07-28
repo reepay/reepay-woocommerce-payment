@@ -4,7 +4,7 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: reepay
  * Author URI: http://reepay.com
- * Version: 1.4.67
+ * Version: 1.4.71
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -14,6 +14,7 @@
  */
 
 use Reepay\Checkout\Api;
+use Reepay\Checkout\DIContainer;
 use Reepay\Checkout\Gateways;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\Plugin\LifeCycle;
@@ -46,6 +47,13 @@ class WC_ReepayCheckout {
 	 * @var Gateways
 	 */
 	private $gateways = null;
+
+	/**
+	 * Dependency injection container
+	 *
+	 * @var DIContainer
+	 */
+	private $di_container = null;
 
 	/**
 	 * Constructor
@@ -111,11 +119,11 @@ class WC_ReepayCheckout {
 			}
 
 			if ( isset( $gateway_settings['private_key'] ) ) {
-				$gateway_settings['private_key'] = apply_filters( 'woocommerce_reepay_private_key', $gateway_settings['private_key'] ?? '' );
+				$gateway_settings['private_key'] = apply_filters( 'woocommerce_reepay_private_key', $gateway_settings['private_key'] );
 			}
 
 			if ( isset( $gateway_settings['private_key_test'] ) ) {
-				$gateway_settings['private_key_test'] = apply_filters( 'woocommerce_reepay_private_key_test', $gateway_settings['private_key_test'] ?? '' );
+				$gateway_settings['private_key_test'] = apply_filters( 'woocommerce_reepay_private_key_test', $gateway_settings['private_key_test'] );
 			}
 
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -142,24 +150,24 @@ class WC_ReepayCheckout {
 				'images_url'              => plugin_dir_url( __FILE__ ) . 'assets/images/',
 				'images_path'             => plugin_dir_path( __FILE__ ) . 'assets/images/',
 
-				'private_key'             => $gateway_settings['private_key'] ?? '',
-				'private_key_test'        => $gateway_settings['private_key_test'] ?? '',
-				'test_mode'               => $gateway_settings['test_mode'] ?? '',
-				'settle'                  => $gateway_settings['settle'] ?? array(),
-				'language'                => $gateway_settings['language'] ?? '',
-				'debug'                   => $gateway_settings['debug'] ?? '',
-				'payment_type'            => $gateway_settings['payment_type'] ?? '',
-				'skip_order_lines'        => $gateway_settings['skip_order_lines'] ?? '',
-				'enable_order_autocancel' => $gateway_settings['enable_order_autocancel'] ?? '',
-				'is_webhook_configured'   => $gateway_settings['is_webhook_configured'] ?? '',
-				'handle_failover'         => $gateway_settings['handle_failover'] ?? '',
-				'payment_button_text'     => $gateway_settings['payment_button_text'] ?? '',
+				'private_key'             => ! empty( $gateway_settings['private_key'] ) ? $gateway_settings['private_key'] : '',
+				'private_key_test'        => ! empty( $gateway_settings['private_key_test'] ) ? $gateway_settings['private_key_test'] : '',
+				'test_mode'               => ! empty( $gateway_settings['test_mode'] ) ? $gateway_settings['test_mode'] : '',
+				'settle'                  => ! empty( $gateway_settings['settle'] ) ? $gateway_settings['settle'] : array(),
+				'language'                => ! empty( $gateway_settings['language'] ) ? $gateway_settings['language'] : '',
+				'debug'                   => ! empty( $gateway_settings['debug'] ) ? $gateway_settings['debug'] : '',
+				'payment_type'            => ! empty( $gateway_settings['payment_type'] ) ? $gateway_settings['payment_type'] : '',
+				'skip_order_lines'        => ! empty( $gateway_settings['skip_order_lines'] ) ? $gateway_settings['skip_order_lines'] : '',
+				'enable_order_autocancel' => ! empty( $gateway_settings['enable_order_autocancel'] ) ? $gateway_settings['enable_order_autocancel'] : '',
+				'is_webhook_configured'   => ! empty( $gateway_settings['is_webhook_configured'] ) ? $gateway_settings['is_webhook_configured'] : '',
+				'handle_failover'         => ! empty( $gateway_settings['handle_failover'] ) ? $gateway_settings['handle_failover'] : '',
+				'payment_button_text'     => ! empty( $gateway_settings['payment_button_text'] ) ? $gateway_settings['payment_button_text'] : '',
 
-				'enable_sync'             => $gateway_settings['enable_sync'] ?? '',
-				'status_created'          => $gateway_settings['status_created'] ?? '',
-				'status_authorized'       => $gateway_settings['status_authorized'] ?? '',
-				'status_settled'          => $gateway_settings['status_settled'] ?? '',
-				'logo_height'         	  => $gateway_settings['logo_height'] ?? '',
+				'enable_sync'       => ! empty( $gateway_settings['enable_sync'] ) ? $gateway_settings['enable_sync'] : '',
+				'status_created'    => ! empty( $gateway_settings['status_created'] ) ? $gateway_settings['status_created'] : '',
+				'status_authorized' => ! empty( $gateway_settings['status_authorized'] ) ? $gateway_settings['status_authorized'] : '',
+				'status_settled'    => ! empty( $gateway_settings['status_settled'] ) ? $gateway_settings['status_settled'] : '',
+				'logo_height'       => ! empty( $gateway_settings['logo_height'] ) ? $gateway_settings['logo_height'] : '',
 			);
 		}
 
@@ -203,23 +211,18 @@ class WC_ReepayCheckout {
 	/**
 	 * Set logging source.
 	 *
-	 * @param ReepayGateway|string $source Source for logging.
+	 * @param ReepayGateway|WC_Order|string $source Source for logging.
 	 *
-	 * @return Api;
+	 * @return Api
 	 */
-	public function api( $source ): ?Api {
-		static $api = null;
-
-		if ( is_null( $api ) ) {
-			$api = new Api( $source );
-		} else {
-			/**
-			 * Api instance
-			 *
-			 * @var Api $api
-			 */
-			$api->set_logging_source( $source );
-		}
+	public function api( $source ): Api {
+		/**
+		 * Api instance
+		 *
+		 * @var Api $api
+		 */
+		$api = $this->di()->get( API::class );
+		$api->set_logging_source( $source );
 
 		return $api;
 	}
@@ -232,6 +235,20 @@ class WC_ReepayCheckout {
 	public function gateways(): ?Gateways {
 		return $this->gateways;
 	}
+
+	/**
+	 * Get dependency injection container
+	 *
+	 * @return DIContainer
+	 */
+	public function di(): DIContainer {
+		if( is_null( $this->di_container ) ) {
+			$this->di_container = new DIContainer();
+		}
+
+		return $this->di_container;
+	}
+
 	/**
 	 * WooCommerce Loaded: load classes
 	 *
@@ -246,13 +263,15 @@ class WC_ReepayCheckout {
 
 		new Reepay\Checkout\OrderFlow\Main();
 
-		new Reepay\Checkout\Subscriptions();
+		new Reepay\Checkout\Actions\Subscriptions();
 
 		$this->gateways = new Reepay\Checkout\Gateways();
 
 		new Reepay\Checkout\Integrations\Main();
 
 		new Reepay\Checkout\Frontend\Main();
+
+		new Reepay\Checkout\Actions\ReepayCustomer();
 	}
 }
 

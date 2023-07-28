@@ -1,6 +1,6 @@
 <?php
 /**
- * Class InstantSettle
+ * Class InstantSettleTest
  *
  * @package Reepay\Checkout
  */
@@ -8,71 +8,68 @@
 use Reepay\Checkout\OrderFlow\InstantSettle;
 
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
-use Reepay\Checkout\Tests\Helpers\OptionsController;
-use Reepay\Checkout\Tests\Helpers\OrderGenerator;
-use Reepay\Checkout\Tests\Helpers\ProductGenerator;
-use Reepay\Checkout\Tests\Mocks\OrderFlow\OrderCaptureMock;
+use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
 /**
- * InstantSettle.
+ * InstantSettleTest.
  *
  * @covers \Reepay\Checkout\OrderFlow\InstantSettle
  */
-class InstantSettleTest extends WP_UnitTestCase {
+class InstantSettleTest extends Reepay_UnitTestCase {
 	/**
-	 * OptionsController instance
-	 *
-	 * @var OptionsController
+	 * Test @see InstantSettle::maybe_settle_instantly with reepay payment method
 	 */
-	private static OptionsController $options;
-
-	/**
-	 * ProductGenerator instance
-	 *
-	 * @var ProductGenerator
-	 */
-	private static ProductGenerator $product_generator;
-
-	/**
-	 * InstantSettle instance
-	 *
-	 * @var InstantSettle
-	 */
-	private static InstantSettle $instant_settle_instance;
-
-	/**
-	 * OrderGenerator instance
-	 *
-	 * @var OrderGenerator
-	 */
-	private OrderGenerator $order_generator;
-
-	/**
-	 * Runs the routine before setting up all tests.
-	 */
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		self::$options                 = new OptionsController();
-		self::$product_generator       = new ProductGenerator();
-		self::$instant_settle_instance = new InstantSettle();
-
-		self::$instant_settle_instance::set_order_capture(
-			new OrderCaptureMock()
+	public function test_maybe_settle_instantly_with_reepay_payment_method() {
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_PHYSICAL,
+			)
 		);
+
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'      => false,
+				'downloadable' => false,
+			)
+		);
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+
+		self::$instant_settle_instance->maybe_settle_instantly( $this->order_generator->order() );
+
+		$this->assertSame( '1', $this->order_generator->get_meta( '_is_instant_settled' ) );
 	}
 
 	/**
-	 * Runs the routine before each test is executed.
+	 * Test @see InstantSettle::maybe_settle_instantly with non reepay payment method
 	 */
-	public function set_up() {
-		parent::set_up();
+	public function test_maybe_settle_instantly_with_non_reepay_payment_method() {
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_PHYSICAL,
+			)
+		);
 
-		$this->order_generator = new OrderGenerator();
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'      => false,
+				'downloadable' => false,
+			)
+		);
+
+		$this->order_generator->set_prop( 'payment_method', 'cod' );
+
+		self::$instant_settle_instance->maybe_settle_instantly( $this->order_generator->order() );
+
+		$this->assertSame( '', $this->order_generator->get_meta( '_is_instant_settled' ) );
 	}
 
 	/**
-	 * Make sure instant settlement can be processed just once
+	 * Test @see InstantSettle::process_instant_settle and make sure instant settlement can be processed just once
 	 */
 	public function test_process_instant_settle_already_settled() {
 		self::$options->set_option(
@@ -85,8 +82,8 @@ class InstantSettleTest extends WP_UnitTestCase {
 		$this->order_generator->add_product(
 			'simple',
 			array(
-				'virtual'      => true,
-				'downloadable' => true,
+				'virtual'      => false,
+				'downloadable' => false,
 			)
 		);
 
@@ -95,23 +92,72 @@ class InstantSettleTest extends WP_UnitTestCase {
 		$order_item_id = $this->order_generator->add_product(
 			'simple',
 			array(
-				'virtual'      => true,
-				'downloadable' => true,
+				'virtual'      => false,
+				'downloadable' => false,
 			)
 		);
 
 		self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
 
-		$this->assertEmpty( ( new WC_Order_Item_Product( $order_item_id ) )->get_meta( 'settled' ) );
+		$this->assertFalse(
+			WC_Order_Factory::get_order_item( $order_item_id )->meta_exists( 'settled' )
+		);
 	}
 
 	/**
-	 * Test get_instant_settle_items with physical product
+	 * Test @see InstantSettle::process_instant_settle
+	 */
+	public function test_process_instant_settle() {
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_PHYSICAL,
+				InstantSettle::SETTLE_VIRTUAL,
+				InstantSettle::SETTLE_RECURRING,
+				InstantSettle::SETTLE_FEE,
+			)
+		);
+
+		$order_item_ids = array();
+
+		$order_item_ids[] = $this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'      => false,
+				'downloadable' => false,
+			)
+		);
+
+		$order_item_ids[] = $this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'      => true,
+				'downloadable' => true,
+			)
+		);
+
+		if ( PLUGINS_STATE::woo_subs_activated() ) {
+			$order_item_ids[] = $this->order_generator->add_product( 'woo_sub' );
+		}
+
+		$order_item_ids[] = $this->order_generator->add_fee();
+
+		self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
+
+		foreach ( $order_item_ids as $order_item_id ) {
+			$this->assertTrue(
+				WC_Order_Factory::get_order_item( $order_item_id )->meta_exists( 'settled' )
+			);
+		}
+	}
+
+	/**
+	 * Test @see InstantSettle::get_instant_settle_items with physical product
 	 *
-	 * @param string $type product type.
-	 * @param bool   $virtual is virtual product.
+	 * @param string $type         product type.
+	 * @param bool   $virtual      is virtual product.
 	 * @param bool   $downloadable is downloadable product.
-	 * @param int    $result expected Result.
+	 * @param int    $result       expected Result.
 	 *
 	 * @testWith
 	 * ["simple", false, false, 1]
@@ -152,12 +198,12 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_instant_settle_items with virtual product
+	 * Test @see InstantSettle::get_instant_settle_items with virtual product
 	 *
-	 * @param string $type product type.
-	 * @param bool   $virtual is virtual product.
+	 * @param string $type         product type.
+	 * @param bool   $virtual      is virtual product.
 	 * @param bool   $downloadable is downloadable product.
-	 * @param int    $result expected Result.
+	 * @param int    $result       expected Result.
 	 *
 	 * @testWith
 	 * ["simple", false, false, 0]
@@ -198,9 +244,9 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_instant_settle_items with recurring product
+	 * Test @see InstantSettle::get_instant_settle_items with recurring product
 	 *
-	 * @param string $type product type.
+	 * @param string $type   product type.
 	 * @param int    $result expected Result.
 	 *
 	 * @testWith
@@ -227,7 +273,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_instant_settle_items with fee order item
+	 * Test @see InstantSettle::get_instant_settle_items with fee order item
 	 */
 	public function test_get_instant_settle_items_fee() {
 		$this->order_generator->add_fee();
@@ -253,7 +299,7 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_instant_settle_items with shipping order item
+	 * Test @see InstantSettle::get_instant_settle_items with shipping order item
 	 */
 	public function test_get_instant_settle_items_shipping() {
 		$this->order_generator->add_shipping();
@@ -279,12 +325,12 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test can_product_be_settled_instantly with physical product
+	 * Test @see InstantSettle::can_product_be_settled_instantly with physical product
 	 *
-	 * @param string $type product type.
-	 * @param bool   $virtual is virtual product.
+	 * @param string $type         product type.
+	 * @param bool   $virtual      is virtual product.
 	 * @param bool   $downloadable is downloadable product.
-	 * @param bool   $result expected Result.
+	 * @param bool   $result       expected Result.
 	 *
 	 * @testWith
 	 * ["simple", false, false, true]
@@ -322,12 +368,12 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test can_product_be_settled_instantly with virtual product
+	 * Test @see InstantSettle::can_product_be_settled_instantly with virtual product
 	 *
-	 * @param string $type product type.
-	 * @param bool   $virtual is virtual product.
+	 * @param string $type         product type.
+	 * @param bool   $virtual      is virtual product.
 	 * @param bool   $downloadable is downloadable product.
-	 * @param bool   $result expected Result.
+	 * @param bool   $result       expected Result.
 	 *
 	 * @testWith
 	 * ["simple", false, false, false]
@@ -365,9 +411,9 @@ class InstantSettleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test can_product_be_settled_instantly with recurring product
+	 * Test @see InstantSettle::can_product_be_settled_instantly with recurring product
 	 *
-	 * @param string $type product type.
+	 * @param string $type   product type.
 	 * @param bool   $result expected Result.
 	 *
 	 * @testWith
@@ -388,5 +434,126 @@ class InstantSettleTest extends WP_UnitTestCase {
 		$product = self::$product_generator->generate( $type );
 
 		$this->assertSame( $result, InstantSettle::can_product_be_settled_instantly( $product ) );
+	}
+
+	/**
+	 * Test @see InstantSettle::calculate_instant_settle
+	 */
+	public function test_calculate_instant_settle() {
+		$prices              = array( 1.02, 2.03, 3.05, 5.07 );
+		$discounts           = array( 0.13 );
+		$order_item_products = array();
+
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_PHYSICAL,
+				InstantSettle::SETTLE_VIRTUAL,
+				InstantSettle::SETTLE_RECURRING,
+				InstantSettle::SETTLE_FEE,
+			)
+		);
+
+		$order_item_products[] = $this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => $prices[0],
+				'virtual'       => false,
+				'downloadable'  => false,
+			)
+		);
+
+		$order_item_products[] = $this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => $prices[1],
+				'virtual'       => true,
+				'downloadable'  => true,
+			)
+		);
+
+		$this->order_generator->add_shipping(
+			array(
+				'total' => $prices[2],
+			)
+		);
+
+		$this->order_generator->add_fee(
+			array(
+				'total' => $prices[3],
+			)
+		);
+
+		$this->order_generator->set_prop( 'discount_total', $discounts[0] );
+
+		$calculations = InstantSettle::calculate_instant_settle( $this->order_generator->order() );
+
+		$this->assertSame(
+			array_sum( $prices ) - array_sum( $discounts ),
+			$calculations['settle_amount']
+		);
+
+		$this->assertSame(
+			count( $order_item_products ),
+			count( $calculations['items'] )
+		);
+	}
+
+	/**
+	 * Test @see InstantSettle::calculate_instant_settle with zero total
+	 */
+	public function test_calculate_instant_settle_zero_total() {
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_PHYSICAL,
+				InstantSettle::SETTLE_VIRTUAL,
+				InstantSettle::SETTLE_RECURRING,
+				InstantSettle::SETTLE_FEE,
+			)
+		);
+
+		$this->order_generator->add_product( 'simple' );
+		$this->order_generator->set_prop( 'discount_total', 200 );
+
+		$calculations = InstantSettle::calculate_instant_settle( $this->order_generator->order() );
+
+		$this->assertSame(
+			0,
+			$calculations['settle_amount']
+		);
+	}
+
+	/**
+	 * Test @see InstantSettle::get_settled_items
+	 */
+	public function test_get_settled_items() {
+		$settled_order_items[] = WC_Order_Factory::get_order_item(
+			$this->order_generator->add_product( 'simple' )
+		);
+
+		$not_settled_order_items[] = WC_Order_Factory::get_order_item(
+			$this->order_generator->add_product( 'simple' )
+		);
+
+		$settled_order_items[] = WC_Order_Factory::get_order_item(
+			$this->order_generator->add_product( 'simple' )
+		);
+
+		foreach ( $settled_order_items as $order_item ) {
+			$order_item->add_meta_data( 'settled', '1' );
+			$order_item->save();
+		}
+
+		$settled_items      = InstantSettle::get_settled_items( $this->order_generator->order() );
+		$settled_items_keys = array_keys( $settled_items );
+
+		foreach ( $settled_order_items as $order_item ) {
+			$this->assertContains( $order_item->get_id(), $settled_items_keys );
+		}
+
+		foreach ( $not_settled_order_items as $order_item ) {
+			$this->assertNotContains( $order_item->get_id(), $settled_items_keys );
+		}
 	}
 }

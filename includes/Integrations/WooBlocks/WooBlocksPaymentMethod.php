@@ -40,7 +40,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 	 *
 	 * @var string[]
 	 */
-	protected $support_cards = array(
+	protected array $support_cards = array(
 		'reepay_checkout',
 	);
 
