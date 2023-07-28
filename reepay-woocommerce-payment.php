@@ -20,6 +20,7 @@ use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\Plugin\LifeCycle;
 use Reepay\Checkout\Plugin\Statistics;
 use Reepay\Checkout\Plugin\WoocommerceExists;
+use Reepay\Checkout\Plugin\WoocommerceHPOS;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -65,6 +66,7 @@ class WC_ReepayCheckout {
 
 		new LifeCycle( $this->get_setting( 'plugin_path' ) );
 		new WoocommerceExists();
+		new WoocommerceHPOS();
 
 		new Reepay\Checkout\Functions\Main();
 
