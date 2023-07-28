@@ -6,11 +6,12 @@
  */
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
+use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
 /**
  * AnydayTest.
  */
-class ReepayCheckoutTest extends WP_UnitTestCase {
+class ReepayCheckoutTest extends Reepay_UnitTestCase {
 	/**
 	 * ReepayCheckout
 	 *
@@ -62,6 +63,7 @@ class ReepayCheckoutTest extends WP_UnitTestCase {
 	 * ["ca_f73e13e5784a5dff32f2f93be7a8130f"]
 	 */
 	public function test_rp_card_store( string $token ) {
+		// Выяснить как делать запросы к апи в тестах или обойти их
 		$this->expectException( Exception::class );
 		self::$gateway->add_payment_token_to_customer( $this->user->ID, $token );
 	}
@@ -69,14 +71,20 @@ class ReepayCheckoutTest extends WP_UnitTestCase {
 	/**
 	 * Test function test_rp_finalize
 	 *
-	 * @param string $token amount for calculation.
+	 * @param string $token card token from callback.
 	 *
 	 * @testWith
 	 * ["ca_f73e13e5784a5dff32f2f93be7a8130f"]
 	 */
-	public function test_rp_finalize( string $token ) {
-		$this->expectException( Exception::class );
-		self::$gateway->add_payment_token_to_customer( $this->user->ID, $token );
+	public function test_rp_finalize( string $token ) { // Выяснить как делать запросы к апи в тестах или обойти их
+		$_GET['payment_method'] = $token;
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+
+		$_GET['key'] = $this->order_generator->order()->get_order_key();
+		self::$gateway->reepay_finalize();
 	}
+
+
 
 }
