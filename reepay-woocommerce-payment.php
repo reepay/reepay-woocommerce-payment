@@ -4,7 +4,7 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: reepay
  * Author URI: http://reepay.com
- * Version: 1.4.71
+ * Version: 1.4.72
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -20,6 +20,7 @@ use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\Plugin\LifeCycle;
 use Reepay\Checkout\Plugin\Statistics;
 use Reepay\Checkout\Plugin\WoocommerceExists;
+use Reepay\Checkout\Plugin\WoocommerceHPOS;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -65,6 +66,7 @@ class WC_ReepayCheckout {
 
 		new LifeCycle( $this->get_setting( 'plugin_path' ) );
 		new WoocommerceExists();
+		new WoocommerceHPOS();
 
 		new Reepay\Checkout\Functions\Main();
 

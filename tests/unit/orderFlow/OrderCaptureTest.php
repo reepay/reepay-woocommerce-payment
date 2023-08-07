@@ -8,50 +8,15 @@
 use Reepay\Checkout\Api;
 
 use Reepay\Checkout\OrderFlow\OrderCapture;
-use Reepay\Checkout\Tests\Helpers\OrderGenerator;
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
-use PHPUnit\Framework\MockObject\MockObject;
+use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
 /**
  * OrderCaptureTest.
  *
  * @covers \Reepay\Checkout\OrderFlow\OrderCapture
  */
-class OrderCaptureTest extends WP_UnitTestCase {
-	/**
-	 * OrderGenerator instance
-	 *
-	 * @var OrderCapture
-	 */
-	private OrderCapture $order_capture;
-
-	/**
-	 * OrderGenerator instance
-	 *
-	 * @var OrderGenerator
-	 */
-	private OrderGenerator $order_generator;
-
-	/**
-	 * Api class mock
-	 *
-	 * @var Api|MockObject
-	 */
-	private Api $api_mock;
-
-	/**
-	 * Runs the routine before each test is executed.
-	 */
-	public function set_up() {
-		parent::set_up();
-
-		$this->order_generator = new OrderGenerator();
-		$this->order_capture   = new OrderCapture();
-
-		$this->api_mock = $this->getMockBuilder( Api::class )->getMock();
-		reepay()->di()->set( Api::class, $this->api_mock );
-	}
-
+class OrderCaptureTest extends Reepay_UnitTestCase {
 	/**
 	 * Test @see OrderCapture::add_item_capture_button
 	 */

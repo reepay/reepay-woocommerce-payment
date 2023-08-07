@@ -6,13 +6,14 @@
  */
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
+use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
 /**
  * Class Gateways
  *
  * @covers \Reepay\Checkout\Gateways
  */
-class Gateways extends WP_UnitTestCase {
+class Gateways extends Reepay_UnitTestCase {
 	/**
 	 * Test get_gateway
 	 *

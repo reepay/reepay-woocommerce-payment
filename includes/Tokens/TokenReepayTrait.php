@@ -11,6 +11,7 @@ use Exception;
 use WC_Order;
 use WC_Payment_Token;
 use WC_Payment_Tokens;
+use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -88,7 +89,7 @@ trait TokenReepayTrait {
 	 * @throws Exception If invalid token or order.
 	 */
 	protected function reepay_save_card_info( WC_Order $order, string $reepay_token ) {
-		$customer_handle = get_user_meta( $order->get_customer_id(), 'reepay_customer_id', true );
+		$customer_handle = rp_get_customer_handle( $order->get_customer_id() );
 		$card_info       = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
 
 		if ( is_wp_error( $card_info ) ) {
@@ -125,7 +126,7 @@ trait TokenReepayTrait {
 	 * @throws Exception If invalid token or order.
 	 */
 	public function add_payment_token_to_customer( int $customer_id, string $reepay_token ): array {
-		$customer_handle = get_user_meta( $customer_id, 'reepay_customer_id', true );
+		$customer_handle = rp_get_customer_handle( $customer_id );
 		$card_info       = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
 
 		if ( is_wp_error( $card_info ) || empty( $card_info ) ) {
@@ -247,5 +248,46 @@ trait TokenReepayTrait {
 		wp_cache_set( $token, $token_id, 'reepay_tokens' );
 
 		return WC_Payment_Tokens::get( $token_id );
+	}
+
+	/**
+	 * Delete Reepay payment method and WooCommerce token
+	 *
+	 * @param WC_Payment_Token $token token to delete.
+	 *
+	 * @return bool
+	 */
+	public static function delete_card( WC_Payment_Token $token ): bool {
+		$result = reepay()->api( 'api-delete-card' )->delete_payment_method( $token->get_token() );
+
+		if ( is_wp_error( $result ) ) {
+			return false;
+		}
+
+		WC_Payment_Tokens::delete( $token->get_id() );
+
+		return true;
+	}
+
+	/**
+	 * Check if $token is Reepay token
+	 *
+	 * @param WC_Payment_Token|null $token token to check.
+	 *
+	 * @return bool
+	 */
+	public static function is_reepay_token( ?WC_Payment_Token $token ): bool {
+		if ( is_null( $token ) ) {
+			return false;
+		}
+
+		return in_array(
+			$token->get_gateway_id(),
+			array(
+				reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id,
+				reepay()->gateways()->checkout()->id,
+			),
+			true
+		);
 	}
 }

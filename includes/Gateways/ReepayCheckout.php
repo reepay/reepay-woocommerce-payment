@@ -69,21 +69,20 @@ class ReepayCheckout extends ReepayGateway {
 
 		parent::__construct();
 
-		$this->private_key             = apply_filters( 'woocommerce_reepay_private_key', $this->settings['private_key'] ?? $this->private_key );
-		$this->private_key_test        = apply_filters( 'woocommerce_reepay_private_key_test', $this->settings['private_key_test'] ?? $this->private_key_test );
-		$this->test_mode               = $this->settings['test_mode'] ?? $this->test_mode;
-		$this->settle                  = ( $this->settings['settle'] ?? $this->settle ) ?: array();
-		$this->language                = $this->settings['language'] ?? $this->language;
-		$this->save_cc                 = $this->settings['save_cc'] ?? $this->save_cc;
-		$this->debug                   = $this->settings['debug'] ?? $this->debug;
-		$this->logos                   = $this->settings['logos'] ?? $this->logos;
-		$this->payment_type            = $this->settings['payment_type'] ?? $this->payment_type;
-		$this->payment_methods         = $this->settings['payment_methods'] ?? $this->payment_methods;
-		$this->skip_order_lines        = $this->settings['skip_order_lines'] ?? $this->skip_order_lines;
-		$this->enable_order_autocancel = $this->settings['enable_order_autocancel'] ?? $this->enable_order_autocancel;
-		$this->failed_webhooks_email   = $this->settings['failed_webhooks_email'] ?? $this->failed_webhooks_email;
-		$this->is_webhook_configured   = $this->settings['is_webhook_configured'] ?? $this->is_webhook_configured;
-		$this->handle_failover         = $this->settings['handle_failover'] ?? $this->handle_failover;
+		$this->private_key             = apply_filters( 'woocommerce_reepay_private_key', $this->settings['private_key'] ?: $this->private_key );
+		$this->private_key_test        = apply_filters( 'woocommerce_reepay_private_key_test', $this->settings['private_key_test'] ?: $this->private_key_test );
+		$this->test_mode               = $this->settings['test_mode'] ?: $this->test_mode;
+		$this->settle                  = $this->settings['settle'] ?: $this->settle;
+		$this->language                = $this->settings['language'] ?: $this->language;
+		$this->save_cc                 = $this->settings['save_cc'] ?: $this->save_cc;
+		$this->debug                   = $this->settings['debug'] ?: $this->debug;
+		$this->logos                   = $this->settings['logos'] ?: $this->logos;
+		$this->payment_type            = $this->settings['payment_type'] ?: $this->payment_type;
+		$this->payment_methods         = $this->settings['payment_methods'] ?: $this->payment_methods;
+		$this->skip_order_lines        = $this->settings['skip_order_lines'] ?: $this->skip_order_lines;
+		$this->enable_order_autocancel = $this->settings['enable_order_autocancel'] ?: $this->enable_order_autocancel;
+		$this->failed_webhooks_email   = $this->settings['failed_webhooks_email'] ?: $this->failed_webhooks_email;
+		$this->handle_failover         = $this->settings['handle_failover'] ?: $this->handle_failover;
 
 		if ( 'yes' === $this->save_cc ) {
 			$this->supports[] = 'add_payment_method';
@@ -610,6 +609,8 @@ class ReepayCheckout extends ReepayGateway {
 		$this->private_key_test = $this->settings['private_key_test'] ?? $this->private_key_test;
 		$this->test_mode        = $this->settings['test_mode'] ?? $this->test_mode;
 
+		reepay()->reset_settings();
+
 		parent::is_webhook_configured();
 
 		return true;
@@ -624,8 +625,9 @@ class ReepayCheckout extends ReepayGateway {
 		parent::payment_fields();
 
 		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription.
-		if ( ( 'yes' === $this->save_cc && ! is_add_payment_method_page() ) ||
-			 ( wcs_cart_have_subscription() || wcs_is_payment_change() )
+		if ( 'yes' === $this->save_cc ||
+			 wcs_cart_have_subscription() ||
+			 wcs_is_payment_change()
 		) {
 			$this->tokenization_script();
 
