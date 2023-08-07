@@ -59,8 +59,6 @@ class Main {
 		 *
 		 * @see WC_Payment_Tokens::get_customer_tokens
 		 */
-		__log( '!1!' );
-		__log( $tokens, $customer_id, $gateway_id );
 
 		if ( ! empty( $gateway_id ) && reepay()->gateways()->checkout()->id !== $gateway_id ) {
 			return $tokens;
@@ -76,38 +74,40 @@ class Main {
 			$tokens = array(); // Only Reepay tokens if Reepay gateway specified.
 		}
 
-		foreach ( $reepay_cards as $card_info ) {
-			$token = TokenReepayTrait::get_payment_token( $card_info['id'] );
+		if ( ! empty( $reepay_cards[0] ) ) {
+			foreach ( $reepay_cards as $card_info ) {
+				$token = TokenReepayTrait::get_payment_token( $card_info['id'] );
 
-			if ( empty( $token ) ) {
-				if ( 'ms_' === substr( $card_info['id'], 0, 3 ) ) {
-					$token = new TokenReepayMS();
-					$token->set_gateway_id( $gateway_id );
-					$token->set_token( $card_info['id'] );
-					$token->set_user_id( $customer_id );
-					$token->set_gateway_id( reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id );
-				} else {
-					$expiry_date = explode( '-', $card_info['exp_date'] );
+				if ( empty( $token ) ) {
+					if ( 'ms_' === substr( $card_info['id'], 0, 3 ) ) {
+						$token = new TokenReepayMS();
+						$token->set_gateway_id( $gateway_id );
+						$token->set_token( $card_info['id'] );
+						$token->set_user_id( $customer_id );
+						$token->set_gateway_id( reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id );
+					} else {
+						$expiry_date = explode( '-', $card_info['exp_date'] );
 
-					$token = new TokenReepay();
-					$token->set_gateway_id( $gateway_id );
-					$token->set_token( $card_info['id'] );
-					$token->set_last4( substr( $card_info['masked_card'], - 4 ) );
-					$token->set_expiry_year( 2000 + $expiry_date[1] );
-					$token->set_expiry_month( $expiry_date[0] );
-					$token->set_card_type( $card_info['card_type'] );
-					$token->set_user_id( $customer_id );
-					$token->set_masked_card( $card_info['masked_card'] );
-					$token->set_gateway_id( reepay()->gateways()->checkout()->id );
+						$token = new TokenReepay();
+						$token->set_gateway_id( $gateway_id );
+						$token->set_token( $card_info['id'] );
+						$token->set_last4( substr( $card_info['masked_card'], - 4 ) );
+						$token->set_expiry_year( 2000 + $expiry_date[1] );
+						$token->set_expiry_month( $expiry_date[0] );
+						$token->set_card_type( $card_info['card_type'] );
+						$token->set_user_id( $customer_id );
+						$token->set_masked_card( $card_info['masked_card'] );
+						$token->set_gateway_id( reepay()->gateways()->checkout()->id );
+					}
+
+					// Save Credit Card.
+					if ( ! $token->save() ) {
+						throw new Exception( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ) );
+					}
 				}
 
-				// Save Credit Card.
-				if ( ! $token->save() ) {
-					throw new Exception( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ) );
-				}
+				$tokens[ $token->get_id() ] = $token;
 			}
-
-			$tokens[ $token->get_id() ] = $token;
 		}
 
 		return $tokens;

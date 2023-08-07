@@ -731,10 +731,10 @@ class ReepayCheckout extends ReepayGateway {
 				}
 			}
 
-			wp_redirect( $this->get_return_url( $order ) );
+			wp_safe_redirect( $this->get_return_url( $order ) );
 		} catch ( Exception $e ) {
 			wc_add_notice( $e->getMessage(), 'error' );
-			wp_redirect( $this->get_return_url() );
+			wp_safe_redirect( $this->get_return_url() );
 		}
 
 		exit();

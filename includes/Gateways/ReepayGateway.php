@@ -335,7 +335,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Check if payment method activated in repay
+	 * Check if payment method activated in reepay
 	 *
 	 * @return bool
 	 */
