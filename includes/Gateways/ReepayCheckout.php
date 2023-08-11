@@ -49,7 +49,7 @@ class ReepayCheckout extends ReepayGateway {
 		$this->id             = 'reepay_checkout';
 		$this->logging_source = $this->id;
 		$this->has_fields     = true;
-		$this->method_title   = __( 'Reepay Checkout', 'reepay-checkout-gateway' );
+		$this->method_title   = __( 'Billwerk+ Payments', 'reepay-checkout-gateway' );
 		$this->supports       = array(
 			'products',
 			'refunds',
@@ -113,13 +113,13 @@ class ReepayCheckout extends ReepayGateway {
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay Checkout', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Billwerk+ Payments', 'reepay-checkout-gateway' ),
 			),
 			'description'                => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay Checkout', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Billwerk+ Payments', 'reepay-checkout-gateway' ),
 			),
 			'hr2'                        => array(
 				'type' => 'separator',

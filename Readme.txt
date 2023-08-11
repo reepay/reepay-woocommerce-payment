@@ -1,18 +1,18 @@
-=== Official Reepay Checkout Gateway ===
+=== Official Billwerk+ Payments Gateway ===
 Contributors: reepaydenmark,aaitse
-Tags: payment,reepay, subscription, visa, mastercard, dankort, mobilepay, woocommerce
+Tags: payment, billwerk+, reepay, subscription, visa, mastercard, dankort, mobilepay, woocommerce
 Requires at least: 4.0
 Tested up to: 6.0
 Requires PHP: 7.4
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
-Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and more directly on your store with the Reepay Payment Gateway for WooCommerce.
-The Reepay plugin extends WooCommerce allowing you to take payments on your store via Reepay\'s API.
+Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and more directly on your store with the Billwerk+ Payment Gateway for WooCommerce.
+The Billwerk+ Payments plugin extends WooCommerce allowing you to take payments on your store via Billwerk+ Payments\'s API.
 
 == Description ==
-Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and more directly on your store with the Reepay Payment Gateway for WooCommerce.
-The Reepay plugin extends WooCommerce allowing you to take payments on your store via Reepay\'s API.
+Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and more directly on your store with the Billwerk+ Payment Gateway for WooCommerce.
+The Billwerk+ Payments plugin extends WooCommerce allowing you to take payments on your store via Billwerk+ Payments\'s API.
 
 == Installation ==
 See installation guide right here: https://intercom.help/reepay/reepay-plugins/woocommerce-plugin

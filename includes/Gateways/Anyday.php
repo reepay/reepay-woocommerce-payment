@@ -39,7 +39,7 @@ class Anyday extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_anyday';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Reepay - Anyday', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ - Anyday', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',
