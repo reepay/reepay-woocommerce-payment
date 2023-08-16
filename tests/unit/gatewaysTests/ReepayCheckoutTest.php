@@ -150,33 +150,67 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * Test @see ReepayGateway::check_is_active
+	 * Test function rp_check_is_active
 	 *
-	 * @param string $token card token.
+	 * Test @param string $gateway gateway id.
 	 *
 	 * @testWith
-	 * ["ms_4a9a9480922ab74ad8bb4a0b5856dc9f"]
+	 * ["anyday"]
+	 * ["applepay"]
+	 * ["googlepay"]
+	 * ["klarna_pay_later"]
+	 * ["klarna_pay_now"]
+	 * ["klarna_slice_it"]
+	 * ["mobilepay"]
+	 * ["mobilepay_subscriptions"]
+	 * ["paypal"]
+	 * ["checkout"]
+	 * ["resurs"]
+	 * ["swish"]
+	 * ["viabill"]
+	 * ["vipps"]
+	 * @see ReepayGateway::check_is_active
 	 */
-	public function test_rp_check_is_active( string $token ) {
-		self::$gateway->id = 'reepay_anyday';
+	public function test_rp_check_is_active( string $gateway ) {
+		self::$gateway->id = 'reepay_' . $gateway;
 
 		$this->api_mock->method( 'request' )->willReturn(
 			array(
-				'anyday',
-				'applepay',
-				'googlepay',
-				'klarna_pay_later',
-				'klarna_pay_now',
-				'klarna_slice_it',
-				'mobilepay',
-				'mobilepay_subscriptions',
-				'paypal',
-				'checkout',
-				'resurs',
-				'swish',
-				'viabill',
-				'vipps',
+				array(
+					'type' => $gateway,
+				),
 			)
 		);
+
+		$this->assertTrue( self::$gateway->check_is_active() );
+	}
+
+	/**
+	 * Test function is_gateway_settings_page
+	 *
+	 * Test @param string $gateway gateway id.
+	 *
+	 * @testWith
+	 * ["anyday"]
+	 * ["applepay"]
+	 * ["googlepay"]
+	 * ["klarna_pay_later"]
+	 * ["klarna_pay_now"]
+	 * ["klarna_slice_it"]
+	 * ["mobilepay"]
+	 * ["mobilepay_subscriptions"]
+	 * ["paypal"]
+	 * ["checkout"]
+	 * ["resurs"]
+	 * ["swish"]
+	 * ["viabill"]
+	 * ["vipps"]
+	 */
+	public function test_rp_is_gateway_settings_page( string $gateway ) {
+		$_GET['tab']       = 'checkout';
+		$_GET['section']   = $gateway;
+		self::$gateway->id = $gateway;
+
+		$this->assertTrue( self::$gateway->is_gateway_settings_page() );
 	}
 }
