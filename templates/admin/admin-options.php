@@ -21,7 +21,7 @@ defined( 'ABSPATH' ) || exit();
 		<?php
 		echo sprintf(
 				// translators: %s link to reepay dashboard.
-			__( 'Please setup WebHook in <a href="%s" target="_blank">Reepay Dashboard</a>.', 'reepay-checkout-gateway' ),
+			__( 'Please setup WebHook in <a href="%s" target="_blank">Billwerk+ Dashboard</a>.', 'reepay-checkout-gateway' ),
 			'https://admin.reepay.com/'
 		);
 		?>

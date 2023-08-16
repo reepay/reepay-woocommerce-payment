@@ -167,7 +167,7 @@ class ReepayCheckout extends ReepayGateway {
 			'private_key_test'           => array(
 				'title'       => __( 'Test Private Key', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
-				'description' => __( 'Insert your private key from your Reepay test account', 'reepay-checkout-gateway' ),
+				'description' => __( 'Insert your private key from your Billwerk+ test account', 'reepay-checkout-gateway' ),
 				'default'     => '',
 			),
 			'verify_key_test'            => array(
@@ -325,7 +325,7 @@ class ReepayCheckout extends ReepayGateway {
 			'logos'                      => array(
 				'title'          => __( 'Payment Logos', 'reepay-checkout-gateway' ),
 				'description'    => __(
-					'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Reepay Dashboard',
+					'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Billwerk+ Dashboard',
 					'reepay-checkout-gateway'
 				),
 				'type'           => 'multiselect',
@@ -372,7 +372,7 @@ class ReepayCheckout extends ReepayGateway {
 			),
 			'skip_order_lines'           => array(
 				'title'       => __( 'Skip order lines', 'reepay-checkout-gateway' ),
-				'description' => __( 'Select if order lines should not be send to Reepay', 'reepay-checkout-gateway' ),
+				'description' => __( 'Select if order lines should not be send to Billwerk+', 'reepay-checkout-gateway' ),
 				'type'        => 'select',
 				'options'     => array(
 					'no'  => 'Include order lines',
