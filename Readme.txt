@@ -18,6 +18,7 @@ The Billwerk+ Payments plugin extends WooCommerce allowing you to take payments 
 See installation guide right here: https://intercom.help/reepay/reepay-plugins/woocommerce-plugin
 
 == Changelog ==
+v 1.4.73 - Billwerk+ naming changes
 v 1.4.72 - MS tokens saving and HPOS support
 v 1.4.71 - Container fixes, manual add token
 v 1.4.70 - Fatal fixes, cards live loading, fix multisite webhooks
