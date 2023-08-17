@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Billwerk+ Payments for WooCommerce
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
- * Author: billwerk+
+ * Author: Billwerk+
  * Author URI: http://billwerk.plus
  * Version: 1.4.73
  * Text Domain: reepay-checkout-gateway
