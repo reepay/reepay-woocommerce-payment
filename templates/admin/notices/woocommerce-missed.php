@@ -28,7 +28,7 @@ defined( 'ABSPATH' ) || exit();
 		<br />
 		<?php
 		_e(
-			'WooCommerce Reepay Checkout Gateway will be deactivated.',
+			'WooCommerce Billwerk+ Payments Gateway will be deactivated.',
 			'reepay-checkout-gateway'
 		)
 		?>
