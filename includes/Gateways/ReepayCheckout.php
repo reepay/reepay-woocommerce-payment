@@ -12,6 +12,7 @@ use Exception;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\LoggingTrait;
 use Reepay\Checkout\Plugin\Statistics;
+use Reepay\Checkout\Tokens\ReepayTokens;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayMS;
 use Reepay\Checkout\OrderFlow\InstantSettle;
@@ -675,7 +676,7 @@ class ReepayCheckout extends ReepayGateway {
 				)
 			);
 
-			$token = $this->reepay_save_token( $order, $reepay_token );
+			$token = ReepayTokens::reepay_save_token( $order, $reepay_token );
 
 			// translators: %s new payment method name.
 			$order->add_order_note( sprintf( __( 'Payment method changed to "%s"', 'reepay-checkout-gateway' ), $token->get_display_name() ) );
