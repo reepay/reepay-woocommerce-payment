@@ -12,6 +12,7 @@ use DOMElement;
 use Exception;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\OrderFlow\OrderStatuses;
+use Reepay\Checkout\Tokens\ReepayTokens;
 use Reepay\Checkout\Tokens\TokenReepay;
 use WC_Order;
 use WC_Order_Refund;
@@ -118,14 +119,14 @@ class Subscriptions {
 				continue;
 			}
 
-			$token = $gateway::get_payment_token_order( $subscription );
+			$token = ReepayTokens::get_payment_token_order( $subscription );
 			if ( ! $token ) {
 				// Copy tokens from parent order.
 				$order = wc_get_order( $order_id );
-				$token = $gateway::get_payment_token_order( $order );
+				$token = ReepayTokens::get_payment_token_order( $order );
 
 				if ( $token ) {
-					$gateway::assign_payment_token( $subscription, $token );
+					ReepayTokens::assign_payment_token( $subscription, $token );
 				}
 			}
 		}
@@ -252,10 +253,10 @@ class Subscriptions {
 			}
 
 			$gateway = rp_get_payment_method( $subscription );
-			$token   = $gateway::get_payment_token( $tokens[0] );
+			$token   = ReepayTokens::get_payment_token( $tokens[0] );
 
 			if ( empty( $token ) ) {
-				$token = $gateway->add_payment_token_to_order( $subscription, $tokens[0] );
+				$token = ReepayTokens::add_payment_token_to_order( $subscription, $tokens[0] );
 			}
 
 			if ( $token->get_user_id() !== $subscription->get_user_id() ) {
@@ -279,7 +280,7 @@ class Subscriptions {
 			 'post_meta' === $meta_table && '_reepay_token' === $meta_key ) {
 			// Add tokens.
 			foreach ( explode( ',', $meta_value ) as $reepay_token ) {
-				ReepayGateway::assign_payment_token( $subscription, $reepay_token );
+				ReepayTokens::assign_payment_token( $subscription, $reepay_token );
 				update_post_meta( $subscription->get_id(), 'reepay_token', $reepay_token );
 			}
 		}
@@ -299,15 +300,15 @@ class Subscriptions {
 		$gateway->log( 'WCS process scheduled payment' );
 		// Lookup token.
 		try {
-			$token = $gateway::get_payment_token_order( $renewal_order );
+			$token = ReepayTokens::get_payment_token_order( $renewal_order );
 			// Try to find token in parent orders.
 			if ( ! $token ) {
 				// Get Subscriptions.
 				$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
 				foreach ( $subscriptions as $subscription ) {
-					$token = $gateway::get_payment_token_order( $subscription );
+					$token = ReepayTokens::get_payment_token_order( $subscription );
 					if ( ! $token ) {
-						$token = $gateway::get_payment_token_order( $subscription->get_parent() );
+						$token = ReepayTokens::get_payment_token_order( $subscription->get_parent() );
 					}
 				}
 			}
@@ -351,7 +352,7 @@ class Subscriptions {
 				}
 
 				if ( ! empty( $token ) ) {
-					$token = $gateway->add_payment_token_to_order( $renewal_order, $token );
+					$token = ReepayTokens::add_payment_token_to_order( $renewal_order, $token );
 				}
 			}
 

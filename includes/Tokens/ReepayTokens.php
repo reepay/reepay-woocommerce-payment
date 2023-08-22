@@ -20,7 +20,7 @@ defined( 'ABSPATH' ) || exit();
  *
  * @package Reepay\Checkout\Tokens
  */
-trait TokenReepayTrait {
+abstract class ReepayTokens {
 	/**
 	 * Assign payment token to order.
 	 *
@@ -65,7 +65,7 @@ trait TokenReepayTrait {
 	 *
 	 * @throws Exception If invalid token or order.
 	 */
-	protected function reepay_save_token( WC_Order $order, string $reepay_token ) {
+	public static function reepay_save_token( WC_Order $order, string $reepay_token ) {
 		// Check if token is exists in WooCommerce.
 		$token = self::get_payment_token( $reepay_token );
 
@@ -74,7 +74,7 @@ trait TokenReepayTrait {
 			self::assign_payment_token( $order, $token );
 		} else {
 			// Create and assign payment token.
-			$token = $this->add_payment_token_to_order( $order, $reepay_token );
+			$token = self::add_payment_token_to_order( $order, $reepay_token );
 		}
 
 		return $token;
@@ -88,9 +88,9 @@ trait TokenReepayTrait {
 	 *
 	 * @throws Exception If invalid token or order.
 	 */
-	protected function reepay_save_card_info( WC_Order $order, string $reepay_token ) {
+	public static function reepay_save_card_info( WC_Order $order, string $reepay_token ) {
 		$customer_handle = rp_get_customer_handle( $order->get_customer_id() );
-		$card_info       = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
+		$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $reepay_token );
 
 		if ( is_wp_error( $card_info ) ) {
 			throw new Exception( $card_info->get_error_message() );
@@ -105,15 +105,6 @@ trait TokenReepayTrait {
 		}
 
 		update_post_meta( $order->get_id(), '_reepay_source', $card_info );
-
-		$this->log(
-			sprintf(
-				'%s Payment info saved for order %s (%s)',
-				__METHOD__,
-				$order->get_id(),
-				$card_info['masked_card'] ?? 'xxxx'
-			)
-		);
 	}
 
 	/**
@@ -125,9 +116,9 @@ trait TokenReepayTrait {
 	 * @return array
 	 * @throws Exception If invalid token or order.
 	 */
-	public function add_payment_token_to_customer( int $customer_id, string $reepay_token ): array {
+	public static function add_payment_token_to_customer( int $customer_id, string $reepay_token ): array {
 		$customer_handle = rp_get_customer_handle( $customer_id );
-		$card_info       = reepay()->api( $this->id )->get_reepay_cards( $customer_handle, $reepay_token );
+		$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $reepay_token );
 
 		if ( is_wp_error( $card_info ) || empty( $card_info ) ) {
 			throw new Exception( __( 'Card not found', 'reepay-checkout-gateway' ) );
@@ -172,11 +163,11 @@ trait TokenReepayTrait {
 	 * @return WC_Payment_Token
 	 * @throws Exception If invalid token or order.
 	 */
-	public function add_payment_token_to_order( WC_Order $order, string $reepay_token ): WC_Payment_Token {
+	public static function add_payment_token_to_order( WC_Order $order, string $reepay_token ): WC_Payment_Token {
 		[ //phpcs:ignore Generic.Arrays.DisallowShortArraySyntax.Found
 			'token'     => $token,
 			'card_info' => $card_info,
-		] = $this->add_payment_token_to_customer( $order->get_customer_id(), $reepay_token );
+		] = self::add_payment_token_to_customer( $order->get_customer_id(), $reepay_token );
 
 		if ( ! empty( $card_info['masked_card'] ) ) {
 			update_post_meta( $order->get_id(), 'reepay_masked_card', $card_info['masked_card'] );
@@ -189,15 +180,6 @@ trait TokenReepayTrait {
 		update_post_meta( $order->get_id(), '_reepay_source', $card_info );
 
 		self::assign_payment_token( $order, $token );
-
-		$this->log(
-			sprintf(
-				'%s Payment token #%s created for %s',
-				__METHOD__,
-				$token->get_id(),
-				$card_info['masked_card'] ?? ''
-			)
-		);
 
 		return $token;
 	}

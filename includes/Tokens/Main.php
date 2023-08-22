@@ -75,7 +75,7 @@ class Main {
 		}
 
 		foreach ( $reepay_cards as $card_info ) {
-			$token = TokenReepayTrait::get_payment_token( $card_info['id'] );
+			$token = ReepayTokens::get_payment_token( $card_info['id'] );
 
 			if ( empty( $token ) ) {
 				if ( 'ms_' === substr( $card_info['id'], 0, 3 ) ) {
