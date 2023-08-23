@@ -59,8 +59,6 @@ class Main {
 		 *
 		 * @see WC_Payment_Tokens::get_customer_tokens
 		 */
-		__log( '!1!' );
-		__log( $tokens, $customer_id, $gateway_id );
 
 		if ( ! empty( $gateway_id ) && reepay()->gateways()->checkout()->id !== $gateway_id ) {
 			return $tokens;

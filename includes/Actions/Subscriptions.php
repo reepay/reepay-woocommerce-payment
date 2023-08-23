@@ -244,12 +244,12 @@ class Subscriptions {
 	public function validate_subscription_payment_meta( string $payment_method_id, array $payment_meta, WC_Subscription $subscription ) {
 		if ( in_array( $payment_method_id, self::PAYMENT_METHODS, true ) ) {
 			if ( empty( $payment_meta['post_meta']['_reepay_token']['value'] ) ) {
-				throw new Exception( 'A "Reepay Token" value is required.' );
+				throw new Exception( 'A "Billwerk+ Token" value is required.' );
 			}
 
 			$tokens = explode( ',', $payment_meta['post_meta']['_reepay_token']['value'] );
 			if ( count( $tokens ) > 1 ) {
-				throw new Exception( 'Only one "Reepay Token" is allowed.' );
+				throw new Exception( 'Only one "Billwerk+ Token" is allowed.' );
 			}
 
 			$gateway = rp_get_payment_method( $subscription );
@@ -260,7 +260,7 @@ class Subscriptions {
 			}
 
 			if ( $token->get_user_id() !== $subscription->get_user_id() ) {
-				throw new Exception( 'Access denied for this "Reepay Token" value.' );
+				throw new Exception( 'Access denied for this "Billwerk+ Token" value.' );
 			}
 		}
 	}

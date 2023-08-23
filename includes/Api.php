@@ -290,7 +290,7 @@ class Api {
 					if ( $this->request_retry ) {
 						$this->request_retry = false;
 
-						return new WP_Error( 0, __( 'Reepay: Request rate limit exceeded', 'reepay-checkout-gateway' ) );
+						return new WP_Error( 0, __( 'Billwerk+: Request rate limit exceeded', 'reepay-checkout-gateway' ) );
 					}
 
 					// Wait and try it again.
@@ -359,7 +359,7 @@ class Api {
 		$handle = rp_get_order_handle( $order );
 
 		if ( empty( $handle ) ) {
-			return new WP_Error( 400, 'Empty reepay invoice handle', 'empty_handle' );
+			return new WP_Error( 400, 'Empty Billwerk+ invoice handle', 'empty_handle' );
 		}
 
 		$order_data = $this->get_invoice_by_handle( $handle );
