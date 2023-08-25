@@ -9,6 +9,7 @@ namespace Reepay\Checkout\Tokens;
 
 use Exception;
 use WC_Order;
+use WC_Subscription;
 use WC_Payment_Token;
 use WC_Payment_Tokens;
 use WP_Error;
@@ -195,6 +196,40 @@ abstract class ReepayTokens {
 		$token = $order->get_meta( '_reepay_token' );
 		if ( empty( $token ) ) {
 			return false;
+		}
+
+		return self::get_payment_token( $token ) ?: false;
+	}
+
+	/**
+	 * Get payment token for subscription.
+	 *
+	 * @param WC_Subscription $subscription order to get token.
+	 *
+	 * @return bool|WC_Payment_Token|null
+	 */
+	public static function get_payment_token_subscription( WC_Subscription $subscription ) {
+		$token = $subscription->get_meta( '_reepay_token' );
+		// If token wasn't stored in Subscription.
+		if ( empty( $token ) ) {
+			$order = $subscription->get_parent();
+			if ( $order ) {
+				$token = $order->get_meta( '_reepay_token' );
+				if ( empty( $token ) ) {
+					$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+					if ( ! empty( $invoice_data ) ) {
+						if ( ! empty( $invoice_data['recurring_payment_method'] ) ) {
+							$token = $invoice_data['recurring_payment_method'];
+						} elseif ( ! empty( $invoice_data['transactions'] ) ) {
+							foreach ( $invoice_data['transactions'] as $transaction ) {
+								if ( ! empty( $transaction['payment_method'] ) ) {
+									$token = $transaction['payment_method'];
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 
 		return self::get_payment_token( $token ) ?: false;

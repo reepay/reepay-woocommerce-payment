@@ -119,7 +119,7 @@ class Subscriptions {
 				continue;
 			}
 
-			$token = ReepayTokens::get_payment_token_order( $subscription );
+			$token = ReepayTokens::get_payment_token_subscription( $subscription );
 			if ( ! $token ) {
 				// Copy tokens from parent order.
 				$order = wc_get_order( $order_id );
@@ -209,21 +209,17 @@ class Subscriptions {
 	 * @return array
 	 */
 	public function add_subscription_payment_meta( array $payment_meta, WC_Subscription $subscription ): array {
-		$token = $subscription->get_meta( '_reepay_token' );
+		$token = ReepayTokens::get_payment_token_subscription( $subscription );
 
-		// If token wasn't stored in Subscription.
-		if ( empty( $token ) ) {
-			$order = $subscription->get_parent();
-			if ( $order ) {
-				$token = $order->get_meta( '_reepay_token' );
-			}
+		if(!empty($token)){
+			$token = $token->get_token();
 		}
 
 		$payment_meta[ $subscription->get_payment_method() ] = array(
 			'post_meta' => array(
 				'_reepay_token' => array(
 					'value' => $token,
-					'label' => 'Reepay Token',
+					'label' => 'Billwerk+ Token',
 				),
 			),
 		);
@@ -306,7 +302,7 @@ class Subscriptions {
 				// Get Subscriptions.
 				$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
 				foreach ( $subscriptions as $subscription ) {
-					$token = ReepayTokens::get_payment_token_order( $subscription );
+					$token = ReepayTokens::get_payment_token_subscription( $subscription );
 					if ( ! $token ) {
 						$token = ReepayTokens::get_payment_token_order( $subscription->get_parent() );
 					}
