@@ -1683,10 +1683,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				$logos = $this->logos;
 				$logo  = array_shift( $logos );
 
-				return reepay()->get_setting( 'logo_url' ) . $logo . '.png';
+				return reepay()->get_setting( 'images_url' ) . $logo . '.png';
 		}
 
-		return reepay()->get_setting( 'logo_url' ) . 'svg/' . $image . '.logo.svg';
+		return reepay()->get_setting( 'images_url' ) . 'svg/' . $image . '.logo.svg';
 	}
 
 	/**
