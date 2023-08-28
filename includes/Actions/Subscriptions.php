@@ -248,7 +248,6 @@ class Subscriptions {
 				throw new Exception( 'Only one "Billwerk+ Token" is allowed.' );
 			}
 
-			$gateway = rp_get_payment_method( $subscription );
 			$token   = ReepayTokens::get_payment_token( $tokens[0] );
 
 			if ( empty( $token ) ) {
