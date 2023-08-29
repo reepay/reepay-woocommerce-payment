@@ -77,7 +77,10 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 
 	public function test_add_payment_token_unsaved() {
 		$this->api_mock->method( 'get_reepay_cards' )->willReturn( array(
-			'id' => 'ms_123456789'
+			'id' => 'rp_123456789',
+			'exp_date' => '20-77',
+			'masked_card' => '457111XXXXXX2077',
+			'card_type' => '' // Empty 'card_type' value cause an exception.
 		) );
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'Invalid or missing payment token fields.' );
@@ -230,6 +233,7 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 		$token_object = ReepayTokens::get_payment_token( $token_string );
 
 		$this->assertSame( $token_id, $token_object->get_id() );
+		$this->assertInstanceOf( TokenReepay::class, $token_object );
 
 		//Test cache set
 		$this->assertSame( $token_id ?: false, wp_cache_get( $token_string, 'reepay_tokens' ) );
