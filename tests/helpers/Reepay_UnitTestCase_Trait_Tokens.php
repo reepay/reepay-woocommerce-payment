@@ -22,7 +22,7 @@ trait Reepay_UnitTestCase_Trait_Tokens {
 			return $this->generate_token_reepay_ms( $args );
 		}
 
-		return $this->generate_token_simple();
+		return $this->generate_token_simple( $args );
 	}
 
 	private function generate_token_reepay( array $args = array() ): TokenReepay {
@@ -64,12 +64,19 @@ trait Reepay_UnitTestCase_Trait_Tokens {
 		}
 
 		$token = new WC_Payment_Token_CC();
-
+		$token->set_gateway_id( 'cod' );
+		$token->set_token( $args['token'] ?? 'cc_1234567890' );
+		$token->set_last4( $args['last4'] ?? '1234' );
+		$token->set_expiry_year( $args['expiry_year'] ?? 2077 );
+		$token->set_expiry_month( $args['expiry_month'] ?? 12 );
+		$token->set_card_type( $args['card_type'] ?? 'simple_woo' );
+		$token->set_user_id( $args['user_id'] );
+		$token->save();
 
 		return $token;
 	}
 
-	private function generate_user_for_token(): int {
+	public function generate_user_for_token(): int {
 		return $this->factory()->user->create_object( array(
 			'user_login' => 'johndoe',
 			'user_email' => 'mail@example.com',
