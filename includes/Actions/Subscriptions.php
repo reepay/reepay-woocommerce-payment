@@ -119,11 +119,11 @@ class Subscriptions {
 				continue;
 			}
 
-			$token = ReepayTokens::get_payment_token_order( $subscription );
+			$token = ReepayTokens::get_payment_token_by_order( $subscription );
 			if ( ! $token ) {
 				// Copy tokens from parent order.
 				$order = wc_get_order( $order_id );
-				$token = ReepayTokens::get_payment_token_order( $order );
+				$token = ReepayTokens::get_payment_token_by_order( $order );
 
 				if ( $token ) {
 					ReepayTokens::assign_payment_token( $subscription, $token );
@@ -300,15 +300,15 @@ class Subscriptions {
 		$gateway->log( 'WCS process scheduled payment' );
 		// Lookup token.
 		try {
-			$token = ReepayTokens::get_payment_token_order( $renewal_order );
+			$token = ReepayTokens::get_payment_token_by_order( $renewal_order );
 			// Try to find token in parent orders.
 			if ( ! $token ) {
 				// Get Subscriptions.
 				$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
 				foreach ( $subscriptions as $subscription ) {
-					$token = ReepayTokens::get_payment_token_order( $subscription );
+					$token = ReepayTokens::get_payment_token_by_order( $subscription );
 					if ( ! $token ) {
-						$token = ReepayTokens::get_payment_token_order( $subscription->get_parent() );
+						$token = ReepayTokens::get_payment_token_by_order( $subscription->get_parent() );
 					}
 				}
 			}
