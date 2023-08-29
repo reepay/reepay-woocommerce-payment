@@ -98,7 +98,7 @@ abstract class ReepayTokens {
 			$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $card_info );
 
 			if ( is_wp_error( $card_info ) ) {
-				throw new Exception( $card_info->get_error_message() );
+				throw new Exception( __( 'Card not found', 'reepay-checkout-gateway' ) );
 			}
 		}
 
@@ -139,15 +139,17 @@ abstract class ReepayTokens {
 	/**
 	 * Add payment token to customer
 	 *
-	 * @param int    $customer_id  customer id to add token.
-	 * @param string $reepay_token card token from reepay.
+	 * @param int          $customer_id customer id to add token.
+	 * @param string|array $card_info   card token or card info.
 	 *
 	 * @return array
 	 * @throws Exception If invalid token or order.
 	 */
-	public static function add_payment_token_to_customer( int $customer_id, string $reepay_token ): array {
-		$customer_handle = rp_get_customer_handle( $customer_id );
-		$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $reepay_token );
+	public static function add_payment_token_to_customer( int $customer_id, $card_info ): array {
+		if ( is_string( $card_info ) ) {
+			$customer_handle = rp_get_customer_handle( $customer_id );
+			$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $card_info );
+		}
 
 		if ( is_wp_error( $card_info ) || empty( $card_info ) ) {
 			throw new Exception( __( 'Card not found', 'reepay-checkout-gateway' ) );
@@ -156,12 +158,12 @@ abstract class ReepayTokens {
 		if ( 'ms_' === substr( $card_info['id'], 0, 3 ) ) {
 			$token = new TokenReepayMS();
 			$token->set_gateway_id( reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id );
-			$token->set_token( $reepay_token );
+			$token->set_token( $card_info['id'] );
 			$token->set_user_id( $customer_id );
 		} else {
 			$token = new TokenReepay();
 			$token->set_gateway_id( reepay()->gateways()->checkout()->id );
-			$token->set_token( $reepay_token );
+			$token->set_token( $card_info['id'] );
 			$token->set_user_id( $customer_id );
 
 			$expiry_date = explode( '-', $card_info['exp_date'] );
