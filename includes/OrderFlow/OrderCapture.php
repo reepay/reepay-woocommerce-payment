@@ -216,7 +216,7 @@ class OrderCapture {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
 				$total     = $item_data['amount'] * $item_data['quantity'];
-				if ( 0 !== $total && $this->check_capture_allowed( $order ) ) {
+				if ( $total !== 0 && $this->check_capture_allowed( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
 					$total_all   += $total;

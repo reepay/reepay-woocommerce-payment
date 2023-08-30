@@ -1062,7 +1062,7 @@ class Api {
 
 		if ( $order->get_customer_id() === 0 ) {
 			$handle = $order->get_meta( '_reepay_customer' );
-			if ( ! empty( $handle ) ) {
+			if(!empty($handle)){
 				return $handle;
 			}
 		}

@@ -73,7 +73,7 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 
 		<div id="order-failed" style="display: none;">
 			<p class="woocommerce-notice woocommerce-notice--error woocommerce-thankyou-order-failed-actions">
-				<?php if ( ! wcr_cart_only_reepay_subscriptions() ) : ?>
+				<?php if(!wcr_cart_only_reepay_subscriptions()):?>
 					<a href="<?php echo esc_url( $order->get_checkout_payment_url() ); ?>"
 					   class="button pay"><?php esc_html_e( 'Pay', 'woocommerce' ); ?></a>
 				<?php endif; ?>

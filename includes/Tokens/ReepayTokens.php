@@ -90,9 +90,8 @@ abstract class ReepayTokens {
 	 * @throws Exception If invalid token or order.
 	 */
 	public static function reepay_save_card_info( WC_Order $order, string $reepay_token ) {
-		$customer_handle = reepay()->api( $order )->get_customer_handle_by_order( $order );
-
-		$card_info = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $reepay_token );
+		$customer_handle = reepay()->api( $order )->get_customer_handle_by_order( $order );;
+		$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $reepay_token );
 
 		if ( is_wp_error( $card_info ) ) {
 			throw new Exception( $card_info->get_error_message() );
