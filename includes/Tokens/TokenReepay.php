@@ -12,7 +12,7 @@ use WC_HTTPS;
 use WC_Payment_Gateway;
 use WC_Payment_Token;
 use WC_Payment_Token_CC;
-use Reepay\Checkout\Tokens\TokenReepayTrait;
+use Reepay\Checkout\Tokens\ReepayTokens;
 
 defined( 'ABSPATH' ) || exit();
 

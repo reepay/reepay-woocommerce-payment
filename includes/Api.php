@@ -1062,6 +1062,16 @@ class Api {
 
 		if ( $order->get_customer_id() === 0 ) {
 			$handle = $order->get_meta( '_reepay_customer' );
+			if ( ! empty( $handle ) ) {
+				return $handle;
+			}
+		}
+
+		$handle = rp_get_customer_handle( $order->get_customer_id() );
+		if ( ! empty( $handle ) ) {
+			$order->add_meta_data( '_reepay_customer', $handle );
+			$order->save_meta_data();
+			return $handle;
 		}
 
 		if ( empty( $handle ) ) {

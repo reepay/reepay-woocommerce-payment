@@ -128,7 +128,7 @@ class MetaBoxes {
 			$order = wc_get_order( $post );
 
 			if ( ! empty( $order ) ) {
-				$handle = rp_get_customer_handle( $order->get_customer_id() );
+				$handle = reepay()->api( $order )->get_customer_handle_by_order( $order->get_id() );
 			}
 		}
 

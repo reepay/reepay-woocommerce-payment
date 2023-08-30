@@ -12,6 +12,7 @@ use Exception;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\LoggingTrait;
 use Reepay\Checkout\Plugin\Statistics;
+use Reepay\Checkout\Tokens\ReepayTokens;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayMS;
 use Reepay\Checkout\OrderFlow\InstantSettle;
@@ -72,13 +73,13 @@ class ReepayCheckout extends ReepayGateway {
 		$this->private_key             = apply_filters( 'woocommerce_reepay_private_key', $this->settings['private_key'] ?: $this->private_key );
 		$this->private_key_test        = apply_filters( 'woocommerce_reepay_private_key_test', $this->settings['private_key_test'] ?: $this->private_key_test );
 		$this->test_mode               = $this->settings['test_mode'] ?: $this->test_mode;
-		$this->settle                  = $this->settings['settle'] ?: $this->settle;
+		$this->settle                  = (array) ( $this->settings['settle'] ?: $this->settle );
 		$this->language                = $this->settings['language'] ?: $this->language;
 		$this->save_cc                 = $this->settings['save_cc'] ?: $this->save_cc;
 		$this->debug                   = $this->settings['debug'] ?: $this->debug;
-		$this->logos                   = $this->settings['logos'] ?: $this->logos;
+		$this->logos                   = (array) ( $this->settings['logos'] ?: $this->logos );
 		$this->payment_type            = $this->settings['payment_type'] ?: $this->payment_type;
-		$this->payment_methods         = $this->settings['payment_methods'] ?: $this->payment_methods;
+		$this->payment_methods         = (array) ( $this->settings['payment_methods'] ?: $this->payment_methods );
 		$this->skip_order_lines        = $this->settings['skip_order_lines'] ?: $this->skip_order_lines;
 		$this->enable_order_autocancel = $this->settings['enable_order_autocancel'] ?: $this->enable_order_autocancel;
 		$this->failed_webhooks_email   = $this->settings['failed_webhooks_email'] ?: $this->failed_webhooks_email;
@@ -675,7 +676,7 @@ class ReepayCheckout extends ReepayGateway {
 				)
 			);
 
-			$token = $this->reepay_save_token( $order, $reepay_token );
+			$token = ReepayTokens::reepay_save_token( $order, $reepay_token );
 
 			// translators: %s new payment method name.
 			$order->add_order_note( sprintf( __( 'Payment method changed to "%s"', 'reepay-checkout-gateway' ), $token->get_display_name() ) );
