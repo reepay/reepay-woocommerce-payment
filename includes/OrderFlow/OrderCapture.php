@@ -248,7 +248,6 @@ class OrderCapture {
 
 		if ( is_wp_error( $result ) ) {
 			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-			set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
 
 			return false;
 		}
@@ -317,7 +316,6 @@ class OrderCapture {
 
 		if ( is_wp_error( $result ) ) {
 			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-			set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
 
 			return false;
 		}
