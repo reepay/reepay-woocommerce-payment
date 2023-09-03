@@ -759,7 +759,7 @@ class Api {
 				$result->get_error_message()
 			);
 
-			set_transient( 'reepay_api_action_error', $error, MINUTE_IN_SECONDS / 2 );
+			$order->add_order_note( $error );
 
 			return $result;
 		}
@@ -796,8 +796,6 @@ class Api {
 		);
 
 		$order->add_order_note( $message );
-
-		set_transient( 'reepay_api_action_success', $message, MINUTE_IN_SECONDS / 2 );
 
 		return $result;
 	}
