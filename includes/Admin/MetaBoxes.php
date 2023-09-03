@@ -166,6 +166,10 @@ class MetaBoxes {
 			return;
 		}
 
+		if( $order_data['authorized_amount'] === $order_data['refunded_amount'] ) {
+			$order_data['state'] = 'refunded';
+		}
+
 		reepay()->get_template(
 			'meta-boxes/invoice.php',
 			array(
