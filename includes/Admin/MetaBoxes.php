@@ -166,7 +166,7 @@ class MetaBoxes {
 			return;
 		}
 
-		if( $order_data['authorized_amount'] === $order_data['refunded_amount'] ) {
+		if ( $order_data['authorized_amount'] === $order_data['refunded_amount'] ) {
 			$order_data['state'] = 'refunded';
 		}
 
