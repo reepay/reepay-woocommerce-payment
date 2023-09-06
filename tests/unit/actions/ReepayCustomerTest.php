@@ -15,6 +15,48 @@ use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
  * @covers \Reepay\Checkout\Actions\ReepayCustomer
  */
 class ReepayCustomerTest extends Reepay_UnitTestCase {
+	public function test_user_register_hook() {
+		$this->api_mock->method('request')->willReturn( array(
+			'content' => array(
+				array(
+					'handle' => 'rp-custom-handle-3'
+				)
+			)
+		) );
+
+		$this->_backup_hooks();
+
+		new ReepayCustomer();
+
+		$user = $this->factory()->user->create();
+
+		$this->assertSame(
+			'rp-custom-handle-3',
+			get_user_meta($user, 'reepay_customer_id', true)
+		);
+
+		$this->_restore_hooks();
+	}
+
+	public function test_user_register() {
+		$this->api_mock->method('request')->willReturn( array(
+			'content' => array(
+				array(
+					'handle' => 'rp-custom-handle-3'
+				)
+			)
+		) );
+
+		$user = $this->factory()->user->create();
+
+		ReepayCustomer::set_reepay_handle( $user );
+
+		$this->assertSame(
+			'rp-custom-handle-3',
+			get_user_meta($user, 'reepay_customer_id', true)
+		);
+	}
+
 	function test_set_reepay_handle_empty_email() {
 		$this->assertSame(
 			'',
