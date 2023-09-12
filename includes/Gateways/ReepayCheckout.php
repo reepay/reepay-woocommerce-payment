@@ -77,7 +77,7 @@ class ReepayCheckout extends ReepayGateway {
 		$this->language                = $this->settings['language'] ?: $this->language;
 		$this->save_cc                 = $this->settings['save_cc'] ?: $this->save_cc;
 		$this->debug                   = $this->settings['debug'] ?: $this->debug;
-		$this->logos                   = (array) ( $this->settings['logos'] ?: $this->logos );
+		$this->logos                   = $this->settings['logos'] ?: $this->logos;
 		$this->payment_type            = $this->settings['payment_type'] ?: $this->payment_type;
 		$this->payment_methods         = (array) ( $this->settings['payment_methods'] ?: $this->payment_methods );
 		$this->skip_order_lines        = $this->settings['skip_order_lines'] ?: $this->skip_order_lines;
