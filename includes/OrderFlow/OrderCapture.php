@@ -85,11 +85,11 @@ class OrderCapture {
 		$order_id = wc_get_order_id_by_order_item_id( $item_id );
 		$order    = wc_get_order( $order_id );
 
-		if ( ! rp_is_order_paid_via_reepay( $order ) || ! empty( $item->get_meta( 'settled' ) ) ) {
-			return;
-		}
-
-		if ( floatval( $item->get_data()['total'] ) > 0 && $this->check_capture_allowed( $order ) ) {
+		if ( rp_is_order_paid_via_reepay( $order ) &&
+			 empty( $item->get_meta( 'settled' ) ) &&
+			 floatval( $item->get_data()['total'] ) > 0 &&
+			 $this->check_capture_allowed( $order )
+		) {
 			$price = self::get_item_price( $item_id, $order );
 
 			reepay()->get_template(
@@ -109,13 +109,9 @@ class OrderCapture {
 	 * @param WC_Order $order current order.
 	 */
 	public function capture_full_order_button( WC_Order $order ) {
-		if ( ! $this->check_capture_allowed( $order ) ) {
-			return;
-		}
-
 		$amount = $this->get_not_settled_amount( $order );
 
-		if ( $amount <= 0 ) {
+		if ( $amount <= 0 || ! $this->check_capture_allowed( $order ) ) {
 			return;
 		}
 
@@ -216,7 +212,7 @@ class OrderCapture {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
 				$total     = $item_data['amount'] * $item_data['quantity'];
-				if ( $total > 0 && $this->check_capture_allowed( $order ) ) {
+				if ( 0 !== $total && $this->check_capture_allowed( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
 					$total_all   += $total;
@@ -417,7 +413,7 @@ class OrderCapture {
 
 		$price['with_tax'] = $price['original'];
 
-		if ( empty( $order_item->get_meta( '_is_card_fee' ) ) ) {
+		if ( ! empty( $order_item ) && ! is_array( $order_item ) && empty( $order_item->get_meta( '_is_card_fee' ) ) ) {
 			$tax_data = wc_tax_enabled() && method_exists( $order_item, 'get_taxes' ) ? $order_item->get_taxes() : false;
 			$taxes    = method_exists( $order, 'get_taxes' ) ? $order->get_taxes() : false;
 

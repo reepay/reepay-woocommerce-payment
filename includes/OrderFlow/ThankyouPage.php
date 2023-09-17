@@ -32,7 +32,7 @@ class ThankyouPage {
 	 * Constructor
 	 */
 	public function __construct() {
-		add_filter( 'wc_get_template', array( $this, 'override_template_thankyou_template' ), 5, 20 );
+		add_filter( 'wc_get_template', array( $this, 'override_thankyou_template' ), 5, 20 );
 
 		add_action( 'wp_enqueue_scripts', array( $this, 'thankyou_scripts' ) );
 
@@ -53,7 +53,7 @@ class ThankyouPage {
 	 *
 	 * @return string
 	 */
-	public function override_template_thankyou_template( $located, $template_name, $args, $template_path, $default_path ): string {
+	public function override_thankyou_template( $located, $template_name, $args, $template_path, $default_path ): string {
 		if ( is_array( $args ) &&
 			 is_string( $template_path ) &&
 			 strpos( $located, 'checkout/thankyou.php' ) !== false &&
@@ -128,11 +128,13 @@ class ThankyouPage {
 		$order_id  = isset( $_POST['order_id'] ) ? wc_clean( $_POST['order_id'] ) : '';
 		$order_key = isset( $_POST['order_key'] ) ? wc_clean( $_POST['order_key'] ) : '';
 
-		$order = wc_get_order( $order_id );
-		if ( ! $order->get_id() || ! $order->key_is_valid( $order_key ) ) {
+		if ( empty( $order_id ) || empty( $order_key ) ) {
 			wp_send_json_error( 'Invalid order' );
+		}
 
-			return;
+		$order = wc_get_order( $order_id );
+		if ( empty( $order ) || ! $order->key_is_valid( $order_key ) ) {
+			wp_send_json_error( 'Invalid order' );
 		}
 
 		foreach ( $order->get_items() as $item ) {
@@ -141,7 +143,7 @@ class ThankyouPage {
 			 *
 			 * @var WC_Order_Item_Product $item
 			 */
-			if ( .0 === $order->get_total() && wcs_is_subscription_product( $item->get_product() ) ) {
+			if ( $order->get_total() <= 0 && wcs_is_subscription_product( $item->get_product() ) ) {
 				$ret = array(
 					'state'   => 'paid',
 					'message' => 'Subscription is activated in trial',

@@ -27,6 +27,7 @@ if ( ! file_exists( "{$_tests_dir}/includes/functions.php" ) ) {
 
 // Give access to tests_add_filter() function.
 require_once "{$_tests_dir}/includes/functions.php";
+require_once __DIR__ . '/../helpers/functions.php';
 
 /**
  * Manually load Reepay plugin and dependencies.
@@ -44,13 +45,13 @@ tests_add_filter(
 tests_add_filter(
 	'plugins_loaded',
 	function () {
-		reepay()->gateways()->checkout()->process_admin_options();
-
 		( new OptionsController() )->set_option( 'enabled', 'yes' );
 	}
 );
 
 tests_add_filter( 'deprecated_function_trigger_error', '__return_false' );
+
+tests_add_filter( 'reepay_running_tests', '__return_true' );
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 

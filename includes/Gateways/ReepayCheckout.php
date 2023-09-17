@@ -12,6 +12,7 @@ use Exception;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\LoggingTrait;
 use Reepay\Checkout\Plugin\Statistics;
+use Reepay\Checkout\Tokens\ReepayTokens;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayMS;
 use Reepay\Checkout\OrderFlow\InstantSettle;
@@ -49,7 +50,7 @@ class ReepayCheckout extends ReepayGateway {
 		$this->id             = 'reepay_checkout';
 		$this->logging_source = $this->id;
 		$this->has_fields     = true;
-		$this->method_title   = __( 'Reepay Checkout', 'reepay-checkout-gateway' );
+		$this->method_title   = __( 'Billwerk+ Payments', 'reepay-checkout-gateway' );
 		$this->supports       = array(
 			'products',
 			'refunds',
@@ -69,21 +70,20 @@ class ReepayCheckout extends ReepayGateway {
 
 		parent::__construct();
 
-		$this->private_key             = apply_filters( 'woocommerce_reepay_private_key', $this->settings['private_key'] ?? $this->private_key );
-		$this->private_key_test        = apply_filters( 'woocommerce_reepay_private_key_test', $this->settings['private_key_test'] ?? $this->private_key_test );
-		$this->test_mode               = $this->settings['test_mode'] ?? $this->test_mode;
-		$this->settle                  = ( $this->settings['settle'] ?? $this->settle ) ?: array();
-		$this->language                = $this->settings['language'] ?? $this->language;
-		$this->save_cc                 = $this->settings['save_cc'] ?? $this->save_cc;
-		$this->debug                   = $this->settings['debug'] ?? $this->debug;
-		$this->logos                   = $this->settings['logos'] ?? $this->logos;
-		$this->payment_type            = $this->settings['payment_type'] ?? $this->payment_type;
-		$this->payment_methods         = $this->settings['payment_methods'] ?? $this->payment_methods;
-		$this->skip_order_lines        = $this->settings['skip_order_lines'] ?? $this->skip_order_lines;
-		$this->enable_order_autocancel = $this->settings['enable_order_autocancel'] ?? $this->enable_order_autocancel;
-		$this->failed_webhooks_email   = $this->settings['failed_webhooks_email'] ?? $this->failed_webhooks_email;
-		$this->is_webhook_configured   = $this->settings['is_webhook_configured'] ?? $this->is_webhook_configured;
-		$this->handle_failover         = $this->settings['handle_failover'] ?? $this->handle_failover;
+		$this->private_key             = apply_filters( 'woocommerce_reepay_private_key', $this->settings['private_key'] ?: $this->private_key );
+		$this->private_key_test        = apply_filters( 'woocommerce_reepay_private_key_test', $this->settings['private_key_test'] ?: $this->private_key_test );
+		$this->test_mode               = $this->settings['test_mode'] ?: $this->test_mode;
+		$this->settle                  = $this->settings['settle'] ?: $this->settle;
+		$this->language                = $this->settings['language'] ?: $this->language;
+		$this->save_cc                 = $this->settings['save_cc'] ?: $this->save_cc;
+		$this->debug                   = $this->settings['debug'] ?: $this->debug;
+		$this->logos                   = $this->settings['logos'] ?: $this->logos;
+		$this->payment_type            = $this->settings['payment_type'] ?: $this->payment_type;
+		$this->payment_methods         = $this->settings['payment_methods'] ?: $this->payment_methods;
+		$this->skip_order_lines        = $this->settings['skip_order_lines'] ?: $this->skip_order_lines;
+		$this->enable_order_autocancel = $this->settings['enable_order_autocancel'] ?: $this->enable_order_autocancel;
+		$this->failed_webhooks_email   = $this->settings['failed_webhooks_email'] ?: $this->failed_webhooks_email;
+		$this->handle_failover         = $this->settings['handle_failover'] ?: $this->handle_failover;
 
 		if ( 'yes' === $this->save_cc ) {
 			$this->supports[] = 'add_payment_method';
@@ -114,13 +114,13 @@ class ReepayCheckout extends ReepayGateway {
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay Checkout', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Billwerk+ Payments', 'reepay-checkout-gateway' ),
 			),
 			'description'                => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay Checkout', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Billwerk+ Payments', 'reepay-checkout-gateway' ),
 			),
 			'hr2'                        => array(
 				'type' => 'separator',
@@ -168,7 +168,7 @@ class ReepayCheckout extends ReepayGateway {
 			'private_key_test'           => array(
 				'title'       => __( 'Test Private Key', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
-				'description' => __( 'Insert your private key from your Reepay test account', 'reepay-checkout-gateway' ),
+				'description' => __( 'Insert your private key from your Billwerk+ test account', 'reepay-checkout-gateway' ),
 				'default'     => '',
 			),
 			'verify_key_test'            => array(
@@ -326,7 +326,7 @@ class ReepayCheckout extends ReepayGateway {
 			'logos'                      => array(
 				'title'          => __( 'Payment Logos', 'reepay-checkout-gateway' ),
 				'description'    => __(
-					'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Reepay Dashboard',
+					'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Billwerk+ Dashboard',
 					'reepay-checkout-gateway'
 				),
 				'type'           => 'multiselect',
@@ -373,7 +373,7 @@ class ReepayCheckout extends ReepayGateway {
 			),
 			'skip_order_lines'           => array(
 				'title'       => __( 'Skip order lines', 'reepay-checkout-gateway' ),
-				'description' => __( 'Select if order lines should not be send to Reepay', 'reepay-checkout-gateway' ),
+				'description' => __( 'Select if order lines should not be send to Billwerk+', 'reepay-checkout-gateway' ),
 				'type'        => 'select',
 				'options'     => array(
 					'no'  => 'Include order lines',
@@ -610,6 +610,8 @@ class ReepayCheckout extends ReepayGateway {
 		$this->private_key_test = $this->settings['private_key_test'] ?? $this->private_key_test;
 		$this->test_mode        = $this->settings['test_mode'] ?? $this->test_mode;
 
+		reepay()->reset_settings();
+
 		parent::is_webhook_configured();
 
 		return true;
@@ -624,8 +626,9 @@ class ReepayCheckout extends ReepayGateway {
 		parent::payment_fields();
 
 		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription.
-		if ( ( 'yes' === $this->save_cc && ! is_add_payment_method_page() ) ||
-			 ( wcs_cart_have_subscription() || wcs_is_payment_change() )
+		if ( 'yes' === $this->save_cc ||
+			 wcs_cart_have_subscription() ||
+			 wcs_is_payment_change()
 		) {
 			$this->tokenization_script();
 
@@ -673,7 +676,7 @@ class ReepayCheckout extends ReepayGateway {
 				)
 			);
 
-			$token = $this->reepay_save_token( $order, $reepay_token );
+			$token = ReepayTokens::reepay_save_token( $order, $reepay_token );
 
 			// translators: %s new payment method name.
 			$order->add_order_note( sprintf( __( 'Payment method changed to "%s"', 'reepay-checkout-gateway' ), $token->get_display_name() ) );

@@ -41,7 +41,7 @@ class MobilepaySubscriptions extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_mobilepay_subscriptions';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Reepay - Mobilepay Subscriptions', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ - Mobilepay Subscriptions', 'reepay-checkout-gateway' );
 
 		$this->supports = array(
 			'products',
@@ -89,14 +89,8 @@ class MobilepaySubscriptions extends ReepayGateway {
 	public function payment_fields() {
 		parent::payment_fields();
 
-		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription.
-		if ( ! is_add_payment_method_page()
-			 || wcs_cart_have_subscription()
-			 || wcs_is_payment_change()
-		) {
-			$this->tokenization_script();
-			$this->saved_payment_methods();
-			$this->save_payment_method_checkbox();
-		}
+		$this->tokenization_script();
+		$this->saved_payment_methods();
+		$this->save_payment_method_checkbox();
 	}
 }

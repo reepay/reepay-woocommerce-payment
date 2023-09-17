@@ -80,7 +80,7 @@ class MetaBoxes {
 			)
 		);
 
-		if ( empty( $subscription ) || ( 0 !== $post->post_parent || ! empty( get_post_meta( $post->ID, '_reepay_renewal', true ) ) ) ) {
+		if ( ! empty( get_post_meta( $post->ID, '_transaction_id', true ) ) ) {
 			add_meta_box(
 				'reepay_checkout_invoice',
 				__( 'Invoice', 'reepay-checkout-gateway' ),
@@ -124,12 +124,19 @@ class MetaBoxes {
 			$handle = get_post_meta( $post->ID, '_reepay_customer', true );
 		}
 
+		if ( empty( $handle ) ) {
+			$order = wc_get_order( $post );
+
+			if ( ! empty( $order ) ) {
+				$handle = reepay()->api( $order )->get_customer_handle_by_order( $order->get_id() );
+			}
+		}
+
 		$template_args = array(
 			'email'  => get_post_meta( $post->ID, '_billing_email', true ),
 			'handle' => $handle,
+			'link'   => $this->dashboard_url . 'customers/customers/customer/' . $handle,
 		);
-
-		$template_args['link'] = $this->dashboard_url . 'customers/customers/customer/' . $template_args['handle'];
 
 		reepay()->get_template(
 			'meta-boxes/customer.php',
@@ -157,6 +164,10 @@ class MetaBoxes {
 
 		if ( is_wp_error( $order_data ) ) {
 			return;
+		}
+
+		if ( $order_data['authorized_amount'] === $order_data['refunded_amount'] ) {
+			$order_data['state'] = 'refunded';
 		}
 
 		reepay()->get_template(

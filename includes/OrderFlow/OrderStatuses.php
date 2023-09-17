@@ -109,7 +109,7 @@ class OrderStatuses {
 			'title'       => __( 'Sync statuses', 'reepay-checkout-gateway' ),
 			'type'        => 'checkbox',
 			'label'       => __( 'Enable sync', 'reepay-checkout-gateway' ),
-			'description' => __( '2-way synchronization of order statuses in Woocommerce with invoice statuses in Reepay', 'reepay-checkout-gateway' ),
+			'description' => __( '2-way synchronization of order statuses in Woocommerce with invoice statuses in Billwerk+', 'reepay-checkout-gateway' ),
 			'default'     => 'yes',
 		);
 
@@ -124,7 +124,7 @@ class OrderStatuses {
 		);
 
 		$form_fields['status_created'] = array(
-			'title'   => __( 'Status: Reepay Created', 'reepay-checkout-gateway' ),
+			'title'   => __( 'Status: Billwerk+ Created', 'reepay-checkout-gateway' ),
 			'type'    => 'select',
 			'options' => $pending_statuses,
 			'default' => 'wc-pending',
@@ -139,7 +139,7 @@ class OrderStatuses {
 		);
 
 		$form_fields['status_authorized'] = array(
-			'title'   => __( 'Status: Reepay Authorized', 'reepay-checkout-gateway' ),
+			'title'   => __( 'Status: Billwerk+ Authorized', 'reepay-checkout-gateway' ),
 			'type'    => 'select',
 			'options' => $authorized_statuses,
 			'default' => 'wc-on-hold',
@@ -154,7 +154,7 @@ class OrderStatuses {
 		);
 
 		$form_fields['status_settled'] = array(
-			'title'   => __( 'Status: Reepay Settled', 'reepay-checkout-gateway' ),
+			'title'   => __( 'Status: Billwerk+ Settled', 'reepay-checkout-gateway' ),
 			'type'    => 'select',
 			'options' => $settled_statuses,
 			'default' => 'wc-processing',
@@ -237,21 +237,20 @@ class OrderStatuses {
 	/**
 	 * Set Authorized Status.
 	 *
-	 * @param WC_Order    $order          order to set.
-	 * @param string|null $note           order note.
-	 * @param string|null $transaction_id transaction id to set.
+	 * @param WC_Order $order          order to set.
+	 * @param string   $note           order note.
+	 * @param string   $transaction_id transaction id to set.
 	 *
-	 * @return void
-	 * @throws WC_Data_Exception Throws exception when invalid data sent to update_order_status.
+	 * @return bool
 	 */
-	public static function set_authorized_status( WC_Order $order, ?string $note, ?string $transaction_id ) {
+	public static function set_authorized_status( WC_Order $order, string $note = '', string $transaction_id = '' ): bool {
 		$authorized_status = self::get_authorized_order_status( $order );
 
 		if ( ! empty( $order->get_meta( '_reepay_state_authorized' ) ) || $order->get_status() === $authorized_status ) {
-			return;
+			return false;
 		}
 
-		if ( ! empty( $order->get_meta( '_order_stock_reduced' ) ) ) {
+		if ( empty( $order->get_meta( '_order_stock_reduced' ) ) ) {
 			wc_reduce_stock_levels( $order->get_id() );
 		}
 
@@ -264,28 +263,28 @@ class OrderStatuses {
 
 		$order->update_meta_data( '_reepay_state_authorized', 1 );
 		$order->save_meta_data();
+
+		return true;
 	}
 
 	/**
 	 * Set Settled Status.
 	 *
-	 * @param WC_Order    $order          order to set.
-	 * @param string|null $note           order note.
-	 * @param string|null $transaction_id transaction id to set.
+	 * @param WC_Order $order          order to set.
+	 * @param string   $note           order note.
+	 * @param string   $transaction_id transaction id to set.
 	 *
-	 * @return void
-	 * @throws WC_Data_Exception If cannot change order status.
+	 * @return bool
 	 */
-	public static function set_settled_status( WC_Order $order, ?string $note, ?string $transaction_id ) {
-		if ( ! rp_is_reepay_payment_method( $order->get_payment_method() ) ||
-			 '1' === $order->get_meta( '_reepay_state_settled' ) ) {
-			return;
+	public static function set_settled_status( WC_Order $order, string $note = '', string $transaction_id = '' ): bool {
+		if ( ! rp_is_reepay_payment_method( $order->get_payment_method() ) || ! empty( $order->get_meta( '_reepay_state_settled' ) ) ) {
+			return false;
 		}
 
 		$invoice = reepay()->api( $order )->get_invoice_data( $order );
 
 		if ( is_wp_error( $invoice ) ) {
-			return;
+			return false;
 		}
 
 		if ( $invoice['settled_amount'] < $invoice['authorized_amount'] ) {
@@ -298,9 +297,11 @@ class OrderStatuses {
 				$order->add_order_note( $note );
 			}
 
-			$order->update_meta_data( '_reepay_state_settled', '1' );
+			$order->update_meta_data( '_reepay_state_settled', 1 );
 			$order->save_meta_data();
 		}
+
+		return true;
 	}
 
 	/**
