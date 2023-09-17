@@ -260,13 +260,14 @@ class Api {
 		if ( reepay()->get_setting( 'debug' ) === 'yes' ) {
 			$this->log(
 				array(
-					'source'    => 'Api::request',
-					'url'       => $url,
-					'method'    => $method,
-					'request'   => $params,
-					'response'  => $body,
-					'time'      => microtime( true ) - $start,
-					'http_code' => $http_code,
+					'source'       => 'Api::request',
+					'url'          => $url,
+					'method'       => $method,
+					'request'      => $params,
+					'response'     => $body,
+					'time'         => microtime( true ) - $start,
+					'http_code'    => $http_code,
+					'backtrace(3)' => debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 ), //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
 				)
 			);
 		}
@@ -759,7 +760,7 @@ class Api {
 				$result->get_error_message()
 			);
 
-			set_transient( 'reepay_api_action_error', $error, MINUTE_IN_SECONDS / 2 );
+			$order->add_order_note( $error );
 
 			return $result;
 		}
@@ -796,8 +797,6 @@ class Api {
 		);
 
 		$order->add_order_note( $message );
-
-		set_transient( 'reepay_api_action_success', $message, MINUTE_IN_SECONDS / 2 );
 
 		return $result;
 	}
@@ -1062,6 +1061,16 @@ class Api {
 
 		if ( $order->get_customer_id() === 0 ) {
 			$handle = $order->get_meta( '_reepay_customer' );
+			if ( ! empty( $handle ) ) {
+				return $handle;
+			}
+		}
+
+		$handle = rp_get_customer_handle( $order->get_customer_id() );
+		if ( ! empty( $handle ) ) {
+			$order->add_meta_data( '_reepay_customer', $handle );
+			$order->save_meta_data();
+			return $handle;
 		}
 
 		if ( empty( $handle ) ) {

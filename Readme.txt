@@ -2,7 +2,7 @@
 Contributors: reepaydenmark,aaitse
 Tags: payment, billwerk+, reepay, subscription, visa, mastercard, dankort, mobilepay, woocommerce
 Requires at least: 4.0
-Tested up to: 6.0
+Tested up to: 6.3
 Requires PHP: 7.4
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
@@ -15,9 +15,10 @@ Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and m
 The Billwerk+ Payments plugin extends WooCommerce allowing you to take payments on your store via Billwerk+ Payments\'s API.
 
 == Installation ==
-See installation guide right here: https://intercom.help/reepay/reepay-plugins/woocommerce-plugin
+See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.5.0 - Billwerk+ version update and thankyou changes
 v 1.4.73 - Billwerk+ naming changes
 v 1.4.72 - MS tokens saving and HPOS support
 v 1.4.71 - Container fixes, manual add token
