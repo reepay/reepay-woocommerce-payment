@@ -267,7 +267,7 @@ class Api {
 					'response'     => $body,
 					'time'         => microtime( true ) - $start,
 					'http_code'    => $http_code,
-					'backtrace(3)' => debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 )
+					'backtrace(3)' => debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 ), //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
 				)
 			);
 		}
