@@ -290,7 +290,7 @@ class Subscriptions {
 				}
 			}
 
-			// Failback: If token doesn't exist, but reepay token is here
+			// Fallback: If token doesn't exist, but reepay token is here
 			// We need that to provide woocommerce_subscription_payment_meta support
 			// See https://github.com/Prospress/woocommerce-subscriptions-importer-exporter#importing-payment-gateway-meta-data.
 			if ( ! $token ) {
