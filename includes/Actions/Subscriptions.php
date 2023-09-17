@@ -211,7 +211,7 @@ class Subscriptions {
 	public function add_subscription_payment_meta( array $payment_meta, WC_Subscription $subscription ): array {
 		$token = ReepayTokens::get_payment_token_subscription( $subscription );
 
-		if(!empty($token)){
+		if ( ! empty( $token ) ) {
 			$token = $token->get_token();
 		}
 
@@ -248,7 +248,7 @@ class Subscriptions {
 				throw new Exception( 'Only one "Billwerk+ Token" is allowed.' );
 			}
 
-			$token   = ReepayTokens::get_payment_token( $tokens[0] );
+			$token = ReepayTokens::get_payment_token( $tokens[0] );
 
 			if ( empty( $token ) ) {
 				$token = ReepayTokens::add_payment_token_to_order( $subscription, $tokens[0] );
