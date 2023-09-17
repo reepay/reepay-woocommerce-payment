@@ -85,11 +85,11 @@ class OrderCapture {
 		$order_id = wc_get_order_id_by_order_item_id( $item_id );
 		$order    = wc_get_order( $order_id );
 
-		if ( ! rp_is_order_paid_via_reepay( $order ) || ! empty( $item->get_meta( 'settled' ) ) ) {
-			return;
-		}
-
-		if ( floatval( $item->get_data()['total'] ) > 0 && $this->check_capture_allowed( $order ) ) {
+		if ( rp_is_order_paid_via_reepay( $order ) &&
+			 empty( $item->get_meta( 'settled' ) ) &&
+			 floatval( $item->get_data()['total'] ) > 0 &&
+			 $this->check_capture_allowed( $order )
+		) {
 			$price = self::get_item_price( $item_id, $order );
 
 			reepay()->get_template(
