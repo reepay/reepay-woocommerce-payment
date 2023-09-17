@@ -137,7 +137,7 @@ class Subscriptions {
 	 */
 	public function renewal_order_created( WC_Order $renewal_order, $subscription ): WC_Order {
 		if ( in_array( $subscription->get_payment_method(), self::PAYMENT_METHODS, true ) ) {
-			$renewal_order->delete_meta_data('_reepay_order');
+			$renewal_order->delete_meta_data( '_reepay_order' );
 			$renewal_order->save();
 
 			rp_get_order_handle( $renewal_order );
