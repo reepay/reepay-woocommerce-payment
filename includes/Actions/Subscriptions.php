@@ -46,16 +46,11 @@ class Subscriptions {
 		add_filter( 'wcs_renewal_order_created', array( $this, 'renewal_order_created' ), 10, 2 );
 
 		foreach ( self::PAYMENT_METHODS as $method ) {
-			add_action( 'woocommerce_thankyou_' . $method, array( $this, 'thankyou_page' ) );
-
 			// Update failing payment method.
 			add_action( 'woocommerce_subscription_failing_payment_method_updated_' . $method, array( $this, 'update_failing_payment_method' ), 10, 2 );
 
 			// Charge the payment when a subscription payment is due.
 			add_action( 'woocommerce_scheduled_subscription_payment_' . $method, array( $this, 'scheduled_subscription_payment' ), 10, 2 );
-
-			// Charge the payment when a subscription payment is due.
-			add_action( 'scheduled_subscription_payment_' . $method, array( $this, 'scheduled_subscription_payment' ), 10, 2 );
 		}
 
 		// Don't transfer customer meta to resubscribe orders.
@@ -149,18 +144,6 @@ class Subscriptions {
 		}
 
 		return $renewal_order;
-	}
-
-	/**
-	 * Thank you page
-	 *
-	 * @param int $order_id order id of current order.
-	 *
-	 * @return void
-	 * @throws Exception If invalid order token.
-	 */
-	public function thankyou_page( int $order_id ) {
-		self::add_subscription_card_id( $order_id );
 	}
 
 	/**
