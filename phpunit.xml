@@ -19,6 +19,9 @@
         <testsuite name="OrderFlow tested">
             <directory suffix="Test.php">./tests/unit/orderFlow</directory>
         </testsuite>
+        <testsuite name="Tokens tested">
+            <directory suffix="Test.php">./tests/unit/tokens</directory>
+        </testsuite>
 	</testsuites>
     <filter>
         <whitelist>

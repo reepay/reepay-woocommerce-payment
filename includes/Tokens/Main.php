@@ -22,7 +22,7 @@ class Main {
 		TokenReepay::register_view_actions();
 		TokenReepayMS::register_view_actions();
 
-		add_action( 'woocommerce_payment_token_class', array( $this, 'set_token_class_name' ), 10, 1 );
+		add_filter( 'woocommerce_payment_token_class', array( $this, 'set_token_class_name' ), 10, 1 );
 		add_filter( 'woocommerce_get_customer_payment_tokens', array( $this, 'add_reepay_cards_to_list' ), 1000, 3 );
 	}
 
@@ -78,31 +78,7 @@ class Main {
 			$token = ReepayTokens::get_payment_token( $card_info['id'] );
 
 			if ( empty( $token ) ) {
-				if ( 'ms_' === substr( $card_info['id'], 0, 3 ) ) {
-					$token = new TokenReepayMS();
-					$token->set_gateway_id( $gateway_id );
-					$token->set_token( $card_info['id'] );
-					$token->set_user_id( $customer_id );
-					$token->set_gateway_id( reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id );
-				} else {
-					$expiry_date = explode( '-', $card_info['exp_date'] );
-
-					$token = new TokenReepay();
-					$token->set_gateway_id( $gateway_id );
-					$token->set_token( $card_info['id'] );
-					$token->set_last4( substr( $card_info['masked_card'], - 4 ) );
-					$token->set_expiry_year( 2000 + $expiry_date[1] );
-					$token->set_expiry_month( $expiry_date[0] );
-					$token->set_card_type( $card_info['card_type'] );
-					$token->set_user_id( $customer_id );
-					$token->set_masked_card( $card_info['masked_card'] );
-					$token->set_gateway_id( reepay()->gateways()->checkout()->id );
-				}
-
-				// Save Credit Card.
-				if ( ! $token->save() ) {
-					throw new Exception( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ) );
-				}
+				$token = ReepayTokens::add_payment_token_to_customer( $customer_id, $card_info )['token'];
 			}
 
 			$tokens[ $token->get_id() ] = $token;
