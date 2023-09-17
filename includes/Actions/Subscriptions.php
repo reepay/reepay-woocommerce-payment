@@ -133,19 +133,19 @@ class Subscriptions {
 	}
 
 	/**
-	 * Create a renewal order to record a scheduled subscription payment.
+	 * Set _reepay_order meta to renewal order
 	 *
-	 * @param WC_Order|int        $renewal_order new order.
-	 * @param WC_Subscription|int $subscription new subscription.
+	 * @param WC_Order            $renewal_order new order.
+	 * @param WC_Subscription|int $subscription  new subscription.
 	 *
-	 * @return bool|WC_Order|WC_Order_Refund
+	 * @return WC_Order
 	 */
-	public function renewal_order_created( $renewal_order, $subscription ) {
-		$renewal_order = wc_get_order( $renewal_order );
+	public function renewal_order_created( WC_Order $renewal_order, $subscription ): WC_Order {
+		if ( in_array( $subscription->get_payment_method(), self::PAYMENT_METHODS, true ) ) {
+			$renewal_order->delete_meta_data('_reepay_order');
+			$renewal_order->save();
 
-		if ( in_array( $renewal_order->get_payment_method(), self::PAYMENT_METHODS, true ) ) {
-			// Remove Reepay order handler from renewal order.
-			delete_post_meta( $renewal_order->get_id(), '_reepay_order' );
+			rp_get_order_handle( $renewal_order );
 		}
 
 		return $renewal_order;
@@ -195,7 +195,6 @@ class Subscriptions {
 			delete_post_meta( $resubscribe_order->get_id(), '_payment_tokens' );
 			delete_post_meta( $resubscribe_order->get_id(), '_reepay_token' );
 			delete_post_meta( $resubscribe_order->get_id(), '_reepay_token_id' );
-			delete_post_meta( $resubscribe_order->get_id(), '_reepay_order' );
 		}
 	}
 
@@ -360,14 +359,6 @@ class Subscriptions {
 			}
 
 			$gateway->log( sprintf( 'WCS token for schedule payment: %s', $token->get_token() ) );
-
-			// Fix the reepay order value to prevent "Invoice already settled".
-			$currently = get_post_meta( $renewal_order->get_id(), '_reepay_order', true );
-			$should_be = 'order-' . $renewal_order->get_id();
-			if ( $currently !== $should_be ) {
-				$renewal_order->update_meta_data( '_reepay_order', $should_be );
-				$renewal_order->save_meta_data();
-			}
 
 			// Charge payment.
 			$result = reepay()->api( $gateway )->charge(
