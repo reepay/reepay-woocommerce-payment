@@ -260,13 +260,14 @@ class Api {
 		if ( reepay()->get_setting( 'debug' ) === 'yes' ) {
 			$this->log(
 				array(
-					'source'    => 'Api::request',
-					'url'       => $url,
-					'method'    => $method,
-					'request'   => $params,
-					'response'  => $body,
-					'time'      => microtime( true ) - $start,
-					'http_code' => $http_code,
+					'source'       => 'Api::request',
+					'url'          => $url,
+					'method'       => $method,
+					'request'      => $params,
+					'response'     => $body,
+					'time'         => microtime( true ) - $start,
+					'http_code'    => $http_code,
+					'backtrace(3)' => debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 ), //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
 				)
 			);
 		}

@@ -80,7 +80,7 @@ class MetaBoxes {
 			)
 		);
 
-		if ( empty( $subscription ) || ( 0 !== $post->post_parent || ! empty( get_post_meta( $post->ID, '_reepay_renewal', true ) ) ) ) {
+		if ( ! empty( get_post_meta( $post->ID, '_transaction_id', true ) ) ) {
 			add_meta_box(
 				'reepay_checkout_invoice',
 				__( 'Invoice', 'reepay-checkout-gateway' ),
