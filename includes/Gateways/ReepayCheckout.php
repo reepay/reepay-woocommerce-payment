@@ -392,10 +392,13 @@ class ReepayCheckout extends ReepayGateway {
 				'default'     => 'no',
 			),
 			'payment_button_text'        => array(
-				'title'       => __( 'Payment button text', 'reepay-checkout-gateway' ),
-				'type'        => 'text',
-				'description' => __( 'Text on button which will be displayed on payment page if subscription products is being purchased', 'reepay-checkout-gateway' ),
-				'default'     => '',
+				'title'             => __( 'Payment button text', 'reepay-checkout-gateway' ),
+				'type'              => 'text',
+				'description'       => __( 'Text on button which will be displayed on payment page if subscription products is being purchased', 'reepay-checkout-gateway' ),
+				'default'           => '',
+				'custom_attributes' => array(
+					'maxlength' => 32,
+				),
 			),
 		);
 
