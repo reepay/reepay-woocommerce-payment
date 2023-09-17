@@ -109,13 +109,9 @@ class OrderCapture {
 	 * @param WC_Order $order current order.
 	 */
 	public function capture_full_order_button( WC_Order $order ) {
-		if ( ! $this->check_capture_allowed( $order ) ) {
-			return;
-		}
-
 		$amount = $this->get_not_settled_amount( $order );
 
-		if ( $amount <= 0 ) {
+		if ( $amount <= 0 || ! $this->check_capture_allowed( $order )) {
 			return;
 		}
 
