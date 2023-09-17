@@ -114,8 +114,8 @@ class Subscriptions {
 				continue;
 			}
 
-      $token = ReepayTokens::get_payment_token_by_order( $subscription );
-      
+			$token = ReepayTokens::get_payment_token_by_order( $subscription );
+
 			if ( ! $token ) {
 				// Copy tokens from parent order.
 				$order = wc_get_order( $order_id );
