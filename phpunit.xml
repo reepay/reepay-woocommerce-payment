@@ -13,6 +13,9 @@
         <testsuite name="Gateways loaded">
             <file>./tests/unit/GatewaysTest.php</file>
         </testsuite>
+        <testsuite name="Actions tested">
+            <directory suffix="Test.php">./tests/unit/actions</directory>
+        </testsuite>
         <testsuite name="Functions tested">
             <directory suffix="Test.php">./tests/unit/functions</directory>
         </testsuite>

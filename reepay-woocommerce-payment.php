@@ -265,15 +265,13 @@ class WC_ReepayCheckout {
 
 		new Reepay\Checkout\OrderFlow\Main();
 
-		new Reepay\Checkout\Actions\Subscriptions();
-
 		$this->gateways = new Reepay\Checkout\Gateways();
 
 		new Reepay\Checkout\Integrations\Main();
 
 		new Reepay\Checkout\Frontend\Main();
 
-		new Reepay\Checkout\Actions\ReepayCustomer();
+		new Reepay\Checkout\Actions\Main();
 	}
 }
 
