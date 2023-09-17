@@ -24,7 +24,7 @@ abstract class ReepayTokens {
 	/**
 	 * Assign payment token to order.
 	 *
-	 * @param WC_Order             $order order to assign.
+	 * @param WC_Order                             $order order to assign.
 	 * @param TokenReepay|TokenReepayMS|int|string $token token class, token id or token string.
 	 *
 	 * @return void
@@ -34,7 +34,7 @@ abstract class ReepayTokens {
 	public static function assign_payment_token( WC_Order $order, $token ) {
 		if ( is_numeric( $token ) ) {
 			$token = WC_Payment_Tokens::get( $token );
-		} else if ( is_string( $token ) ) {
+		} elseif ( is_string( $token ) ) {
 			$token = self::get_payment_token( $token );
 		}
 
@@ -93,7 +93,7 @@ abstract class ReepayTokens {
 	 * @throws Exception If invalid token or order.
 	 */
 	public static function reepay_save_card_info( WC_Order $order, $card_info ) {
-		if( is_string( $card_info ) ) {
+		if ( is_string( $card_info ) ) {
 			$customer_handle = rp_get_customer_handle( $order->get_customer_id() );
 			$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $card_info );
 
@@ -210,7 +210,7 @@ abstract class ReepayTokens {
 	public static function get_payment_token( string $token ) {
 		global $wpdb;
 
-		if( empty( $token ) ) {
+		if ( empty( $token ) ) {
 			return null;
 		}
 
