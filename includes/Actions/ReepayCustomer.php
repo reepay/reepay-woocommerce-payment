@@ -38,11 +38,7 @@ class ReepayCustomer {
 	 * @param int $user_id user id to set handle.
 	 */
 	public static function set_reepay_handle( int $user_id ): string {
-		try {
-			$customer = new WC_Customer( $user_id );
-		} catch ( Exception $e ) {
-			return '';
-		}
+		$customer = new WC_Customer( $user_id );
 
 		$email = $customer->get_email() ?: $customer->get_billing_email();
 

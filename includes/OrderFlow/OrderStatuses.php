@@ -109,7 +109,7 @@ class OrderStatuses {
 			'title'       => __( 'Sync statuses', 'reepay-checkout-gateway' ),
 			'type'        => 'checkbox',
 			'label'       => __( 'Enable sync', 'reepay-checkout-gateway' ),
-			'description' => __( '2-way synchronization of order statuses in Woocommerce with invoice statuses in Reepay', 'reepay-checkout-gateway' ),
+			'description' => __( '2-way synchronization of order statuses in Woocommerce with invoice statuses in Billwerk+', 'reepay-checkout-gateway' ),
 			'default'     => 'yes',
 		);
 
@@ -124,7 +124,7 @@ class OrderStatuses {
 		);
 
 		$form_fields['status_created'] = array(
-			'title'   => __( 'Status: Reepay Created', 'reepay-checkout-gateway' ),
+			'title'   => __( 'Status: Billwerk+ Created', 'reepay-checkout-gateway' ),
 			'type'    => 'select',
 			'options' => $pending_statuses,
 			'default' => 'wc-pending',
@@ -139,7 +139,7 @@ class OrderStatuses {
 		);
 
 		$form_fields['status_authorized'] = array(
-			'title'   => __( 'Status: Reepay Authorized', 'reepay-checkout-gateway' ),
+			'title'   => __( 'Status: Billwerk+ Authorized', 'reepay-checkout-gateway' ),
 			'type'    => 'select',
 			'options' => $authorized_statuses,
 			'default' => 'wc-on-hold',
@@ -154,7 +154,7 @@ class OrderStatuses {
 		);
 
 		$form_fields['status_settled'] = array(
-			'title'   => __( 'Status: Reepay Settled', 'reepay-checkout-gateway' ),
+			'title'   => __( 'Status: Billwerk+ Settled', 'reepay-checkout-gateway' ),
 			'type'    => 'select',
 			'options' => $settled_statuses,
 			'default' => 'wc-processing',

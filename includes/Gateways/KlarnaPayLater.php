@@ -39,7 +39,7 @@ class KlarnaPayLater extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_klarna_pay_later';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Reepay - Klarna Pay Later', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ - Klarna Pay Later', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

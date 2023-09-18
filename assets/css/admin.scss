@@ -9,6 +9,40 @@
                 width: 100%;
                 font-size: small;
                 margin-top: 0;
+
+                &.reepay-invoice-status {
+                    &-created {
+                        color: #abab00;
+                    }
+
+                    &-pending {
+                        color: #abab00;
+                    }
+
+                    &-dunning {
+                        color: #abab00;
+                    }
+
+                    &-settled {
+                        color: green;
+                    }
+
+                    &-cancelled {
+                        color: red;
+                    }
+
+                    &-authorized {
+                        color: #abab00;
+                    }
+
+                    &-failed {
+                        color: red;
+                    }
+
+                    &-refunded {
+                        color: red;
+                    }
+                }
             }
 
             &-header {

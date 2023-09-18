@@ -26,8 +26,8 @@ if ( ! function_exists( 'rp_get_order_handle' ) ) {
 
 		if ( empty( $handle ) ) {
 			$handle = $unique ?
-				'order-' . $order->get_id() . '-' . time() :
-				'order-' . $order->get_id();
+				'order-' . $order->get_order_number() . '-' . time() :
+				'order-' . $order->get_order_number();
 
 			$order->add_meta_data( '_reepay_order', $handle );
 
