@@ -12,6 +12,7 @@ use Exception;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\LoggingTrait;
 use Reepay\Checkout\Plugin\Statistics;
+use Reepay\Checkout\Tokens\ReepayTokens;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayMS;
 use Reepay\Checkout\OrderFlow\InstantSettle;
@@ -49,7 +50,7 @@ class ReepayCheckout extends ReepayGateway {
 		$this->id             = 'reepay_checkout';
 		$this->logging_source = $this->id;
 		$this->has_fields     = true;
-		$this->method_title   = __( 'Reepay Checkout', 'reepay-checkout-gateway' );
+		$this->method_title   = __( 'Billwerk+ Payments', 'reepay-checkout-gateway' );
 		$this->supports       = array(
 			'products',
 			'refunds',
@@ -113,13 +114,13 @@ class ReepayCheckout extends ReepayGateway {
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay Checkout', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Billwerk+ Payments', 'reepay-checkout-gateway' ),
 			),
 			'description'                => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Reepay Checkout', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Billwerk+ Payments', 'reepay-checkout-gateway' ),
 			),
 			'hr2'                        => array(
 				'type' => 'separator',
@@ -167,7 +168,7 @@ class ReepayCheckout extends ReepayGateway {
 			'private_key_test'           => array(
 				'title'       => __( 'Test Private Key', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
-				'description' => __( 'Insert your private key from your Reepay test account', 'reepay-checkout-gateway' ),
+				'description' => __( 'Insert your private key from your Billwerk+ test account', 'reepay-checkout-gateway' ),
 				'default'     => '',
 			),
 			'verify_key_test'            => array(
@@ -325,7 +326,7 @@ class ReepayCheckout extends ReepayGateway {
 			'logos'                      => array(
 				'title'          => __( 'Payment Logos', 'reepay-checkout-gateway' ),
 				'description'    => __(
-					'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Reepay Dashboard',
+					'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Billwerk+ Dashboard',
 					'reepay-checkout-gateway'
 				),
 				'type'           => 'multiselect',
@@ -372,7 +373,7 @@ class ReepayCheckout extends ReepayGateway {
 			),
 			'skip_order_lines'           => array(
 				'title'       => __( 'Skip order lines', 'reepay-checkout-gateway' ),
-				'description' => __( 'Select if order lines should not be send to Reepay', 'reepay-checkout-gateway' ),
+				'description' => __( 'Select if order lines should not be send to Billwerk+', 'reepay-checkout-gateway' ),
 				'type'        => 'select',
 				'options'     => array(
 					'no'  => 'Include order lines',
@@ -391,10 +392,13 @@ class ReepayCheckout extends ReepayGateway {
 				'default'     => 'no',
 			),
 			'payment_button_text'        => array(
-				'title'       => __( 'Payment button text', 'reepay-checkout-gateway' ),
-				'type'        => 'text',
-				'description' => __( 'Text on button which will be displayed on payment page if subscription products is being purchased', 'reepay-checkout-gateway' ),
-				'default'     => '',
+				'title'             => __( 'Payment button text', 'reepay-checkout-gateway' ),
+				'type'              => 'text',
+				'description'       => __( 'Text on button which will be displayed on payment page if subscription products is being purchased', 'reepay-checkout-gateway' ),
+				'default'           => '',
+				'custom_attributes' => array(
+					'maxlength' => 32,
+				),
 			),
 		);
 
@@ -675,7 +679,7 @@ class ReepayCheckout extends ReepayGateway {
 				)
 			);
 
-			$token = $this->reepay_save_token( $order, $reepay_token );
+			$token = ReepayTokens::reepay_save_token( $order, $reepay_token );
 
 			// translators: %s new payment method name.
 			$order->add_order_note( sprintf( __( 'Payment method changed to "%s"', 'reepay-checkout-gateway' ), $token->get_display_name() ) );

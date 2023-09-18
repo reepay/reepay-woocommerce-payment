@@ -39,7 +39,7 @@ class Vipps extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_vipps';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Reepay - Vipps', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ - Vipps', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',
