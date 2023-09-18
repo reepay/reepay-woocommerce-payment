@@ -7,7 +7,6 @@
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
-use Reepay\Checkout\Tokens\ReepayTokens;
 
 /**
  * AnydayTest.
