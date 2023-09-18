@@ -80,8 +80,8 @@ class Main {
 			if ( empty( $token ) ) {
 				$token = ReepayTokens::add_payment_token_to_customer( $customer_id, $card_info )['token'];
 			}
-      
-      $tokens[ $token->get_id() ] = $token;
+
+			$tokens[ $token->get_id() ] = $token;
 		}
 
 		return $tokens;
