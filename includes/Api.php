@@ -1019,7 +1019,7 @@ class Api {
 			return $result;
 		}
 
-		if ( ! isset( $result['cards'] ) ) {
+		if ( ! isset( $result['cards'] ) && ! isset( $result['mps_subscriptions'] ) ) {
 			return new WP_Error( 0, 'Unable to retrieve customer payment methods' );
 		}
 
@@ -1027,17 +1027,21 @@ class Api {
 			return $result['cards'];
 		}
 
-		$cards = $result['cards'];
-		foreach ( $cards as $card ) {
-			if ( $card['id'] === $reepay_token && 'active' === $card['state'] ) {
-				return $card;
+		if ( ! empty( $result['cards'] ) ) {
+			$cards = $result['cards'];
+			foreach ( $cards as $card ) {
+				if ( $card['id'] === $reepay_token && 'active' === $card['state'] ) {
+					return $card;
+				}
 			}
 		}
 
-		$mps_subscriptions = $result['mps_subscriptions'];
-		foreach ( $mps_subscriptions as $subscription ) {
-			if ( $subscription['id'] === $reepay_token && 'active' === $subscription['state'] ) {
-				return $subscription;
+		if ( ! empty( $result['mps_subscriptions'] ) ) {
+			$mps_subscriptions = $result['mps_subscriptions'];
+			foreach ( $mps_subscriptions as $subscription ) {
+				if ( ( $subscription['id'] === $reepay_token || $subscription['reference'] === $reepay_token ) && 'active' === $subscription['state'] ) {
+					return $subscription;
+				}
 			}
 		}
 

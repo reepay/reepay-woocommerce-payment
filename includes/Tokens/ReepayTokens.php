@@ -152,6 +152,8 @@ abstract class ReepayTokens {
 			$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $card_info );
 		}
 
+		$this->log( sprintf( 'Card receiving data: %s', wp_json_encode( $card_info, JSON_PRETTY_PRINT ) ) );
+
 		if ( is_wp_error( $card_info ) || empty( $card_info ) ) {
 			throw new Exception( __( 'Card not found', 'reepay-checkout-gateway' ) );
 		}
