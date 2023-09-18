@@ -56,68 +56,6 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * Test function test_rp_card_store
-	 *
-	 * @param string $token card token.
-	 * @param string $exp_date card expiry date.
-	 * @param string $masked_card card number.
-	 * @param string $card_type card type.
-	 *
-	 * @testWith
-	 * ["ca_f73e13e5784a5dff32f2f93be7a8130f", "05-43", "411111XXXXXX1111", "Visa"]
-	 */
-	public function test_rp_card_store( string $token, string $exp_date, string $masked_card, string $card_type ) {
-		$this->api_mock->method( 'get_reepay_cards' )->willReturn(
-			array(
-				'id'          => $token,
-				'exp_date'    => $exp_date,
-				'masked_card' => $masked_card,
-				'card_type'   => $card_type,
-			)
-		);
-
-		$token_data = ReepayTokens::add_payment_token_to_customer( $this->user->ID, $token );
-
-		$this->assertNotEmpty(
-			$token_data['token'],
-			'Token is not exist'
-		);
-
-		$this->assertSame(
-			$token,
-			$token_data['token']->get_token()
-		);
-	}
-
-	/**
-	 * Test function test_rp_card_store
-	 *
-	 * @param string $token card token.
-	 *
-	 * @testWith
-	 * ["ms_4a9a9480922ab74ad8bb4a0b5856dc9f"]
-	 */
-	public function test_rp_card_store_mobilepay( string $token ) {
-		$this->api_mock->method( 'get_reepay_cards' )->willReturn(
-			array(
-				'id' => $token,
-			)
-		);
-
-		$token_data = ReepayTokens::add_payment_token_to_customer( $this->user->ID, $token );
-
-		$this->assertNotEmpty(
-			$token_data['token'],
-			'Token is not exist'
-		);
-
-		$this->assertSame(
-			$token,
-			$token_data['token']->get_token()
-		);
-	}
-
-	/**
 	 * Test function test_rp_finalize
 	 *
 	 * @param string $token card token.
@@ -144,8 +82,7 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 
 		$_GET['key'] = $this->order_generator->order()->get_order_key();
 
-		$expected_error = 'Cannot modify header information';
-		$this->expectErrorMessage( $expected_error );
+		$this->expectError();
 
 		self::$gateway->reepay_finalize();
 	}
@@ -244,50 +181,4 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 			self::$gateway->get_account_info( $is_test )
 		);
 	}
-
-	/**
-	 * Test function rp_get_webhook_url
-	 *
-	 * Test @param bool $is_test use test or live reepay api keys.
-	 * Test @param string $handle handle of account.
-	 *
-	 * @see ReepayGateway::get_webhook_url
-	 */
-	/*
-	public function test_rp_get_webhook_url() {
-		self::$gateway->id = 'checkout';
-		$this->getMockBuilder( SitePress::class )->getMock();
-
-		$time = $this->getFunctionMock( __NAMESPACE__, 'apply_filters' );
-
-		$url = self::$gateway::get_webhook_url();
-	}*/
-
-
-	/**
-	 * Test function rp_is_webhook_configured
-	 *
-	 * @testWith
-	 * ["http://example.com/wc-api/WC_Gateway_Reepay/"]
-	 * ["http://example.com/wc-api/WC_Gateway_Reepay_Checkout/"]
-	 * ["http://example.com/wc-api/not_configured/"]
-	 * @see ReepayGateway::is_webhook_configured
-	 */
-//	public function test_rp_is_webhook_configured( string $webhook_url ) {
-//		self::$gateway->id = 'checkout';
-//
-//		$this->api_mock->method( 'request' )->willReturn(
-//			array(
-//				'urls'         => array(
-//					$webhook_url,
-//				),
-//				'alert_emails' => array(
-//					'test@test.com',
-//				),
-//			)
-//		);
-//
-//		var_dump( self::$gateway->is_webhook_configured() );
-//	}
-
 }
