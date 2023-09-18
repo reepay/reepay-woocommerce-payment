@@ -409,7 +409,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		if ( class_exists( SitePress::class ) && ! is_multisite() ) {
 			$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
-			var_dump($languages);
+
 			$languages = wp_list_pluck( $languages, 'default_locale' );
 
 			if ( ! empty( $languages ) ) {
