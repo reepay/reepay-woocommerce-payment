@@ -7,6 +7,7 @@
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
+use Reepay\Checkout\Tokens\ReepayTokens;
 
 /**
  * AnydayTest.
@@ -75,7 +76,7 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 			)
 		);
 
-		$token_data = self::$gateway->add_payment_token_to_customer( $this->user->ID, $token );
+		$token_data = ReepayTokens::add_payment_token_to_customer( $this->user->ID, $token );
 
 		$this->assertNotEmpty(
 			$token_data['token'],
@@ -103,7 +104,7 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 			)
 		);
 
-		$token_data = self::$gateway->add_payment_token_to_customer( $this->user->ID, $token );
+		$token_data = ReepayTokens::add_payment_token_to_customer( $this->user->ID, $token );
 
 		$this->assertNotEmpty(
 			$token_data['token'],
@@ -144,7 +145,7 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 		$_GET['key'] = $this->order_generator->order()->get_order_key();
 
 		$expected_error = 'Cannot modify header information';
-		$this->expectError( $expected_error );
+		$this->expectErrorMessage( $expected_error );
 
 		self::$gateway->reepay_finalize();
 	}
