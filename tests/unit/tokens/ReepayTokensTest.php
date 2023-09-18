@@ -269,7 +269,8 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 	/**
 	 * Test @see ReepayTokens::is_reepay_token
 	 *
-	 * @param bool $generate_token
+	 * @param string|null $token_type token type.
+	 * @param bool $result expecting result.
 	 *
 	 * @testWith
 	 * [null, false]
