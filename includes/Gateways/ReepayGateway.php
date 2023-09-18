@@ -1470,7 +1470,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			 * @var WC_Order_Item_Product $order_item
 			 */
 
-			if ( wcr_is_subscription_product( $order_item->get_product() ) ) {
+			if ( $order_item->get_product() && wcr_is_subscription_product( $order_item->get_product() ) ) {
 				$fee = $order_item->get_product()->get_meta( '_reepay_subscription_fee' );
 				if ( ! empty( $fee ) && ! empty( $fee['enabled'] ) && 'yes' === $fee['enabled'] ) {
 					$setup_fees[] = $order_item->get_product()->get_name() . ' - ' . $fee['text'];
