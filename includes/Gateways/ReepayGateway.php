@@ -1141,7 +1141,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			 * @var WC_Order_Item_Product $order_item
 			 */
 
-			if ( ! wcr_is_subscription_product( $order_item->get_product() ) ) {
+			if ( ! $order_item->get_product() || ! wcr_is_subscription_product( $order_item->get_product() ) ) {
 				$only_items_lines[] = $order_item;
 			}
 		}
