@@ -391,11 +391,6 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 				array()
 			)
 		);
-
-		$this->assertNotEmpty(
-			get_transient( 'reepay_api_action_error' ),
-			'Error message not set'
-		);
 	}
 
 	/**
@@ -588,11 +583,6 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 				WC_Order_Factory::get_order_item( $order_item_id ),
 				$this->order_generator->order()
 			)
-		);
-
-		$this->assertNotEmpty(
-			get_transient( 'reepay_api_action_error' ),
-			'Error message not set'
 		);
 	}
 

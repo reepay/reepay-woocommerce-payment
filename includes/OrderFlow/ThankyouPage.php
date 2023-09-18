@@ -9,9 +9,7 @@ namespace Reepay\Checkout\OrderFlow;
 
 use Exception;
 use Reepay\Checkout\LoggingTrait;
-use WC_Order;
 use WC_Order_Item_Product;
-use WC_Subscriptions_Product;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -34,7 +32,7 @@ class ThankyouPage {
 	 * Constructor
 	 */
 	public function __construct() {
-		add_filter( 'wc_get_template', array( $this, 'override_template' ), 5, 20 );
+		add_filter( 'wc_get_template', array( $this, 'override_thankyou_template' ), 5, 20 );
 
 		add_action( 'wp_enqueue_scripts', array( $this, 'thankyou_scripts' ) );
 
@@ -54,27 +52,14 @@ class ThankyouPage {
 	 * @param string $default_path  Default path.
 	 *
 	 * @return string
-	 * @noinspection PhpMissingParamTypeInspection
 	 */
-	public function override_template( $located, $template_name, $args, $template_path, $default_path ): string {
-		if ( ! is_array( $args ) || ! is_string( $template_path ) ) {
-			return $located;
-		}
-
-		if ( strpos( $located, 'checkout/thankyou.php' ) !== false ) {
-			if ( ! isset( $args['order'] ) ) {
-				return $located;
-			}
-
-			$order = wc_get_order( $args['order'] );
-			if ( ! $order ) {
-				return $located;
-			}
-
-			if ( ! rp_is_order_paid_via_reepay( $order ) ) {
-				return $located;
-			}
-
+	public function override_thankyou_template( $located, $template_name, $args, $template_path, $default_path ): string {
+		if ( is_array( $args ) &&
+			 is_string( $template_path ) &&
+			 strpos( $located, 'checkout/thankyou.php' ) !== false &&
+			 ! empty( $args['order'] ) &&
+			 rp_is_order_paid_via_reepay( $args['order'] )
+		) {
 			$located = wc_locate_template(
 				'checkout/thankyou.php',
 				$template_path,
@@ -96,8 +81,7 @@ class ThankyouPage {
 		}
 
 		$order_key = isset( $_GET['key'] ) ? wc_clean( wp_unslash( $_GET['key'] ) ) : '';
-
-		$order = wc_get_order( get_query_var( 'order-received', 0 ) );
+		$order     = wc_get_order( get_query_var( 'order-received', 0 ) );
 
 		if ( empty( $order )
 			 || ! $order->key_is_valid( $order_key )
@@ -153,40 +137,29 @@ class ThankyouPage {
 			wp_send_json_error( 'Invalid order' );
 		}
 
-		if ( class_exists( WC_Subscriptions_Product::class, false ) ) {
-			foreach ( $order->get_items() as $item ) {
-				/**
-				 * WC_Order_Item_Product returns not WC_Order_Item
-				 *
-				 * @var WC_Order_Item_Product $item
-				 */
-				if ( wcs_is_subscription_product( $item->get_product() ) ) {
-					if ( $order->get_total() <= 0 ) {
-						$ret = array(
-							'state'   => 'paid',
-							'message' => 'Subscription is activated in trial',
-						);
+		foreach ( $order->get_items() as $item ) {
+			/**
+			 * WC_Order_Item_Product returns not WC_Order_Item
+			 *
+			 * @var WC_Order_Item_Product $item
+			 */
+			if ( $order->get_total() <= 0 && wcs_is_subscription_product( $item->get_product() ) ) {
+				$ret = array(
+					'state'   => 'paid',
+					'message' => 'Subscription is activated in trial',
+				);
 
-						wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', $ret, $order->get_id() ) );
-					}
-				}
+				wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', $ret, $order->get_id() ) );
 			}
 		}
 
-		$ret = array();
+		$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
 
-		$result = reepay()->api( $order )->get_invoice_data( $order );
-
-		if ( is_wp_error( $result ) ) {
-			// No information.
-			$ret = array(
-				'state' => 'unknown',
-			);
-
-			wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', $ret, $order->get_id() ) );
+		if ( is_wp_error( $invoice_data ) ) {
+			wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', array( 'state' => 'unknown' ), $order->get_id() ) );
 		}
 
-		switch ( $result['state'] ) {
+		switch ( $invoice_data['state'] ) {
 			case 'pending':
 				$ret = array(
 					'state' => 'pending',
@@ -210,10 +183,10 @@ class ThankyouPage {
 			case 'failed':
 				$message = 'Order has been failed';
 
-				if ( count( $result['transactions'] ) > 0 &&
-					 isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
+				if ( count( $invoice_data['transactions'] ) > 0 &&
+					 isset( $invoice_data['transactions'][0]['card_transaction']['acquirer_message'] )
 				) {
-					$message = $result['transactions'][0]['card_transaction']['acquirer_message'];
+					$message = $invoice_data['transactions'][0]['card_transaction']['acquirer_message'];
 				}
 
 				$ret = array(
@@ -224,6 +197,6 @@ class ThankyouPage {
 				break;
 		}
 
-		wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', $ret, $order->get_id() ) );
+		wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', $ret ?? array(), $order->get_id() ) );
 	}
 }

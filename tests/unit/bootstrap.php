@@ -51,6 +51,8 @@ tests_add_filter(
 
 tests_add_filter( 'deprecated_function_trigger_error', '__return_false' );
 
+tests_add_filter( 'reepay_running_tests', '__return_true' );
+
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 // Start up the WP testing environment.

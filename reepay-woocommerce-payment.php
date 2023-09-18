@@ -1,10 +1,10 @@
 <?php
 /**
- * Plugin Name: Reepay Checkout for WooCommerce
+ * Plugin Name: Billwerk+ Payments for WooCommerce
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
- * Author: reepay
- * Author URI: http://reepay.com
- * Version: 1.4.72
+ * Author: Billwerk+
+ * Author URI: http://billwerk.plus
+ * Version: 1.5.0
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -84,7 +84,7 @@ class WC_ReepayCheckout {
 		static $instance_requested = false;
 
 		if ( true === $instance_requested && is_null( self::$instance ) ) {
-			$message = 'Function reepay called in time of initialization main plugin class. Recursion prevented';
+			$message = 'Function billwerk+ called in time of initialization main plugin class. Recursion prevented';
 
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				$message .= '<br>Stack trace for debugging:<br><pre>' . print_r( //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
@@ -265,15 +265,13 @@ class WC_ReepayCheckout {
 
 		new Reepay\Checkout\OrderFlow\Main();
 
-		new Reepay\Checkout\Actions\Subscriptions();
-
 		$this->gateways = new Reepay\Checkout\Gateways();
 
 		new Reepay\Checkout\Integrations\Main();
 
 		new Reepay\Checkout\Frontend\Main();
 
-		new Reepay\Checkout\Actions\ReepayCustomer();
+		new Reepay\Checkout\Actions\Main();
 	}
 }
 

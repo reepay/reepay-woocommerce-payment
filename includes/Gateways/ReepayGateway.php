@@ -12,7 +12,7 @@ use Reepay\Checkout\Api;
 use SitePress;
 use Reepay\Checkout\LoggingTrait;
 use Reepay\Checkout\Tokens\TokenReepay;
-use Reepay\Checkout\Tokens\TokenReepayTrait;
+use Reepay\Checkout\Tokens\ReepayTokens;
 use WC_Admin_Settings;
 use WC_Countries;
 use WC_Order;
@@ -32,7 +32,7 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 abstract class ReepayGateway extends WC_Payment_Gateway {
-	use TokenReepayTrait, LoggingTrait;
+	use LoggingTrait;
 
 	const METHOD_WINDOW = 'WINDOW';
 
@@ -320,7 +320,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$reepay_token = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
 
 		try {
-			$token = $this->add_payment_token_to_customer( get_current_user_id(), $reepay_token )['token'];
+			$token = ReepayTokens::add_payment_token_to_customer( get_current_user_id(), $reepay_token )['token'];
 		} catch ( Exception $e ) {
 			wc_add_notice( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ), 'error' );
 			wp_redirect( wc_get_account_endpoint_url( 'add-payment-method' ) );
@@ -503,7 +503,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				)
 			);
 
-			WC_Admin_Settings::add_message( __( 'Reepay: WebHook has been successfully created/updated', 'reepay-checkout-gateway' ) );
+			WC_Admin_Settings::add_message( __( 'Billwerk+: WebHook has been successfully created/updated', 'reepay-checkout-gateway' ) );
 		} catch ( Exception $e ) {
 			$this->log(
 				array(
@@ -731,7 +731,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				return array(
 					'src' => esc_url( reepay()->get_setting( 'images_url' ) . $logo . '.png' ),
 					// translators: %s gateway title.
-					'alt' => esc_attr( sprintf( __( 'Pay with %s on Reepay', 'reepay-checkout-gateway' ), $this->get_title() ) ),
+					'alt' => esc_attr( sprintf( __( 'Pay with %s on Billwerk+', 'reepay-checkout-gateway' ), $this->get_title() ) ),
 				);
 			},
 			array_filter( (array) $this->logos, 'strlen' )
@@ -835,7 +835,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				}
 
 				try {
-					self::assign_payment_token( $order, $token );
+					ReepayTokens::assign_payment_token( $order, $token );
 				} catch ( Exception $e ) {
 					$order->add_order_note( $e->getMessage() );
 
@@ -913,7 +913,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 		}
 
-		$customer_handle = rp_get_customer_handle( $order->get_customer_id() );
+		$customer_handle = reepay()->api( $this )->get_customer_handle_by_order( $order_id );
 
 		$data = array(
 			'country'         => $country,
@@ -1052,8 +1052,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			} else {
 				try {
-					self::assign_payment_token( $order, $token );
-					$this->reepay_save_card_info( $order, $token->get_token() );
+					ReepayTokens::assign_payment_token( $order, $token );
+					ReepayTokens::reepay_save_card_info( $order, $token->get_token() );
 				} catch ( Exception $e ) {
 					$order->add_order_note( $e->getMessage() );
 
@@ -1081,7 +1081,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 							try {
 								foreach ( $order->get_meta( '_reepay_another_orders' ) ?: array() as $order_id ) {
-									$this->reepay_save_card_info( wc_get_order( $order_id ), $token->get_token() );
+									ReepayTokens::reepay_save_card_info( wc_get_order( $order_id ), $token->get_token() );
 								}
 							} catch ( Exception $e ) {
 								wc_get_order( $order_id )->add_order_note( $e->getMessage() );
@@ -1356,7 +1356,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			try {
 				if ( $maybe_save_card || order_contains_subscription( $order ) ) {
-					$this->reepay_save_token( $order, wc_clean( $_GET['payment_method'] ) );
+					ReepayTokens::reepay_save_token( $order, wc_clean( $_GET['payment_method'] ) );
 				}
 			} catch ( Exception $e ) {
 				$this->log( 'Card saving error: ' . $e->getMessage() );
@@ -1684,10 +1684,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				$logos = $this->logos;
 				$logo  = array_shift( $logos );
 
-				return reepay()->get_setting( 'logo_url' ) . $logo . '.png';
+				return reepay()->get_setting( 'images_url' ) . $logo . '.png';
 		}
 
-		return reepay()->get_setting( 'logo_url' ) . 'svg/' . $image . '.logo.svg';
+		return reepay()->get_setting( 'images_url' ) . 'svg/' . $image . '.logo.svg';
 	}
 
 	/**
@@ -1696,9 +1696,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'is_reepay_configured' => array(
-				'title'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
+				'title'   => __( 'Status in Billwerk+', 'reepay-checkout-gateway' ),
 				'type'    => 'gateway_status',
-				'label'   => __( 'Status in reepay', 'reepay-checkout-gateway' ),
+				'label'   => __( 'Status in Billwerk+', 'reepay-checkout-gateway' ),
 				'default' => $this->test_mode,
 			),
 			'enabled'              => array(
