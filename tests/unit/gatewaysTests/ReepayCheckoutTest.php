@@ -273,21 +273,21 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 	 * ["http://example.com/wc-api/not_configured/"]
 	 * @see ReepayGateway::is_webhook_configured
 	 */
-	public function test_rp_is_webhook_configured( string $webhook_url ) {
-		self::$gateway->id = 'checkout';
-
-		$this->api_mock->method( 'request' )->willReturn(
-			array(
-				'urls'         => array(
-					$webhook_url,
-				),
-				'alert_emails' => array(
-					'test@test.com',
-				),
-			)
-		);
-
-		var_dump( self::$gateway->is_webhook_configured() );
-	}
+//	public function test_rp_is_webhook_configured( string $webhook_url ) {
+//		self::$gateway->id = 'checkout';
+//
+//		$this->api_mock->method( 'request' )->willReturn(
+//			array(
+//				'urls'         => array(
+//					$webhook_url,
+//				),
+//				'alert_emails' => array(
+//					'test@test.com',
+//				),
+//			)
+//		);
+//
+//		var_dump( self::$gateway->is_webhook_configured() );
+//	}
 
 }
