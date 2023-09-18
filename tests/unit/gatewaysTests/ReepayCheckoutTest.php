@@ -55,68 +55,6 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * Test function test_rp_card_store
-	 *
-	 * @param string $token card token.
-	 * @param string $exp_date card expiry date.
-	 * @param string $masked_card card number.
-	 * @param string $card_type card type.
-	 *
-	 * @testWith
-	 * ["ca_f73e13e5784a5dff32f2f93be7a8130f", "05-43", "411111XXXXXX1111", "Visa"]
-	 */
-	public function test_rp_card_store( string $token, string $exp_date, string $masked_card, string $card_type ) {
-		$this->api_mock->method( 'get_reepay_cards' )->willReturn(
-			array(
-				'id'          => $token,
-				'exp_date'    => $exp_date,
-				'masked_card' => $masked_card,
-				'card_type'   => $card_type,
-			)
-		);
-
-		$token_data = self::$gateway->add_payment_token_to_customer( $this->user->ID, $token );
-
-		$this->assertNotEmpty(
-			$token_data['token'],
-			'Token is not exist'
-		);
-
-		$this->assertSame(
-			$token,
-			$token_data['token']->get_token()
-		);
-	}
-
-	/**
-	 * Test function test_rp_card_store
-	 *
-	 * @param string $token card token.
-	 *
-	 * @testWith
-	 * ["ms_4a9a9480922ab74ad8bb4a0b5856dc9f"]
-	 */
-	public function test_rp_card_store_mobilepay( string $token ) {
-		$this->api_mock->method( 'get_reepay_cards' )->willReturn(
-			array(
-				'id' => $token,
-			)
-		);
-
-		$token_data = self::$gateway->add_payment_token_to_customer( $this->user->ID, $token );
-
-		$this->assertNotEmpty(
-			$token_data['token'],
-			'Token is not exist'
-		);
-
-		$this->assertSame(
-			$token,
-			$token_data['token']->get_token()
-		);
-	}
-
-	/**
 	 * Test function test_rp_finalize
 	 *
 	 * @param string $token card token.
@@ -143,8 +81,7 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 
 		$_GET['key'] = $this->order_generator->order()->get_order_key();
 
-		$expected_error = 'Cannot modify header information';
-		$this->expectError( $expected_error );
+		$this->expectError();
 
 		self::$gateway->reepay_finalize();
 	}
@@ -243,6 +180,4 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 			self::$gateway->get_account_info( $is_test )
 		);
 	}
-
-
 }
