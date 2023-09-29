@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit();
 		echo sprintf(
 				// translators: %s link to reepay dashboard.
 			__( 'Please setup WebHook in <a href="%s" target="_blank">Billwerk+ Dashboard</a>.', 'reepay-checkout-gateway' ),
-			'https://admin.reepay.com/'
+			'https://admin.billwerk.plus/'
 		);
 		?>
 		<br>
