@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Admin;
 
+use Automattic\WooCommerce\Utilities\OrderUtil;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -32,47 +34,48 @@ class Main {
 	 * @param string $hook current page hook.
 	 */
 	public function admin_enqueue_scripts( string $hook ) {
-		if ( 'post.php' !== $hook ) {
-			return;
-		}
+		if (
+			'post.php' === $hook ||
+			OrderUtil::custom_orders_table_usage_is_enabled() && isset( $_GET['id'] ) && 'shop_order' === get_post_type( $_GET['id'] ) && wc_get_order( $_GET['id'] )
+		) {
+			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
-		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+			wp_enqueue_style(
+				'wc-gateway-reepay-admin',
+				reepay()->get_setting( 'css_url' ) . 'admin' . $suffix . '.css',
+				array(),
+				reepay()->get_setting( 'plugin_version' )
+			);
 
-		wp_enqueue_style(
-			'wc-gateway-reepay-admin',
-			reepay()->get_setting( 'css_url' ) . 'admin' . $suffix . '.css',
-			array(),
-			reepay()->get_setting( 'plugin_version' )
-		);
-
-		wp_register_script(
-			'reepay-js-input-mask',
-			reepay()->get_setting( 'js_url' ) . 'jquery.inputmask' . $suffix . '.js',
-			array( 'jquery' ),
-			'5.0.3',
-			true
-		);
-
-		wp_enqueue_script(
-			'reepay-admin-js',
-			reepay()->get_setting( 'js_url' ) . 'admin' . $suffix . '.js',
-			array(
-				'jquery',
+			wp_register_script(
 				'reepay-js-input-mask',
-			),
-			reepay()->get_setting( 'plugin_version' ),
-			true
-		);
+				reepay()->get_setting( 'js_url' ) . 'jquery.inputmask' . $suffix . '.js',
+				array( 'jquery' ),
+				'5.0.3',
+				true
+			);
 
-		wp_localize_script(
-			'reepay-admin-js',
-			'Reepay_Admin',
-			array(
-				'ajax_url'  => admin_url( 'admin-ajax.php' ),
-				'text_wait' => __( 'Please wait...', 'reepay-checkout-gateway' ),
-				'nonce'     => wp_create_nonce( 'reepay' ),
-			)
-		);
+			wp_enqueue_script(
+				'reepay-admin-js',
+				reepay()->get_setting( 'js_url' ) . 'admin' . $suffix . '.js',
+				array(
+					'jquery',
+					'reepay-js-input-mask',
+				),
+				reepay()->get_setting( 'plugin_version' ),
+				true
+			);
+
+			wp_localize_script(
+				'reepay-admin-js',
+				'Reepay_Admin',
+				array(
+					'ajax_url'  => admin_url( 'admin-ajax.php' ),
+					'text_wait' => __( 'Please wait...', 'reepay-checkout-gateway' ),
+					'nonce'     => wp_create_nonce( 'reepay' ),
+				)
+			);
+		}
 	}
 }
 
