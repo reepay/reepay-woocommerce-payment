@@ -152,9 +152,17 @@ class OrderCapture {
 	 * Hooked to admin_init. Capture items from request
 	 */
 	public function process_item_capture() {
-		if ( ! isset( $_POST['post_type'] ) || 'shop_order' !== $_POST['post_type'] ||
-			 ! isset( $_POST['post_ID'] ) ||
-			 ( ! isset( $_POST['line_item_capture'] ) && ! isset( $_POST['all_items_capture'] ) ) ) {
+		if ( ! rp_hpos_is_order_page() ) {
+			return;
+		} else {
+			if ( ! isset( $_POST['post_type'] ) ||
+				 'shop_order' !== $_POST['post_type'] ||
+				 ! isset( $_POST['post_ID'] ) ) {
+				return;
+			}
+		}
+
+		if ( ! isset( $_POST['line_item_capture'] ) && ! isset( $_POST['all_items_capture'] ) ) {
 			return;
 		}
 
