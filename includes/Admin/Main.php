@@ -34,10 +34,7 @@ class Main {
 	 * @param string $hook current page hook.
 	 */
 	public function admin_enqueue_scripts( string $hook ) {
-		if (
-			'post.php' === $hook ||
-			OrderUtil::custom_orders_table_usage_is_enabled() && isset( $_GET['id'] ) && 'shop_order' === get_post_type( $_GET['id'] ) && wc_get_order( $_GET['id'] )
-		) {
+		if ( 'post.php' === $hook || rp_hpos_is_order_page() ) {
 			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
 			wp_enqueue_style(
