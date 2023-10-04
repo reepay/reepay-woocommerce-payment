@@ -238,10 +238,11 @@ class Api {
 			$key = reepay()->get_setting( 'private_key' );
 		}
 
-		if( empty( $key ) ) {
+		if ( empty( $key ) ) {
 			return new WP_Error(
 				401,
 				sprintf(
+					// translators: %s - url to gateway settings.
 					__( 'Billwerk+: API key not specified. Specify it in <a href="%s" target="_blank">gateway settings</a>', 'reepay-checkout-gateway' ),
 					admin_url( 'admin.php?page=wc-settings&tab=checkout&section=reepay_checkout' )
 				)
