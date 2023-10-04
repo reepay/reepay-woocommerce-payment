@@ -152,8 +152,10 @@ class OrderCapture {
 	 * Hooked to admin_init. Capture items from request
 	 */
 	public function process_item_capture() {
-		if ( ! rp_hpos_is_order_page() ) {
-			return;
+		if ( rp_hpos_enabled() ) {
+			if ( ! rp_hpos_is_order_page() ) {
+				return;
+			}
 		} else {
 			if ( ! isset( $_POST['post_type'] ) ||
 				 'shop_order' !== $_POST['post_type'] ||
