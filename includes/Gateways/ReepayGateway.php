@@ -136,13 +136,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public string $skip_order_lines = 'no';
 
 	/**
-	 * If automatically cancel unpaid orders should be ignored
-	 *
-	 * @var string
-	 */
-	public string $enable_order_autocancel = 'no';
-
-	/**
 	 * Email address for notification about failed webhooks
 	 *
 	 * @var string
@@ -1396,7 +1389,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$this->debug                   = (string) reepay()->get_setting( 'debug' );
 		$this->payment_type            = (string) reepay()->get_setting( 'payment_type' );
 		$this->skip_order_lines        = (string) reepay()->get_setting( 'skip_order_lines' );
-		$this->enable_order_autocancel = (string) reepay()->get_setting( 'enable_order_autocancel' );
 		$this->handle_failover         = (string) reepay()->get_setting( 'handle_failover' );
 	}
 
