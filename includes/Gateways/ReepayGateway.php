@@ -1555,6 +1555,21 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			);
 		}
 
+
+		// Add "PW Gift Cards" support.
+		foreach( $order->get_items( 'pw_gift_card' ) as $line ) {
+			$amount = apply_filters( 'pwgc_to_order_currency', floatval( $line->get_amount() ) * -1, $order );
+
+			$items[] = array(
+				// translators: gift card code.
+				'ordertext'       => sprintf( __( 'PW gift card (%s)', 'reepay-checkout-gateway' ), $line->get_card_number() ),
+				'quantity'        => 1,
+				'amount'          => rp_prepare_amount( $amount, $order->get_currency() ),
+				'vat'             => 0,
+				'amount_incl_vat' => $prices_incl_tax,
+			);
+		}
+
 		// Add "Gift Up!" discount.
 		if ( defined( 'GIFTUP_ORDER_META_CODE_KEY' ) &&
 			 defined( 'GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY' )
