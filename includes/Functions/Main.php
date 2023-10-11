@@ -23,6 +23,7 @@ class Main {
 		include_once dirname( __FILE__ ) . '/customer.php';
 		include_once dirname( __FILE__ ) . '/format.php';
 		include_once dirname( __FILE__ ) . '/gateways.php';
+		include_once dirname( __FILE__ ) . '/hpos.php';
 		include_once dirname( __FILE__ ) . '/order.php';
 		include_once dirname( __FILE__ ) . '/subscriptions.php';
 	}

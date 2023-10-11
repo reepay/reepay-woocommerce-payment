@@ -93,7 +93,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 		 *
 		 * @return array
 		 */
-		$script_dependencies = apply_filters( 'woocommerce_blocks_register_script_dependencies', array( Assets::SLUG_CHECKOUT_JS ), $handle );
+		$script_dependencies = apply_filters( 'woocommerce_blocks_register_script_dependencies', is_admin() ? array() : array( Assets::SLUG_CHECKOUT_JS ), $handle );
 
 		wp_register_script(
 			$handle,
