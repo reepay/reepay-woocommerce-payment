@@ -685,6 +685,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			throw new Exception( 'Payment can\'t be refunded.' );
 		}
 
+		if ( .0 === (float) $amount ) {
+			throw new Exception( 'Refund amount must be greater than 0.' );
+		}
+
 		$result = reepay()->api( $this )->refund( $order, $amount, $reason );
 
 		if ( is_wp_error( $result ) ) {
