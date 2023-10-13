@@ -136,13 +136,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public string $skip_order_lines = 'no';
 
 	/**
-	 * If automatically cancel unpaid orders should be ignored
-	 *
-	 * @var string
-	 */
-	public string $enable_order_autocancel = 'no';
-
-	/**
 	 * Email address for notification about failed webhooks
 	 *
 	 * @var string
@@ -1400,7 +1393,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$this->debug                   = (string) reepay()->get_setting( 'debug' );
 		$this->payment_type            = (string) reepay()->get_setting( 'payment_type' );
 		$this->skip_order_lines        = (string) reepay()->get_setting( 'skip_order_lines' );
-		$this->enable_order_autocancel = (string) reepay()->get_setting( 'enable_order_autocancel' );
 		$this->handle_failover         = (string) reepay()->get_setting( 'handle_failover' );
 	}
 
@@ -1563,6 +1555,21 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'quantity'        => 1,
 				'amount'          => round( - 1 * rp_prepare_amount( $prices_incl_tax ? $discount_with_tax : $discount, $order->get_currency() ) ) + ( $sub_amount_discount * 100 ),
 				'vat'             => round( $tax_percent / 100, 2 ),
+				'amount_incl_vat' => $prices_incl_tax,
+			);
+		}
+
+
+		// Add "PW Gift Cards" support.
+		foreach( $order->get_items( 'pw_gift_card' ) as $line ) {
+			$amount = apply_filters( 'pwgc_to_order_currency', floatval( $line->get_amount() ) * -1, $order );
+
+			$items[] = array(
+				// translators: gift card code.
+				'ordertext'       => sprintf( __( 'PW gift card (%s)', 'reepay-checkout-gateway' ), $line->get_card_number() ),
+				'quantity'        => 1,
+				'amount'          => rp_prepare_amount( $amount, $order->get_currency() ),
+				'vat'             => 0,
 				'amount_incl_vat' => $prices_incl_tax,
 			);
 		}

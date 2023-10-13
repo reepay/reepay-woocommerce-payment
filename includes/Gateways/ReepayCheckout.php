@@ -81,7 +81,6 @@ class ReepayCheckout extends ReepayGateway {
 		$this->payment_type            = $this->settings['payment_type'] ?: $this->payment_type;
 		$this->payment_methods         = $this->settings['payment_methods'] ?: $this->payment_methods;
 		$this->skip_order_lines        = $this->settings['skip_order_lines'] ?: $this->skip_order_lines;
-		$this->enable_order_autocancel = $this->settings['enable_order_autocancel'] ?: $this->enable_order_autocancel;
 		$this->failed_webhooks_email   = $this->settings['failed_webhooks_email'] ?: $this->failed_webhooks_email;
 		$this->handle_failover         = $this->settings['handle_failover'] ?: $this->handle_failover;
 
@@ -378,16 +377,6 @@ class ReepayCheckout extends ReepayGateway {
 				'options'     => array(
 					'no'  => 'Include order lines',
 					'yes' => 'Skip order lines',
-				),
-				'default'     => 'no',
-			),
-			'enable_order_autocancel'    => array(
-				'title'       => __( 'The automatic order auto-cancel', 'reepay-checkout-gateway' ),
-				'description' => __( 'The automatic order auto-cancel', 'reepay-checkout-gateway' ),
-				'type'        => 'select',
-				'options'     => array(
-					'yes' => 'Enable auto-cancel',
-					'no'  => 'Ignore / disable auto-cancel',
 				),
 				'default'     => 'no',
 			),
