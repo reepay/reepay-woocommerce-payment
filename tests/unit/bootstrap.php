@@ -5,6 +5,7 @@
  * @package ./reepay_Woocommerce_Payment
  */
 
+use Reepay\Checkout\Tests\Helpers\HPOS_STATE;
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\OptionsController;
 
@@ -35,6 +36,7 @@ require_once __DIR__ . '/../helpers/functions.php';
 tests_add_filter(
 	'muplugins_loaded',
 	function () {
+		HPOS_STATE::init();
 		PLUGINS_STATE::activate_plugins();
 
 		require_once __DIR__ . '/../../reepay-woocommerce-payment.php';
