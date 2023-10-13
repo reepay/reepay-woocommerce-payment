@@ -1385,15 +1385,15 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Apply settings from Reepay Checkout Gateway to other gateways. Use it in constructor
 	 */
 	protected function apply_parent_settings() {
-		$this->private_key             = (string) reepay()->get_setting( 'private_key' );
-		$this->private_key_test        = (string) reepay()->get_setting( 'private_key_test' );
-		$this->test_mode               = (string) reepay()->get_setting( 'test_mode' );
-		$this->settle                  = (array) reepay()->get_setting( 'settle' );
-		$this->language                = (string) reepay()->get_setting( 'language' );
-		$this->debug                   = (string) reepay()->get_setting( 'debug' );
-		$this->payment_type            = (string) reepay()->get_setting( 'payment_type' );
-		$this->skip_order_lines        = (string) reepay()->get_setting( 'skip_order_lines' );
-		$this->handle_failover         = (string) reepay()->get_setting( 'handle_failover' );
+		$this->private_key      = (string) reepay()->get_setting( 'private_key' );
+		$this->private_key_test = (string) reepay()->get_setting( 'private_key_test' );
+		$this->test_mode        = (string) reepay()->get_setting( 'test_mode' );
+		$this->settle           = (array) reepay()->get_setting( 'settle' );
+		$this->language         = (string) reepay()->get_setting( 'language' );
+		$this->debug            = (string) reepay()->get_setting( 'debug' );
+		$this->payment_type     = (string) reepay()->get_setting( 'payment_type' );
+		$this->skip_order_lines = (string) reepay()->get_setting( 'skip_order_lines' );
+		$this->handle_failover  = (string) reepay()->get_setting( 'handle_failover' );
 	}
 
 	/**
@@ -1559,9 +1559,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			);
 		}
 
-
 		// Add "PW Gift Cards" support.
-		foreach( $order->get_items( 'pw_gift_card' ) as $line ) {
+		foreach ( $order->get_items( 'pw_gift_card' ) as $line ) {
 			$amount = apply_filters( 'pwgc_to_order_currency', floatval( $line->get_amount() ) * -1, $order );
 
 			$items[] = array(

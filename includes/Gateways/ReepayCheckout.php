@@ -70,19 +70,19 @@ class ReepayCheckout extends ReepayGateway {
 
 		parent::__construct();
 
-		$this->private_key             = apply_filters( 'woocommerce_reepay_private_key', $this->settings['private_key'] ?: $this->private_key );
-		$this->private_key_test        = apply_filters( 'woocommerce_reepay_private_key_test', $this->settings['private_key_test'] ?: $this->private_key_test );
-		$this->test_mode               = $this->settings['test_mode'] ?: $this->test_mode;
-		$this->settle                  = $this->settings['settle'] ?: $this->settle;
-		$this->language                = $this->settings['language'] ?: $this->language;
-		$this->save_cc                 = $this->settings['save_cc'] ?: $this->save_cc;
-		$this->debug                   = $this->settings['debug'] ?: $this->debug;
-		$this->logos                   = $this->settings['logos'] ?: $this->logos;
-		$this->payment_type            = $this->settings['payment_type'] ?: $this->payment_type;
-		$this->payment_methods         = $this->settings['payment_methods'] ?: $this->payment_methods;
-		$this->skip_order_lines        = $this->settings['skip_order_lines'] ?: $this->skip_order_lines;
-		$this->failed_webhooks_email   = $this->settings['failed_webhooks_email'] ?: $this->failed_webhooks_email;
-		$this->handle_failover         = $this->settings['handle_failover'] ?: $this->handle_failover;
+		$this->private_key           = apply_filters( 'woocommerce_reepay_private_key', $this->settings['private_key'] ?: $this->private_key );
+		$this->private_key_test      = apply_filters( 'woocommerce_reepay_private_key_test', $this->settings['private_key_test'] ?: $this->private_key_test );
+		$this->test_mode             = $this->settings['test_mode'] ?: $this->test_mode;
+		$this->settle                = $this->settings['settle'] ?: $this->settle;
+		$this->language              = $this->settings['language'] ?: $this->language;
+		$this->save_cc               = $this->settings['save_cc'] ?: $this->save_cc;
+		$this->debug                 = $this->settings['debug'] ?: $this->debug;
+		$this->logos                 = $this->settings['logos'] ?: $this->logos;
+		$this->payment_type          = $this->settings['payment_type'] ?: $this->payment_type;
+		$this->payment_methods       = $this->settings['payment_methods'] ?: $this->payment_methods;
+		$this->skip_order_lines      = $this->settings['skip_order_lines'] ?: $this->skip_order_lines;
+		$this->failed_webhooks_email = $this->settings['failed_webhooks_email'] ?: $this->failed_webhooks_email;
+		$this->handle_failover       = $this->settings['handle_failover'] ?: $this->handle_failover;
 
 		if ( 'yes' === $this->save_cc ) {
 			$this->supports[] = 'add_payment_method';
