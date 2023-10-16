@@ -7,6 +7,7 @@
 
 namespace Reepay\Checkout\Tests\Helpers;
 
+use Automattic\WooCommerce\Utilities\OrderUtil;
 use PHPUnit\Framework\Assert;
 use WC_Product;
 
