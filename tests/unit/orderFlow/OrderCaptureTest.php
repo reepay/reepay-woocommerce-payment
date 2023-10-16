@@ -289,8 +289,14 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 		$this->order_generator->order()->save();
 
 		$_POST['all_items_capture'] = 'true';
-		$_POST['post_type']         = 'shop_order';
+		$_GET['id']                 = $this->order_generator->order()->get_id();
 		$_POST['post_ID']           = $this->order_generator->order()->get_id();
+
+		if ( HPOS_STATE::is_active() ) {
+			set_current_screen( 'edit-post' );
+		} else {
+			$_POST['post_type'] = 'shop_order';
+		}
 
 		$this->order_capture->process_item_capture();
 
