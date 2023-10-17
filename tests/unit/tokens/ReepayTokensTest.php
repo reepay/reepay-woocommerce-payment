@@ -170,6 +170,89 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 		$this->assertSame( $api_response, $this->order_generator->get_meta('_reepay_source') );
 	}
 
+	public function test_get_payment_token_subscription_token_in_subscription() {
+		$token = $this->generate_token( 'reepay' );
+
+		$this->order_generator->add_product( 'woo_sub' );
+		$this->order_generator->order()->save();
+
+		$subscriptions = wcs_get_subscriptions_for_order( $this->order_generator->order()->get_id() );
+		$subscription = reset( $subscriptions );
+		$subscription->add_meta_data( '_reepay_token', $token->get_token() );
+		$subscription->save();
+
+		$this->assertSame( $token->get_token(), ReepayTokens::get_payment_token_subscription( $subscription )->get_token() );
+	}
+
+	public function test_get_payment_token_subscription_token_in_order() {
+		$token = $this->generate_token( 'reepay' );
+
+		$this->order_generator->add_product( 'woo_sub' );
+		$this->order_generator->set_meta( '_reepay_token', $token->get_token() );
+		$this->order_generator->order()->save();
+
+		$subscriptions = wcs_get_subscriptions_for_order( $this->order_generator->order()->get_id() );
+		$subscription = reset( $subscriptions );
+
+		$this->assertSame( $token->get_token(), ReepayTokens::get_payment_token_subscription( $subscription )->get_token() );
+	}
+
+	public function test_get_payment_token_subscription_api_empty() {
+		$this->order_generator->add_product( 'woo_sub' );
+		$this->order_generator->order()->save();
+
+		$subscriptions = wcs_get_subscriptions_for_order( $this->order_generator->order()->get_id() );
+		$subscription  = reset( $subscriptions );
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn( array() );
+
+		$this->assertSame( false, ReepayTokens::get_payment_token_subscription( $subscription ) );
+	}
+
+	public function test_get_payment_token_subscription_token_in_api_recurring_payment_method() {
+		$token_string = 'rp_12345';
+		$this->generate_token( 'reepay', array(
+			'token' => $token_string
+		) );
+
+		$this->order_generator->add_product( 'woo_sub' );
+		$this->order_generator->order()->save();
+
+		$subscriptions = wcs_get_subscriptions_for_order( $this->order_generator->order()->get_id() );
+		$subscription  = reset( $subscriptions );
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn( array(
+			'recurring_payment_method' => $token_string
+		) );
+
+		$this->assertSame( $token_string, ReepayTokens::get_payment_token_subscription( $subscription )->get_token() );
+	}
+
+	public function test_get_payment_token_subscription_token_in_api_transactions() {
+		$token_string = 'rp_12345';
+		$this->generate_token( 'reepay', array(
+			'token' => $token_string
+		) );
+
+		$this->order_generator->add_product( 'woo_sub' );
+		$this->order_generator->order()->save();
+
+		$subscriptions = wcs_get_subscriptions_for_order( $this->order_generator->order()->get_id() );
+		$subscription  = reset( $subscriptions );
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn( array(
+			'transactions' => array(
+				array(),
+				array(
+					'payment_method' => $token_string
+				),
+				array()
+			)
+		) );
+
+		$this->assertSame( $token_string, ReepayTokens::get_payment_token_subscription( $subscription )->get_token() );
+	}
+
 	/**
 	 * @testWith
 	 * [false, false]
