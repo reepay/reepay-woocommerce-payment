@@ -35,7 +35,7 @@ abstract class HPOS_STATE {
 			$hpos_activated = trim( getenv( 'HPOS_ENABLED' ) ) === 'yes';
 		}
 
-		echo "HPOS_STATE activated: " . ( $hpos_activated ? 'yes' : 'no' ) . "\n";
+		echo "HPOS_ENABLED=" . ( $hpos_activated ? 'yes' : 'no' ) . "\n";
 
 		self::$hpos_activated = $hpos_activated;
 
