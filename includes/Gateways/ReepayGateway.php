@@ -192,7 +192,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Add Payment Method.
+	 * Add payment method via account screen.
 	 */
 	public function add_payment_method() {
 		$user            = get_userdata( get_current_user_id() );
