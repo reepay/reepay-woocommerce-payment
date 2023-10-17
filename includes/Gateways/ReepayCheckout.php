@@ -647,7 +647,7 @@ class ReepayCheckout extends ReepayGateway {
 			);
 
 			$reepay_token = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
-			$key = isset( $_GET['key'] ) ? wc_clean( $_GET['key'] ) : '';
+			$key          = isset( $_GET['key'] ) ? wc_clean( $_GET['key'] ) : '';
 
 			if ( empty( $reepay_token ) || empty( $key ) ) {
 				throw new Exception( 'Not enough data' );
