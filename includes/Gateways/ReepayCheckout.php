@@ -638,14 +638,22 @@ class ReepayCheckout extends ReepayGateway {
 	 * @throws Exception If wrong request data.
 	 */
 	public function reepay_finalize() {
-		$reepay_token = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
-
 		try {
-			if ( empty( $_GET['key'] ) ) {
-				throw new Exception( 'Order key is undefined' );
+			$this->log(
+				array(
+					'source' => 'reepay_finalize',
+					'data'   => $_GET,
+				)
+			);
+
+			$reepay_token = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
+			$key = isset( $_GET['key'] ) ? wc_clean( $_GET['key'] ) : '';
+
+			if ( empty( $reepay_token ) || empty( $key ) ) {
+				throw new Exception( 'Not enough data' );
 			}
 
-			$order_id = isset( $_GET['key'] ) ? wc_get_order_id_by_order_key( wc_clean( $_GET['key'] ) ) : 0;
+			$order_id = wc_get_order_id_by_order_key( $key );
 
 			if ( empty( $order_id ) ) {
 				throw new Exception( 'Can not get order' );
@@ -660,13 +668,6 @@ class ReepayCheckout extends ReepayGateway {
 			if ( $order->get_payment_method() !== $this->id ) {
 				throw new Exception( 'Unable to use this order' );
 			}
-
-			$this->log(
-				array(
-					'source' => 'reepay_finalize',
-					'data'   => $_GET,
-				)
-			);
 
 			$token = ReepayTokens::reepay_save_token( $order, $reepay_token );
 
