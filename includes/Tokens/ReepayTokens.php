@@ -93,7 +93,7 @@ abstract class ReepayTokens {
 	 *
 	 * @throws Exception If invalid token or order.
 	 */
-	public static function reepay_save_card_info( WC_Order $order, $card_info ) {
+	public static function save_card_info_to_order( WC_Order $order, $card_info ) {
 		if ( is_string( $card_info ) ) {
 			$customer_handle = rp_get_customer_handle( $order->get_customer_id() );
 			$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $card_info );
@@ -130,7 +130,7 @@ abstract class ReepayTokens {
 			'card_info' => $card_info,
 		] = self::add_payment_token_to_customer( $order->get_customer_id(), $reepay_token );
 
-		self::reepay_save_card_info( $order, $card_info );
+		self::save_card_info_to_order( $order, $card_info );
 
 		self::assign_payment_token( $order, $token );
 
@@ -224,6 +224,7 @@ abstract class ReepayTokens {
 							foreach ( $invoice_data['transactions'] as $transaction ) {
 								if ( ! empty( $transaction['payment_method'] ) ) {
 									$token = $transaction['payment_method'];
+									break;
 								}
 							}
 						}

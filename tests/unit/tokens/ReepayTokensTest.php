@@ -148,7 +148,7 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 		$this->assertSame( $api_response, $card_info );
 	}
 
-	public function test_reepay_save_card_info() {
+	public function test_save_card_info_to_order() {
 		$api_response = array(
 			'id' => 'ca_123456789',
 			'exp_date' => '20-77',
@@ -158,7 +158,7 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 
 		$this->api_mock->method( 'get_reepay_cards' )->willReturn( $api_response );
 
-		ReepayTokens::reepay_save_card_info(
+		ReepayTokens::save_card_info_to_order(
 			$this->order_generator->order(),
 			$api_response['id']
 		);
