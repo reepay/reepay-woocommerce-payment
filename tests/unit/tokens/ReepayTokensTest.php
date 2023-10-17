@@ -5,6 +5,7 @@
  * @package Reepay\Checkout
  */
 
+use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase_Trait_Tokens;
 use Reepay\Checkout\Tokens\ReepayTokens;
@@ -171,6 +172,8 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 	}
 
 	public function test_get_payment_token_subscription_token_in_subscription() {
+		PLUGINS_STATE::maybe_skip_test_by_product_type( 'woo_sub' );
+
 		$token = $this->generate_token( 'reepay' );
 
 		$this->order_generator->add_product( 'woo_sub' );
@@ -185,6 +188,8 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 	}
 
 	public function test_get_payment_token_subscription_token_in_order() {
+		PLUGINS_STATE::maybe_skip_test_by_product_type( 'woo_sub' );
+
 		$token = $this->generate_token( 'reepay' );
 
 		$this->order_generator->add_product( 'woo_sub' );
@@ -198,6 +203,8 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 	}
 
 	public function test_get_payment_token_subscription_api_empty() {
+		PLUGINS_STATE::maybe_skip_test_by_product_type( 'woo_sub' );
+
 		$this->order_generator->add_product( 'woo_sub' );
 		$this->order_generator->order()->save();
 
@@ -210,6 +217,8 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 	}
 
 	public function test_get_payment_token_subscription_token_in_api_recurring_payment_method() {
+		PLUGINS_STATE::maybe_skip_test_by_product_type( 'woo_sub' );
+
 		$token_string = 'rp_12345';
 		$this->generate_token( 'reepay', array(
 			'token' => $token_string
@@ -229,6 +238,8 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 	}
 
 	public function test_get_payment_token_subscription_token_in_api_transactions() {
+		PLUGINS_STATE::maybe_skip_test_by_product_type( 'woo_sub' );
+
 		$token_string = 'rp_12345';
 		$this->generate_token( 'reepay', array(
 			'token' => $token_string
