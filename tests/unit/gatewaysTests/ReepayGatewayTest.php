@@ -27,6 +27,20 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * @param bool $include_tax
+	 * @param bool $only_not_settled
+	 *
+	 * @testWith
+	 * [false, false]
+	 * [false, true]
+	 * [true, false]
+	 * [true, true]
+	 */
+	public function test_get_order_items( bool $include_tax, bool $only_not_settled ) {
+//		$this->order_generator->add_product('simple', )
+	}
+
+	/**
 	 * @param $card_type
 	 * @param $result
 	 *
