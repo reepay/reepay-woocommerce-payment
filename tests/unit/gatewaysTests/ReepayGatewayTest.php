@@ -7,6 +7,7 @@
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
 use Reepay\Checkout\Gateways\ReepayGateway;
+use Reepay\Checkout\Tests\Helpers\OrderItemsGenerator;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
 class ReepayGatewayTestChild extends ReepayGateway {
@@ -26,6 +27,13 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 		self::$gateway = new ReepayGatewayTestChild();
 	}
 
+	public static function tear_down_after_class() {
+		parent::tear_down_after_class();
+
+		update_option( 'woocommerce_calc_taxes', 'no' );
+		update_option( 'woocommerce_prices_include_tax', 'no' );
+	}
+
 	/**
 	 * @param bool $include_tax
 	 * @param bool $only_not_settled
@@ -36,8 +44,26 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	 * [true, false]
 	 * [true, true]
 	 */
-	public function test_get_order_items( bool $include_tax, bool $only_not_settled ) {
-//		$this->order_generator->add_product('simple', )
+	public function test_get_order_items( bool $include_tax = false, bool $only_not_settled = false ) {
+		$order_items_generator = new OrderItemsGenerator(
+			$this->order_generator,
+			array(
+				'include_tax' => $include_tax,
+				'only_not_settled' => $only_not_settled,
+			)
+		);
+
+		$order_items_generator->generate_line_item();
+		$order_items_generator->generate_line_item( array(
+			'order_item_meta' => array(
+				'settled' => true
+			)
+		) );
+
+		$this->assertSame(
+			$order_items_generator->get_order_items(),
+			self::$gateway->get_order_items( $this->order_generator->order(), $only_not_settled )
+		);
 	}
 
 	/**
