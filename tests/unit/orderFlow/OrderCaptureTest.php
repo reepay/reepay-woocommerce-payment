@@ -913,7 +913,7 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 			array(
 				'ordertext'       => $product_name,
 				'quantity'        => $qty,
-				'amount'          => round( $price * 100 * ( 1 + $tax_rate / 100 ) ),
+				'amount'          => round( $price * ( 100 + $tax_rate ) ),
 				'vat'             => $tax_rate / 100,
 				'amount_incl_vat' => true,
 			),
