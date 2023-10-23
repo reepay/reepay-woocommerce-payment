@@ -294,7 +294,7 @@ class OrderStatuses {
 			$order->payment_complete( $transaction_id );
 
 			if ( $note ) {
-				$order->add_order_note( $note );
+				$order->add_order_note( $note, true, true );
 			}
 
 			$order->update_meta_data( '_reepay_state_settled', 1 );
