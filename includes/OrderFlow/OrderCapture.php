@@ -247,7 +247,7 @@ class OrderCapture {
 	 *
 	 * @return bool
 	 */
-	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instantly = false): bool {
+	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instantly = false) : bool {
 		unset( $_POST['post_status'] ); // // Prevent order status changing by WooCommerce
 
 		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instantly );
