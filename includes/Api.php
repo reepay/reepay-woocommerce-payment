@@ -774,7 +774,7 @@ class Api {
 			if($instantly){
 				$order->add_order_note( $error );
 			}else{
-				$order->add_order_note( $error, true, true);
+				$order->add_order_note( $error, true, true );
 			}
 
 			return $result;
@@ -814,7 +814,7 @@ class Api {
 		if($instantly){
 			$order->add_order_note( $message);
 		}else{
-			$order->add_order_note( $message, true, true);
+			$order->add_order_note( $message, true, true );
 		}
 
 
