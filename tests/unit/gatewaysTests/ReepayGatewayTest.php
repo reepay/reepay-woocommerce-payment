@@ -44,7 +44,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	 * [true, false]
 	 * [true, true]
 	 */
-	public function test_get_order_items( bool $include_tax = false, bool $only_not_settled = false ) {
+	public function test_get_order_items_line_items( bool $include_tax = false, bool $only_not_settled = false ) {
 		$order_items_generator = new OrderItemsGenerator(
 			$this->order_generator,
 			array(
