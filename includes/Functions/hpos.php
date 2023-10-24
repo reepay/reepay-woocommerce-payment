@@ -24,5 +24,5 @@ function rp_hpos_enabled(): bool {
  * @return bool
  */
 function rp_hpos_is_order_page(): bool {
-	return is_admin() && rp_hpos_enabled() && isset( $_GET['id'] ) && 'shop_order' === get_post_type( $_GET['id'] ) && wc_get_order( $_GET['id'] );
+	return is_admin() && rp_hpos_enabled() && isset( $_GET['id'] ) && wc_get_order( $_GET['id'] );
 }

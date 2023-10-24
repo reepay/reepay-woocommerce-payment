@@ -7,6 +7,7 @@
 
 namespace Reepay\Checkout\Tests\Helpers;
 
+use Automattic\WooCommerce\Utilities\OrderUtil;
 use PHPUnit\Framework\Assert;
 use WC_Product;
 
@@ -40,7 +41,7 @@ abstract class PLUGINS_STATE {
 			}
 		}
 
-		echo 'Additional plugins: ' . implode( ', ', $plugins ) . "\n";
+		echo 'PHPUNIT_PLUGINS=' . implode( ',', $plugins ) . "\n";
 
 		$wordpres_plugins_path = ABSPATH . 'wp-content/plugins/';
 		$active_plugins        = get_option( 'active_plugins', array() );

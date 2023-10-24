@@ -192,7 +192,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Add Payment Method.
+	 * Add payment method via account screen.
 	 */
 	public function add_payment_method() {
 		$user            = get_userdata( get_current_user_id() );
@@ -1050,7 +1050,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			} else {
 				try {
 					ReepayTokens::assign_payment_token( $order, $token );
-					ReepayTokens::reepay_save_card_info( $order, $token->get_token() );
+					ReepayTokens::save_card_info_to_order( $order, $token->get_token() );
 				} catch ( Exception $e ) {
 					$order->add_order_note( $e->getMessage() );
 
@@ -1078,7 +1078,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 							try {
 								foreach ( $order->get_meta( '_reepay_another_orders' ) ?: array() as $order_id ) {
-									ReepayTokens::reepay_save_card_info( wc_get_order( $order_id ), $token->get_token() );
+									ReepayTokens::save_card_info_to_order( wc_get_order( $order_id ), $token->get_token() );
 								}
 							} catch ( Exception $e ) {
 								wc_get_order( $order_id )->add_order_note( $e->getMessage() );
@@ -1627,77 +1627,36 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @return string the logo
 	 */
 	public function get_logo( string $card_type ): string {
-		switch ( $card_type ) {
-			case 'visa':
-				$image = 'visa';
-				break;
-			case 'mc':
-				$image = 'mastercard';
-				break;
-			case 'dankort':
-			case 'visa_dk':
-				$image = 'dankort';
-				break;
-			case 'ffk':
-				$image = 'forbrugsforeningen';
-				break;
-			case 'visa_elec':
-				$image = 'visa-electron';
-				break;
-			case 'maestro':
-				$image = 'maestro';
-				break;
-			case 'amex':
-				$image = 'american-express';
-				break;
-			case 'diners':
-				$image = 'diners';
-				break;
-			case 'discover':
-				$image = 'discover';
-				break;
-			case 'jcb':
-				$image = 'jcb';
-				break;
-			case 'mobilepay':
-			case 'ms_subscripiton':
-				$image = 'mobilepay';
-				break;
-			case 'viabill':
-				$image = 'viabill';
-				break;
-			case 'klarna_pay_later':
-			case 'klarna_pay_now':
-				$image = 'klarna';
-				break;
-			case 'resurs':
-				$image = 'resurs';
-				break;
-			case 'china_union_pay':
-				$image = 'cup';
-				break;
-			case 'paypal':
-				$image = 'paypal';
-				break;
-			case 'applepay':
-				$image = 'applepay';
-				break;
-			case 'googlepay':
-				$image = 'googlepay';
-				break;
-			case 'vipps':
-				$image = 'vipps';
-				break;
-			default:
-				// $image = 'reepay.png';
-				// Use an image of payment method
-				$logos = $this->logos;
-				$logo  = array_shift( $logos );
+		$card_types = array(
+			'visa'             => 'visa',
+			'mc'               => 'mastercard',
+			'dankort'          => 'dankort',
+			'visa_dk'          => 'dankort',
+			'ffk'              => 'forbrugsforeningen',
+			'visa_elec'        => 'visa-electron',
+			'maestro'          => 'maestro',
+			'amex'             => 'american-express',
+			'diners'           => 'diners',
+			'discover'         => 'discover',
+			'jcb'              => 'jcb',
+			'mobilepay'        => 'mobilepay',
+			'ms_subscripiton'  => 'mobilepay',
+			'viabill'          => 'viabill',
+			'klarna_pay_later' => 'klarna',
+			'klarna_pay_now'   => 'klarna',
+			'resurs'           => 'resurs',
+			'china_union_pay'  => 'cup',
+			'paypal'           => 'paypal',
+			'applepay'         => 'applepay',
+			'googlepay'        => 'googlepay',
+			'vipps'            => 'vipps',
+		);
 
-				return reepay()->get_setting( 'images_url' ) . $logo . '.png';
+		if ( isset( $card_types[ $card_type ] ) ) {
+			return reepay()->get_setting( 'images_url' ) . 'svg/' . $card_types[ $card_type ] . '.logo.svg';
+		} else {
+			return reepay()->get_setting( 'images_url' ) . 'dankort.png';
 		}
-
-		return reepay()->get_setting( 'images_url' ) . 'svg/' . $image . '.logo.svg';
 	}
 
 	/**
