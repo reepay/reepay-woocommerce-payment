@@ -93,4 +93,47 @@ class OrderItemsGenerator {
 			);
 		}
 	}
+
+	/**
+	 * @todo complete function
+	 */
+	public function generate_shipping_item( array $options = array() ) {
+		$options = wp_parse_args( $options, array(
+			'name'     => 'Shipping #' . rand( 1000000, 9999999 ),
+			'price'    => rand( 1, 99999 ) / 100,
+			'tax'      => rand( 0, 9999 ) / 100,
+		) );
+
+		if ( ! $this->include_tax ) {
+			$options['tax'] = 0;
+		}
+
+		if ( ! empty( $options['tax'] ) ) {
+			$this->order_generator->add_tax( $options['tax'] );
+		}
+
+		$order_item_id = $this->order_generator->add_shipping( array(
+			'method_title' => $options['name'],
+			'total'        => $options['price'],
+			'taxes'    => array(
+				'total'    => [ $options['tax'] ],
+				'subtotal' => [ $options['tax'] ]
+			)
+		) );
+
+		$order_item = $this->order_generator->order()->get_item( $order_item_id, false );
+
+		if ( ! $this->only_not_settled || empty( $order_item->get_meta( 'settled' ) ) ) {
+			$this->order_items[] = array(
+				'ordertext'       => $options['name'],
+				'quantity'        => 1,
+				'amount'          => rp_prepare_amount(
+					$options['price'] + $options['tax'],
+					$this->order_generator->order()->get_currency()
+				),
+				'vat'             => round( $options['tax'] / $options['price'], 2 ),
+				'amount_incl_vat' => $this->include_tax
+			);
+		}
+	}
 }
