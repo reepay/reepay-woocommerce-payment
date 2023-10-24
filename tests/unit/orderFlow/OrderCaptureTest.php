@@ -300,6 +300,8 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 
 		$this->order_capture->process_item_capture();
 
+		$this->order_generator->reset_order();
+
 		$this->assertSame(
 			$prices[0] * $qty + $prices[1] * $qty + $prices[2] + $prices[3],
 			array_reduce(
