@@ -44,7 +44,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	 * [true, false]
 	 * [true, true]
 	 */
-	public function test_get_order_items_line_items( bool $include_tax = false, bool $only_not_settled = false ) {
+	public function test_get_order_items_line_items( bool $include_tax, bool $only_not_settled ) {
 		$order_items_generator = new OrderItemsGenerator(
 			$this->order_generator,
 			array(
@@ -75,12 +75,8 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	 * [false, true]
 	 * [true, false]
 	 * [true, true]
-	 *
-	 * @todo complete test
 	 */
-	public function test_get_order_items_shipping_items( bool $include_tax = true, bool $only_not_settled = true ) {
-		$this->markTestSkipped();
-
+	public function test_get_order_items_shipping_items( bool $include_tax, bool $only_not_settled ) {
 		$order_items_generator = new OrderItemsGenerator(
 			$this->order_generator,
 			array(
@@ -89,20 +85,22 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 			)
 		);
 
-//		$order_items_generator->generate_line_item([
-//			'price' => 200,
-//			'quantity' => 3,
-//			'tax' => 5
-//		]);
-		$order_items_generator->generate_shipping_item([
-			'price' => 300,
+		$order_items_generator->generate_line_item([
+			'price' => 200,
+			'quantity' => 3,
 			'tax' => 5
 		]);
-//		$order_items_generator->generate_shipping_item( array(
-//			'meta' => array(
-//				'settled' => true
-//			)
-//		) );
+
+		$order_items_generator->generate_shipping_item([
+			'price' => 300
+		]);
+
+		$order_items_generator->generate_shipping_item( array(
+			'price' => 300,
+			'meta' => array(
+				'settled' => true
+			)
+		) );
 
 		$this->assertSame(
 			$order_items_generator->get_order_items(),
