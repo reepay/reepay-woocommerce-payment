@@ -240,17 +240,18 @@ class OrderCapture {
 	/**
 	 * Settle order items.
 	 *
-	 * @param WC_Order        $order      order to settle.
-	 * @param array[]         $items_data items data from self::get_item_data.
-	 * @param float           $total_all  order total amount ot settle.
-	 * @param WC_Order_Item[] $line_items order line items.
+	 * @param WC_Order        $order        order to settle.
+	 * @param array[]         $items_data   items data from self::get_item_data.
+	 * @param float           $total_all    order total amount ot settle.
+	 * @param WC_Order_Item[] $line_items   order line items.
+	 * @param bool            $instant_note add order note instantly.
 	 *
 	 * @return bool
 	 */
-	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instantly = false) : bool {
+	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = false ) : bool {
 		unset( $_POST['post_status'] ); // // Prevent order status changing by WooCommerce
 
-		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instantly );
+		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note );
 
 		if ( is_wp_error( $result ) ) {
 			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );

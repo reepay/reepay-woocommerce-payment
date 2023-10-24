@@ -681,16 +681,17 @@ class Api {
 	/**
 	 * Settle the payment online.
 	 *
-	 * @param WC_Order       $order      order to settle.
-	 * @param float|int|null $amount     amount to settle.
-	 * @param false|array    $items_data order items info. @see OrderCapture::get_item_data.
-	 * @param WC_Order_Item  $line_item  order line item.
+	 * @param WC_Order       $order        order to settle.
+	 * @param float|int|null $amount       amount to settle.
+	 * @param false|array    $items_data   order items info. @see OrderCapture::get_item_data.
+	 * @param WC_Order_Item  $line_item    order line item.
+	 * @param bool           $instant_note add order note instantly.
 	 *
 	 * @return array|WP_Error
 	 *
 	 * @ToDO refactor function. $amount is useless.
 	 */
-	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false, bool $instantly = false ) {
+	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false, bool $instant_note = false ) {
 		$this->log( sprintf( 'Settle: %s, %s', $order->get_id(), $amount ) );
 
 		$handle = rp_get_order_handle( $order );
@@ -771,9 +772,9 @@ class Api {
 				$result->get_error_message()
 			);
 
-			if($instantly){
+			if ( $instant_note ) {
 				$order->add_order_note( $error );
-			}else{
+			} else {
 				$order->add_order_note( $error, true, true );
 			}
 
@@ -806,17 +807,16 @@ class Api {
 
 		$message = sprintf(
 			// translators: %1$s amount to settle, %2$s transaction number.
-			__( 'Payment has been settleddd. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
+			__( 'Payment has been settled. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
 			rp_make_initial_amount( $amount, $order->get_currency() ) . ' ' . $order->get_currency(),
 			$result['transaction']
 		);
 
-		if($instantly){
-			$order->add_order_note( $message);
-		}else{
+		if ( $instant_note ) {
+			$order->add_order_note( $message );
+		} else {
 			$order->add_order_note( $message, true, true );
 		}
-
 
 		return $result;
 	}
