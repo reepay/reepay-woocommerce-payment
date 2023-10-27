@@ -85,11 +85,11 @@ class OrderCapture {
 		$order_id = wc_get_order_id_by_order_item_id( $item_id );
 		$order    = wc_get_order( $order_id );
 
-		if ( ! rp_is_order_paid_via_reepay( $order ) || ! empty( $item->get_meta( 'settled' ) ) ) {
-			return;
-		}
-
-		if ( floatval( $item->get_data()['total'] ) > 0 && $this->check_capture_allowed( $order ) ) {
+		if ( rp_is_order_paid_via_reepay( $order ) &&
+			 empty( $item->get_meta( 'settled' ) ) &&
+			 floatval( $item->get_data()['total'] ) > 0 &&
+			 $this->check_capture_allowed( $order )
+		) {
 			$price = self::get_item_price( $item_id, $order );
 
 			reepay()->get_template(
@@ -109,13 +109,9 @@ class OrderCapture {
 	 * @param WC_Order $order current order.
 	 */
 	public function capture_full_order_button( WC_Order $order ) {
-		if ( ! $this->check_capture_allowed( $order ) ) {
-			return;
-		}
-
 		$amount = $this->get_not_settled_amount( $order );
 
-		if ( $amount <= 0 ) {
+		if ( $amount <= 0 || ! $this->check_capture_allowed( $order ) ) {
 			return;
 		}
 
@@ -156,9 +152,19 @@ class OrderCapture {
 	 * Hooked to admin_init. Capture items from request
 	 */
 	public function process_item_capture() {
-		if ( ! isset( $_POST['post_type'] ) || 'shop_order' !== $_POST['post_type'] ||
-			 ! isset( $_POST['post_ID'] ) ||
-			 ( ! isset( $_POST['line_item_capture'] ) && ! isset( $_POST['all_items_capture'] ) ) ) {
+		if ( rp_hpos_enabled() ) {
+			if ( ! rp_hpos_is_order_page() ) {
+				return;
+			}
+		} else {
+			if ( ! isset( $_POST['post_type'] ) ||
+				 'shop_order' !== $_POST['post_type'] ||
+				 ! isset( $_POST['post_ID'] ) ) {
+				return;
+			}
+		}
+
+		if ( ! isset( $_POST['line_item_capture'] ) && ! isset( $_POST['all_items_capture'] ) ) {
 			return;
 		}
 
@@ -234,20 +240,22 @@ class OrderCapture {
 	/**
 	 * Settle order items.
 	 *
-	 * @param WC_Order        $order      order to settle.
-	 * @param array[]         $items_data items data from self::get_item_data.
-	 * @param float           $total_all  order total amount ot settle.
-	 * @param WC_Order_Item[] $line_items order line items.
+	 * @param WC_Order        $order        order to settle.
+	 * @param array[]         $items_data   items data from self::get_item_data.
+	 * @param float           $total_all    order total amount ot settle.
+	 * @param WC_Order_Item[] $line_items   order line items.
+	 * @param bool            $instant_note add order note instantly.
 	 *
 	 * @return bool
 	 */
-	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items ): bool {
+	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = false ) : bool {
 		unset( $_POST['post_status'] ); // // Prevent order status changing by WooCommerce
 
-		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items );
+		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note );
 
 		if ( is_wp_error( $result ) ) {
 			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
+			set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
 
 			return false;
 		}
@@ -316,6 +324,7 @@ class OrderCapture {
 
 		if ( is_wp_error( $result ) ) {
 			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
+			set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
 
 			return false;
 		}

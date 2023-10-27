@@ -11,13 +11,22 @@
             <file>./tests/unit/MainClassTest.php</file>
         </testsuite>
         <testsuite name="Gateways loaded">
-            <file>./tests/unit/GatewaysTest.php</file>
+            <file>./tests/unit/Gateways.php</file>
+        </testsuite>
+        <testsuite name="Actions tested">
+            <directory suffix="Test.php">./tests/unit/actions</directory>
         </testsuite>
         <testsuite name="Functions tested">
             <directory suffix="Test.php">./tests/unit/functions</directory>
         </testsuite>
         <testsuite name="OrderFlow tested">
             <directory suffix="Test.php">./tests/unit/orderFlow</directory>
+        </testsuite>
+        <testsuite name="Gateways tested">
+            <directory suffix="Test.php">./tests/unit/gatewaysTests</directory>
+        </testsuite>
+        <testsuite name="Tokens tested">
+            <directory suffix="Test.php">./tests/unit/tokens</directory>
         </testsuite>
 	</testsuites>
     <filter>

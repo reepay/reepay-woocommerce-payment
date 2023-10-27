@@ -294,7 +294,7 @@ class OrderStatuses {
 			$order->payment_complete( $transaction_id );
 
 			if ( $note ) {
-				$order->add_order_note( $note );
+				$order->add_order_note( $note, true, true );
 			}
 
 			$order->update_meta_data( '_reepay_state_settled', 1 );
@@ -373,7 +373,7 @@ class OrderStatuses {
 	 * @see wc_cancel_unpaid_orders()
 	 */
 	public function cancel_unpaid_order( bool $maybe_cancel, WC_Order $order ): bool {
-		if ( $maybe_cancel && rp_is_order_paid_via_reepay( $order ) && 'yes' !== reepay()->get_setting( 'enable_order_autocancel' ) ) {
+		if ( $maybe_cancel && rp_is_order_paid_via_reepay( $order ) ) {
 			$maybe_cancel = false;
 		}
 

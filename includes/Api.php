@@ -238,6 +238,17 @@ class Api {
 			$key = reepay()->get_setting( 'private_key' );
 		}
 
+		if ( empty( $key ) ) {
+			return new WP_Error(
+				401,
+				sprintf(
+					// translators: %s - url to gateway settings.
+					__( 'Billwerk+: API key not specified. Specify it in <a href="%s" target="_blank">gateway settings</a>', 'reepay-checkout-gateway' ),
+					admin_url( 'admin.php?page=wc-settings&tab=checkout&section=reepay_checkout' )
+				)
+			);
+		}
+
 		$args = array(
 			'headers' => array(
 				'Accept'        => 'application/json',
@@ -260,13 +271,14 @@ class Api {
 		if ( reepay()->get_setting( 'debug' ) === 'yes' ) {
 			$this->log(
 				array(
-					'source'    => 'Api::request',
-					'url'       => $url,
-					'method'    => $method,
-					'request'   => $params,
-					'response'  => $body,
-					'time'      => microtime( true ) - $start,
-					'http_code' => $http_code,
+					'source'       => 'Api::request',
+					'url'          => $url,
+					'method'       => $method,
+					'request'      => $params,
+					'response'     => $body,
+					'time'         => microtime( true ) - $start,
+					'http_code'    => $http_code,
+					'backtrace(3)' => debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 ), //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
 				)
 			);
 		}
@@ -669,16 +681,17 @@ class Api {
 	/**
 	 * Settle the payment online.
 	 *
-	 * @param WC_Order       $order      order to settle.
-	 * @param float|int|null $amount     amount to settle.
-	 * @param false|array    $items_data order items info. @see OrderCapture::get_item_data.
-	 * @param WC_Order_Item  $line_item  order line item.
+	 * @param WC_Order       $order        order to settle.
+	 * @param float|int|null $amount       amount to settle.
+	 * @param false|array    $items_data   order items info. @see OrderCapture::get_item_data.
+	 * @param WC_Order_Item  $line_item    order line item.
+	 * @param bool           $instant_note add order note instantly.
 	 *
 	 * @return array|WP_Error
 	 *
 	 * @ToDO refactor function. $amount is useless.
 	 */
-	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false ) {
+	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false, bool $instant_note = false ) {
 		$this->log( sprintf( 'Settle: %s, %s', $order->get_id(), $amount ) );
 
 		$handle = rp_get_order_handle( $order );
@@ -759,7 +772,11 @@ class Api {
 				$result->get_error_message()
 			);
 
-			set_transient( 'reepay_api_action_error', $error, MINUTE_IN_SECONDS / 2 );
+			if ( $instant_note ) {
+				$order->add_order_note( $error );
+			} else {
+				$order->add_order_note( $error, true, true );
+			}
 
 			return $result;
 		}
@@ -795,9 +812,11 @@ class Api {
 			$result['transaction']
 		);
 
-		$order->add_order_note( $message );
-
-		set_transient( 'reepay_api_action_success', $message, MINUTE_IN_SECONDS / 2 );
+		if ( $instant_note ) {
+			$order->add_order_note( $message );
+		} else {
+			$order->add_order_note( $message, true, true );
+		}
 
 		return $result;
 	}
@@ -1020,7 +1039,7 @@ class Api {
 			return $result;
 		}
 
-		if ( ! isset( $result['cards'] ) ) {
+		if ( ! isset( $result['cards'] ) && ! isset( $result['mps_subscriptions'] ) ) {
 			return new WP_Error( 0, 'Unable to retrieve customer payment methods' );
 		}
 
@@ -1028,17 +1047,21 @@ class Api {
 			return $result['cards'];
 		}
 
-		$cards = $result['cards'];
-		foreach ( $cards as $card ) {
-			if ( $card['id'] === $reepay_token && 'active' === $card['state'] ) {
-				return $card;
+		if ( ! empty( $result['cards'] ) ) {
+			$cards = $result['cards'];
+			foreach ( $cards as $card ) {
+				if ( $card['id'] === $reepay_token && 'active' === $card['state'] ) {
+					return $card;
+				}
 			}
 		}
 
-		$mps_subscriptions = $result['mps_subscriptions'];
-		foreach ( $mps_subscriptions as $subscription ) {
-			if ( $subscription['id'] === $reepay_token && 'active' === $subscription['state'] ) {
-				return $subscription;
+		if ( ! empty( $result['mps_subscriptions'] ) ) {
+			$mps_subscriptions = $result['mps_subscriptions'];
+			foreach ( $mps_subscriptions as $subscription ) {
+				if ( ( $subscription['id'] === $reepay_token || $subscription['reference'] === $reepay_token ) && 'active' === $subscription['state'] ) {
+					return $subscription;
+				}
 			}
 		}
 

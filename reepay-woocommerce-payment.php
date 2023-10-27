@@ -4,7 +4,7 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: Billwerk+
  * Author URI: http://billwerk.plus
- * Version: 1.5.0
+ * Version: 1.6.0
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -160,7 +160,6 @@ class WC_ReepayCheckout {
 				'debug'                   => ! empty( $gateway_settings['debug'] ) ? $gateway_settings['debug'] : '',
 				'payment_type'            => ! empty( $gateway_settings['payment_type'] ) ? $gateway_settings['payment_type'] : '',
 				'skip_order_lines'        => ! empty( $gateway_settings['skip_order_lines'] ) ? $gateway_settings['skip_order_lines'] : '',
-				'enable_order_autocancel' => ! empty( $gateway_settings['enable_order_autocancel'] ) ? $gateway_settings['enable_order_autocancel'] : '',
 				'is_webhook_configured'   => ! empty( $gateway_settings['is_webhook_configured'] ) ? $gateway_settings['is_webhook_configured'] : '',
 				'handle_failover'         => ! empty( $gateway_settings['handle_failover'] ) ? $gateway_settings['handle_failover'] : '',
 				'payment_button_text'     => ! empty( $gateway_settings['payment_button_text'] ) ? $gateway_settings['payment_button_text'] : '',
@@ -265,15 +264,13 @@ class WC_ReepayCheckout {
 
 		new Reepay\Checkout\OrderFlow\Main();
 
-		new Reepay\Checkout\Actions\Subscriptions();
-
 		$this->gateways = new Reepay\Checkout\Gateways();
 
 		new Reepay\Checkout\Integrations\Main();
 
 		new Reepay\Checkout\Frontend\Main();
 
-		new Reepay\Checkout\Actions\ReepayCustomer();
+		new Reepay\Checkout\Actions\Main();
 	}
 }
 

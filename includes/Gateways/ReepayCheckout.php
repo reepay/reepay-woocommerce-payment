@@ -70,20 +70,19 @@ class ReepayCheckout extends ReepayGateway {
 
 		parent::__construct();
 
-		$this->private_key             = apply_filters( 'woocommerce_reepay_private_key', $this->settings['private_key'] ?: $this->private_key );
-		$this->private_key_test        = apply_filters( 'woocommerce_reepay_private_key_test', $this->settings['private_key_test'] ?: $this->private_key_test );
-		$this->test_mode               = $this->settings['test_mode'] ?: $this->test_mode;
-		$this->settle                  = (array) ( $this->settings['settle'] ?: $this->settle );
-		$this->language                = $this->settings['language'] ?: $this->language;
-		$this->save_cc                 = $this->settings['save_cc'] ?: $this->save_cc;
-		$this->debug                   = $this->settings['debug'] ?: $this->debug;
-		$this->logos                   = $this->settings['logos'] ?: $this->logos;
-		$this->payment_type            = $this->settings['payment_type'] ?: $this->payment_type;
-		$this->payment_methods         = (array) ( $this->settings['payment_methods'] ?: $this->payment_methods );
-		$this->skip_order_lines        = $this->settings['skip_order_lines'] ?: $this->skip_order_lines;
-		$this->enable_order_autocancel = $this->settings['enable_order_autocancel'] ?: $this->enable_order_autocancel;
-		$this->failed_webhooks_email   = $this->settings['failed_webhooks_email'] ?: $this->failed_webhooks_email;
-		$this->handle_failover         = $this->settings['handle_failover'] ?: $this->handle_failover;
+		$this->private_key           = apply_filters( 'woocommerce_reepay_private_key', $this->settings['private_key'] ?: $this->private_key );
+		$this->private_key_test      = apply_filters( 'woocommerce_reepay_private_key_test', $this->settings['private_key_test'] ?: $this->private_key_test );
+		$this->test_mode             = $this->settings['test_mode'] ?: $this->test_mode;
+		$this->settle                = $this->settings['settle'] ?: $this->settle;
+		$this->language              = $this->settings['language'] ?: $this->language;
+		$this->save_cc               = $this->settings['save_cc'] ?: $this->save_cc;
+		$this->debug                 = $this->settings['debug'] ?: $this->debug;
+		$this->logos                 = $this->settings['logos'] ?: $this->logos;
+		$this->payment_type          = $this->settings['payment_type'] ?: $this->payment_type;
+		$this->payment_methods       = $this->settings['payment_methods'] ?: $this->payment_methods;
+		$this->skip_order_lines      = $this->settings['skip_order_lines'] ?: $this->skip_order_lines;
+		$this->failed_webhooks_email = $this->settings['failed_webhooks_email'] ?: $this->failed_webhooks_email;
+		$this->handle_failover       = $this->settings['handle_failover'] ?: $this->handle_failover;
 
 		if ( 'yes' === $this->save_cc ) {
 			$this->supports[] = 'add_payment_method';
@@ -381,21 +380,14 @@ class ReepayCheckout extends ReepayGateway {
 				),
 				'default'     => 'no',
 			),
-			'enable_order_autocancel'    => array(
-				'title'       => __( 'The automatic order auto-cancel', 'reepay-checkout-gateway' ),
-				'description' => __( 'The automatic order auto-cancel', 'reepay-checkout-gateway' ),
-				'type'        => 'select',
-				'options'     => array(
-					'yes' => 'Enable auto-cancel',
-					'no'  => 'Ignore / disable auto-cancel',
-				),
-				'default'     => 'no',
-			),
 			'payment_button_text'        => array(
-				'title'       => __( 'Payment button text', 'reepay-checkout-gateway' ),
-				'type'        => 'text',
-				'description' => __( 'Text on button which will be displayed on payment page if subscription products is being purchased', 'reepay-checkout-gateway' ),
-				'default'     => '',
+				'title'             => __( 'Payment button text', 'reepay-checkout-gateway' ),
+				'type'              => 'text',
+				'description'       => __( 'Text on button which will be displayed on payment page if subscription products is being purchased', 'reepay-checkout-gateway' ),
+				'default'           => '',
+				'custom_attributes' => array(
+					'maxlength' => 32,
+				),
 			),
 		);
 
@@ -646,14 +638,22 @@ class ReepayCheckout extends ReepayGateway {
 	 * @throws Exception If wrong request data.
 	 */
 	public function reepay_finalize() {
-		$reepay_token = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
-
 		try {
-			if ( empty( $_GET['key'] ) ) {
-				throw new Exception( 'Order key is undefined' );
+			$this->log(
+				array(
+					'source' => 'reepay_finalize',
+					'data'   => $_GET,
+				)
+			);
+
+			$reepay_token = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
+			$key          = isset( $_GET['key'] ) ? wc_clean( $_GET['key'] ) : '';
+
+			if ( empty( $reepay_token ) || empty( $key ) ) {
+				throw new Exception( 'Not enough data' );
 			}
 
-			$order_id = isset( $_GET['key'] ) ? wc_get_order_id_by_order_key( wc_clean( $_GET['key'] ) ) : 0;
+			$order_id = wc_get_order_id_by_order_key( $key );
 
 			if ( empty( $order_id ) ) {
 				throw new Exception( 'Can not get order' );
@@ -668,13 +668,6 @@ class ReepayCheckout extends ReepayGateway {
 			if ( $order->get_payment_method() !== $this->id ) {
 				throw new Exception( 'Unable to use this order' );
 			}
-
-			$this->log(
-				array(
-					'source' => 'reepay_finalize',
-					'data'   => $_GET,
-				)
-			);
 
 			$token = ReepayTokens::reepay_save_token( $order, $reepay_token );
 
@@ -732,10 +725,10 @@ class ReepayCheckout extends ReepayGateway {
 				}
 			}
 
-			wp_redirect( $this->get_return_url( $order ) );
+			wp_safe_redirect( $this->get_return_url( $order ) );
 		} catch ( Exception $e ) {
 			wc_add_notice( $e->getMessage(), 'error' );
-			wp_redirect( $this->get_return_url() );
+			wp_safe_redirect( $this->get_return_url() );
 		}
 
 		exit();

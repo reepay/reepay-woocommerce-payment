@@ -270,7 +270,7 @@ class OrderGenerator {
 		}
 
 		if ( is_int( $order_item ) ) {
-			$order_item = WC_Order_Factory::get_order_item( $order_item );
+			$order_item = $this->order()->get_item( $order_item, false );
 		}
 
 		foreach ( $data as $key => $value ) {

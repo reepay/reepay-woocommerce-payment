@@ -46,16 +46,11 @@ class Subscriptions {
 		add_filter( 'wcs_renewal_order_created', array( $this, 'renewal_order_created' ), 10, 2 );
 
 		foreach ( self::PAYMENT_METHODS as $method ) {
-			add_action( 'woocommerce_thankyou_' . $method, array( $this, 'thankyou_page' ) );
-
 			// Update failing payment method.
 			add_action( 'woocommerce_subscription_failing_payment_method_updated_' . $method, array( $this, 'update_failing_payment_method' ), 10, 2 );
 
 			// Charge the payment when a subscription payment is due.
 			add_action( 'woocommerce_scheduled_subscription_payment_' . $method, array( $this, 'scheduled_subscription_payment' ), 10, 2 );
-
-			// Charge the payment when a subscription payment is due.
-			add_action( 'scheduled_subscription_payment_' . $method, array( $this, 'scheduled_subscription_payment' ), 10, 2 );
 		}
 
 		// Don't transfer customer meta to resubscribe orders.
@@ -119,11 +114,12 @@ class Subscriptions {
 				continue;
 			}
 
-			$token = ReepayTokens::get_payment_token_subscription( $subscription );
+			$token = ReepayTokens::get_payment_token_by_order( $subscription );
+
 			if ( ! $token ) {
 				// Copy tokens from parent order.
 				$order = wc_get_order( $order_id );
-				$token = ReepayTokens::get_payment_token_order( $order );
+				$token = ReepayTokens::get_payment_token_by_order( $order );
 
 				if ( $token ) {
 					ReepayTokens::assign_payment_token( $subscription, $token );
@@ -133,34 +129,22 @@ class Subscriptions {
 	}
 
 	/**
-	 * Create a renewal order to record a scheduled subscription payment.
+	 * Set _reepay_order meta to renewal order
 	 *
-	 * @param WC_Order|int        $renewal_order new order.
-	 * @param WC_Subscription|int $subscription new subscription.
+	 * @param WC_Order            $renewal_order new order.
+	 * @param WC_Subscription|int $subscription  new subscription.
 	 *
-	 * @return bool|WC_Order|WC_Order_Refund
+	 * @return WC_Order
 	 */
-	public function renewal_order_created( $renewal_order, $subscription ) {
-		$renewal_order = wc_get_order( $renewal_order );
+	public function renewal_order_created( WC_Order $renewal_order, $subscription ): WC_Order {
+		if ( in_array( $subscription->get_payment_method(), self::PAYMENT_METHODS, true ) ) {
+			$renewal_order->delete_meta_data( '_reepay_order' );
+			$renewal_order->save();
 
-		if ( in_array( $renewal_order->get_payment_method(), self::PAYMENT_METHODS, true ) ) {
-			// Remove Reepay order handler from renewal order.
-			delete_post_meta( $renewal_order->get_id(), '_reepay_order' );
+			rp_get_order_handle( $renewal_order );
 		}
 
 		return $renewal_order;
-	}
-
-	/**
-	 * Thank you page
-	 *
-	 * @param int $order_id order id of current order.
-	 *
-	 * @return void
-	 * @throws Exception If invalid order token.
-	 */
-	public function thankyou_page( int $order_id ) {
-		self::add_subscription_card_id( $order_id );
 	}
 
 	/**
@@ -195,7 +179,6 @@ class Subscriptions {
 			delete_post_meta( $resubscribe_order->get_id(), '_payment_tokens' );
 			delete_post_meta( $resubscribe_order->get_id(), '_reepay_token' );
 			delete_post_meta( $resubscribe_order->get_id(), '_reepay_token_id' );
-			delete_post_meta( $resubscribe_order->get_id(), '_reepay_order' );
 		}
 	}
 
@@ -295,20 +278,21 @@ class Subscriptions {
 		$gateway->log( 'WCS process scheduled payment' );
 		// Lookup token.
 		try {
-			$token = ReepayTokens::get_payment_token_order( $renewal_order );
+			$token = ReepayTokens::get_payment_token_by_order( $renewal_order );
 			// Try to find token in parent orders.
 			if ( ! $token ) {
 				// Get Subscriptions.
 				$subscriptions = wcs_get_subscriptions_for_order( $renewal_order, array( 'order_type' => 'any' ) );
 				foreach ( $subscriptions as $subscription ) {
-					$token = ReepayTokens::get_payment_token_subscription( $subscription );
+					$token = ReepayTokens::get_payment_token_by_order( $subscription );
+
 					if ( ! $token ) {
-						$token = ReepayTokens::get_payment_token_order( $subscription->get_parent() );
+						$token = ReepayTokens::get_payment_token_by_order( $subscription->get_parent() );
 					}
 				}
 			}
 
-			// Failback: If token doesn't exist, but reepay token is here
+			// Fallback: If token doesn't exist, but reepay token is here
 			// We need that to provide woocommerce_subscription_payment_meta support
 			// See https://github.com/Prospress/woocommerce-subscriptions-importer-exporter#importing-payment-gateway-meta-data.
 			if ( ! $token ) {
@@ -360,14 +344,6 @@ class Subscriptions {
 			}
 
 			$gateway->log( sprintf( 'WCS token for schedule payment: %s', $token->get_token() ) );
-
-			// Fix the reepay order value to prevent "Invoice already settled".
-			$currently = get_post_meta( $renewal_order->get_id(), '_reepay_order', true );
-			$should_be = 'order-' . $renewal_order->get_id();
-			if ( $currently !== $should_be ) {
-				$renewal_order->update_meta_data( '_reepay_order', $should_be );
-				$renewal_order->save_meta_data();
-			}
 
 			// Charge payment.
 			$result = reepay()->api( $gateway )->charge(

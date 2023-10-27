@@ -64,7 +64,11 @@ class InstantSettle {
 	 */
 	public function maybe_settle_instantly( WC_Order $order ) {
 		if ( rp_is_order_paid_via_reepay( $order ) ) {
-			$this->process_instant_settle( $order );
+			$invoice = reepay()->api( $order )->get_invoice_data( $order );
+
+			if ( ! is_wp_error( $invoice ) ) {
+				$this->process_instant_settle( $order );
+			}
 		}
 	}
 
@@ -99,7 +103,7 @@ class InstantSettle {
 				}
 			}
 
-			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items );
+			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items, true );
 			$order->add_meta_data( '_is_instant_settled', '1' );
 			$order->save_meta_data();
 		}

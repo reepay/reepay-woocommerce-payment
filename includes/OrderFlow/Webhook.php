@@ -251,11 +251,13 @@ class Webhook {
 					}
 				}
 
-				OrderStatuses::set_settled_status(
-					$order,
-					false,
-					$data['transaction']
-				);
+				if ( empty( $order->get_meta( '_reepay_subscription_handle' ) ) ) {
+					OrderStatuses::set_settled_status(
+						$order,
+						false,
+						$data['transaction']
+					);
+				}
 
 				update_post_meta( $order->get_id(), '_reepay_capture_transaction', $data['transaction'] );
 

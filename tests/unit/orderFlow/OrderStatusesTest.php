@@ -593,29 +593,18 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 	 *
 	 * @param bool $default_value
 	 * @param bool $paid_via_reepay
-	 * @param bool $enabled_order_autocancel
 	 * @param bool $expected_value
 	 *
 	 * @testWith
-	 * [false, false, false, false]
-	 * [false, false, true, false]
-	 * [false, true, false, false]
-	 * [false, true, true, false]
-	 * [true, false, false, true]
-	 * [true, false, true, true]
-	 * [true, true, false, false]
-	 * [true, true, true, true]
+	 * [false, false, false]
+	 * [false, true, false]
+	 * [true, false, true]
+	 * [true, true, false]
 	 */
-	public function test_cancel_unpaid_order( bool $default_value, bool $paid_via_reepay, bool $enabled_order_autocancel, bool $expected_value ) {
+	public function test_cancel_unpaid_order( bool $default_value, bool $paid_via_reepay, bool $expected_value ) {
 		if ( $paid_via_reepay ) {
 			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
 		}
-
-		self::$options->set_options(
-			array(
-				'enable_order_autocancel' => $enabled_order_autocancel ? 'yes' : 'no',
-			)
-		);
 
 		$this->assertSame(
 			$expected_value,

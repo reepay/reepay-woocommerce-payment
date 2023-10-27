@@ -1,7 +1,8 @@
 if (window.wc
     && window.wc.wcBlocksRegistry
     && window.React
-    && window.wc_reepay) {
+    && (window.wc_reepay || document.body.classList.contains('wp-admin'))) {
+
     const PAYMENT_METHOD_NAME = (new URL(document.currentScript.src)).searchParams.get('name');
 
     if (!PAYMENT_METHOD_NAME) {

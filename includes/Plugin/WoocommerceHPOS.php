@@ -7,6 +7,7 @@
 
 namespace Reepay\Checkout\Plugin;
 
+use Automattic\WooCommerce\Utilities\FeaturesUtil;
 use WooCommerce;
 
 defined( 'ABSPATH' ) || exit();
@@ -28,8 +29,8 @@ class WoocommerceHPOS {
 	 * Add notices
 	 */
 	public function add_support() {
-		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
-			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', reepay()->get_setting( 'plugin_file' ), true );
+		if ( class_exists( FeaturesUtil::class ) ) {
+			FeaturesUtil::declare_compatibility( 'custom_order_tables', reepay()->get_setting( 'plugin_file' ), true );
 		}
 	}
 }

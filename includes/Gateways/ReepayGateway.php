@@ -136,13 +136,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public string $skip_order_lines = 'no';
 
 	/**
-	 * If automatically cancel unpaid orders should be ignored
-	 *
-	 * @var string
-	 */
-	public string $enable_order_autocancel = 'no';
-
-	/**
 	 * Email address for notification about failed webhooks
 	 *
 	 * @var string
@@ -199,7 +192,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Add Payment Method.
+	 * Add payment method via account screen.
 	 */
 	public function add_payment_method() {
 		$user            = get_userdata( get_current_user_id() );
@@ -335,7 +328,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Check if payment method activated in repay
+	 * Check if payment method activated in reepay
 	 *
 	 * @return bool
 	 */
@@ -409,6 +402,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		if ( class_exists( SitePress::class ) && ! is_multisite() ) {
 			$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
+
 			$languages = wp_list_pluck( $languages, 'default_locale' );
 
 			if ( ! empty( $languages ) ) {
@@ -682,6 +676,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		if ( ! $this->can_refund( $order ) ) {
 			throw new Exception( 'Payment can\'t be refunded.' );
+		}
+
+		if ( .0 === (float) $amount ) {
+			throw new Exception( 'Refund amount must be greater than 0.' );
 		}
 
 		$result = reepay()->api( $this )->refund( $order, $amount, $reason );
@@ -1052,7 +1050,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			} else {
 				try {
 					ReepayTokens::assign_payment_token( $order, $token );
-					ReepayTokens::reepay_save_card_info( $order, $token->get_token() );
+					ReepayTokens::save_card_info_to_order( $order, $token->get_token() );
 				} catch ( Exception $e ) {
 					$order->add_order_note( $e->getMessage() );
 
@@ -1080,7 +1078,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 							try {
 								foreach ( $order->get_meta( '_reepay_another_orders' ) ?: array() as $order_id ) {
-									ReepayTokens::reepay_save_card_info( wc_get_order( $order_id ), $token->get_token() );
+									ReepayTokens::save_card_info_to_order( wc_get_order( $order_id ), $token->get_token() );
 								}
 							} catch ( Exception $e ) {
 								wc_get_order( $order_id )->add_order_note( $e->getMessage() );
@@ -1140,7 +1138,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			 * @var WC_Order_Item_Product $order_item
 			 */
 
-			if ( ! wcr_is_subscription_product( $order_item->get_product() ) ) {
+			if ( ! $order_item->get_product() || ! wcr_is_subscription_product( $order_item->get_product() ) ) {
 				$only_items_lines[] = $order_item;
 			}
 		}
@@ -1387,16 +1385,15 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Apply settings from Reepay Checkout Gateway to other gateways. Use it in constructor
 	 */
 	protected function apply_parent_settings() {
-		$this->private_key             = (string) reepay()->get_setting( 'private_key' );
-		$this->private_key_test        = (string) reepay()->get_setting( 'private_key_test' );
-		$this->test_mode               = (string) reepay()->get_setting( 'test_mode' );
-		$this->settle                  = (array) reepay()->get_setting( 'settle' );
-		$this->language                = (string) reepay()->get_setting( 'language' );
-		$this->debug                   = (string) reepay()->get_setting( 'debug' );
-		$this->payment_type            = (string) reepay()->get_setting( 'payment_type' );
-		$this->skip_order_lines        = (string) reepay()->get_setting( 'skip_order_lines' );
-		$this->enable_order_autocancel = (string) reepay()->get_setting( 'enable_order_autocancel' );
-		$this->handle_failover         = (string) reepay()->get_setting( 'handle_failover' );
+		$this->private_key      = (string) reepay()->get_setting( 'private_key' );
+		$this->private_key_test = (string) reepay()->get_setting( 'private_key_test' );
+		$this->test_mode        = (string) reepay()->get_setting( 'test_mode' );
+		$this->settle           = (array) reepay()->get_setting( 'settle' );
+		$this->language         = (string) reepay()->get_setting( 'language' );
+		$this->debug            = (string) reepay()->get_setting( 'debug' );
+		$this->payment_type     = (string) reepay()->get_setting( 'payment_type' );
+		$this->skip_order_lines = (string) reepay()->get_setting( 'skip_order_lines' );
+		$this->handle_failover  = (string) reepay()->get_setting( 'handle_failover' );
 	}
 
 	/**
@@ -1469,7 +1466,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			 * @var WC_Order_Item_Product $order_item
 			 */
 
-			if ( wcr_is_subscription_product( $order_item->get_product() ) ) {
+			if ( $order_item->get_product() && wcr_is_subscription_product( $order_item->get_product() ) ) {
 				$fee = $order_item->get_product()->get_meta( '_reepay_subscription_fee' );
 				if ( ! empty( $fee ) && ! empty( $fee['enabled'] ) && 'yes' === $fee['enabled'] ) {
 					$setup_fees[] = $order_item->get_product()->get_name() . ' - ' . $fee['text'];
@@ -1562,6 +1559,20 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			);
 		}
 
+		// Add "PW Gift Cards" support.
+		foreach ( $order->get_items( 'pw_gift_card' ) as $line ) {
+			$amount = apply_filters( 'pwgc_to_order_currency', floatval( $line->get_amount() ) * -1, $order );
+
+			$items[] = array(
+				// translators: gift card code.
+				'ordertext'       => sprintf( __( 'PW gift card (%s)', 'reepay-checkout-gateway' ), $line->get_card_number() ),
+				'quantity'        => 1,
+				'amount'          => rp_prepare_amount( $amount, $order->get_currency() ),
+				'vat'             => 0,
+				'amount_incl_vat' => $prices_incl_tax,
+			);
+		}
+
 		// Add "Gift Up!" discount.
 		if ( defined( 'GIFTUP_ORDER_META_CODE_KEY' ) &&
 			 defined( 'GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY' )
@@ -1616,77 +1627,36 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @return string the logo
 	 */
 	public function get_logo( string $card_type ): string {
-		switch ( $card_type ) {
-			case 'visa':
-				$image = 'visa';
-				break;
-			case 'mc':
-				$image = 'mastercard';
-				break;
-			case 'dankort':
-			case 'visa_dk':
-				$image = 'dankort';
-				break;
-			case 'ffk':
-				$image = 'forbrugsforeningen';
-				break;
-			case 'visa_elec':
-				$image = 'visa-electron';
-				break;
-			case 'maestro':
-				$image = 'maestro';
-				break;
-			case 'amex':
-				$image = 'american-express';
-				break;
-			case 'diners':
-				$image = 'diners';
-				break;
-			case 'discover':
-				$image = 'discover';
-				break;
-			case 'jcb':
-				$image = 'jcb';
-				break;
-			case 'mobilepay':
-			case 'ms_subscripiton':
-				$image = 'mobilepay';
-				break;
-			case 'viabill':
-				$image = 'viabill';
-				break;
-			case 'klarna_pay_later':
-			case 'klarna_pay_now':
-				$image = 'klarna';
-				break;
-			case 'resurs':
-				$image = 'resurs';
-				break;
-			case 'china_union_pay':
-				$image = 'cup';
-				break;
-			case 'paypal':
-				$image = 'paypal';
-				break;
-			case 'applepay':
-				$image = 'applepay';
-				break;
-			case 'googlepay':
-				$image = 'googlepay';
-				break;
-			case 'vipps':
-				$image = 'vipps';
-				break;
-			default:
-				// $image = 'reepay.png';
-				// Use an image of payment method
-				$logos = $this->logos;
-				$logo  = array_shift( $logos );
+		$card_types = array(
+			'visa'             => 'visa',
+			'mc'               => 'mastercard',
+			'dankort'          => 'dankort',
+			'visa_dk'          => 'dankort',
+			'ffk'              => 'forbrugsforeningen',
+			'visa_elec'        => 'visa-electron',
+			'maestro'          => 'maestro',
+			'amex'             => 'american-express',
+			'diners'           => 'diners',
+			'discover'         => 'discover',
+			'jcb'              => 'jcb',
+			'mobilepay'        => 'mobilepay',
+			'ms_subscripiton'  => 'mobilepay',
+			'viabill'          => 'viabill',
+			'klarna_pay_later' => 'klarna',
+			'klarna_pay_now'   => 'klarna',
+			'resurs'           => 'resurs',
+			'china_union_pay'  => 'cup',
+			'paypal'           => 'paypal',
+			'applepay'         => 'applepay',
+			'googlepay'        => 'googlepay',
+			'vipps'            => 'vipps',
+		);
 
-				return reepay()->get_setting( 'images_url' ) . $logo . '.png';
+		if ( isset( $card_types[ $card_type ] ) ) {
+			return reepay()->get_setting( 'images_url' ) . 'svg/' . $card_types[ $card_type ] . '.logo.svg';
+		} else {
+			return reepay()->get_setting( 'images_url' ) . 'dankort.png';
 		}
-
-		return reepay()->get_setting( 'images_url' ) . 'svg/' . $image . '.logo.svg';
 	}
 
 	/**
