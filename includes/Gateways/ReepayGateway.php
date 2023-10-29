@@ -673,9 +673,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @throws Exception If already refunded or refund error.
 	 */
 	public function refund_payment( $order, $amount = null, $reason = '' ) {
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
+		$order = wc_get_order( $order );
 
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
 			throw new Exception( 'Order is already canceled' );
@@ -685,7 +683,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			throw new Exception( 'Payment can\'t be refunded.' );
 		}
 
-		if ( .0 === (float) $amount ) {
+		if ( ! is_null( $amount ) && $amount <= 0 ) {
 			throw new Exception( 'Refund amount must be greater than 0.' );
 		}
 
