@@ -582,47 +582,52 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Check if order can be captured
 	 *
-	 * @param WC_Order|int $order  order to check.
+	 * @param mixed $order  order to check.
 	 * @param float|false  $amount amount to capture.
 	 *
 	 * @return bool
 	 */
 	public function can_capture( $order, $amount = false ): bool {
+		$order = wc_get_order( $order );
 		return reepay()->api( $this )->can_capture( $order, $amount );
 	}
 
 	/**
 	 * Check if order can be cancelled
 	 *
-	 * @param WC_Order|int $order order to check.
+	 * @param mixed $order order to check.
 	 *
 	 * @return bool
 	 */
 	public function can_cancel( $order ): bool {
+		$order = wc_get_order( $order );
 		return reepay()->api( $this )->can_cancel( $order );
 	}
 
 	/**
 	 * Check if order can be refunded
 	 *
-	 * @param WC_Order $order order to check.
+	 * @param mixed $order order to check.
 	 *
 	 * @return bool
 	 */
-	public function can_refund( WC_Order $order ): bool {
+	public function can_refund( $order ): bool {
+		$order = wc_get_order( $order );
 		return reepay()->api( $this )->can_refund( $order );
 	}
 
 	/**
 	 * Capture order payment
 	 *
-	 * @param WC_Order|int $order  order to capture.
+	 * @param mixed $order  order to capture.
 	 * @param float|null   $amount amount to capture. Null to capture order total.
 	 *
 	 * @return void
 	 * @throws Exception If capture error.
 	 */
 	public function capture_payment( $order, $amount = null ) {
+		$order = wc_get_order( $order );
+
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
 			throw new Exception( __( 'Order is canceled', 'reepay-checkout-gateway' ) );
 		}
@@ -637,11 +642,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Cancel order payment
 	 *
-	 * @param WC_Order|int $order order to cancel.
+	 * @param mixed $order order to cancel.
 	 *
 	 * @throws Exception If cancellation error.
 	 */
 	public function cancel_payment( $order ) {
+		$order = wc_get_order( $order );
+
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
 			throw new Exception( 'Order is already canceled' );
 		}
