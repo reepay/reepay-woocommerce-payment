@@ -36,6 +36,109 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * @param string $gateway gateway id.
+	 *
+	 * @testWith
+	 * ["anyday"]
+	 * ["applepay"]
+	 * ["googlepay"]
+	 * ["klarna_pay_later"]
+	 * ["klarna_pay_now"]
+	 * ["klarna_slice_it"]
+	 * ["mobilepay"]
+	 * ["mobilepay_subscriptions"]
+	 * ["paypal"]
+	 * ["checkout"]
+	 * ["resurs"]
+	 * ["swish"]
+	 * ["viabill"]
+	 * ["vipps"]
+	 *
+	 */
+	public function test_check_is_active( string $gateway ) {
+		self::$gateway->id = 'reepay_' . $gateway;
+
+		$this->api_mock->method( 'request' )->willReturn(
+			array(
+				array(
+					'type' => $gateway,
+				),
+			)
+		);
+
+		$this->assertTrue( self::$gateway->check_is_active() );
+	}
+
+	/**
+	 * @param string $gateway gateway id.
+	 *
+	 * @testWith
+	 * ["anyday"]
+	 * ["applepay"]
+	 * ["googlepay"]
+	 * ["klarna_pay_later"]
+	 * ["klarna_pay_now"]
+	 * ["klarna_slice_it"]
+	 * ["mobilepay"]
+	 * ["mobilepay_subscriptions"]
+	 * ["paypal"]
+	 * ["checkout"]
+	 * ["resurs"]
+	 * ["swish"]
+	 * ["viabill"]
+	 * ["vipps"]
+	 */
+	public function test_is_gateway_settings_page( string $gateway ) {
+		$_GET['tab']       = 'checkout';
+		$_GET['section']   = $gateway;
+		self::$gateway->id = $gateway;
+
+		$this->assertTrue( self::$gateway->is_gateway_settings_page() );
+	}
+
+	/**
+	 * @param bool $is_test use test or live reepay api keys.
+	 *
+	 * @testWith
+	 * [true]
+	 * [false]
+	 */
+	public function test_get_account_info_not_on_settings_page( bool $is_test ) {
+		$this->assertFalse( self::$gateway->is_gateway_settings_page() );
+		$this->assertEmpty( self::$gateway->get_account_info( $is_test ) );
+	}
+
+	/**
+	 * @param bool $is_test use test or live reepay api keys.
+	 *
+	 * @testWith
+	 * [true]
+	 * [false]
+	 */
+	public function test_get_account_info( bool $is_test ) {
+		$_GET['tab']       = 'checkout';
+		$_GET['section']   = 'checkout';
+		self::$gateway->id = 'checkout';
+
+		$result = array(
+			'handle' => 'test_1234',
+		);
+
+		$this->api_mock->method( 'request' )->willReturn( $result );
+		$this->assertSame(
+			$result,
+			self::$gateway->get_account_info( $is_test )
+		);
+
+		$this->api_mock->method( 'request' )->willReturn( 'unused' );
+		$this->assertSame(
+			$result,
+			self::$gateway->get_account_info( $is_test ),
+			'transient cache error'
+		);
+	}
+
+	/**
 	 * @testWith
 	 * [true]
 	 * [false]
