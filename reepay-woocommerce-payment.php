@@ -256,6 +256,10 @@ class WC_ReepayCheckout {
 	 * @return void
 	 */
 	public function include_classes() {
+		if ( ! WoocommerceExists::woo_activated() ) {
+			return;
+		}
+
 		new Reepay\Checkout\Admin\Main();
 
 		new Reepay\Checkout\Tokens\Main();
