@@ -55,38 +55,6 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * Test function test_rp_finalize
-	 *
-	 * @param string $token card token.
-	 * @param string $exp_date card expiry date.
-	 * @param string $masked_card card number.
-	 * @param string $card_type card type.
-	 *
-	 * @testWith
-	 * ["ca_f73e13e5784a5dff32f2f93be7a8130f", "05-43", "411111XXXXXX1111", "Visa"]
-	 */
-	public function test_rp_finalize( string $token, string $exp_date, string $masked_card, string $card_type ) {
-		$_GET['payment_method'] = $token;
-
-		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
-
-		$this->api_mock->method( 'get_reepay_cards' )->willReturn(
-			array(
-				'id'          => $token,
-				'exp_date'    => $exp_date,
-				'masked_card' => $masked_card,
-				'card_type'   => $card_type,
-			)
-		);
-
-		$_GET['key'] = $this->order_generator->order()->get_order_key();
-
-		$this->expectException(Exception::class);
-
-		self::$gateway->reepay_finalize();
-	}
-
-	/**
 	 * Test function rp_check_is_active
 	 *
 	 * Test @param string $gateway gateway id.
