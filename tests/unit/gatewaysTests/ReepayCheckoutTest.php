@@ -81,7 +81,7 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 
 		$_GET['key'] = $this->order_generator->order()->get_order_key();
 
-		$this->expectError();
+		$this->expectException(Exception::class);
 
 		self::$gateway->reepay_finalize();
 	}
