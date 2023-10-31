@@ -179,16 +179,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$this->title       = $this->settings['title'] ?? 'no';
 		$this->description = $this->settings['description'] ?? 'no';
 
-		add_action( 'admin_notices', array( $this, 'admin_notice_api_action' ) );
-
-		add_action( 'the_post', array( $this, 'payment_confirm' ) );
-
-		add_action( 'wp_ajax_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
-		add_action( 'wp_ajax_nopriv_reepay_cancel_payment', array( $this, 'reepay_cancel_payment' ) );
-		add_action( 'woocommerce_checkout_create_order_line_item', array( $this, 'action_checkout_create_order_line_item' ), 10, 4 );
-
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
-
 	}
 
 	/**
@@ -651,8 +642,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		if ( is_wp_error( $result ) ) {
 			throw new Exception( $result->get_error_message() );
 		}
-
-		add_action( 'the_post', array( $this, 'payment_confirm' ) );
 	}
 
 	/**
@@ -686,34 +675,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		if ( is_wp_error( $result ) ) {
 			throw new Exception( $result->get_error_message() );
-		}
-	}
-
-	/**
-	 * Add notifications in admin for api actions.
-	 */
-	public function admin_notice_api_action() {
-		if ( 'yes' === $this->enabled ) {
-			$error   = get_transient( 'reepay_api_action_error' );
-			$success = get_transient( 'reepay_api_action_success' );
-
-			if ( ! empty( $error ) ) :
-				?>
-				<div class="error notice is-dismissible">
-					<p><?php echo esc_html( $error ); ?></p>
-				</div>
-				<?php
-				set_transient( 'reepay_api_action_error', null, 1 );
-			endif;
-
-			if ( ! empty( $success ) ) :
-				?>
-				<div class="notice-success notice is-dismissible">
-					<p><?php echo esc_html( $success ); ?></p>
-				</div>
-				<?php
-				set_transient( 'reepay_api_action_success', null, 1 );
-			endif;
 		}
 	}
 
@@ -1313,75 +1274,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Payment confirm action
-	 *
-	 * @return void
-	 * @throws Exception  If invalid token or order.
-	 * @see ThankyouPage::thankyou_page()
-	 */
-	public function payment_confirm() {
-		if ( ! ( is_wc_endpoint_url( 'order-received' ) ) ||
-			 empty( $_GET['id'] ) ||
-			 empty( $_GET['key'] )
-		 ) {
-			return;
-		}
-
-		$order_id = wc_get_order_id_by_order_key( $_GET['key'] );
-		$order    = wc_get_order( $order_id );
-
-		if ( empty( $order ) ) {
-			wc_add_notice( __( 'Cannot found the order', 'reepay-checkout-gateway' ), 'error' );
-
-			return;
-		}
-
-		if ( $order->get_payment_method() !== $this->id ) {
-			return;
-		}
-
-		$this->log(
-			array(
-				'source' => 'payment_confirm incoming data',
-				'$_GET'  => $_GET,
-			)
-		);
-
-		if ( ! empty( $_GET['payment_method'] ) ) {
-			// Save Payment Method.
-			$maybe_save_card = $order->get_meta( '_reepay_maybe_save_card' );
-
-			try {
-				if ( $maybe_save_card || order_contains_subscription( $order ) ) {
-					ReepayTokens::reepay_save_token( $order, wc_clean( $_GET['payment_method'] ) );
-				}
-			} catch ( Exception $e ) {
-				$this->log( 'Card saving error: ' . $e->getMessage() );
-			}
-		}
-
-		$invoice_data = reepay()->api( $this->id )->get_invoice_data( $order );
-
-		$this->log(
-			array(
-				'source'       => 'ReepayGateway::payment_confirm',
-				'invoice_data' => $invoice_data,
-			)
-		);
-
-		if ( ! is_wp_error( $invoice_data ) && ! empty( $invoice_data['transactions'] ) &&
-			 ! empty( $invoice_data['transactions'][0] ) &&
-			 ! empty( $invoice_data['transactions'][0]['card_transaction'] ) &&
-			 ! empty( $invoice_data['transactions'][0]['card_transaction'] )
-		) {
-			$card_info = $invoice_data['transactions'][0]['card_transaction'];
-
-			update_post_meta( $order->get_id(), 'reepay_masked_card', $card_info['masked_card'] );
-			update_post_meta( $order->get_id(), 'reepay_card_type', $card_info['card_type'] );
-		}
-	}
-
-	/**
 	 * Apply settings from Reepay Checkout Gateway to other gateways. Use it in constructor
 	 */
 	protected function apply_parent_settings() {
@@ -1426,23 +1318,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		} catch ( Exception $e ) {
 			return new WP_Error( 'refund', $e->getMessage() );
 		}
-	}
-
-	/**
-	 * Count line item discount
-	 *
-	 * @param WC_Order_Item_Product $item          created order item.
-	 * @param string                $cart_item_key order item key in cart.
-	 * @param array                 $values        values from cart item.
-	 * @param WC_Order              $order         new order.
-	 *
-	 * @see WC_Checkout::create_order_line_items
-	 */
-	public function action_checkout_create_order_line_item( WC_Order_Item_Product $item, string $cart_item_key, array $values, WC_Order $order ) {
-		$line_discount     = $values['line_subtotal'] - $values['line_total'];
-		$line_discount_tax = $values['line_subtotal_tax'] - $values['line_tax'];
-
-		$item->update_meta_data( '_line_discount', $line_discount + $line_discount_tax );
 	}
 
 	/**

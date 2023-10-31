@@ -20,6 +20,8 @@ class Main {
 	 */
 	public function __construct() {
 		if ( ! apply_filters( 'reepay_running_tests', false ) ) {
+			new Admin();
+			new Checkout();
 			new ReepayCustomer();
 			new Subscriptions();
 		}
