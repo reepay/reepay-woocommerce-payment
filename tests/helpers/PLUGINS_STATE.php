@@ -7,7 +7,6 @@
 
 namespace Reepay\Checkout\Tests\Helpers;
 
-use Automattic\WooCommerce\Utilities\OrderUtil;
 use PHPUnit\Framework\Assert;
 use WC_Product;
 
@@ -36,6 +35,8 @@ abstract class PLUGINS_STATE {
 
 			if ( empty( $env_plugins ) ) {
 				$plugins = self::DEFAULT_PLUGINS_SET;
+			} elseif( 'none' === $env_plugins || 'no' === $env_plugins ) {
+				$plugins = array();
 			} else {
 				$plugins = explode( ',', $env_plugins );
 			}
@@ -82,6 +83,10 @@ abstract class PLUGINS_STATE {
 		}
 
 		update_option( 'active_plugins', $other_plugins );
+	}
+
+	public static function woo_activated(): bool {
+		return class_exists( \WooCommerce::class, false ) && defined( 'WC_ABSPATH' );
 	}
 
 	/**

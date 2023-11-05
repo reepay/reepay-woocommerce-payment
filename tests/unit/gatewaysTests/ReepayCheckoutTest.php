@@ -6,6 +6,7 @@
  */
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
+use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
 /**
@@ -17,7 +18,7 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 	 *
 	 * @var ReepayCheckout
 	 */
-	private static ReepayCheckout $gateway;
+	private static ?ReepayCheckout $gateway;
 
 	/**
 	 * Runs the routine before setting up all tests.
@@ -25,6 +26,6 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
 
-		self::$gateway = new ReepayCheckout();
+		self::$gateway = PLUGINS_STATE::woo_activated() ? new ReepayGatewayTestChild() : null;
 	}
 }

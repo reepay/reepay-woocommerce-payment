@@ -1,5 +1,10 @@
 export HPOS_ENABLED="no"
 
+echo 'PHPUNIT_PLUGINS=no'
+echo 'HPOS_ENABLED=no'
+export PHPUNIT_PLUGINS="no"
+php ./vendor/bin/phpunit
+
 echo 'PHPUNIT_PLUGINS=woo'
 echo 'HPOS_ENABLED=no'
 export PHPUNIT_PLUGINS="woo"

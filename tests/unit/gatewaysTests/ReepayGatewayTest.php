@@ -11,8 +11,9 @@ use Reepay\Checkout\Tests\Helpers\OrderItemsGenerator;
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
-class ReepayGatewayTestChild extends ReepayGateway {
-
+if ( PLUGINS_STATE::woo_activated() ) {
+	class ReepayGatewayTestChild extends ReepayGateway {
+	}
 }
 
 /**
@@ -20,12 +21,12 @@ class ReepayGatewayTestChild extends ReepayGateway {
  */
 class ReepayGatewayTest extends Reepay_UnitTestCase {
 
-	public static ReepayGatewayTestChild $gateway;
+	public static ?ReepayGatewayTestChild $gateway;
 
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
 
-		self::$gateway = new ReepayGatewayTestChild();
+		self::$gateway = PLUGINS_STATE::woo_activated() ? new ReepayGatewayTestChild() : null;
 	}
 
 	public static function tear_down_after_class() {

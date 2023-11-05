@@ -19,7 +19,7 @@ class OptionsController {
 	 *
 	 * @var ReepayCheckout|null
 	 */
-	private ?ReepayCheckout $reepay_gateway;
+	private ?ReepayCheckout $reepay_gateway = null;
 
 	/**
 	 * Settings reset after set_option
@@ -32,7 +32,9 @@ class OptionsController {
 	 * RpTestOptions constructor.
 	 */
 	public function __construct() {
-		$this->reepay_gateway = reepay()->gateways()->checkout();
+		if( reepay()->gateways() ) {
+			$this->reepay_gateway = reepay()->gateways()->checkout();
+		}
 	}
 
 	/**
@@ -44,6 +46,10 @@ class OptionsController {
 	 * @return $this
 	 */
 	public function set_option( string $key, $value ): OptionsController {
+		if( empty( $this->reepay_gateway ) ) {
+			return $this;
+		}
+
 		$this->reepay_gateway->update_option( $key, $value );
 
 		if ( $this->reset ) {

@@ -74,6 +74,8 @@ trait Reepay_UnitTestCase_Trait {
 	 */
 	protected Api $api_mock;
 
+	protected bool $skip_if_woo_not_active = true;
+
 	/**
 	 * Runs the routine before setting up all tests.
 	 */
@@ -93,6 +95,10 @@ trait Reepay_UnitTestCase_Trait {
 	 * Runs the routine before each test is executed.
 	 */
 	public function set_up() {
+		if( $this->skip_if_woo_not_active && ! PLUGINS_STATE::woo_activated() ) {
+			$this->markTestSkipped( 'Woocommerce not active' );
+		}
+
 		parent::set_up();
 
 		$this->order_statuses  = new OrderStatuses();

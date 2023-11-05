@@ -40,7 +40,7 @@ abstract class DataProvider {
 	 */
 	public static function order_statuses(): array {
 		return array_reduce(
-			array_keys( wc_get_order_statuses() ),
+			array_keys( function_exists( 'wc_get_order_statuses' ) ? wc_get_order_statuses() : array() ),
 			function ( array $carry, string $status ) {
 				$status           = str_replace( 'wc-', '', $status );
 				$carry[ $status ] = array( $status );
