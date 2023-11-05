@@ -101,10 +101,12 @@ trait Reepay_UnitTestCase_Trait {
 
 		parent::set_up();
 
-		$this->order_statuses  = new OrderStatuses();
-		$this->order_capture   = new OrderCapture();
-		$this->order_generator = new OrderGenerator();
-		$this->cart_generator  = new CartGenerator();
+		if( PLUGINS_STATE::woo_activated() ) {
+			$this->order_statuses  = new OrderStatuses();
+			$this->order_capture   = new OrderCapture();
+			$this->order_generator = new OrderGenerator();
+			$this->cart_generator  = new CartGenerator();
+		}
 
 		self::$options->set_options(
 			array(
