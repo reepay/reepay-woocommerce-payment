@@ -26,6 +26,6 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
 
-		self::$gateway = PLUGINS_STATE::woo_activated() ? new ReepayGatewayTestChild() : null;
+		self::$gateway = PLUGINS_STATE::woo_activated() ? new ReepayCheckout() : null;
 	}
 }

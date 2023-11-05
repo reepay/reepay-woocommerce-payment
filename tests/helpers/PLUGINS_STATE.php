@@ -58,6 +58,7 @@ abstract class PLUGINS_STATE {
 				include_once $plugin_path;
 
 				if ( 'woo' === $plugin ) {
+					include_once WC_ABSPATH . 'includes/admin/class-wc-admin.php'; // make WooCommerce admin functions available.
 					update_option( 'woocommerce_db_version', WC()->version );
 				}
 			} else {
