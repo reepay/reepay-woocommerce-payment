@@ -19,11 +19,14 @@
         <testsuite name="Functions tested">
             <directory suffix="Test.php">./tests/unit/functions</directory>
         </testsuite>
+        <testsuite name="Gateways tested">
+            <directory suffix="Test.php">./tests/unit/gatewaysTests</directory>
+        </testsuite>
         <testsuite name="OrderFlow tested">
             <directory suffix="Test.php">./tests/unit/orderFlow</directory>
         </testsuite>
-        <testsuite name="Gateways tested">
-            <directory suffix="Test.php">./tests/unit/gatewaysTests</directory>
+        <testsuite name="Plugin tested">
+            <directory suffix="Test.php">./tests/unit/plugin</directory>
         </testsuite>
         <testsuite name="Tokens tested">
             <directory suffix="Test.php">./tests/unit/tokens</directory>
