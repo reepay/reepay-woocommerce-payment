@@ -30,7 +30,6 @@ class WoocommerceExists {
 	public function maybe_deactivate() {
 		if ( ! self::woo_activated() ) {
 			add_action( 'admin_notices', array( $this, 'missing_woocommerce_notice' ) );
-			deactivate_plugins( reepay()->get_setting( 'plugin_basename' ), true );
 		}
 	}
 
@@ -38,9 +37,29 @@ class WoocommerceExists {
 	 * Show notice in admin
 	 */
 	public function missing_woocommerce_notice() {
-		reepay()->get_template(
-			'admin/notices/woocommerce-missed.php',
-			array()
+		$template = <<<OUTPUT
+<div id="message" class="error">
+	<p class="main">
+		<strong>%s</strong>
+	</p>
+	<p>%s<br/>%s</p>
+</div>
+OUTPUT;
+
+		echo sprintf(
+			$template,
+			esc_html__(
+				'WooCommerce is inactive or missing.',
+				'reepay-checkout-gateway'
+			),
+			__(
+				'WooCommerce plugin is inactive or missing. Please install and active it.',
+				'reepay-checkout-gateway'
+			),
+			__(
+				'WooCommerce Billwerk+ Payments Gateway isn\'t active now.',
+				'reepay-checkout-gateway'
+			)
 		);
 	}
 
