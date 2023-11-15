@@ -11,6 +11,7 @@ use Exception;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\OrderFlow\InstantSettle;
 use Reepay\Checkout\OrderFlow\OrderCapture;
+use Reepay\Checkout\Actions\ReepayCustomer;
 use WC_Order;
 use Reepay\Checkout\OrderFlow\OrderStatuses;
 use WC_Order_Item;
@@ -1079,22 +1080,13 @@ class Api {
 		$order = wc_get_order( $order );
 
 		$handle = $this->get_customer_handle( $order );
-		if ( ! empty( $handle ) ) {
-			return $handle;
-		}
 
-		if ( $order->get_customer_id() === 0 ) {
+		if ( $order->get_customer_id() === 0 && empty( $handle )) {
 			$handle = $order->get_meta( '_reepay_customer' );
-			if ( ! empty( $handle ) ) {
-				return $handle;
-			}
 		}
 
-		$handle = rp_get_customer_handle( $order->get_customer_id() );
-		if ( ! empty( $handle ) ) {
-			$order->add_meta_data( '_reepay_customer', $handle );
-			$order->save_meta_data();
-			return $handle;
+		if( empty( $handle ) ){
+			$handle = rp_get_customer_handle( $order->get_customer_id() );
 		}
 
 		if ( empty( $handle ) ) {
@@ -1103,6 +1095,14 @@ class Api {
 			} else {
 				$handle = 'cust-' . time();
 			}
+		}
+
+		if( ReepayCustomer::have_same_handle( $order->get_customer_id(), $handle ) ){
+			$handle = 'cust-' . time();
+			$order->add_meta_data( '_reepay_customer', $handle );
+			$order->save_meta_data();
+
+			return $this->get_customer_handle_by_order( $order );
 		}
 
 		$order->add_meta_data( '_reepay_customer', $handle );

@@ -35,6 +35,7 @@ if ( ! function_exists( 'rp_get_customer_handle' ) ) {
 			}
 		}
 
+
 		return $handle;
 	}
 }

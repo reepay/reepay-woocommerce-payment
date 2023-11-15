@@ -917,6 +917,18 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					if ( is_wp_error( $result ) ) {
 						throw new Exception( $result->get_error_message(), $result->get_error_code() );
 					}
+
+					try {
+						ReepayTokens::assign_payment_token( $order, $token );
+						ReepayTokens::save_card_info_to_order( $order, $token->get_token() );
+					} catch ( Exception $e ) {
+						$order->add_order_note( $e->getMessage() );
+
+						return array(
+							'result'  => 'failure',
+							'message' => $e->getMessage(),
+						);
+					}
 				}
 
 				$order->payment_complete();
