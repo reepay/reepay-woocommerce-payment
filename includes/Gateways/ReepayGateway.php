@@ -573,8 +573,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Check if order can be captured
 	 *
-	 * @param mixed $order  order to check.
-	 * @param float|false  $amount amount to capture.
+	 * @param mixed       $order  order to check.
+	 * @param float|false $amount amount to capture.
 	 *
 	 * @return bool
 	 */
@@ -610,8 +610,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Capture order payment
 	 *
-	 * @param mixed $order  order to capture.
-	 * @param float|null   $amount amount to capture. Null to capture order total.
+	 * @param mixed      $order  order to capture.
+	 * @param float|null $amount amount to capture. Null to capture order total.
 	 *
 	 * @return void
 	 * @throws Exception If capture error.
@@ -781,99 +781,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		if ( wcs_is_payment_change() ) {
-			$customer_handle = reepay()->api( $this )->get_customer_handle_by_order( $order_id );
-
-			if ( absint( $token_id ) > 0 ) {
-				$token = new TokenReepay( $token_id );
-				if ( ! $token->get_id() ) {
-					wc_add_notice( __( 'Failed to load token.', 'reepay-checkout-gateway' ), 'error' );
-
-					return false;
-				}
-
-				if ( $token->get_user_id() !== $order->get_user_id() ) {
-					wc_add_notice( __( 'Access denied.', 'reepay-checkout-gateway' ), 'error' );
-
-					return false;
-				}
-
-				try {
-					ReepayTokens::assign_payment_token( $order, $token );
-				} catch ( Exception $e ) {
-					$order->add_order_note( $e->getMessage() );
-
-					return array(
-						'result'  => 'failure',
-						'message' => $e->getMessage(),
-					);
-				}
-
-				$order->add_order_note(
-					sprintf(
-						// translators: %s payment method name.
-						__( 'Payment method changed to "%s"', 'reepay-checkout-gateway' ),
-						$token->get_display_name()
-					)
-				);
-
-				return array(
-					'result'   => 'success',
-					'redirect' => $this->get_return_url( $order ),
-				);
-			} else {
-				// Add new Card.
-				$params = array(
-					'locale'          => $this->get_language(),
-					'button_text'     => __( 'Add card', 'reepay-checkout-gateway' ),
-					'create_customer' => array(
-						'test'        => 'yes' === $this->test_mode,
-						'handle'      => $customer_handle,
-						'email'       => $order->get_billing_email(),
-						'address'     => $order->get_billing_address_1(),
-						'address2'    => $order->get_billing_address_2(),
-						'city'        => $order->get_billing_city(),
-						'phone'       => $order->get_billing_phone(),
-						'company'     => $order->get_billing_company(),
-						'vat'         => '',
-						'first_name'  => $order->get_billing_first_name(),
-						'last_name'   => $order->get_billing_last_name(),
-						'postal_code' => $order->get_billing_postcode(),
-					),
-					'accept_url'      => add_query_arg(
-						array(
-							'action' => 'reepay_finalize',
-							'key'    => $order->get_order_key(),
-						),
-						admin_url( 'admin-ajax.php' )
-					),
-					'cancel_url'      => $order->get_cancel_order_url(),
-				);
-
-				if ( ! empty( $country ) ) {
-					$params['create_customer']['country'] = $country;
-				}
-
-				if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
-					$params['payment_methods'] = $this->payment_methods;
-				}
-
-				$result = reepay()->api( $this )->request(
-					'POST',
-					'https://checkout-api.reepay.com/v1/session/recurring',
-					$params
-				);
-				if ( is_wp_error( $result ) ) {
-					return array(
-						'result'  => 'failure',
-						'message' => $result->get_error_message(),
-					);
-				}
-
-				return array(
-					'result'   => 'success',
-					'redirect' => $result['url'],
-				);
-			}
+			return $this->wcs_change_payment_method( $order, $token_id );
 		}
 
 		$customer_handle = reepay()->api( $this )->get_customer_handle_by_order( $order_id );
@@ -893,7 +801,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			'locale'     => $this->get_language(),
 			'recurring'  => apply_filters(
 				'order_contains_reepay_subscription',
-				$maybe_save_card || order_contains_subscription( $order ) || wcs_is_payment_change(),
+				$maybe_save_card || order_contains_subscription( $order ),
 				$order
 			),
 			'order'      => array(
@@ -1146,6 +1054,116 @@ exit;
 	}
 
 	/**
+	 * Handle WooCommerce subscription changing or adding payment method.
+	 *
+	 * @param mixed  $order param to get order.
+	 * @param string $token_id optional. Existed payment method to add.
+	 *
+	 * @return array|false
+	 */
+	public function wcs_change_payment_method( $order, $token_id = '' ) {
+		$order = wc_get_order( $order );
+
+		if ( empty( $order ) ) {
+			return false;
+		}
+
+		$customer_handle = reepay()->api( $this )->get_customer_handle_by_order( $order->get_id() );
+
+		if ( absint( $token_id ) > 0 ) {
+			$token = new TokenReepay( $token_id );
+			if ( ! $token->get_id() ) {
+				wc_add_notice( __( 'Failed to load token.', 'reepay-checkout-gateway' ), 'error' );
+
+				return false;
+			}
+
+			if ( $token->get_user_id() !== $order->get_user_id() ) {
+				wc_add_notice( __( 'Access denied.', 'reepay-checkout-gateway' ), 'error' );
+
+				return false;
+			}
+
+			try {
+				ReepayTokens::assign_payment_token( $order, $token );
+			} catch ( Exception $e ) {
+				$order->add_order_note( $e->getMessage() );
+
+				return array(
+					'result'  => 'failure',
+					'message' => $e->getMessage(),
+				);
+			}
+
+			$order->add_order_note(
+				sprintf(
+				// translators: %s payment method name.
+					__( 'Payment method changed to "%s"', 'reepay-checkout-gateway' ),
+					$token->get_display_name()
+				)
+			);
+
+			return array(
+				'result'   => 'success',
+				'redirect' => $this->get_return_url( $order ),
+			);
+		} else {
+			// Add new Card.
+			$params = array(
+				'locale'          => $this->get_language(),
+				'button_text'     => __( 'Add card', 'reepay-checkout-gateway' ),
+				'create_customer' => array(
+					'test'        => 'yes' === $this->test_mode,
+					'handle'      => $customer_handle,
+					'email'       => $order->get_billing_email(),
+					'address'     => $order->get_billing_address_1(),
+					'address2'    => $order->get_billing_address_2(),
+					'city'        => $order->get_billing_city(),
+					'phone'       => $order->get_billing_phone(),
+					'company'     => $order->get_billing_company(),
+					'vat'         => '',
+					'first_name'  => $order->get_billing_first_name(),
+					'last_name'   => $order->get_billing_last_name(),
+					'postal_code' => $order->get_billing_postcode(),
+				),
+				'accept_url'      => add_query_arg(
+					array(
+						'action' => 'reepay_finalize',
+						'key'    => $order->get_order_key(),
+					),
+					admin_url( 'admin-ajax.php' )
+				),
+				'cancel_url'      => $order->get_cancel_order_url(),
+			);
+
+			if ( ! empty( $country ) ) {
+				$params['create_customer']['country'] = $country;
+			}
+
+			if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
+				$params['payment_methods'] = $this->payment_methods;
+			}
+
+			$result = reepay()->api( $this )->request(
+				'POST',
+				'https://checkout-api.reepay.com/v1/session/recurring',
+				$params
+			);
+			if ( is_wp_error( $result ) ) {
+				return array(
+					'result'  => 'failure',
+					'message' => $result->get_error_message(),
+				);
+			}
+
+			return array(
+				'result'   => 'success',
+				'redirect' => $result['url'],
+			);
+		}
+	}
+
+	/**
 	 * Process session charge
 	 *
 	 * @param array    $params reepay api params.
@@ -1359,7 +1377,7 @@ exit;
 			$price          = $order->get_line_subtotal( $order_item, false, false );
 			$price_with_tax = $order->get_line_subtotal( $order_item, true, false );
 			$tax            = $price_with_tax - $price;
-			$tax_percent    = ( $tax > 0 && $price > 0) ? round( 100 / ( $price / $tax ) ) : 0;
+			$tax_percent    = ( $tax > 0 && $price > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
 			$unit_price     = round( ( $prices_incl_tax ? $price_with_tax : $price ) / $order_item->get_quantity(), 2 );
 
 			if ( $only_not_settled && ! empty( $order_item->get_meta( 'settled' ) ) ) {

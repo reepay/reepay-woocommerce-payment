@@ -10,7 +10,15 @@ namespace Reepay\Checkout\Actions;
 use WC_Order;
 use WC_Order_Item_Product;
 
+/**
+ * Class Checkout
+ *
+ * @package Reepay\Checkout
+ */
 class Checkout {
+	/**
+	 * Checkout constructor.
+	 */
 	public function __construct() {
 		add_action( 'woocommerce_checkout_create_order_line_item', array( $this, 'action_checkout_create_order_line_item' ), 10, 4 );
 		add_filter( 'woocommerce_cart_needs_payment', array( $this, 'check_need_payment' ), 10 );

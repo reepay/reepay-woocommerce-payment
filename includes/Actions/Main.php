@@ -24,6 +24,22 @@ class Main {
 			new Checkout();
 			new ReepayCustomer();
 			new Subscriptions();
+
+			add_filter( 'allowed_redirect_hosts', array( $this, 'add_allowed_redirect_hosts' ) );
 		}
+	}
+
+	/**
+	 * Add reepay domains to allowed hosts list.
+	 *
+	 * @param array $hosts array of allowed hosts.
+	 *
+	 * @return mixed
+	 */
+	public function add_allowed_redirect_hosts( array $hosts ) {
+		$hosts[] = 'reepay.com';
+		$hosts[] = 'checkout.reepay.com';
+
+		return $hosts;
 	}
 }

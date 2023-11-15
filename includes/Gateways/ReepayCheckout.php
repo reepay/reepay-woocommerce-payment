@@ -633,7 +633,9 @@ class ReepayCheckout extends ReepayGateway {
 	}
 
 	/**
-	 * Ajax: Finalize Payment
+	 * Ajax: Finalize Payment. Used only to change the payment method
+	 *
+	 * @see ReepayGateway::change_payment_method
 	 *
 	 * @throws Exception If wrong request data.
 	 */
@@ -725,7 +727,11 @@ class ReepayCheckout extends ReepayGateway {
 				}
 			}
 
-			wp_safe_redirect( $this->get_return_url( $order ) );
+			$subscription = wcs_get_subscription( $order->get_id() );
+
+			$redirect_url = ! empty( $subscription ) ? $subscription->get_view_order_url() : $this->get_return_url( $order );
+
+			wp_safe_redirect( $redirect_url );
 		} catch ( Exception $e ) {
 			wc_add_notice( $e->getMessage(), 'error' );
 			wp_safe_redirect( $this->get_return_url() );

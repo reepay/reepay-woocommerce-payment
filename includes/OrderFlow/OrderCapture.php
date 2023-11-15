@@ -59,10 +59,10 @@ class OrderCapture {
 				if ( in_array( $meta->key, array( 'settled' ), true ) ) {
 					$meta->display_key = 'Settled';
 				}
-				if ( in_array( $meta->key, array( '_line_discount' ), true )) {
-					if (intval($meta->value) == 0){
-						unset($formatted_meta[$i]);
-					}else{
+				if ( in_array( $meta->key, array( '_line_discount' ), true ) ) {
+					if ( intval( $meta->value ) === 0 ) {
+						unset( $formatted_meta[ $i ] );
+					} else {
 						$meta->display_key = 'Line discount';
 					}
 				}
