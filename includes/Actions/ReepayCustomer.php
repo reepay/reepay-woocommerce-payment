@@ -71,9 +71,9 @@ class ReepayCustomer {
 			'https://api.reepay.com/v1/customer/' . $handle,
 		);
 
-		if( !empty( $user_reepay ) ){
+		if( !empty( $user_reepay ) && !is_wp_error( $user_reepay ) ){
 			$customer = new WC_Customer( $user_id );
-			$email = $customer->get_email() ?: $customer->get_billing_email();
+			$email = $customer->get_billing_email();
 
 			if($user_reepay['email'] !== $email){
 				return true;

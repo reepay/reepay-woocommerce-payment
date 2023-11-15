@@ -1019,8 +1019,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		// If here's Subscription or zero payment.
 		if ( ( $have_sub ) && ( abs( $order->get_total() ) < 0.01 || empty( $only_items_lines ) ) ) {
-var_dump($data);
-exit;
+
 			$result = reepay()->api( $this )->recurring( $this->payment_methods, $order, $data, false, $params['button_text'] );
 
 			if ( is_wp_error( $result ) ) {

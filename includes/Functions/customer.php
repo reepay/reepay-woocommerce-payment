@@ -35,13 +35,6 @@ if ( ! function_exists( 'rp_get_customer_handle' ) ) {
 			}
 		}
 
-		if( ReepayCustomer::have_same_handle( $user_id, $handle ) ){
-			$handle = 'cust-' . time();
-			update_user_meta( $user_id, 'reepay_customer_id', $handle );
-
-			return rp_get_customer_handle( $user_id );
-		}
-
 
 		return $handle;
 	}
