@@ -169,7 +169,7 @@ class Webhook {
 				$data['order_id'] = $order->get_id();
 				do_action( 'reepay_webhook_invoice_authorized', $data );
 
-				//Need for analytics
+				// Need for analytics
 				$order->set_date_paid( time() );
 
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
@@ -269,7 +269,7 @@ class Webhook {
 				$data['order_id'] = $order->get_id();
 				do_action( 'reepay_webhook_invoice_settled', $data );
 
-				//Need for analytics
+				// Need for analytics
 				$order->set_date_paid( time() );
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;

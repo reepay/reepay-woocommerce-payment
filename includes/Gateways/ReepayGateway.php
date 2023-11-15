@@ -573,8 +573,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Check if order can be captured
 	 *
-	 * @param mixed $order  order to check.
-	 * @param float|false  $amount amount to capture.
+	 * @param mixed       $order  order to check.
+	 * @param float|false $amount amount to capture.
 	 *
 	 * @return bool
 	 */
@@ -610,8 +610,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Capture order payment
 	 *
-	 * @param mixed $order  order to capture.
-	 * @param float|null   $amount amount to capture. Null to capture order total.
+	 * @param mixed      $order  order to capture.
+	 * @param float|null $amount amount to capture. Null to capture order total.
 	 *
 	 * @return void
 	 * @throws Exception If capture error.
@@ -1055,7 +1055,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Handle WooCommerce subscription changing or adding payment method.
 	 *
-	 * @param mixed    $order param to get order.
+	 * @param mixed  $order param to get order.
 	 * @param string $token_id optional. Existed payment method to add.
 	 *
 	 * @return array|false
@@ -1063,7 +1063,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public function wcs_change_payment_method( $order, $token_id = '' ) {
 		$order = wc_get_order( $order );
 
-		if( empty( $order ) ) {
+		if ( empty( $order ) ) {
 			return false;
 		}
 
@@ -1376,7 +1376,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$price          = $order->get_line_subtotal( $order_item, false, false );
 			$price_with_tax = $order->get_line_subtotal( $order_item, true, false );
 			$tax            = $price_with_tax - $price;
-			$tax_percent    = ( $tax > 0 && $price > 0) ? round( 100 / ( $price / $tax ) ) : 0;
+			$tax_percent    = ( $tax > 0 && $price > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
 			$unit_price     = round( ( $prices_incl_tax ? $price_with_tax : $price ) / $order_item->get_quantity(), 2 );
 
 			if ( $only_not_settled && ! empty( $order_item->get_meta( 'settled' ) ) ) {
