@@ -40,7 +40,10 @@ class ReepayCustomer {
 	public static function set_reepay_handle( int $user_id ): string {
 		$customer = new WC_Customer( $user_id );
 
-		$email = $customer->get_email() ?: $customer->get_billing_email();
+		$email = $customer->get_billing_email();
+		if(empty( $email ) && !empty( $_POST['billing_email'] )){
+			$email = $_POST['billing_email'];
+		}
 
 		if ( empty( $email ) ) {
 			return '';
@@ -75,7 +78,11 @@ class ReepayCustomer {
 			$customer = new WC_Customer( $user_id );
 			$email = $customer->get_billing_email();
 
-			if($user_reepay['email'] !== $email){
+			if(empty( $email ) && !empty( $_POST['billing_email'] )){
+				$email = $_POST['billing_email'];
+			}
+
+			if(!empty($email) && $user_reepay['email'] !== $email){
 				return true;
 			}
 		}
