@@ -781,7 +781,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		if ( wcs_is_payment_change() ) {
-			return $this->change_payment_method( $order, $token_id );
+			return $this->wcs_change_payment_method( $order, $token_id );
 		}
 
 		$customer_handle = reepay()->api( $this )->get_customer_handle_by_order( $order_id );
@@ -1053,12 +1053,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Handle WooCommerce subscription changing or adding payment method.
+	 *
 	 * @param mixed    $order param to get order.
 	 * @param string $token_id optional. Existed payment method to add.
 	 *
 	 * @return array|false
 	 */
-	public function change_payment_method( $order, $token_id = '' ) {
+	public function wcs_change_payment_method( $order, $token_id = '' ) {
 		$order = wc_get_order( $order );
 
 		if( empty( $order ) ) {
