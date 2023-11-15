@@ -29,7 +29,14 @@ class Main {
 		}
 	}
 
-	public function add_allowed_redirect_hosts( $hosts ) {
+	/**
+	 * Add reepay domains to allowed hosts list.
+	 *
+	 * @param array $hosts array of allowed hosts.
+	 *
+	 * @return mixed
+	 */
+	public function add_allowed_redirect_hosts( array $hosts ) {
 		$hosts[] = 'reepay.com';
 		$hosts[] = 'checkout.reepay.com';
 

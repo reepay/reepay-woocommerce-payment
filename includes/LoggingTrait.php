@@ -33,7 +33,7 @@ trait LoggingTrait {
 			);
 		} else {
 			// if Woocommerce disabled.
-			error_log( print_r( $message, true ) );
+			error_log( print_r( $message, true ) ); //phpcs:ignore
 		}
 	}
 }
