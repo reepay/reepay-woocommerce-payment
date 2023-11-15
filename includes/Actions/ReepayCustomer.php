@@ -58,4 +58,28 @@ class ReepayCustomer {
 
 		return $customer_handle;
 	}
+
+	/**
+	 * Check exist customer in reepay with same handle but another data
+	 *
+	 * @param int $user_id user id to set handle.
+	 * @param string $handle user id to set handle.
+	 */
+	public static function have_same_handle( int $user_id, string $handle ): bool {
+		$user_reepay = reepay()->api( 'reepay_user_register' )->request(
+			'GET',
+			'https://api.reepay.com/v1/customer/' . $handle,
+		);
+
+		if( !empty( $user_reepay ) ){
+			$customer = new WC_Customer( $user_id );
+			$email = $customer->get_email() ?: $customer->get_billing_email();
+
+			if($user_reepay['email'] !== $email){
+				return true;
+			}
+		}
+
+		return false;
+	}
 }
