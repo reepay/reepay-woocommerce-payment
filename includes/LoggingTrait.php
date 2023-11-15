@@ -23,7 +23,7 @@ trait LoggingTrait {
 			$message = print_r( $message, true ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 		}
 
-		if ( function_exists('wc_get_logger' ) ) {
+		if ( function_exists( 'wc_get_logger' ) ) {
 			wc_get_logger()->debug(
 				$message,
 				array(
@@ -33,7 +33,7 @@ trait LoggingTrait {
 			);
 		} else {
 			// if Woocommerce disabled.
-			error_log( print_r( $message, true ) );
+			error_log( print_r( $message, true ) ); //phpcs:ignore
 		}
 	}
 }

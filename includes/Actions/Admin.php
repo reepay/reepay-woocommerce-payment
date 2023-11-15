@@ -7,7 +7,15 @@
 
 namespace Reepay\Checkout\Actions;
 
+/**
+ * Class Admin
+ *
+ * @package Reepay\Checkout
+ */
 class Admin {
+	/**
+	 * Admin constructor.
+	 */
 	public function __construct() {
 		add_action( 'admin_notices', array( $this, 'admin_notice_api_action' ) );
 	}
