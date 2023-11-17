@@ -18,6 +18,7 @@ The Billwerk+ Payments plugin extends WooCommerce allowing you to take payments 
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.6.1 - Card saving fixes, user creation fixes
 v 1.6.0 - Lots of updates and fixes
 v 1.5.0 - Billwerk+ version update and thankyou changes
 v 1.4.73 - Billwerk+ naming changes

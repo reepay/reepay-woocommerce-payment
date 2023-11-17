@@ -1086,8 +1086,14 @@ class Api {
 		}
 
 		if( empty( $handle ) ){
+			$handle = get_user_meta( $order->get_customer_id(), 'reepay_customer_id', true );
+			return $handle;
+		}
+
+		if( empty( $handle ) ){
 			$handle = rp_get_customer_handle( $order->get_customer_id() );
 		}
+
 
 		if ( empty( $handle ) ) {
 			if ( $order->get_customer_id() > 0 ) {
@@ -1099,10 +1105,7 @@ class Api {
 
 		if( ReepayCustomer::have_same_handle( $order->get_customer_id(), $handle ) ){
 			$handle = 'cust-' . time();
-			$order->add_meta_data( '_reepay_customer', $handle );
-			$order->save_meta_data();
-
-			return $this->get_customer_handle_by_order( $order );
+			update_user_meta( $order->get_customer_id(), 'reepay_customer_id', $handle );
 		}
 
 		$order->add_meta_data( '_reepay_customer', $handle );
