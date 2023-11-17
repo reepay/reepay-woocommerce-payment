@@ -171,10 +171,11 @@ class OrderGenerator {
 	 * Add fee to order
 	 *
 	 * @param array $data optional. Fee data.
+	 * @param array $order_item_data optional. order item meta data.
 	 *
 	 * @return int order item id
 	 */
-	public function add_fee( array $data = array() ): int {
+	public function add_fee( array $data = array(), array $order_item_data = array() ): int {
 		$item = new WC_Order_Item_Fee();
 		$item->save();
 
@@ -190,6 +191,8 @@ class OrderGenerator {
 			)
 		);
 
+		$this->add_data_to_order_item( $item, $order_item_data );
+
 		$this->order->add_item( $item );
 
 		return $item->get_id();
@@ -199,10 +202,11 @@ class OrderGenerator {
 	 * Add shipping to order
 	 *
 	 * @param array $data optional. Shipping data.
+	 * @param array $order_item_data optional. order item meta data.
 	 *
 	 * @return int order item id
 	 */
-	public function add_shipping( array $data = array() ): int {
+	public function add_shipping( array $data = array(), array $order_item_data = array() ): int {
 		$item = new WC_Order_Item_Shipping();
 		$item->save();
 
@@ -216,6 +220,8 @@ class OrderGenerator {
 				)
 			)
 		);
+
+		$this->add_data_to_order_item( $item, $order_item_data );
 
 		$this->order->add_item( $item );
 

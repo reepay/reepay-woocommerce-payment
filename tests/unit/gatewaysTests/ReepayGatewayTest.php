@@ -8,6 +8,7 @@
 use Reepay\Checkout\Gateways\ReepayCheckout;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\Tests\Helpers\OrderItemsGenerator;
+use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
 class ReepayGatewayTestChild extends ReepayGateway {
@@ -15,7 +16,7 @@ class ReepayGatewayTestChild extends ReepayGateway {
 }
 
 /**
- * AnydayTest.
+ * ReepayGatewayTest.
  */
 class ReepayGatewayTest extends Reepay_UnitTestCase {
 
@@ -35,6 +36,238 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * @param string $gateway gateway id.
+	 *
+	 * @testWith
+	 * ["anyday"]
+	 * ["applepay"]
+	 * ["googlepay"]
+	 * ["klarna_pay_later"]
+	 * ["klarna_pay_now"]
+	 * ["klarna_slice_it"]
+	 * ["mobilepay"]
+	 * ["mobilepay_subscriptions"]
+	 * ["paypal"]
+	 * ["checkout"]
+	 * ["resurs"]
+	 * ["swish"]
+	 * ["viabill"]
+	 * ["vipps"]
+	 *
+	 */
+	public function test_check_is_active( string $gateway ) {
+		self::$gateway->id = 'reepay_' . $gateway;
+
+		$this->api_mock->method( 'request' )->willReturn(
+			array(
+				array(
+					'type' => $gateway,
+				),
+			)
+		);
+
+		$this->assertTrue( self::$gateway->check_is_active() );
+	}
+
+	/**
+	 * @param string $gateway gateway id.
+	 *
+	 * @testWith
+	 * ["anyday"]
+	 * ["applepay"]
+	 * ["googlepay"]
+	 * ["klarna_pay_later"]
+	 * ["klarna_pay_now"]
+	 * ["klarna_slice_it"]
+	 * ["mobilepay"]
+	 * ["mobilepay_subscriptions"]
+	 * ["paypal"]
+	 * ["checkout"]
+	 * ["resurs"]
+	 * ["swish"]
+	 * ["viabill"]
+	 * ["vipps"]
+	 */
+	public function test_is_gateway_settings_page( string $gateway ) {
+		$_GET['tab']       = 'checkout';
+		$_GET['section']   = $gateway;
+		self::$gateway->id = $gateway;
+
+		$this->assertTrue( self::$gateway->is_gateway_settings_page() );
+	}
+
+	/**
+	 * @param bool $is_test use test or live reepay api keys.
+	 *
+	 * @testWith
+	 * [true]
+	 * [false]
+	 */
+	public function test_get_account_info_not_on_settings_page( bool $is_test ) {
+		$this->assertFalse( self::$gateway->is_gateway_settings_page() );
+		$this->assertEmpty( self::$gateway->get_account_info( $is_test ) );
+	}
+
+	/**
+	 * @param bool $is_test use test or live reepay api keys.
+	 *
+	 * @testWith
+	 * [true]
+	 * [false]
+	 */
+	public function test_get_account_info( bool $is_test ) {
+		$_GET['tab']       = 'checkout';
+		$_GET['section']   = 'checkout';
+		self::$gateway->id = 'checkout';
+
+		$result = array(
+			'handle' => 'test_1234',
+		);
+
+		$this->api_mock->method( 'request' )->willReturn( $result );
+		$this->assertSame(
+			$result,
+			self::$gateway->get_account_info( $is_test )
+		);
+
+		$this->api_mock->method( 'request' )->willReturn( 'unused' );
+		$this->assertSame(
+			$result,
+			self::$gateway->get_account_info( $is_test ),
+			'transient cache error'
+		);
+	}
+
+	/**
+	 * @testWith
+	 * [true]
+	 * [false]
+	 */
+	public function test_can_capture( bool $result ) {
+		$this->api_mock->method( 'can_capture' )->willReturn( $result );
+
+		$this->assertSame(
+			$result,
+			self::$gateway->can_capture( $this->order_generator->order() )
+		);
+	}
+
+	/**
+	 * @testWith
+	 * [true]
+	 * [false]
+	 */
+	public function test_can_cancel( bool $result ) {
+		$this->api_mock->method( 'can_cancel' )->willReturn( $result );
+
+		$this->assertSame(
+			$result,
+			self::$gateway->can_cancel( $this->order_generator->order() )
+		);
+	}
+
+	public function test_capture_payment_with_cancelled_order() {
+		$this->order_generator->set_meta( '_reepay_order_cancelled', '1' );
+
+		$this->expectException(Exception::class);
+
+		self::$gateway->capture_payment( $this->order_generator->order() );
+	}
+
+	public function test_capture_payment_with_api_error() {
+		$this->api_mock->method( 'capture_payment' )->willReturn( new WP_Error() );
+
+		$this->expectException(Exception::class);
+
+		self::$gateway->capture_payment( $this->order_generator->order() );
+	}
+
+	public function test_cancel_payment_with_cancelled_order() {
+		$this->order_generator->set_meta( '_reepay_order_cancelled', '1' );
+
+		$this->expectException(Exception::class);
+
+		self::$gateway->cancel_payment( $this->order_generator->order() );
+	}
+
+	public function test_cancel_payment_with_api_error() {
+		$this->api_mock->method( 'cancel_payment' )->willReturn( new WP_Error() );
+
+		$this->expectException(Exception::class);
+
+		self::$gateway->cancel_payment( $this->order_generator->order() );
+	}
+
+	public function test_refund_payment_with_cancelled_order() {
+		$this->order_generator->set_meta( '_reepay_order_cancelled', '1' );
+
+		$this->expectException(Exception::class);
+		$this->expectExceptionMessage('Order is already canceled');
+
+		self::$gateway->refund_payment( $this->order_generator->order() );
+	}
+
+	public function test_refund_payment_with_impossible_to_cancel_order() {
+		$this->expectException(Exception::class);
+		$this->expectExceptionMessage('Payment can\'t be refunded.');
+
+		self::$gateway->refund_payment( $this->order_generator->order() );
+	}
+
+	/**
+	 * @param $amount
+	 *
+	 * @testWith
+	 * [ -100.1, true ]
+	 * [ -100.0, true ]
+	 * [ -100, true ]
+	 * [ -0, true ]
+	 * [ 0, true ]
+	 * [ 100, false ]
+	 * [ 100.0, false ]
+	 * [ 100.1, false ]
+	 * [ null, false ]
+	 */
+	public function test_refund_payment_with_different_amounts( $amount, bool $expect_error ) {
+		$this->api_mock->method( 'can_refund' )->willReturn( true );
+
+		if ( $expect_error ) {
+			$this->expectException(Exception::class);
+			$this->expectExceptionMessage('Refund amount must be greater than 0.');
+		} else {
+			$this->expectNotToPerformAssertions();
+		}
+
+		self::$gateway->refund_payment( $this->order_generator->order(), $amount );
+	}
+
+	public function test_refund_payment_with_api_error() {
+		$error_message = 'refund api error';
+
+		$this->api_mock->method( 'can_refund' )->willReturn( true );
+		$this->api_mock->method( 'refund' )->willReturn( new WP_Error( 10, $error_message ) );
+
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( $error_message );
+
+		self::$gateway->refund_payment( $this->order_generator->order() );
+	}
+
+	/**
+	 * @testWith
+	 * [true]
+	 * [false]
+	 */
+	public function test_can_refund( bool $result ) {
+		$this->api_mock->method( 'can_refund' )->willReturn( $result );
+
+		$this->assertSame(
+			$result,
+			self::$gateway->can_refund( $this->order_generator->order() )
+		);
+	}
+
+	/**
 	 * @param bool $include_tax
 	 * @param bool $only_not_settled
 	 *
@@ -44,7 +277,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	 * [true, false]
 	 * [true, true]
 	 */
-	public function test_get_order_items_line_items( bool $include_tax = false, bool $only_not_settled = false ) {
+	public function test_get_order_items_line_items_simple( bool $include_tax, bool $only_not_settled ) {
 		$order_items_generator = new OrderItemsGenerator(
 			$this->order_generator,
 			array(
@@ -75,11 +308,9 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	 * [false, true]
 	 * [true, false]
 	 * [true, true]
-	 *
-	 * @todo complete test
 	 */
-	public function test_get_order_items_shipping_items( bool $include_tax = true, bool $only_not_settled = true ) {
-		$this->markTestSkipped();
+	public function test_get_order_items_line_items_reepay_subscription( bool $include_tax, bool $only_not_settled ) {
+		PLUGINS_STATE::maybe_skip_test_by_product_type( 'rp_sub' );
 
 		$order_items_generator = new OrderItemsGenerator(
 			$this->order_generator,
@@ -89,25 +320,220 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 			)
 		);
 
-//		$order_items_generator->generate_line_item([
-//			'price' => 200,
-//			'quantity' => 3,
-//			'tax' => 5
-//		]);
-		$order_items_generator->generate_shipping_item([
-			'price' => 300,
+		$order_items_generator->generate_line_item(array(
+			'type' => 'rp_sub'
+		));
+		$order_items_generator->generate_line_item( array(
+			'type' => 'rp_sub',
+			'order_item_meta' => array(
+				'settled' => true
+			)
+		) );
+		$order_items_generator->generate_line_item(array(
+			'type' => 'rp_sub',
+			'product_meta' => array(
+				'_reepay_subscription_fee' => array(
+					'enabled' => 'yes',
+					'text' => 'test'
+				),
+				'_line_discount' => 10
+			)
+		));
+		$order_items_generator->generate_line_item( array(
+			'type' => 'rp_sub',
+			'product_meta' => array(
+				'name' => 'Product #-1',
+				'_reepay_subscription_fee' => array(
+					'enabled' => 'yes',
+					'text' => 'test'
+				),
+				'_line_discount' => 10
+			),
+			'order_item_meta' => array(
+				'settled' => true
+			)
+		) );
+		$order_items_generator->generate_fee_item(array(
+			'name' => 'Product #-1 - test'
+		));
+
+		$this->assertSame(
+			array(),
+			self::$gateway->get_order_items( $this->order_generator->order(), $only_not_settled )
+		);
+	}
+
+	/**
+	 * @param bool $include_tax
+	 * @param bool $only_not_settled
+	 *
+	 * @testWith
+	 * [false, false]
+	 * [false, true]
+	 * [true, false]
+	 * [true, true]
+	 */
+	public function test_get_order_items_shipping_items( bool $include_tax, bool $only_not_settled ) {
+		$order_items_generator = new OrderItemsGenerator(
+			$this->order_generator,
+			array(
+				'include_tax' => $include_tax,
+				'only_not_settled' => $only_not_settled,
+			)
+		);
+
+		$order_items_generator->generate_line_item([
+			'price' => 200,
+			'quantity' => 3,
 			'tax' => 5
 		]);
-//		$order_items_generator->generate_shipping_item( array(
-//			'meta' => array(
-//				'settled' => true
-//			)
-//		) );
+
+		$order_items_generator->generate_shipping_item([
+			'price' => 300
+		]);
+
+		$order_items_generator->generate_shipping_item( array(
+			'price' => 300,
+			'meta' => array(
+				'settled' => true
+			)
+		) );
 
 		$this->assertSame(
 			$order_items_generator->get_order_items(),
 			self::$gateway->get_order_items( $this->order_generator->order(), $only_not_settled )
 		);
+	}
+
+	/**
+	 * @param bool $include_tax
+	 * @param bool $only_not_settled
+	 *
+	 * @testWith
+	 * [false, false]
+	 * [false, true]
+	 * [true, false]
+	 * [true, true]
+	 */
+	public function test_get_order_items_fee_items( bool $include_tax, bool $only_not_settled ) {
+		$order_items_generator = new OrderItemsGenerator(
+			$this->order_generator,
+			array(
+				'include_tax' => $include_tax,
+				'only_not_settled' => $only_not_settled,
+			)
+		);
+
+		$order_items_generator->generate_fee_item();
+		$order_items_generator->generate_fee_item( array(
+			'meta' => array(
+				'settled' => true
+			)
+		) );
+
+		$this->assertSame(
+			$order_items_generator->get_order_items(),
+			self::$gateway->get_order_items( $this->order_generator->order(), $only_not_settled )
+		);
+	}
+
+	/**
+	 * @param bool $include_tax
+	 * @param bool $only_not_settled
+	 *
+	 * @testWith
+	 * [false, false]
+	 * [false, true]
+	 * [true, false]
+	 * [true, true]
+	 */
+	public function test_get_order_reepay_subscription_with_fee( bool $include_tax, bool $only_not_settled ) {
+		PLUGINS_STATE::maybe_skip_test_by_product_type( 'rp_sub' );
+
+		$order_items_generator = new OrderItemsGenerator(
+			$this->order_generator,
+			array(
+				'include_tax' => $include_tax,
+				'only_not_settled' => $only_not_settled,
+			)
+		);
+
+		$order_items_generator->generate_line_item(array(
+			'type' => 'rp_sub'
+		));
+		$order_items_generator->generate_fee_item();
+		$order_items_generator->generate_fee_item( array(
+			'meta' => array(
+				'settled' => true
+			)
+		) );
+
+		$this->assertSame(
+			$order_items_generator->get_order_items(),
+			self::$gateway->get_order_items( $this->order_generator->order(), $only_not_settled )
+		);
+	}
+
+	/**
+	 * @param bool $include_tax
+	 * @param bool $only_not_settled
+	 *
+	 * @testWith
+	 * [false, false]
+	 * [false, true]
+	 * [true, false]
+	 * [true, true]
+	 */
+	public function test_get_order_items_total_discount( bool $include_tax, bool $only_not_settled ) {
+		$order_items_generator = new OrderItemsGenerator(
+			$this->order_generator,
+			array(
+				'include_tax' => $include_tax,
+				'only_not_settled' => $only_not_settled,
+			)
+		);
+
+		$order_items_generator->generate_line_item(array(
+			'price' => 99
+		));
+
+		$order_items_generator->add_total_discount( array(
+			'amount' => 15,
+			'tax' => 7
+		) );
+
+		$this->assertSame(
+			$order_items_generator->get_order_items(),
+			self::$gateway->get_order_items( $this->order_generator->order(), $only_not_settled )
+		);
+	}
+
+	/**
+	 * @param bool $include_tax
+	 * @param bool $only_not_settled
+	 *
+	 * @testWith
+	 * [false, false]
+	 * [false, true]
+	 * [true, false]
+	 * [true, true]
+	 */
+	public function test_get_order_items_pw_gift_card( bool $include_tax, bool $only_not_settled ) {
+		$this->markTestIncomplete();
+	}
+
+	/**
+	 * @param bool $include_tax
+	 * @param bool $only_not_settled
+	 *
+	 * @testWith
+	 * [false, false]
+	 * [false, true]
+	 * [true, false]
+	 * [true, true]
+	 */
+	public function test_get_order_items_giftup( bool $include_tax, bool $only_not_settled ) {
+		$this->markTestIncomplete();
 	}
 
 	/**

@@ -4,7 +4,7 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: Billwerk+
  * Author URI: http://billwerk.plus
- * Version: 1.6.0
+ * Version: 1.6.1
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -256,6 +256,10 @@ class WC_ReepayCheckout {
 	 * @return void
 	 */
 	public function include_classes() {
+		if ( ! WoocommerceExists::woo_activated() ) {
+			return;
+		}
+
 		new Reepay\Checkout\Admin\Main();
 
 		new Reepay\Checkout\Tokens\Main();

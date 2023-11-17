@@ -55,9 +55,16 @@ class OrderCapture {
 	public function unset_specific_order_item_meta_data( array $formatted_meta, WC_Order_Item $item ): array {
 		// Only on emails notifications.
 		if ( is_admin() && isset( $_GET['post'] ) ) {
-			foreach ( $formatted_meta as $meta ) {
+			foreach ( $formatted_meta as $i => $meta ) {
 				if ( in_array( $meta->key, array( 'settled' ), true ) ) {
-					$meta->display_key = 'Settle';
+					$meta->display_key = 'Settled';
+				}
+				if ( in_array( $meta->key, array( '_line_discount' ), true ) ) {
+					if ( intval( $meta->value ) === 0 ) {
+						unset( $formatted_meta[ $i ] );
+					} else {
+						$meta->display_key = 'Line discount';
+					}
 				}
 			}
 
