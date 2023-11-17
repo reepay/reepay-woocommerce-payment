@@ -45,6 +45,10 @@ class ReepayCustomer {
 			$email = $_POST['billing_email'];
 		}
 
+		if( empty( $email ) ){
+			$email = $customer->get_email();
+		}
+
 		if ( empty( $email ) ) {
 			return '';
 		}
