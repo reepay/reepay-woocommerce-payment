@@ -221,7 +221,7 @@ class Subscriptions {
 	 * @throws Exception If validation error.
 	 */
 	public function validate_subscription_payment_meta( string $payment_method_id, array $payment_meta, WC_Subscription $subscription ) {
-		if ( in_array( $payment_method_id, self::PAYMENT_METHODS, true ) && !empty( $payment_meta['post_meta']['_reepay_token']['value'] ) ) {
+		if ( in_array( $payment_method_id, self::PAYMENT_METHODS, true ) && ! empty( $payment_meta['post_meta']['_reepay_token']['value'] ) ) {
 
 			$tokens = explode( ',', $payment_meta['post_meta']['_reepay_token']['value'] );
 			if ( count( $tokens ) > 1 ) {

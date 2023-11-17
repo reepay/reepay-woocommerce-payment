@@ -41,7 +41,7 @@ class ReepayCustomer {
 		$customer = new WC_Customer( $user_id );
 
 		$email = $customer->get_billing_email();
-		if(empty( $email ) && !empty( $_POST['billing_email'] )){
+		if ( empty( $email ) && ! empty( $_POST['billing_email'] ) ) {
 			$email = $_POST['billing_email'];
 		}
 
@@ -65,7 +65,7 @@ class ReepayCustomer {
 	/**
 	 * Check exist customer in reepay with same handle but another data
 	 *
-	 * @param int $user_id user id to set handle.
+	 * @param int    $user_id user id to set handle.
 	 * @param string $handle user id to set handle.
 	 */
 	public static function have_same_handle( int $user_id, string $handle ): bool {
@@ -74,15 +74,15 @@ class ReepayCustomer {
 			'https://api.reepay.com/v1/customer/' . $handle,
 		);
 
-		if( !empty( $user_reepay ) && !is_wp_error( $user_reepay ) ){
+		if ( ! empty( $user_reepay ) && ! is_wp_error( $user_reepay ) ) {
 			$customer = new WC_Customer( $user_id );
-			$email = $customer->get_billing_email();
+			$email    = $customer->get_billing_email();
 
-			if(empty( $email ) && !empty( $_POST['billing_email'] )){
+			if ( empty( $email ) && ! empty( $_POST['billing_email'] ) ) {
 				$email = $_POST['billing_email'];
 			}
 
-			if(!empty($email) && $user_reepay['email'] !== $email){
+			if ( ! empty( $email ) && $user_reepay['email'] !== $email ) {
 				return true;
 			}
 		}
