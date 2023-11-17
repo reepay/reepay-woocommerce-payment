@@ -83,9 +83,15 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 			'masked_card' => '457111XXXXXX2077',
 			'card_type' => '' // Empty 'card_type' value cause an exception.
 		) );
-		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'Invalid or missing payment token fields.' );
-		ReepayTokens::add_payment_token_to_customer( 0, '' );
+
+		$this->assertSame(
+			array(
+				'token'     => false,
+				'card_info' => '',
+			),
+			ReepayTokens::add_payment_token_to_customer( 0, '' )
+		);
+		;
 	}
 
 	public function test_add_payment_token_ms() {
