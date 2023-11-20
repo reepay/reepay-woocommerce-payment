@@ -147,7 +147,7 @@ abstract class ReepayTokens {
 	 * @throws Exception If invalid token or order.
 	 */
 	public static function add_payment_token_to_customer( int $customer_id, $card_info ): array {
-		if(empty($card_info)){
+		if ( empty( $card_info ) ) {
 			return array(
 				'token'     => false,
 				'card_info' => $card_info,

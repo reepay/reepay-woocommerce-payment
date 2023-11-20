@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit();
  * @return bool
  */
 function rp_hpos_enabled(): bool {
-	if(class_exists(OrderUtil::class)){
+	if ( class_exists( OrderUtil::class ) ) {
 		return OrderUtil::custom_orders_table_usage_is_enabled();
 	}
 	return false;
