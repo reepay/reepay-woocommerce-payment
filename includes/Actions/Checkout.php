@@ -21,24 +21,6 @@ class Checkout {
 	 */
 	public function __construct() {
 		add_action( 'woocommerce_checkout_create_order_line_item', array( $this, 'action_checkout_create_order_line_item' ), 10, 4 );
-		add_filter( 'woocommerce_cart_needs_payment', array( $this, 'check_need_payment' ), 10 );
-	}
-
-	/**
-	 * Count line item discount
-	 *
-	 * @param bool $need_payment need payment marker.
-	 *
-	 * @see WC_Cart::needs_payment
-	 *
-	 * @return bool
-	 */
-	public function check_need_payment( bool $need_payment ): bool {
-		if ( wcs_cart_have_subscription() ) {
-			return true;
-		}
-
-		return $need_payment;
 	}
 
 	/**
