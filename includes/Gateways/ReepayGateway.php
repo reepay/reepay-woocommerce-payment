@@ -1216,18 +1216,24 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 						$params
 					);
 					if ( is_wp_error( $result ) ) {
+						wc_add_notice( $result->get_error_message(), 'error' );
+
 						return array(
 							'result'  => 'failure',
 							'message' => $result->get_error_message(),
 						);
 					}
 				} else {
+					wc_add_notice( $result->get_error_message(), 'error' );
+
 					return array(
 						'result'  => 'failure',
 						'message' => $result->get_error_message(),
 					);
 				}
 			} else {
+				wc_add_notice( $result->get_error_message(), 'error' );
+
 				return array(
 					'result'  => 'failure',
 					'message' => $result->get_error_message(),
