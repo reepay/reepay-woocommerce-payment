@@ -224,7 +224,7 @@ abstract class ReepayTokens {
 				$token = $order->get_meta( '_reepay_token' );
 				if ( empty( $token ) ) {
 					$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
-					if ( ! empty( $invoice_data ) ) {
+					if ( ! empty( $invoice_data ) && ! is_wp_error( $invoice_data ) ) {
 						if ( ! empty( $invoice_data['recurring_payment_method'] ) ) {
 							$token = $invoice_data['recurring_payment_method'];
 						} elseif ( ! empty( $invoice_data['transactions'] ) ) {
