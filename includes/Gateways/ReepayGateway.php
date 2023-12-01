@@ -1013,7 +1013,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			);
 		}
 
-		$have_sub = class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order );
+		$have_sub = (class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order )) || wcs_cart_have_subscription();
 
 		$only_items_lines = array();
 
@@ -1216,18 +1216,24 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 						$params
 					);
 					if ( is_wp_error( $result ) ) {
+						wc_add_notice( $result->get_error_message(), 'error' );
+
 						return array(
 							'result'  => 'failure',
 							'message' => $result->get_error_message(),
 						);
 					}
 				} else {
+					wc_add_notice( $result->get_error_message(), 'error' );
+
 					return array(
 						'result'  => 'failure',
 						'message' => $result->get_error_message(),
 					);
 				}
 			} else {
+				wc_add_notice( $result->get_error_message(), 'error' );
+
 				return array(
 					'result'  => 'failure',
 					'message' => $result->get_error_message(),

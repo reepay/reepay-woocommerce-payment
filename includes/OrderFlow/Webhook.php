@@ -9,6 +9,7 @@ namespace Reepay\Checkout\OrderFlow;
 
 use Exception;
 use Reepay\Checkout\LoggingTrait;
+use Reepay\Checkout\Tokens\ReepayTokens;
 use WC_Order_Item_Fee;
 use WC_Subscriptions_Manager;
 use WP_Error;
@@ -436,6 +437,20 @@ class Webhook {
 					$order = rp_get_order_by_session( $data['payment_method_reference'] );
 					if ( $order && order_contains_subscription( $order ) ) {
 						WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
+
+						if(! empty( $data['payment_method'] )){
+							try {
+								$token = ReepayTokens::reepay_save_token( $order, $data['payment_method'] );
+								ReepayTokens::assign_payment_token( $order, $token );
+								ReepayTokens::save_card_info_to_order( $order, $token->get_token() );
+
+								$order->payment_complete();
+							} catch ( Exception $e ) {
+								$order->add_order_note( $e->getMessage() );
+								$this->log( sprintf( 'WebHook: Token save error: %s', $e->getMessage() ) );
+								return;
+							}
+						}
 					}
 				}
 
