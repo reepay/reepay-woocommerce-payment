@@ -561,7 +561,7 @@ class Api {
 	 * @return array|mixed|object|WP_Error
 	 * @see ReepayGateway::payment_methods.
 	 */
-	public function recurring( array $payment_methods, WC_Order $order, array $data, $token = false, $payment_text = '' ) {
+	public function recurring( array $payment_methods, WC_Order $order, array $data, $token = false ) {
 		$params = array(
 			'locale'          => $data['language'],
 			'create_customer' => array(
@@ -582,8 +582,8 @@ class Api {
 			'cancel_url'      => $order->get_cancel_order_url(),
 		);
 
-		if ( ! empty( $payment_text ) ) {
-			$params['button_text'] = $payment_text;
+		if ( ! empty( $data['button_text'] ) ) {
+			$params['button_text'] = $data['button_text'];
 		}
 
 		if ( ! empty( $token ) ) {
