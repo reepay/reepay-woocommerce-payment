@@ -362,6 +362,12 @@ class Subscriptions {
 				throw new Exception( $result->get_error_message(), $result->get_error_code() );
 			}
 
+			// Fix for subscriptions can create the invoice
+			sleep(5);
+			if($renewal_order->get_status() == 'pending'){
+				sleep(5);
+			}
+
 			// Instant settle.
 			do_action( 'reepay_instant_settle', $renewal_order );
 		} catch ( Exception $e ) {
