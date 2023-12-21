@@ -912,6 +912,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 					if ( ! empty( $result['id'] ) ) {
 						$order->update_meta_data( 'reepay_session_id', $result['id'] );
+						$order->save_meta_data();
 					}
 
 					if ( is_wp_error( $result ) ) {
@@ -1040,6 +1041,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			if ( ! empty( $result['id'] ) ) {
 				$order->update_meta_data( 'reepay_session_id', $result['id'] );
+				$order->save_meta_data();
 			}
 
 			do_action( 'reepay_instant_settle', $order );
@@ -1209,6 +1211,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					$params['order']['handle'] = $handle;
 
 					$order->update_meta_data( '_reepay_order', $handle );
+					$order->save_meta_data();
 
 					$result = reepay()->api( $this )->request(
 						'POST',
@@ -1243,6 +1246,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		if ( ! empty( $result['id'] ) ) {
 			$order->update_meta_data( 'reepay_session_id', $result['id'] );
+			$order->save_meta_data();
 		}
 
 		if ( is_checkout_pay_page() ) {

@@ -264,6 +264,7 @@ class Webhook {
 				}
 
 				$order->update_meta_data( '_reepay_capture_transaction', $data['transaction'] );
+				$order->save_meta_data();
 
 				self::unlock_order( $order->get_id() );
 
@@ -486,6 +487,7 @@ class Webhook {
 	private static function lock_order( int $order_id ) {
 		$order = wc_get_order( $order_id );
 		$order->update_meta_data( '_reepay_locked', '1' );
+		$order->save_meta_data();
 	}
 
 	/**
@@ -499,6 +501,7 @@ class Webhook {
 	private static function unlock_order( $order_id ) {
 		$order = wc_get_order( $order_id );
 		$order->delete_meta_data( '_reepay_locked' );
+		$order->save_meta_data();
 	}
 
 	/**

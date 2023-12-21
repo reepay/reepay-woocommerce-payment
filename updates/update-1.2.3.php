@@ -50,6 +50,7 @@ try {
 		$token_id = $subscription->get_meta( '_reepay_token_id' );
 		if ( empty( $token_id ) ) {
 			$subscription->update_meta_data( '_reepay_token_id', $token->get_id() );
+			$subscription->save_meta_data();
 			$processed[ $subscription->get_id() ] = $subscription;
 			$log->add( $handler, sprintf( '[SUCCESS] Subscription #%s. Token ID was filled.', $subscription->get_id() ) );
 		}
@@ -59,6 +60,7 @@ try {
 		if ( empty( $reepay_token ) ) {
 			$subscription->update_meta_data( '_reepay_token', $token->get_token() );
 			$subscription->update_meta_data( 'reepay_token', $token->get_token() );
+			$subscription->save_meta_data();
 			$processed[ $subscription->get_id() ] = $subscription;
 			$log->add( $handler, sprintf( '[SUCCESS] Subscription #%s. Token was filled.', $subscription->get_id() ) );
 		}
@@ -97,6 +99,7 @@ foreach ($processed as $subscription_id => $subscription) {
 			// Update _reepay_order meta
 			$meta = $order->get_meta( '_reepay_order' );
 			$order->update_meta_data( '_reepay_order', 'order-' . $order->get_id() );
+			$order->save_meta_data();
 			$log->add( $handler, sprintf( '[INFO] Meta of order #%s changed. Meta that was before: %s', $order->get_id(), $meta ) );
 
 			// Charge

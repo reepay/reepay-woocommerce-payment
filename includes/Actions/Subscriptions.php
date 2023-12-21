@@ -179,6 +179,7 @@ class Subscriptions {
 			$resubscribe_order->delete_meta_data( '_payment_tokens' );
 			$resubscribe_order->delete_meta_data( '_reepay_token' );
 			$resubscribe_order->delete_meta_data( '_reepay_token_id' );
+			$resubscribe_order->save_meta_data();
 		}
 	}
 
@@ -257,6 +258,7 @@ class Subscriptions {
 			foreach ( explode( ',', $meta_value ) as $reepay_token ) {
 				ReepayTokens::assign_payment_token( $subscription, $reepay_token );
 				$subscription->update_meta_data( 'reepay_token', $reepay_token );
+				$subscription->save_meta_data();
 			}
 		}
 	}
@@ -506,6 +508,7 @@ class Subscriptions {
 		if ( 'reepay_token' === $meta_key ) {
 			$order = wc_get_order( $post_id );
 			$order->update_meta_data( '_reepay_token', $meta_value );
+			$order->save_meta_data();
 		}
 	}
 }

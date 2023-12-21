@@ -229,6 +229,7 @@ class MetaBoxes {
 				$subscription          = reepay_s()->api()->request( "subscription/{$template_args['handle']}" );
 				$template_args['plan'] = $subscription['plan'];
 				$order->update_meta_data( '_reepay_subscription_plan', $subscription['plan'] );
+				$order->save_meta_data();
 			} catch ( Exception $e ) { //phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 				// Do not show subscription plan name if api error.
 			}
