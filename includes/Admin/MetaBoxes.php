@@ -40,21 +40,10 @@ class MetaBoxes {
 	 */
 	public function add_meta_boxes() {
 		$screen     = get_current_screen();
-		$post_types = array( 'shop_order', 'shop_subscription' );
 
-		if ( OrderUtil::custom_orders_table_usage_is_enabled() ) {
-			$post_types[] = 'woocommerce_page_wc-orders';
+		$order = wc_get_order( $_GET['id'] );
+		$order_data = $order->get_data();
 
-			$post = get_post( wc_clean( $_GET['id'] ?? 0 ) );
-		} else {
-			global $post;
-		}
-
-		if ( empty( $post ) || ! in_array( $screen->id, $post_types, true ) || ! in_array( $post->post_type, $post_types, true ) ) {
-			return;
-		}
-
-		$order = wc_get_order( $post->ID );
 
 		if ( empty( $order ) || ! rp_is_order_paid_via_reepay( $order ) ) {
 			return;
@@ -66,12 +55,13 @@ class MetaBoxes {
 			return;
 		}
 
-		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && 0 !== $post->post_parent ) {
-			$subscription = get_post_meta( $post->post_parent, '_reepay_subscription_handle', true );
-		} elseif ( ! empty( get_post_meta( $post->ID, '_reepay_subscription_handle_parent', true ) ) ) {
-			$subscription = get_post_meta( $post->ID, '_reepay_subscription_handle_parent', true );
+		if ( ! empty( $order->get_meta( '_reepay_order' ) ) && 0 !== $order_data['parent_id'] ) {
+			$parent_order = wc_get_order( $order_data['parent_id'] );
+			$subscription = $parent_order->get_meta( '_reepay_subscription_handle' );
+		} elseif ( ! empty( $order->get_meta( '_reepay_subscription_handle_parent' ) ) ) {
+			$subscription = $order->get_meta( '_reepay_subscription_handle_parent' );
 		} else {
-			$subscription = get_post_meta( $post->ID, '_reepay_subscription_handle', true );
+			$subscription = $order->get_meta( '_reepay_subscription_handle' );
 		}
 
 		add_meta_box(
@@ -84,11 +74,10 @@ class MetaBoxes {
 			array(
 				'order'   => $order,
 				'gateway' => $gateway,
-				'post'    => $post,
 			)
 		);
 
-		if ( ! empty( get_post_meta( $post->ID, '_transaction_id', true ) ) ) {
+		if ( ! empty( $order->get_meta( '_transaction_id' ) ) ) {
 			add_meta_box(
 				'reepay_checkout_invoice',
 				__( 'Invoice', 'reepay-checkout-gateway' ),
@@ -99,7 +88,6 @@ class MetaBoxes {
 				array(
 					'order'   => $order,
 					'gateway' => $gateway,
-					'post'    => $post,
 				)
 			);
 		}
@@ -115,7 +103,6 @@ class MetaBoxes {
 				array(
 					'order'   => $order,
 					'gateway' => $gateway,
-					'post'    => $post,
 				)
 			);
 		}
@@ -133,16 +120,15 @@ class MetaBoxes {
 		 *
 		 * @var WC_Order $order
 		 * @var ReepayCheckout $gateway
-		 * @var WP_Post $post
 		 */
 		$order   = $meta['args']['order'];
-		$gateway = $meta['args']['gateway'];
-		$post    = $meta['args']['post'];
+		$order_data = $order->get_data();
 
-		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && 0 !== $post->post_parent ) {
-			$handle = get_post_meta( $post->post_parent, '_reepay_customer', true );
+		if ( ! empty( $order->get_meta( '_reepay_order' ) ) && 0 !== $order_data['parent_id'] ) {
+			$parent_order = wc_get_order( $order_data['parent_id'] );
+			$handle = $parent_order->get_meta('_reepay_customer');
 		} else {
-			$handle = get_post_meta( $post->ID, '_reepay_customer', true );
+			$handle = $order->get_meta( '_reepay_customer' );
 		}
 
 		if ( empty( $handle ) ) {
@@ -150,7 +136,7 @@ class MetaBoxes {
 		}
 
 		$template_args = array(
-			'email'  => get_post_meta( $post->ID, '_billing_email', true ),
+			'email'  => $order->get_meta( '_billing_email' ),
 			'handle' => $handle,
 			'link'   => $this->dashboard_url . 'customers/customers/customer/' . $handle,
 		);
@@ -173,11 +159,9 @@ class MetaBoxes {
 		 *
 		 * @var WC_Order $order
 		 * @var ReepayCheckout $gateway
-		 * @var WP_Post $post
 		 */
 		$order   = $meta['args']['order'];
 		$gateway = $meta['args']['gateway'];
-		$post    = $meta['args']['post'];
 
 		$order_data = reepay()->api( $gateway )->get_invoice_data( $order );
 
@@ -218,21 +202,21 @@ class MetaBoxes {
 		 *
 		 * @var WC_Order $order
 		 * @var ReepayCheckout $gateway
-		 * @var WP_Post $post
 		 */
 		$order   = $meta['args']['order'];
 		$gateway = $meta['args']['gateway'];
-		$post    = $meta['args']['post'];
+		$order_data = $order->get_data();
 
-		if ( ! empty( get_post_meta( $post->ID, '_reepay_order', true ) ) && 0 !== $post->post_parent ) {
-			$handle = get_post_meta( $post->post_parent, '_reepay_subscription_handle', true );
-			$plan   = get_post_meta( $post->post_parent, '_reepay_subscription_plan', true );
-		} elseif ( get_post_meta( $post->ID, '_reepay_renewal', true ) ) {
-			$handle = get_post_meta( $post->ID, '_reepay_subscription_handle_parent', true );
-			$plan   = get_post_meta( $post->ID, '_reepay_subscription_plan', true );
+		if ( ! empty( $order->get_meta( '_reepay_order' ) ) && 0 !== $order_data['parent_id'] ) {
+			$parent_order = wc_get_order( $order_data['parent_id'] );
+			$handle = $parent_order->get_meta( '_reepay_subscription_handle' );
+			$plan   = $parent_order->get_meta( '_reepay_subscription_plan' );
+		} elseif ( $order->get_meta( '_reepay_renewal' ) ) {
+			$handle = $order->get_meta( '_reepay_subscription_handle_parent' );
+			$plan   = $order->get_meta( '_reepay_subscription_plan' );
 		} else {
-			$handle = get_post_meta( $post->ID, '_reepay_subscription_handle', true );
-			$plan   = get_post_meta( $post->ID, '_reepay_subscription_plan', true );
+			$handle = $order->get_meta( '_reepay_subscription_handle' );
+			$plan   = $order->get_meta( '_reepay_subscription_plan' );
 		}
 
 		$template_args = array(
@@ -244,7 +228,7 @@ class MetaBoxes {
 			try {
 				$subscription          = reepay_s()->api()->request( "subscription/{$template_args['handle']}" );
 				$template_args['plan'] = $subscription['plan'];
-				update_post_meta( $post->ID, '_reepay_subscription_plan', $subscription['plan'] );
+				$order->update_meta_data( '_reepay_subscription_plan', $subscription['plan'] );
 			} catch ( Exception $e ) { //phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 				// Do not show subscription plan name if api error.
 			}
