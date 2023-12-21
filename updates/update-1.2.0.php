@@ -41,7 +41,7 @@ foreach ($orders as $key => $order) {
 		continue;
 	}
 
-	$handle = get_post_meta( $order->get_id(), '_reepay_order', true );
+	$handle = $order->get_meta( '_reepay_order' );
 	if ( ! empty( $handle ) ) {
 		// Check if reepay handler is different that expected
 		$check_id = str_replace( 'order-', '', $handle );

@@ -44,7 +44,7 @@ foreach ( $subscriptions as $subscription ) {
 	}
 
 	$log->add( $handler, sprintf( 'Processing subscription #%s', $subscription->get_id() ) );
-	$token_id = get_post_meta( $subscription->get_parent()->get_id(), '_reepay_token_id', true );
+	$token_id = $subscription->get_parent()->get_meta( '_reepay_token_id' );
 	if ( empty( $token_id ) ) {
 		$log->add( $handler, sprintf( '[INFO] Subscription #%s doesn\'t have token id.', $subscription->get_id() ) );
 		continue;
@@ -63,7 +63,7 @@ foreach ( $subscriptions as $subscription ) {
 	}
 
 	// Check subscription's token
-	$subscriptions_tokens = get_post_meta( $subscription->get_id(), '_payment_tokens', true );
+	$subscriptions_tokens = $subscription->get_meta( '_payment_tokens' );
 	if ( empty( $subscriptions_tokens ) ) {
 		try {
 			ReepayCheckout::assign_payment_token( $subscription, $token );
@@ -77,7 +77,7 @@ foreach ( $subscriptions as $subscription ) {
 	$orders = $subscription->get_related_orders( 'all', $order_types = array( 'renewal' ) );
 	foreach ( $orders as $order ) {
 		/** WC_Order $order */
-		$order_tokens = get_post_meta( $order->get_id(), '_payment_tokens', true );
+		$order_tokens = $order->get_meta( '_payment_tokens' );
 		if ( empty( $order_tokens ) ) {
 			try {
 				ReepayCheckout::assign_payment_token( $order, $token );

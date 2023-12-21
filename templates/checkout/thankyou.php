@@ -31,7 +31,7 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 
 	<?php
 	if ( $order ) :
-		$another_orders = get_post_meta( $order->get_id(), '_reepay_another_orders', true ) ?: array();
+		$another_orders = $order->get_meta( '_reepay_another_orders' ) ?: array();
 
 		do_action( 'woocommerce_before_thankyou', $order->get_id() );
 		?>

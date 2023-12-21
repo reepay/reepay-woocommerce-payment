@@ -47,7 +47,7 @@ try {
 		}
 
 		// Check Token ID
-		$token_id = get_post_meta( $subscription->get_id(), '_reepay_token_id', true );
+		$token_id = $subscription->get_meta( '_reepay_token_id' );
 		if ( empty( $token_id ) ) {
 			update_post_meta( $subscription->get_id(), '_reepay_token_id', $token->get_id() );
 			$processed[ $subscription->get_id() ] = $subscription;
@@ -55,7 +55,7 @@ try {
 		}
 
 		// Check Token
-		$reepay_token = get_post_meta( $subscription->get_id(), '_reepay_token', true );
+		$reepay_token = $subscription->get_meta( '_reepay_token' );
 		if ( empty( $reepay_token ) ) {
 			update_post_meta( $subscription->get_id(), '_reepay_token', $token->get_token() );
 			update_post_meta( $subscription->get_id(), 'reepay_token', $token->get_token() );
@@ -95,7 +95,7 @@ foreach ($processed as $subscription_id => $subscription) {
 			}
 
 			// Update _reepay_order meta
-			$meta = get_post_meta( $order_id, '_reepay_order', true );
+			$meta = $order->get_meta( '_reepay_order' );
 			update_post_meta( $order_id, '_reepay_order', 'order-' . $order->get_id() );
 			$log->add( $handler, sprintf( '[INFO] Meta of order #%s changed. Meta that was before: %s', $order->get_id(), $meta ) );
 

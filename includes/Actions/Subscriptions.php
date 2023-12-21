@@ -473,7 +473,7 @@ class Subscriptions {
 	 */
 	public function create_sub_invoice( int $order_id, string $this_status_transition_from, string $this_status_transition_to, WC_Order $instance ) {
 		$renewal_order = wc_get_order( $order_id );
-		$renewal_sub   = get_post_meta( $order_id, '_subscription_renewal', true );
+		$renewal_sub   = $renewal_order->get_meta( '_subscription_renewal' );
 		$gateway       = rp_get_payment_method( $renewal_order );
 		if ( ! empty( $renewal_sub ) && ! empty( $gateway ) ) {
 			$order_data = reepay()->api( $gateway )->get_invoice_data( $renewal_order );
