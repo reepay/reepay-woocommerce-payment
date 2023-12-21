@@ -48,7 +48,7 @@ foreach ($orders as $key => $order) {
 		if ($check_id != $order->get_id()) {
 			// Update handler
 			$handle = 'order-' . $order->get_id();
-			update_post_meta( $order->get_id(), '_reepay_order', $handle );
+			$order->update_meta_data( '_reepay_order', $handle );
 			$log->add( $handler, sprintf( '[SUCCESS] Updated reepay handler for order #%s. Handler before: %s', $order->get_id(), $handle ) );
 		}
 	}

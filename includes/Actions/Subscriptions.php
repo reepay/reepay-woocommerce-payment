@@ -256,7 +256,7 @@ class Subscriptions {
 			// Add tokens.
 			foreach ( explode( ',', $meta_value ) as $reepay_token ) {
 				ReepayTokens::assign_payment_token( $subscription, $reepay_token );
-				update_post_meta( $subscription->get_id(), 'reepay_token', $reepay_token );
+				$subscription->update_meta_data( 'reepay_token', $reepay_token );
 			}
 		}
 	}
@@ -504,7 +504,8 @@ class Subscriptions {
 	 */
 	public function sync_reepay_token_meta( int $meta_id, int $post_id, string $meta_key, $meta_value ) {
 		if ( 'reepay_token' === $meta_key ) {
-			update_post_meta( $post_id, '_reepay_token', $meta_value );
+			$order = wc_get_order( $post_id );
+			$order->update_meta_data( '_reepay_token', $meta_value );
 		}
 	}
 }
