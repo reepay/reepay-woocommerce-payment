@@ -8,6 +8,7 @@
 namespace Reepay\Checkout\Admin;
 
 use Automattic\WooCommerce\Utilities\OrderUtil;
+use Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController;
 use Exception;
 use Reepay\Checkout\Gateways\ReepayCheckout;
 use WC_Order;
@@ -39,7 +40,9 @@ class MetaBoxes {
 	 * Register meta boxes on order page
 	 */
 	public function add_meta_boxes() {
-		$screen     = get_current_screen();
+		$screen = wc_get_container()->get( CustomOrdersTableController::class )->custom_orders_table_usage_is_enabled()
+			? wc_get_page_screen_id( 'shop-order' )
+			: 'shop_order';
 
 		$order = wc_get_order( $_GET['id'] );
 		$order_data = $order->get_data();
@@ -68,7 +71,7 @@ class MetaBoxes {
 			'reepay_checkout_customer',
 			__( 'Customer', 'reepay-checkout-gateway' ),
 			array( $this, 'generate_meta_box_content_customer' ),
-			$screen->id,
+			$screen,
 			'side',
 			'high',
 			array(
@@ -82,7 +85,7 @@ class MetaBoxes {
 				'reepay_checkout_invoice',
 				__( 'Invoice', 'reepay-checkout-gateway' ),
 				array( $this, 'generate_meta_box_content_invoice' ),
-				$screen->id,
+				$screen,
 				'side',
 				'high',
 				array(
@@ -97,7 +100,7 @@ class MetaBoxes {
 				'reepay_checkout_subscription',
 				__( 'Subscription', 'reepay-checkout-gateway' ),
 				array( $this, 'generate_meta_box_content_subscription' ),
-				$screen->id,
+				$screen,
 				'side',
 				'high',
 				array(
