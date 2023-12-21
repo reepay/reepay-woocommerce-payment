@@ -725,14 +725,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Run some conditions for woo blocks using
+	 * Process Payment
 	 *
-	 * @param object $order Order.
+	 * @param int $order_id Order ID.
 	 *
-	 * @return false
+	 * @return array|false
 	 * @throws Exception If payment error.
 	 */
-	public function woo_blocks_conditions( $order ){
+	public function process_payment( $order_id ) {
 		$is_woo_blocks_checkout_request = false;
 
 		if ( isset( $_SERVER['CONTENT_TYPE'] ) && 'application/json' === $_SERVER['CONTENT_TYPE'] ) {
@@ -747,11 +747,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					}
 				}
 			} catch ( Exception $e ) {
-				throw new Exception( __('Wrong Request. Try again', 'reepay-checkout-gateway') );
+				return array(
+					'messages' => __( 'Wrong Request. Try again', 'reepay-checkout-gateway' ),
+					'result'   => 'failure',
+				);
 			}
 		}
 
-
+		$order = wc_get_order( $order_id );
 
 		if ( $is_woo_blocks_checkout_request ) {
 			/**
@@ -760,10 +763,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$order->calculate_totals();
 		}
 
-		return false;
-	}
-
-	public function get_params( $order, $token_id ){
+		$token_id = isset( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) ? wc_clean( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) : 'new';
 
 		if ( 'yes' === $this->save_cc
 			 && 'new' === $token_id
@@ -775,13 +775,28 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$maybe_save_card = wcs_cart_have_subscription();
 		}
 
-		$customer_handle = reepay()->api( $this )->get_customer_handle_by_order( $order->get_id() );
-
 		$country = WC()->countries->country_exists( $order->get_billing_country() ) ? $order->get_billing_country() : '';
 		if ( $order->needs_shipping_address() ) {
 			$country = WC()->countries->country_exists( $order->get_shipping_country() ) ? $order->get_shipping_country() : '';
 		}
 
+		if ( wcs_is_payment_change() ) {
+			return $this->wcs_change_payment_method( $order, $token_id );
+		}
+
+		$customer_handle = reepay()->api( $this )->get_customer_handle_by_order( $order_id );
+
+		$data = array(
+			'country'         => $country,
+			'customer_handle' => $customer_handle,
+			'test_mode'       => $this->test_mode,
+			'return_url'      => $this->get_return_url( $order ),
+			'language'        => $this->get_language(),
+		);
+
+		$order_handle = rp_get_order_handle( $order );
+
+		// Initialize Payment.
 		$params = array(
 			'locale'     => $this->get_language(),
 			'recurring'  => apply_filters(
@@ -790,7 +805,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				$order
 			),
 			'order'      => array(
-				'handle'          => rp_get_order_handle( $order ),
+				'handle'          => $order_handle,
 				'amount'          => 'yes' === $this->skip_order_lines ? rp_prepare_amount( $order->get_total(), $order->get_currency() ) : null,
 				'order_lines'     => 'no' === $this->skip_order_lines ? $this->get_order_items( $order ) : null,
 				'currency'        => $order->get_currency(),
@@ -800,7 +815,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'email'       => $order->get_billing_email(),
 					'address'     => $order->get_billing_address_1(),
 					'address2'    => $order->get_billing_address_2(),
-					'country'     => ! empty( $country ) ? $country : '',
 					'city'        => $order->get_billing_city(),
 					'phone'       => $order->get_billing_phone(),
 					'company'     => $order->get_billing_company(),
@@ -814,7 +828,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'email'             => $order->get_billing_email(),
 					'address'           => $order->get_billing_address_1(),
 					'address2'          => $order->get_billing_address_2(),
-					'country'     		=> ! empty( $country ) ? $country : '',
 					'city'              => $order->get_billing_city(),
 					'phone'             => $order->get_billing_phone(),
 					'company'           => $order->get_billing_company(),
@@ -833,6 +846,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$params['button_text'] = reepay()->get_setting( 'payment_button_text' );
 		}
 
+		if ( ! empty( $country ) ) {
+			$params['order']['customer']['country']        = $country;
+			$params['order']['billing_address']['country'] = $country;
+		}
+
 		if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
 			$params['payment_methods'] = $this->payment_methods;
 		}
@@ -844,7 +862,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'email'             => $order->get_billing_email(),
 				'address'           => $order->get_shipping_address_1(),
 				'address2'          => $order->get_shipping_address_2(),
-				'country'     		=> ! empty( $country ) ? $country : '',
 				'city'              => $order->get_shipping_city(),
 				'phone'             => $order->get_billing_phone(),
 				'company'           => $order->get_shipping_company(),
@@ -854,86 +871,58 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'postal_code'       => $order->get_shipping_postcode(),
 				'state_or_province' => $order->get_shipping_state(),
 			);
+
+			if ( ! empty( $country ) ) {
+				$params['order']['shipping_address']['country'] = $country;
+			}
 		}
 
 		if ( 'reepay_mobilepay_subscriptions' === $order->get_payment_method() ) {
 			$params['parameters']['mps_ttl'] = 'PT24H';
 		}
 
-		if ( absint( $token_id ) > 0 ) {
-			$token = new TokenReepay( $token_id );
-
-			$params['card_on_file']                  = $token->get_token();
-			$params['card_on_file_require_cvv']      = false;
-			$params['card_on_file_require_exp_date'] = false;
-			unset( $params['recurring'] );
-		}
-
-		// "Save Card" flag
-		$order->update_meta_data( '_reepay_maybe_save_card', $maybe_save_card );
-		$order->save_meta_data();
-
-		return $params;
-	}
-
-	/**
-	 * Process Payment
-	 *
-	 * @param int $order_id Order ID.
-	 *
-	 * @return array|false
-	 * @throws Exception If payment error.
-	 */
-	public function process_payment( $order_id ) {
-		$order = wc_get_order( $order_id );
-
-		try {
-			$this->woo_blocks_conditions( $order );
-		}catch (Exception $e){
-			wc_add_notice( $e->getMessage(), 'error' );
-			return array(
-				'messages' => __( $e->getMessage() ),
-				'result'   => 'failure',
-			);
-		}
-
-		$token_id = isset( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) ? wc_clean( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) : 'new';
-
-		if ( wcs_is_payment_change() ) {
-			return $this->wcs_change_payment_method( $order, $token_id );
-		}
-
-		$params = $this->get_params( $order, $token_id );
-
-		$data = array(
-			'country'         => $params['order']['customer']['country'],
-			'customer_handle' => $params['order']['customer']['handle'],
-			'test_mode'       => $this->test_mode,
-			'return_url'      => $this->get_return_url( $order ),
-			'language'        => $this->get_language(),
-			'button_text'     => reepay()->get_setting( 'payment_button_text' ),
-		);
-
 		// Try to charge with saved token.
 		if ( absint( $token_id ) > 0 ) {
 			$token = new TokenReepay( $token_id );
 			if ( ! $token->get_id() ) {
 				wc_add_notice( __( 'Failed to load token.', 'reepay-checkout-gateway' ), 'error' );
+
 				return false;
 			}
 
 			if ( $token->get_user_id() !== $order->get_user_id() ) {
 				wc_add_notice( __( 'Access denied.', 'reepay-checkout-gateway' ), 'error' );
+
 				return false;
 			}
 
+			$params['card_on_file']                  = $token->get_token();
+			$params['card_on_file_require_cvv']      = false;
+			$params['card_on_file_require_exp_date'] = false;
+			unset( $params['recurring'] );
+
 			// Don't charge payment if zero amount.
 			if ( abs( $order->get_total() ) < 0.01 ) {
-				if ( wcs_cart_only_subscriptions() ) { // Cart contain only WC or Reepay subscriptions
+				if ( wcs_cart_only_subscriptions() ) {
+					$result = reepay()->api( $this )->recurring( $this->payment_methods, $order, $data, $token->get_token(), $params['button_text'] );
+
+					if ( is_wp_error( $result ) ) {
+						throw new Exception( $result->get_error_message(), $result->get_error_code() );
+					}
+
+					if ( ! empty( $result['id'] ) ) {
+						update_post_meta( $order_id, 'reepay_session_id', $result['id'] );
+					}
+
+					if ( is_wp_error( $result ) ) {
+						throw new Exception( $result->get_error_message(), $result->get_error_code() );
+					}
+
 					try {
-						$this->create_recurring( $order, $data, $token->get_token());
-					}catch (Exception $e){
-						wc_add_notice( $e->getMessage(), 'error' );
+						ReepayTokens::assign_payment_token( $order, $token );
+						ReepayTokens::save_card_info_to_order( $order, $token->get_token() );
+					} catch ( Exception $e ) {
+						$order->add_order_note( $e->getMessage() );
 
 						return array(
 							'result'  => 'failure',
@@ -949,7 +938,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					ReepayTokens::assign_payment_token( $order, $token );
 					ReepayTokens::save_card_info_to_order( $order, $token->get_token() );
 				} catch ( Exception $e ) {
-					wc_add_notice( $e->getMessage(), 'error' );
+					$order->add_order_note( $e->getMessage() );
 
 					return array(
 						'result'  => 'failure',
@@ -1012,6 +1001,18 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			);
 		}
 
+		// "Save Card" flag
+		$order->update_meta_data( '_reepay_maybe_save_card', $maybe_save_card );
+		$order->save_meta_data();
+
+		if ( ! empty( $customer_handle ) && 0 === $order->get_customer_id() ) {
+			reepay()->api( $this )->request(
+				'PUT',
+				'https://api.reepay.com/v1/customer/' . $customer_handle,
+				$params['order']['customer']
+			);
+		}
+
 		$have_sub = (class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order )) || wcs_cart_have_subscription();
 
 		$only_items_lines = array();
@@ -1031,16 +1032,17 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		// If here's Subscription or zero payment.
 		if ( ( $have_sub ) && ( abs( $order->get_total() ) < 0.01 || empty( $only_items_lines ) ) ) {
 
-			try {
-				$this->create_recurring( $order, $data );
-			}catch (Exception $e){
-				wc_add_notice( $e->getMessage(), 'error' );
+			$result = reepay()->api( $this )->recurring( $this->payment_methods, $order, $data, false, $params['button_text'] );
 
-				return array(
-					'result'  => 'failure',
-					'message' => $e->getMessage(),
-				);
+			if ( is_wp_error( $result ) ) {
+				throw new Exception( $result->get_error_message(), $result->get_error_code() );
 			}
+
+			if ( ! empty( $result['id'] ) ) {
+				update_post_meta( $order_id, 'reepay_session_id', $result['id'] );
+			}
+
+			do_action( 'reepay_instant_settle', $order );
 
 			$redirect = '#!reepay-checkout';
 
@@ -1060,35 +1062,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		return $this->process_session_charge( $params, $order );
-	}
-
-	public function create_recurring( $order, $data, $token = false ){
-		$result = reepay()->api( $this )->recurring( $this->payment_methods, $order, $data, $token );
-
-		if ( is_wp_error( $result ) ) {
-			throw new Exception( $result->get_error_message(), $result->get_error_code() );
-		}
-
-		if ( ! empty( $result['id'] ) ) {
-			update_post_meta( $order->get_id(), 'reepay_session_id', $result['id'] );
-		}
-
-		if( $token ){
-			try {
-				ReepayTokens::assign_payment_token( $order, $token );
-				ReepayTokens::save_card_info_to_order( $order, $token->get_token() );
-			} catch ( Exception $e ) {
-				$order->add_order_note( $e->getMessage() );
-
-				return array(
-					'result'  => 'failure',
-					'message' => $e->getMessage(),
-				);
-			}
-		}
-
-
-		do_action( 'reepay_instant_settle', $order );
 	}
 
 	/**
