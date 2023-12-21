@@ -80,7 +80,7 @@ class MetaBoxes {
 			)
 		);
 
-		if ( ! empty( $order->get_meta( '_transaction_id' ) ) ) {
+		if ( ! empty( $order->get_transaction_id() ) ) {
 			add_meta_box(
 				'reepay_checkout_invoice',
 				__( 'Invoice', 'reepay-checkout-gateway' ),
@@ -139,7 +139,7 @@ class MetaBoxes {
 		}
 
 		$template_args = array(
-			'email'  => $order->get_meta( '_billing_email' ),
+			'email'  => $order->get_billing_email(),
 			'handle' => $handle,
 			'link'   => $this->dashboard_url . 'customers/customers/customer/' . $handle,
 		);
