@@ -176,9 +176,9 @@ class Subscriptions {
 	public function delete_resubscribe_meta( WC_Order $resubscribe_order ) {
 		if ( in_array( $resubscribe_order->get_payment_method(), self::PAYMENT_METHODS, true ) ) {
 			// Delete tokens.
-			delete_post_meta( $resubscribe_order->get_id(), '_payment_tokens' );
-			delete_post_meta( $resubscribe_order->get_id(), '_reepay_token' );
-			delete_post_meta( $resubscribe_order->get_id(), '_reepay_token_id' );
+			$resubscribe_order->delete_meta_data( '_payment_tokens' );
+			$resubscribe_order->delete_meta_data( '_reepay_token' );
+			$resubscribe_order->delete_meta_data( '_reepay_token_id' );
 		}
 	}
 
