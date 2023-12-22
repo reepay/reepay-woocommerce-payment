@@ -44,7 +44,8 @@ class MetaBoxes {
 			? wc_get_page_screen_id( 'shop-order' )
 			: 'shop_order';
 
-		$order = wc_get_order( $_GET['id'] );
+		$order_id = !empty($_GET['id']) ? $_GET['id'] : $_GET['post'];
+		$order = wc_get_order( $order_id );
 		$order_data = $order->get_data();
 
 
