@@ -176,9 +176,10 @@ class Subscriptions {
 	public function delete_resubscribe_meta( WC_Order $resubscribe_order ) {
 		if ( in_array( $resubscribe_order->get_payment_method(), self::PAYMENT_METHODS, true ) ) {
 			// Delete tokens.
-			delete_post_meta( $resubscribe_order->get_id(), '_payment_tokens' );
-			delete_post_meta( $resubscribe_order->get_id(), '_reepay_token' );
-			delete_post_meta( $resubscribe_order->get_id(), '_reepay_token_id' );
+			$resubscribe_order->delete_meta_data( '_payment_tokens' );
+			$resubscribe_order->delete_meta_data( '_reepay_token' );
+			$resubscribe_order->delete_meta_data( '_reepay_token_id' );
+			$resubscribe_order->save_meta_data();
 		}
 	}
 
@@ -256,7 +257,8 @@ class Subscriptions {
 			// Add tokens.
 			foreach ( explode( ',', $meta_value ) as $reepay_token ) {
 				ReepayTokens::assign_payment_token( $subscription, $reepay_token );
-				update_post_meta( $subscription->get_id(), 'reepay_token', $reepay_token );
+				$subscription->update_meta_data( 'reepay_token', $reepay_token );
+				$subscription->save_meta_data();
 			}
 		}
 	}
@@ -360,6 +362,12 @@ class Subscriptions {
 
 			if ( is_wp_error( $result ) && ! empty( $result->get_error_message() ) ) {
 				throw new Exception( $result->get_error_message(), $result->get_error_code() );
+			}
+
+			// Fix for subscriptions can create the invoice
+			sleep(5);
+			if($renewal_order->get_status() == 'pending'){
+				sleep(5);
 			}
 
 			// Instant settle.
@@ -467,7 +475,7 @@ class Subscriptions {
 	 */
 	public function create_sub_invoice( int $order_id, string $this_status_transition_from, string $this_status_transition_to, WC_Order $instance ) {
 		$renewal_order = wc_get_order( $order_id );
-		$renewal_sub   = get_post_meta( $order_id, '_subscription_renewal', true );
+		$renewal_sub   = $renewal_order->get_meta( '_subscription_renewal' );
 		$gateway       = rp_get_payment_method( $renewal_order );
 		if ( ! empty( $renewal_sub ) && ! empty( $gateway ) ) {
 			$order_data = reepay()->api( $gateway )->get_invoice_data( $renewal_order );
@@ -498,7 +506,9 @@ class Subscriptions {
 	 */
 	public function sync_reepay_token_meta( int $meta_id, int $post_id, string $meta_key, $meta_value ) {
 		if ( 'reepay_token' === $meta_key ) {
-			update_post_meta( $post_id, '_reepay_token', $meta_value );
+			$order = wc_get_order( $post_id );
+			$order->update_meta_data( '_reepay_token', $meta_value );
+			$order->save_meta_data();
 		}
 	}
 }

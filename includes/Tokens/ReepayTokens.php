@@ -44,12 +44,12 @@ abstract class ReepayTokens {
 		}
 
 		if ( $token->get_id() ) {
-			// Delete tokens if exist.
-			delete_post_meta( $order->get_id(), '_payment_tokens' );
+
 
 			// Reload order.
 			$order = wc_get_order( $order->get_id() );
-
+			// Delete tokens if exist.
+			$order->delete_meta_data( '_payment_tokens' );
 			// Add payment token.
 			$order->add_payment_token( $token );
 

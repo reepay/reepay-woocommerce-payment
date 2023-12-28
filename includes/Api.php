@@ -972,8 +972,8 @@ class Api {
 
 				break;
 			case 'settled':
-				update_post_meta( $order->get_id(), '_reepay_capture_transaction', $result['transaction'] );
-
+				$order->update_meta_data( '_reepay_capture_transaction', $result['transaction'] );
+				$order->save_meta_data();
 				OrderStatuses::set_settled_status(
 					$order,
 					sprintf(
@@ -987,8 +987,8 @@ class Api {
 
 				break;
 			case 'cancelled':
-				update_post_meta( $order->get_id(), '_reepay_cancel_transaction', $result['transaction'] );
-
+				$order->update_meta_data( '_reepay_cancel_transaction', $result['transaction'] );
+				$order->save_meta_data();
 				if ( ! $order->has_status( 'cancelled' ) ) {
 					$order->update_status(
 						'cancelled',

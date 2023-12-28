@@ -263,7 +263,8 @@ class Webhook {
 					);
 				}
 
-				update_post_meta( $order->get_id(), '_reepay_capture_transaction', $data['transaction'] );
+				$order->update_meta_data( '_reepay_capture_transaction', $data['transaction'] );
+				$order->save_meta_data();
 
 				self::unlock_order( $order->get_id() );
 
@@ -329,7 +330,7 @@ class Webhook {
 					return;
 				}
 
-				$sub_order = get_post_meta( $order->get_id(), '_reepay_subscription_handle', true );
+				$sub_order = $order->get_meta( '_reepay_subscription_handle' );
 				if ( ! empty( $sub_order ) ) {
 					return;
 				}
@@ -484,7 +485,9 @@ class Webhook {
 	 * @see wait_for_unlock()
 	 */
 	private static function lock_order( int $order_id ) {
-		update_post_meta( $order_id, '_reepay_locked', '1' );
+		$order = wc_get_order( $order_id );
+		$order->update_meta_data( '_reepay_locked', '1' );
+		$order->save_meta_data();
 	}
 
 	/**
@@ -496,7 +499,9 @@ class Webhook {
 	 * @see wait_for_unlock()
 	 */
 	private static function unlock_order( $order_id ) {
-		delete_post_meta( $order_id, '_reepay_locked' );
+		$order = wc_get_order( $order_id );
+		$order->delete_meta_data( '_reepay_locked' );
+		$order->save_meta_data();
 	}
 
 	/**
@@ -509,7 +514,8 @@ class Webhook {
 	private static function wait_for_unlock( int $order_id ): bool {
 		set_time_limit( 0 );
 
-		$is_locked    = (bool) get_post_meta( $order_id, '_reepay_locked', true );
+		$order = wc_get_order( $order_id );
+		$is_locked    = (bool) $order->get_meta( '_reepay_locked' );
 		$needs_reload = false;
 		$attempts     = 0;
 		while ( $is_locked ) {
@@ -520,7 +526,7 @@ class Webhook {
 			}
 
 			wp_cache_delete( $order_id, 'post_meta' );
-			$is_locked = (bool) get_post_meta( $order_id, '_reepay_locked', true );
+			$is_locked = (bool) $order->get_meta( '_reepay_locked' );
 			if ( $is_locked ) {
 				$needs_reload = true;
 				clean_post_cache( $order_id );
