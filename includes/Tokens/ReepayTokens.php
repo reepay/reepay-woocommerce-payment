@@ -45,7 +45,6 @@ abstract class ReepayTokens {
 
 		if ( $token->get_id() ) {
 
-
 			// Reload order.
 			$order = wc_get_order( $order->get_id() );
 			// Delete tokens if exist.

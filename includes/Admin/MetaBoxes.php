@@ -44,11 +44,10 @@ class MetaBoxes {
 			? wc_get_page_screen_id( 'shop-order' )
 			: 'shop_order';
 
-		$order_id = !empty($_GET['id']) ? $_GET['id'] : $_GET['post'];
-		$order = wc_get_order( $order_id );
-		if($order){
+		$order_id = ! empty( $_REQUEST['id'] ) ? $_REQUEST['id'] : 0;
+		$order    = wc_get_order( $order_id );
+		if ( $order ) {
 			$order_data = $order->get_data();
-
 
 			if ( empty( $order ) || ! rp_is_order_paid_via_reepay( $order ) ) {
 				return;
@@ -127,12 +126,12 @@ class MetaBoxes {
 		 * @var WC_Order $order
 		 * @var ReepayCheckout $gateway
 		 */
-		$order   = $meta['args']['order'];
+		$order      = $meta['args']['order'];
 		$order_data = $order->get_data();
 
 		if ( ! empty( $order->get_meta( '_reepay_order' ) ) && 0 !== $order_data['parent_id'] ) {
 			$parent_order = wc_get_order( $order_data['parent_id'] );
-			$handle = $parent_order->get_meta('_reepay_customer');
+			$handle       = $parent_order->get_meta( '_reepay_customer' );
 		} else {
 			$handle = $order->get_meta( '_reepay_customer' );
 		}
@@ -209,14 +208,14 @@ class MetaBoxes {
 		 * @var WC_Order $order
 		 * @var ReepayCheckout $gateway
 		 */
-		$order   = $meta['args']['order'];
-		$gateway = $meta['args']['gateway'];
+		$order      = $meta['args']['order'];
+		$gateway    = $meta['args']['gateway'];
 		$order_data = $order->get_data();
 
 		if ( ! empty( $order->get_meta( '_reepay_order' ) ) && 0 !== $order_data['parent_id'] ) {
 			$parent_order = wc_get_order( $order_data['parent_id'] );
-			$handle = $parent_order->get_meta( '_reepay_subscription_handle' );
-			$plan   = $parent_order->get_meta( '_reepay_subscription_plan' );
+			$handle       = $parent_order->get_meta( '_reepay_subscription_handle' );
+			$plan         = $parent_order->get_meta( '_reepay_subscription_plan' );
 		} elseif ( $order->get_meta( '_reepay_renewal' ) ) {
 			$handle = $order->get_meta( '_reepay_subscription_handle_parent' );
 			$plan   = $order->get_meta( '_reepay_subscription_plan' );

@@ -439,7 +439,7 @@ class Webhook {
 					if ( $order && order_contains_subscription( $order ) ) {
 						WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 
-						if(! empty( $data['payment_method'] )){
+						if ( ! empty( $data['payment_method'] ) ) {
 							try {
 								$token = ReepayTokens::reepay_save_token( $order, $data['payment_method'] );
 								ReepayTokens::assign_payment_token( $order, $token );
@@ -514,7 +514,7 @@ class Webhook {
 	private static function wait_for_unlock( int $order_id ): bool {
 		set_time_limit( 0 );
 
-		$order = wc_get_order( $order_id );
+		$order        = wc_get_order( $order_id );
 		$is_locked    = (bool) $order->get_meta( '_reepay_locked' );
 		$needs_reload = false;
 		$attempts     = 0;
