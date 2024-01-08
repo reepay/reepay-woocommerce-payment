@@ -911,7 +911,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					}
 
 					if ( ! empty( $result['id'] ) ) {
-						update_post_meta( $order_id, 'reepay_session_id', $result['id'] );
+						$order->update_meta_data( 'reepay_session_id', $result['id'] );
+						$order->save_meta_data();
 					}
 
 					if ( is_wp_error( $result ) ) {
@@ -1013,7 +1014,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			);
 		}
 
-		$have_sub = class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order );
+		$have_sub = ( class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) || wcs_cart_have_subscription();
 
 		$only_items_lines = array();
 
@@ -1039,7 +1040,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 
 			if ( ! empty( $result['id'] ) ) {
-				update_post_meta( $order_id, 'reepay_session_id', $result['id'] );
+				$order->update_meta_data( 'reepay_session_id', $result['id'] );
+				$order->save_meta_data();
 			}
 
 			do_action( 'reepay_instant_settle', $order );
@@ -1208,7 +1210,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					$handle                    = rp_get_order_handle( $order, true );
 					$params['order']['handle'] = $handle;
 
-					update_post_meta( $order->get_id(), '_reepay_order', $handle );
+					$order->update_meta_data( '_reepay_order', $handle );
+					$order->save_meta_data();
 
 					$result = reepay()->api( $this )->request(
 						'POST',
@@ -1216,18 +1219,24 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 						$params
 					);
 					if ( is_wp_error( $result ) ) {
+						wc_add_notice( $result->get_error_message(), 'error' );
+
 						return array(
 							'result'  => 'failure',
 							'message' => $result->get_error_message(),
 						);
 					}
 				} else {
+					wc_add_notice( $result->get_error_message(), 'error' );
+
 					return array(
 						'result'  => 'failure',
 						'message' => $result->get_error_message(),
 					);
 				}
 			} else {
+				wc_add_notice( $result->get_error_message(), 'error' );
+
 				return array(
 					'result'  => 'failure',
 					'message' => $result->get_error_message(),
@@ -1236,7 +1245,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		if ( ! empty( $result['id'] ) ) {
-			update_post_meta( $order->get_id(), 'reepay_session_id', $result['id'] );
+			$order->update_meta_data( 'reepay_session_id', $result['id'] );
+			$order->save_meta_data();
 		}
 
 		if ( is_checkout_pay_page() ) {

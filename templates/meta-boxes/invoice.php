@@ -23,6 +23,10 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 ?>
 
 <ul class="order_action order_action_reepay_subscriotions clearfix">
+	<input type="hidden" id="reepay_order_id" data-order-id="<?php echo $order_id; ?>"/>
+	<input type="hidden" id="reepay_order_total_authorized" value="<?php echo $order_data['authorized_amount']; ?>"/>
+	<input type="hidden" id="reepay_order_total_settled" value="<?php echo $order_data['settled_amount']; ?>"/>
+	<input type="hidden" id="reepay_order_total" data-order-total="<?php echo $order->get_total(); ?>" value="<?php echo $order->get_total() . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ); ?>"/>
 	<li class="reepay-admin-section-li-header-small">
 		<?php echo __( 'Invoice handle', 'reepay-subscriptions-for-woocommerce' ); ?>
 	</li>
@@ -70,7 +74,7 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 			<span class='reepay-balance__currency'>
 				&nbsp;
 			</span>
-			<?php echo $order_data['authorized_amount'] ? rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol() : $order_data['authorized_amount'] . ' ' . get_woocommerce_currency_symbol(); ?>
+			<?php echo $order_data['authorized_amount'] ? rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ) : $order_data['authorized_amount'] . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ); ?>
 		</span>
 	</li>
 	<li class="reepay-admin-section-li">
@@ -81,7 +85,7 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 			<span class='reepay-balance__currency'>
 				&nbsp;
 			</span>
-			<?php echo rp_make_initial_amount( $order_data['authorized_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol(); ?>
+			<?php echo rp_make_initial_amount( $order_data['authorized_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ); ?>
 	   </span>
 	</li>
 
@@ -93,7 +97,7 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 			<span class='reepay-balance__currency'>
 				&nbsp;
 			</span>
-			<?php echo rp_make_initial_amount( $order_data['settled_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol(); ?>
+			<?php echo rp_make_initial_amount( $order_data['settled_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ); ?>
 		</span>
 	</li>
 	<li class="reepay-admin-section-li">
@@ -104,7 +108,7 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 			<span class='reepay-balance__currency'>
 				&nbsp;
 			</span>
-			<?php echo rp_make_initial_amount( $order_data['refunded_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol(); ?>
+			<?php echo rp_make_initial_amount( $order_data['refunded_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ); ?>
 		</span>
 	</li>
 

@@ -44,12 +44,11 @@ abstract class ReepayTokens {
 		}
 
 		if ( $token->get_id() ) {
-			// Delete tokens if exist.
-			delete_post_meta( $order->get_id(), '_payment_tokens' );
 
 			// Reload order.
 			$order = wc_get_order( $order->get_id() );
-
+			// Delete tokens if exist.
+			$order->delete_meta_data( '_payment_tokens' );
 			// Add payment token.
 			$order->add_payment_token( $token );
 
@@ -224,7 +223,7 @@ abstract class ReepayTokens {
 				$token = $order->get_meta( '_reepay_token' );
 				if ( empty( $token ) ) {
 					$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
-					if ( ! empty( $invoice_data ) ) {
+					if ( ! empty( $invoice_data ) && ! is_wp_error( $invoice_data ) ) {
 						if ( ! empty( $invoice_data['recurring_payment_method'] ) ) {
 							$token = $invoice_data['recurring_payment_method'];
 						} elseif ( ! empty( $invoice_data['transactions'] ) ) {

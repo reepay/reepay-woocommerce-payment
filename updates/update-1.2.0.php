@@ -41,14 +41,15 @@ foreach ($orders as $key => $order) {
 		continue;
 	}
 
-	$handle = get_post_meta( $order->get_id(), '_reepay_order', true );
+	$handle = $order->get_meta( '_reepay_order' );
 	if ( ! empty( $handle ) ) {
 		// Check if reepay handler is different that expected
 		$check_id = str_replace( 'order-', '', $handle );
 		if ($check_id != $order->get_id()) {
 			// Update handler
 			$handle = 'order-' . $order->get_id();
-			update_post_meta( $order->get_id(), '_reepay_order', $handle );
+			$order->update_meta_data( '_reepay_order', $handle );
+			$order->save_meta_data();
 			$log->add( $handler, sprintf( '[SUCCESS] Updated reepay handler for order #%s. Handler before: %s', $order->get_id(), $handle ) );
 		}
 	}
