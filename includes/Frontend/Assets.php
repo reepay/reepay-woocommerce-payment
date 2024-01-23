@@ -91,7 +91,7 @@ class Assets {
 		);
 
 		if ( ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() )
-			 && ! is_order_received_page()
+			&& ! is_order_received_page()
 		) {
 			wp_enqueue_style( self::SLUG_CHECKOUT_CSS );
 

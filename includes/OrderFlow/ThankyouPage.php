@@ -55,10 +55,10 @@ class ThankyouPage {
 	 */
 	public function override_thankyou_template( $located, $template_name, $args, $template_path, $default_path ): string {
 		if ( is_array( $args ) &&
-			 is_string( $template_path ) &&
-			 strpos( $located, 'checkout/thankyou.php' ) !== false &&
-			 ! empty( $args['order'] ) &&
-			 rp_is_order_paid_via_reepay( $args['order'] )
+			is_string( $template_path ) &&
+			strpos( $located, 'checkout/thankyou.php' ) !== false &&
+			! empty( $args['order'] ) &&
+			rp_is_order_paid_via_reepay( $args['order'] )
 		) {
 			$located = wc_locate_template(
 				'checkout/thankyou.php',
@@ -84,8 +84,8 @@ class ThankyouPage {
 		$order     = wc_get_order( get_query_var( 'order-received', 0 ) );
 
 		if ( empty( $order )
-			 || ! $order->key_is_valid( $order_key )
-			 || ! rp_is_order_paid_via_reepay( $order )
+			|| ! $order->key_is_valid( $order_key )
+			|| ! rp_is_order_paid_via_reepay( $order )
 		) {
 			return;
 		}
@@ -184,7 +184,7 @@ class ThankyouPage {
 				$message = 'Order has been failed';
 
 				if ( count( $invoice_data['transactions'] ) > 0 &&
-					 isset( $invoice_data['transactions'][0]['card_transaction']['acquirer_message'] )
+					isset( $invoice_data['transactions'][0]['card_transaction']['acquirer_message'] )
 				) {
 					$message = $invoice_data['transactions'][0]['card_transaction']['acquirer_message'];
 				}

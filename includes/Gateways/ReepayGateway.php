@@ -251,7 +251,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$result = reepay()->api( $this )->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
 		if ( is_wp_error( $result ) ) {
 			if ( $result->get_error_code() === API::ERROR_CODES['Customer has been deleted'] ||
-				 $result->get_error_code() === API::ERROR_CODES['Customer not found'] ) {
+				$result->get_error_code() === API::ERROR_CODES['Customer not found'] ) {
 				$params = array(
 					'locale'          => $this->get_language(),
 					'button_text'     => __( 'Add card', 'reepay-checkout-gateway' ),
@@ -350,7 +350,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 */
 	public function is_gateway_settings_page(): bool {
 		return isset( $_GET['tab'] ) && 'checkout' === $_GET['tab'] &&
-			   ! empty( $_GET['section'] ) && $_GET['section'] === $this->id;
+				! empty( $_GET['section'] ) && $_GET['section'] === $this->id;
 	}
 
 	/**
@@ -433,7 +433,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			// The webhook settings of the payment plugin.
 			$alert_email = '';
 			if ( ! empty( $this->settings['failed_webhooks_email'] ) &&
-				 is_email( $this->settings['failed_webhooks_email'] )
+				is_email( $this->settings['failed_webhooks_email'] )
 			) {
 				$alert_email = $this->settings['failed_webhooks_email'];
 			}
@@ -444,8 +444,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			foreach ( $response['urls'] as $url ) {
 				if ( ( strpos( $url, $webhook_url ) === false || // either another site or exact url match.
-					 $url === $webhook_url ) &&
-					 strpos( $url, 'WC_Gateway_Reepay_Checkout' ) === false ) {
+					$url === $webhook_url ) &&
+					strpos( $url, 'WC_Gateway_Reepay_Checkout' ) === false ) {
 					$urls[] = $url;
 				} else {
 					$exist_waste_urls = true;
@@ -454,8 +454,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			// Verify the webhook settings.
 			if ( ! $exist_waste_urls &&
-				 in_array( $webhook_url, $urls, true )
-				 && ( empty( $alert_email ) || in_array( $alert_email, $alert_emails, true ) )
+				in_array( $webhook_url, $urls, true )
+				&& ( empty( $alert_email ) || in_array( $alert_email, $alert_emails, true ) )
 			) {
 				return true;
 			}
@@ -560,8 +560,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					<?php endif; ?>
 
 					<input type="hidden" name="<?php echo esc_attr( $field_key ); ?>"
-						   id="<?php echo esc_attr( $field_key ); ?>"
-						   value="<?php echo esc_attr( $is_active ); ?>"/>
+							id="<?php echo esc_attr( $field_key ); ?>"
+							value="<?php echo esc_attr( $is_active ); ?>"/>
 				</fieldset>
 			</td>
 		</tr>
@@ -766,9 +766,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$token_id = isset( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) ? wc_clean( $_POST[ 'wc-' . $this->id . '-payment-token' ] ) : 'new';
 
 		if ( 'yes' === $this->save_cc
-			 && 'new' === $token_id
-			 && isset( $_POST[ 'wc-' . $this->id . '-new-payment-method' ] )
-			 && false !== $_POST[ 'wc-' . $this->id . '-new-payment-method' ]
+			&& 'new' === $token_id
+			&& isset( $_POST[ 'wc-' . $this->id . '-new-payment-method' ] )
+			&& false !== $_POST[ 'wc-' . $this->id . '-new-payment-method' ]
 		) {
 			$maybe_save_card = 'true' === $_POST[ 'wc-' . $this->id . '-new-payment-method' ];
 		} else {
@@ -1305,7 +1305,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		if ( 'failed' === $result['state'] ) {
 			if ( count( $result['transactions'] ) > 0 &&
-				 isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
+				isset( $result['transactions'][0]['card_transaction']['acquirer_message'] )
 			) {
 				$message = $result['transactions'][0]['card_transaction']['acquirer_message'];
 
@@ -1495,7 +1495,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		// Add "Gift Up!" discount.
 		if ( defined( 'GIFTUP_ORDER_META_CODE_KEY' ) &&
-			 defined( 'GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY' )
+			defined( 'GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY' )
 		) {
 			if ( $order->meta_exists( GIFTUP_ORDER_META_CODE_KEY ) ) {
 				$code              = $order->get_meta( GIFTUP_ORDER_META_CODE_KEY );

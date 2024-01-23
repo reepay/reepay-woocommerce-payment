@@ -253,7 +253,7 @@ class Subscriptions {
 	 */
 	public function save_subscription_payment_meta( WC_Subscription $subscription, string $meta_table, string $meta_key, string $meta_value ) {
 		if ( in_array( $subscription->get_payment_method(), self::PAYMENT_METHODS, true ) &&
-			 'post_meta' === $meta_table && '_reepay_token' === $meta_key ) {
+			'post_meta' === $meta_table && '_reepay_token' === $meta_key ) {
 			// Add tokens.
 			foreach ( explode( ',', $meta_value ) as $reepay_token ) {
 				ReepayTokens::assign_payment_token( $subscription, $reepay_token );
@@ -395,7 +395,7 @@ class Subscriptions {
 	 */
 	public function maybe_render_subscription_payment_method( string $payment_method_to_display, WC_Subscription $subscription ): string {
 		if ( ! in_array( $subscription->get_payment_method(), self::PAYMENT_METHODS, true ) ||
-			 ! $subscription->get_user_id()
+			! $subscription->get_user_id()
 		) {
 			return $payment_method_to_display;
 		}
@@ -482,14 +482,14 @@ class Subscriptions {
 			if ( is_wp_error( $order_data ) && $renewal_order->get_total() > 0 ) {
 
 				if ( 'pending' === $this_status_transition_from &&
-					 ( ( OrderStatuses::$status_sync_enabled && OrderStatuses::$status_authorized === $this_status_transition_to ) ||
-					   'on-hold' === $this_status_transition_to ) ) {
+					( ( OrderStatuses::$status_sync_enabled && OrderStatuses::$status_authorized === $this_status_transition_to ) ||
+						'on-hold' === $this_status_transition_to ) ) {
 					self::scheduled_subscription_payment( $renewal_order->get_total(), $renewal_order );
 				}
 
 				if ( 'pending' === $this_status_transition_from &&
-					 ( ( OrderStatuses::$status_sync_enabled && OrderStatuses::$status_settled === $this_status_transition_to ) ||
-					   'processing' === $this_status_transition_to ) ) {
+					( ( OrderStatuses::$status_sync_enabled && OrderStatuses::$status_settled === $this_status_transition_to ) ||
+						'processing' === $this_status_transition_to ) ) {
 					self::scheduled_subscription_payment( $renewal_order->get_total(), $renewal_order, true );
 				}
 			}

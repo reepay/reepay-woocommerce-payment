@@ -175,9 +175,9 @@ class MetaBoxes {
 		}
 
 		if ( $order_data['refunded_amount'] > 0 &&
-			 ( $order_data['authorized_amount'] === $order_data['refunded_amount']
-			   || $order_data['settled_amount'] === $order_data['refunded_amount']
-			 )
+			( $order_data['authorized_amount'] === $order_data['refunded_amount']
+				|| $order_data['settled_amount'] === $order_data['refunded_amount']
+			)
 		) {
 			$order_data['state'] = 'refunded';
 		}

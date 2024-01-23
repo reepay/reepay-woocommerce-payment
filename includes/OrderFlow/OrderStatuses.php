@@ -334,9 +334,9 @@ class OrderStatuses {
 	 */
 	public function is_editable( bool $is_editable, WC_Order $order ): bool {
 		if ( ! $is_editable &&
-			 self::$status_sync_enabled &&
-			 rp_is_order_paid_via_reepay( $order ) &&
-			 in_array( $order->get_status(), array( self::$status_created, self::$status_authorized ), true ) ) {
+			self::$status_sync_enabled &&
+			rp_is_order_paid_via_reepay( $order ) &&
+			in_array( $order->get_status(), array( self::$status_created, self::$status_authorized ), true ) ) {
 			$is_editable = true;
 		}
 
@@ -353,9 +353,9 @@ class OrderStatuses {
 	 */
 	public function is_paid( bool $is_paid, WC_Order $order ): bool {
 		if ( ! $is_paid &&
-			 self::$status_sync_enabled &&
-			 rp_is_order_paid_via_reepay( $order ) &&
-			 $order->get_status() === self::$status_settled
+			self::$status_sync_enabled &&
+			rp_is_order_paid_via_reepay( $order ) &&
+			$order->get_status() === self::$status_settled
 		) {
 			$is_paid = true;
 		}

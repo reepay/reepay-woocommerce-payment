@@ -200,20 +200,18 @@ class Api {
 	public function set_logging_source( $source ) {
 		if ( is_string( $source ) ) {
 			$this->logging_source = $source;
-		} else {
-			if ( is_a( $source, ReepayGateway::class ) ) {
+		} elseif ( is_a( $source, ReepayGateway::class ) ) {
 				$this->logging_source = $source->id;
-			} elseif ( is_a( $source, WC_Order::class ) ) {
-				$payment_method = rp_get_payment_method( $source );
+		} elseif ( is_a( $source, WC_Order::class ) ) {
+			$payment_method = rp_get_payment_method( $source );
 
-				if ( $payment_method ) {
-					$this->logging_source = rp_get_payment_method( $source )->id;
-				} else {
-					$this->logging_source = 'reepay-unknown-payment-method';
-				}
+			if ( $payment_method ) {
+				$this->logging_source = rp_get_payment_method( $source )->id;
 			} else {
-				$this->logging_source = 'reepay';
+				$this->logging_source = 'reepay-unknown-payment-method';
 			}
+		} else {
+			$this->logging_source = 'reepay';
 		}
 	}
 
@@ -642,7 +640,7 @@ class Api {
 			if ( is_wp_error( $result ) ) {
 
 				if ( 'yes' === reepay()->get_setting( 'handle_failover' ) &&
-					 ( in_array( $result->get_error_code(), array( 105, 79, 29, 99, 72 ), true ) )
+					( in_array( $result->get_error_code(), array( 105, 79, 29, 99, 72 ), true ) )
 				) {
 					// Workaround: handle already exists lets create another with unique handle.
 					$params['handle'] = rp_get_order_handle( $order, true );
@@ -750,8 +748,8 @@ class Api {
 				} else {
 					$price = OrderCapture::get_item_price( $line_item, $order );
 					if ( $remaining > 0 &&
-						 round( $remaining / 100 ) === $price['with_tax'] &&
-						 ! empty( $request_data['order_lines'][0] ) ) {
+						round( $remaining / 100 ) === $price['with_tax'] &&
+						! empty( $request_data['order_lines'][0] ) ) {
 						$full = $remaining / ( $request_data['order_lines'][0]['vat'] + 1 );
 						if ( $full > 0 ) {
 							$request_data['order_lines'][0]['amount'] = $full;

@@ -125,18 +125,18 @@ class InstantSettle {
 		$settle_types = reepay()->get_setting( 'settle' ) ?: array();
 
 		if ( in_array( self::SETTLE_PHYSICAL, $settle_types, true ) &&
-			 ( ! wcs_is_subscription_product( $product ) &&
-			   $product->needs_shipping() &&
-			   ! $product->is_downloadable() )
+			( ! wcs_is_subscription_product( $product ) &&
+				$product->needs_shipping() &&
+				! $product->is_downloadable() )
 		) {
 			return true;
 		} elseif ( in_array( self::SETTLE_VIRTUAL, $settle_types, true ) &&
-				   ( ! wcs_is_subscription_product( $product ) &&
-					 ( $product->is_virtual() || $product->is_downloadable() ) )
+					( ! wcs_is_subscription_product( $product ) &&
+					( $product->is_virtual() || $product->is_downloadable() ) )
 		) {
 			return true;
 		} elseif ( in_array( self::SETTLE_RECURRING, $settle_types, true ) &&
-				   wcs_is_subscription_product( $product )
+					wcs_is_subscription_product( $product )
 		) {
 			return true;
 		}
