@@ -221,17 +221,17 @@ class OrderStatuses {
 	/**
 	 * Get a status for Authorized payments.
 	 *
-	 * @param WC_Order $order  current order.
-	 * @param string   $default default status.
+	 * @param WC_Order $order          current order.
+	 * @param string   $default_status default status.
 	 *
 	 * @return string
 	 */
-	public static function get_authorized_order_status( WC_Order $order, string $default = 'on-hold' ): string {
+	public static function get_authorized_order_status( WC_Order $order, string $default_status = 'on-hold' ): string {
 		if ( self::$status_sync_enabled && rp_is_order_paid_via_reepay( $order ) && ! order_contains_subscription( $order ) ) {
 			return self::$status_authorized;
 		}
 
-		return $default;
+		return $default_status;
 	}
 
 	/**

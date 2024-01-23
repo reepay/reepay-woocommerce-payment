@@ -37,7 +37,7 @@ class WooBlocksIntegration {
 		foreach ( Gateways::PAYMENT_METHODS as $payment_method ) {
 			Package::container()->register(
 				$payment_method,
-				function ( Container $container ) use ( $payment_method ) {
+				function () use ( $payment_method ) {
 					return new WooBlocksPaymentMethod( $payment_method );
 				}
 			);
