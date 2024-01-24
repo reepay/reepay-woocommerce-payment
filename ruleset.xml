@@ -10,8 +10,6 @@
 
         <exclude name="WordPress.PHP.DisallowShortTernary.Found"/>
 
-        <exclude name="WordPress.WhiteSpace.PrecisionAlignment"/>
-
         <exclude name="WordPress.Files.FileName"/>
 
         <exclude name="WordPress.Security.NonceVerification.Recommended"/>
@@ -23,5 +21,11 @@
         <exclude name="WordPress.Security.SafeRedirect.wp_redirect_wp_redirect"/>
 
         <exclude name="Squiz.Commenting.FunctionCommentThrowTag.Missing"/>
+
+        <exclude name="Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed"/>
+
+        <exclude name="Universal.Operators.DisallowShortTernary.Found"/>
+
+        <exclude name="WordPress.Security.EscapeOutput.ExceptionNotEscaped"/>
     </rule>
 </ruleset>

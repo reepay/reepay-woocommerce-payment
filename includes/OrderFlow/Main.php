@@ -29,4 +29,3 @@ class Main {
 		new Webhook();
 	}
 }
-

@@ -554,8 +554,8 @@ class ReepayCheckout extends ReepayGateway {
 					<?php endif; ?>
 
 					<input type="hidden"
-						   name="<?php echo esc_attr( $this->get_field_key( $key ) ); ?>"
-						   value="<?php echo esc_attr( $is_webhook_configured ); ?>"/>
+							name="<?php echo esc_attr( $this->get_field_key( $key ) ); ?>"
+							value="<?php echo esc_attr( $is_webhook_configured ); ?>"/>
 				</fieldset>
 			</td>
 		</tr>
@@ -622,8 +622,8 @@ class ReepayCheckout extends ReepayGateway {
 
 		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription.
 		if ( 'yes' === $this->save_cc ||
-			 wcs_cart_have_subscription() ||
-			 wcs_is_payment_change()
+			wcs_cart_have_subscription() ||
+			wcs_is_payment_change()
 		) {
 			$this->tokenization_script();
 

@@ -77,7 +77,7 @@ class MobilepaySubscriptions extends ReepayGateway {
 	 */
 	public function is_available(): bool {
 		return parent::is_available()
-			   && ( ( is_checkout() && wcs_cart_have_subscription() )
+				&& ( ( is_checkout() && wcs_cart_have_subscription() )
 					|| is_add_payment_method_page() );
 	}
 

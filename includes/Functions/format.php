@@ -20,14 +20,14 @@ if ( ! function_exists( 'rp_format_credit_card' ) ) {
 		$cc_length = strlen( $cc );
 		$new_cc    = substr( $cc, - 4 );
 
-		for ( $i = $cc_length - 5; $i >= 0; $i -- ) {
+		for ( $i = $cc_length - 5; $i >= 0; $i-- ) {
 			if ( ( ( $i + 1 ) - $cc_length ) % 4 === 0 ) {
 				$new_cc = ' ' . $new_cc;
 			}
 			$new_cc = $cc[ $i ] . $new_cc;
 		}
 
-		for ( $i = 7; $i < $cc_length - 4; $i ++ ) {
+		for ( $i = 7; $i < $cc_length - 4; $i++ ) {
 			if ( ' ' === $new_cc[ $i ] ) {
 				continue;
 			}

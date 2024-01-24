@@ -19,7 +19,7 @@ defined( 'ABSPATH' ) || exit();
 <?php if ( ! $webhook_installed ) : ?>
 	<p>
 		<?php
-		echo sprintf(
+		printf(
 				// translators: %s link to reepay dashboard.
 			__( 'Please setup WebHook in <a href="%s" target="_blank">Billwerk+ Dashboard</a>.', 'reepay-checkout-gateway' ),
 			'https://admin.billwerk.plus/'
@@ -27,7 +27,7 @@ defined( 'ABSPATH' ) || exit();
 		?>
 		<br>
 		<?php
-		echo sprintf(
+		printf(
 			// translators: %1$s, %2$s - webhook url.
 			__( 'WebHook URL: <a href="%1$s" target="_blank">%2$s</a>', 'reepay-checkout-gateway' ),
 			ReepayGateway::get_webhook_url(),

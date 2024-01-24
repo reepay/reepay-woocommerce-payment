@@ -60,4 +60,3 @@ class PluginsPage {
 		return $links;
 	}
 }
-

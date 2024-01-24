@@ -19,12 +19,12 @@ class Main {
 	 * Main constructor.
 	 */
 	public function __construct() {
-		include_once dirname( __FILE__ ) . '/currency.php';
-		include_once dirname( __FILE__ ) . '/customer.php';
-		include_once dirname( __FILE__ ) . '/format.php';
-		include_once dirname( __FILE__ ) . '/gateways.php';
-		include_once dirname( __FILE__ ) . '/hpos.php';
-		include_once dirname( __FILE__ ) . '/order.php';
-		include_once dirname( __FILE__ ) . '/subscriptions.php';
+		include_once __DIR__ . '/currency.php';
+		include_once __DIR__ . '/customer.php';
+		include_once __DIR__ . '/format.php';
+		include_once __DIR__ . '/gateways.php';
+		include_once __DIR__ . '/hpos.php';
+		include_once __DIR__ . '/order.php';
+		include_once __DIR__ . '/subscriptions.php';
 	}
 }

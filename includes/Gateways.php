@@ -130,4 +130,3 @@ class Gateways {
 		return $this->gateways['reepay_checkout'] ?? null;
 	}
 }
-
