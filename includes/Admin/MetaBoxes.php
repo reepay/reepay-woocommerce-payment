@@ -44,7 +44,12 @@ class MetaBoxes {
 			? wc_get_page_screen_id( 'shop-order' )
 			: 'shop_order';
 
-		$order_id = ! empty( $_REQUEST['id'] ) ? $_REQUEST['id'] : 0;
+		if(!empty($_REQUEST['id'])){
+			$order_id = $_REQUEST['id'];
+		}elseif (!empty($_GET['post'])){
+			$order_id = $_GET['post'];
+		}
+
 		$order    = wc_get_order( $order_id );
 		if ( $order ) {
 			$order_data = $order->get_data();
@@ -67,6 +72,7 @@ class MetaBoxes {
 			} else {
 				$subscription = $order->get_meta( '_reepay_subscription_handle' );
 			}
+
 
 			add_meta_box(
 				'reepay_checkout_customer',
