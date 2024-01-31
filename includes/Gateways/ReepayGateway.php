@@ -1396,10 +1396,43 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 
 			$price          = $order->get_line_subtotal( $order_item, false, false );
+			$this->log(
+				array(
+					'source' => 'Price',
+					'result' => $price,
+				)
+			);
+
 			$price_with_tax = $order->get_line_subtotal( $order_item, true, false );
+			$this->log(
+				array(
+					'source' => 'Price with tax',
+					'result' => $price_with_tax,
+				)
+			);
+
 			$tax            = $price_with_tax - $price;
+			$this->log(
+				array(
+					'source' => 'Tax amount',
+					'result' => $tax,
+				)
+			);
+
 			$tax_percent    = ( $tax > 0 && $price > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
+			$this->log(
+				array(
+					'source' => 'Tax percent',
+					'result' => $tax_percent,
+				)
+			);
 			$unit_price     = round( ( $prices_incl_tax ? $price_with_tax : $price ) / $order_item->get_quantity(), 2 );
+			$this->log(
+				array(
+					'source' => 'Unit price',
+					'result' => $unit_price,
+				)
+			);
 
 			if ( $only_not_settled && ! empty( $order_item->get_meta( 'settled' ) ) ) {
 				continue;
