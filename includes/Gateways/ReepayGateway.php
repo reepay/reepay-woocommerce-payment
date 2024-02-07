@@ -1439,7 +1439,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 
 			$items[] = array(
-				'ordertext'       => $order_item->get_name(),
+				'ordertext'       => rp_clear_ordertext($order_item->get_name()),
 				'quantity'        => $order_item->get_quantity(),
 				'amount'          => rp_prepare_amount( $unit_price, $order->get_currency() ),
 				'vat'             => round( $tax_percent / 100, 2 ),
