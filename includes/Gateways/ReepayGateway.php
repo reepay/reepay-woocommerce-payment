@@ -1389,13 +1389,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			if ( $order_item->get_product() && wcr_is_subscription_product( $order_item->get_product() ) ) {
 				$fee = $order_item->get_product()->get_meta( '_reepay_subscription_fee' );
 				if ( ! empty( $fee ) && ! empty( $fee['enabled'] ) && 'yes' === $fee['enabled'] ) {
-					$setup_fees[] = rp_clear_ordertext($order_item->get_product()->get_name()) . ' - ' . $fee['text'];
+					$setup_fees[] = rp_clear_ordertext( $order_item->get_product()->get_name() ) . ' - ' . $fee['text'];
 				}
 				$sub_amount_discount += floatval( $order_item->get_meta( '_line_discount' ) );
 				continue;
 			}
 
-			$price          = $order->get_line_subtotal( $order_item, false, false );
+			$price = $order->get_line_subtotal( $order_item, false, false );
 			$this->log(
 				array(
 					'source' => 'Price',
@@ -1411,7 +1411,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				)
 			);
 
-			$tax            = $price_with_tax - $price;
+			$tax = $price_with_tax - $price;
 			$this->log(
 				array(
 					'source' => 'Tax amount',
@@ -1419,14 +1419,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				)
 			);
 
-			$tax_percent    = ( $tax > 0 && $price > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
+			$tax_percent = ( $tax > 0 && $price > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
 			$this->log(
 				array(
 					'source' => 'Tax percent',
 					'result' => $tax_percent,
 				)
 			);
-			$unit_price     = round( ( $prices_incl_tax ? $price_with_tax : $price ) / $order_item->get_quantity(), 2 );
+			$unit_price = round( ( $prices_incl_tax ? $price_with_tax : $price ) / $order_item->get_quantity(), 2 );
 			$this->log(
 				array(
 					'source' => 'Unit price',
@@ -1439,7 +1439,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 
 			$items[] = array(
-				'ordertext'       => rp_clear_ordertext($order_item->get_name()),
+				'ordertext'       => rp_clear_ordertext( $order_item->get_name() ),
 				'quantity'        => $order_item->get_quantity(),
 				'amount'          => rp_prepare_amount( $unit_price, $order->get_currency() ),
 				'vat'             => round( $tax_percent / 100, 2 ),

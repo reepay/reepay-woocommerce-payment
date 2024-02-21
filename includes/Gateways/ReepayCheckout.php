@@ -83,7 +83,7 @@ class ReepayCheckout extends ReepayGateway {
 		$this->failed_webhooks_email = $this->settings['failed_webhooks_email'] ?: $this->failed_webhooks_email;
 		$this->handle_failover       = ! empty( $this->settings['handle_failover'] ) ?: $this->handle_failover;
 
-		if(!empty($this->settings['settle']) && is_array( $this->settings['settle'])){
+		if ( ! empty( $this->settings['settle'] ) && is_array( $this->settings['settle'] ) ) {
 			$this->settle = $this->settings['settle'];
 		}
 
