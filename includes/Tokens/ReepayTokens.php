@@ -217,11 +217,11 @@ abstract class ReepayTokens {
 	public static function get_payment_token_subscription( WC_Subscription $subscription ) {
 		$token = $subscription->get_meta( '_reepay_token' );
 		// If token wasn't stored in Subscription.
-		if ( empty( $token ) ) {
+		if ( ! is_wp_error( $token ) && empty( $token ) ) {
 			$order = $subscription->get_parent();
-			if ( $order ) {
+			if ( ! is_wp_error( $order ) && $order ) {
 				$token = $order->get_meta( '_reepay_token' );
-				if ( empty( $token ) ) {
+				if ( ! is_wp_error( $order ) && empty( $token ) ) {
 					$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
 					if ( ! empty( $invoice_data ) && ! is_wp_error( $invoice_data ) ) {
 						if ( ! empty( $invoice_data['recurring_payment_method'] ) ) {
@@ -285,7 +285,7 @@ abstract class ReepayTokens {
 	 *
 	 * @return bool
 	 */
-	public static function delete_card( WC_Payment_Token $token ): bool {
+	public static function delete_card( WC_Payment_Token $token ) {
 		$result = reepay()->api( 'api-delete-card' )->delete_payment_method( $token->get_token() );
 
 		if ( is_wp_error( $result ) ) {

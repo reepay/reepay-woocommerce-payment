@@ -44,48 +44,40 @@ class MetaBoxes {
 			? wc_get_page_screen_id( 'shop-order' )
 			: 'shop_order';
 
-		$order_id = ! empty( $_REQUEST['id'] ) ? $_REQUEST['id'] : 0;
-		$order    = wc_get_order( $order_id );
-		if ( $order ) {
-			$order_data = $order->get_data();
+		if ( ! empty( $_REQUEST['id'] ) ) {
+			$order_id = $_REQUEST['id'];
+		} elseif ( ! empty( $_GET['post'] ) ) {
+			$order_id = $_GET['post'];
+		}
 
-			if ( empty( $order ) || ! rp_is_order_paid_via_reepay( $order ) ) {
-				return;
-			}
+		if ( ! empty( $order_id ) ) {
+			$order = wc_get_order( $order_id );
+			if ( $order ) {
+				$order_data = $order->get_data();
 
-			$gateway = rp_get_payment_method( $order );
+				if ( empty( $order ) || ! rp_is_order_paid_via_reepay( $order ) ) {
+					return;
+				}
 
-			if ( empty( $gateway ) ) {
-				return;
-			}
+				$gateway = rp_get_payment_method( $order );
 
-			if ( ! empty( $order->get_meta( '_reepay_order' ) ) && 0 !== $order_data['parent_id'] ) {
-				$parent_order = wc_get_order( $order_data['parent_id'] );
-				$subscription = $parent_order->get_meta( '_reepay_subscription_handle' );
-			} elseif ( ! empty( $order->get_meta( '_reepay_subscription_handle_parent' ) ) ) {
-				$subscription = $order->get_meta( '_reepay_subscription_handle_parent' );
-			} else {
-				$subscription = $order->get_meta( '_reepay_subscription_handle' );
-			}
+				if ( empty( $gateway ) ) {
+					return;
+				}
 
-			add_meta_box(
-				'reepay_checkout_customer',
-				__( 'Customer', 'reepay-checkout-gateway' ),
-				array( $this, 'generate_meta_box_content_customer' ),
-				$screen,
-				'side',
-				'high',
-				array(
-					'order'   => $order,
-					'gateway' => $gateway,
-				)
-			);
+				if ( ! empty( $order->get_meta( '_reepay_order' ) ) && 0 !== $order_data['parent_id'] ) {
+					$parent_order = wc_get_order( $order_data['parent_id'] );
+					$subscription = $parent_order->get_meta( '_reepay_subscription_handle' );
+				} elseif ( ! empty( $order->get_meta( '_reepay_subscription_handle_parent' ) ) ) {
+					$subscription = $order->get_meta( '_reepay_subscription_handle_parent' );
+				} else {
+					$subscription = $order->get_meta( '_reepay_subscription_handle' );
+				}
 
-			if ( ! empty( $order->get_transaction_id() ) ) {
 				add_meta_box(
-					'reepay_checkout_invoice',
-					__( 'Invoice', 'reepay-checkout-gateway' ),
-					array( $this, 'generate_meta_box_content_invoice' ),
+					'reepay_checkout_customer',
+					__( 'Customer', 'reepay-checkout-gateway' ),
+					array( $this, 'generate_meta_box_content_customer' ),
 					$screen,
 					'side',
 					'high',
@@ -94,21 +86,36 @@ class MetaBoxes {
 						'gateway' => $gateway,
 					)
 				);
-			}
 
-			if ( ! empty( $subscription ) ) {
-				add_meta_box(
-					'reepay_checkout_subscription',
-					__( 'Subscription', 'reepay-checkout-gateway' ),
-					array( $this, 'generate_meta_box_content_subscription' ),
-					$screen,
-					'side',
-					'high',
-					array(
-						'order'   => $order,
-						'gateway' => $gateway,
-					)
-				);
+				if ( ! empty( $order->get_transaction_id() ) ) {
+					add_meta_box(
+						'reepay_checkout_invoice',
+						__( 'Invoice', 'reepay-checkout-gateway' ),
+						array( $this, 'generate_meta_box_content_invoice' ),
+						$screen,
+						'side',
+						'high',
+						array(
+							'order'   => $order,
+							'gateway' => $gateway,
+						)
+					);
+				}
+
+				if ( ! empty( $subscription ) ) {
+					add_meta_box(
+						'reepay_checkout_subscription',
+						__( 'Subscription', 'reepay-checkout-gateway' ),
+						array( $this, 'generate_meta_box_content_subscription' ),
+						$screen,
+						'side',
+						'high',
+						array(
+							'order'   => $order,
+							'gateway' => $gateway,
+						)
+					);
+				}
 			}
 		}
 	}

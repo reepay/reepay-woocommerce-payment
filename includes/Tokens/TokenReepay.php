@@ -8,11 +8,12 @@
 namespace Reepay\Checkout\Tokens;
 
 use Exception;
+use Reepay\Checkout\Tokens\ReepayTokens;
 use WC_HTTPS;
 use WC_Payment_Gateway;
 use WC_Payment_Token;
+use WC_Payment_Tokens;
 use WC_Payment_Token_CC;
-use Reepay\Checkout\Tokens\ReepayTokens;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -77,6 +78,25 @@ class TokenReepay extends WC_Payment_Token_CC {
 		ob_end_clean();
 
 		return $display;
+	}
+
+	/**
+	 * Delete payment method in reepay side.
+	 *
+	 * @param bool $force_delete From parent.
+	 *
+	 * @return bool
+	 */
+	public function delete( $force_delete = false ) {
+		global $wp;
+
+		if ( isset( $wp->query_vars['delete-payment-method'] ) ) {
+			$token_id = absint( $wp->query_vars['delete-payment-method'] );
+			$token    = WC_Payment_Tokens::get( $token_id );
+			ReepayTokens::delete_card( $token );
+		}
+
+		return parent::delete();
 	}
 
 	/**

@@ -172,14 +172,13 @@ jQuery(document).ready(function ($) {
     });
 
     $(document).on('click', '#woocommerce-order-actions .button', function (e) {
-        e.preventDefault();
-
         var order_id = $("#reepay_order_id").data('order-id');
         var amount = $('#reepay_order_total').data('order-total');
         var authorized = $('#reepay_order_total_authorized').val();
         var settled = $('#reepay_order_total_settled').val();
         var formatted_amount = $("#reepay_order_total").val();
         if (amount > 0 && settled < authorized && $("#order_status option:selected").val() == 'wc-completed') {
+            e.preventDefault();
             const settle = window.confirm('You are about to change the order status. Do you want to capture the remaining amount of ' + formatted_amount + ' at the same time? Click OK to continue with settle. Click Cancel to continue without settle.');
 
             $.ajax({
