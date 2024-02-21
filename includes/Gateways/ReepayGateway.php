@@ -1389,7 +1389,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			if ( $order_item->get_product() && wcr_is_subscription_product( $order_item->get_product() ) ) {
 				$fee = $order_item->get_product()->get_meta( '_reepay_subscription_fee' );
 				if ( ! empty( $fee ) && ! empty( $fee['enabled'] ) && 'yes' === $fee['enabled'] ) {
-					$setup_fees[] = $order_item->get_product()->get_name() . ' - ' . $fee['text'];
+					$setup_fees[] = rp_clear_ordertext($order_item->get_product()->get_name()) . ' - ' . $fee['text'];
 				}
 				$sub_amount_discount += floatval( $order_item->get_meta( '_line_discount' ) );
 				continue;

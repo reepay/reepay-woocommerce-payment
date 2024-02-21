@@ -401,7 +401,7 @@ class OrderCapture {
 		$unit_price  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
 
 		return array(
-			'ordertext'       => $order_item->get_name(),
+			'ordertext'       => rp_clear_ordertext($order_item->get_name()),
 			'quantity'        => $order_item->get_quantity(),
 			'amount'          => rp_prepare_amount( $unit_price, $order->get_currency() ),
 			'vat'             => round( $tax_percent / 100, 2 ),
