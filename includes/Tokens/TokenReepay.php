@@ -80,8 +80,14 @@ class TokenReepay extends WC_Payment_Token_CC {
 		return $display;
 	}
 
-
-	public function delete( $force_delete = false ) {
+	/**
+	 * Delete payment method in reepay side.
+	 *
+	 * @param bool $force_delete From parent.
+	 *
+	 * @return void
+	 */
+	public function delete( bool $force_delete = false ) {
 		global $wp;
 
 		if ( isset( $wp->query_vars['delete-payment-method'] ) ) {
