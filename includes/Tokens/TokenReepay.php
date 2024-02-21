@@ -85,7 +85,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 *
 	 * @param bool $force_delete From parent.
 	 *
-	 * @return void
+	 * @return bool
 	 */
 	public function delete( $force_delete = false ) {
 		global $wp;
@@ -96,7 +96,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 			ReepayTokens::delete_card( $token );
 		}
 
-		parent::delete();
+		return parent::delete();
 	}
 
 	/**
