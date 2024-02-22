@@ -160,6 +160,7 @@ class WC_ReepayCheckout {
 				'debug'                   => ! empty( $gateway_settings['debug'] ) ? $gateway_settings['debug'] : '',
 				'payment_type'            => ! empty( $gateway_settings['payment_type'] ) ? $gateway_settings['payment_type'] : '',
 				'skip_order_lines'        => ! empty( $gateway_settings['skip_order_lines'] ) ? $gateway_settings['skip_order_lines'] : '',
+				'enable_order_autocancel' => ! empty( $gateway_settings['enable_order_autocancel'] ) ? $gateway_settings['enable_order_autocancel'] : '',
 				'is_webhook_configured'   => ! empty( $gateway_settings['is_webhook_configured'] ) ? $gateway_settings['is_webhook_configured'] : '',
 				'handle_failover'         => ! empty( $gateway_settings['handle_failover'] ) ? $gateway_settings['handle_failover'] : '',
 				'payment_button_text'     => ! empty( $gateway_settings['payment_button_text'] ) ? $gateway_settings['payment_button_text'] : '',

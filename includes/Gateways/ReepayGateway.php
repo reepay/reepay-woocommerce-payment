@@ -136,6 +136,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public string $skip_order_lines = 'no';
 
 	/**
+	 * If automatically cancel unpaid orders should be ignored
+	 *
+	 * @var string
+	 */
+	public string $enable_order_autocancel = 'no';
+
+	/**
 	 * Email address for notification about failed webhooks
 	 *
 	 * @var string
@@ -1322,15 +1329,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Apply settings from Reepay Checkout Gateway to other gateways. Use it in constructor
 	 */
 	protected function apply_parent_settings() {
-		$this->private_key      = (string) reepay()->get_setting( 'private_key' );
-		$this->private_key_test = (string) reepay()->get_setting( 'private_key_test' );
-		$this->test_mode        = (string) reepay()->get_setting( 'test_mode' );
-		$this->settle           = (array) reepay()->get_setting( 'settle' );
-		$this->language         = (string) reepay()->get_setting( 'language' );
-		$this->debug            = (string) reepay()->get_setting( 'debug' );
-		$this->payment_type     = (string) reepay()->get_setting( 'payment_type' );
-		$this->skip_order_lines = (string) reepay()->get_setting( 'skip_order_lines' );
-		$this->handle_failover  = (string) reepay()->get_setting( 'handle_failover' );
+		$this->private_key             = (string) reepay()->get_setting( 'private_key' );
+		$this->private_key_test        = (string) reepay()->get_setting( 'private_key_test' );
+		$this->test_mode               = (string) reepay()->get_setting( 'test_mode' );
+		$this->settle                  = (array) reepay()->get_setting( 'settle' );
+		$this->language                = (string) reepay()->get_setting( 'language' );
+		$this->debug                   = (string) reepay()->get_setting( 'debug' );
+		$this->payment_type            = (string) reepay()->get_setting( 'payment_type' );
+		$this->skip_order_lines        = (string) reepay()->get_setting( 'skip_order_lines' );
+		$this->handle_failover         = (string) reepay()->get_setting( 'handle_failover' );
+		$this->enable_order_autocancel = (string) reepay()->get_setting( 'enable_order_autocancel' );
 	}
 
 	/**
