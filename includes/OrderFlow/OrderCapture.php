@@ -224,7 +224,7 @@ class OrderCapture {
 			}
 		}
 
-		foreach ( $order->get_items( array( 'shipping', 'fee' ) ) as $item ) {
+		foreach ( $order->get_items( array( 'shipping', 'fee', 'pw_gift_card' ) ) as $item ) {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
 				$total     = $item_data['amount'] * $item_data['quantity'];
@@ -380,6 +380,11 @@ class OrderCapture {
 			}
 		}
 
+		foreach ( $order->get_items( 'pw_gift_card' ) as $line ) {
+			$amount_gift = apply_filters( 'pwgc_to_order_currency', floatval( $line->get_amount() ), $order );
+			$amount -= $amount_gift;
+		}
+
 		return $amount;
 	}
 
@@ -393,12 +398,16 @@ class OrderCapture {
 	 */
 	public function get_item_data( WC_Order_Item $order_item, WC_Order $order ): array {
 		$prices_incl_tax = wc_prices_include_tax();
-
 		$price = self::get_item_price( $order_item, $order );
 
 		$tax         = $price['with_tax'] - $price['original'];
 		$tax_percent = ( $tax > 0 ) ? 100 / ( $price['original'] / $tax ) : 0;
-		$unit_price  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
+
+		if($order_item->is_type( 'pw_gift_card' )){
+			$unit_price = apply_filters( 'pwgc_to_order_currency', floatval( $order_item->get_amount() ) * -1, $order );
+		}else{
+			$unit_price  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
+		}
 
 		return array(
 			'ordertext'       => rp_clear_ordertext( $order_item->get_name() ),

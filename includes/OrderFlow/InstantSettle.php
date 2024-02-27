@@ -169,6 +169,13 @@ class InstantSettle {
 			}
 		}
 
+		if(!empty($items_data)){
+			foreach ( $order->get_items( 'pw_gift_card' ) as $line ) {
+				$items_data[] = $line;
+			}
+		}
+
+
 		if ( in_array( self::SETTLE_FEE, $settle_types, true ) ) {
 			foreach ( $order->get_fees() as $i => $order_fee ) {
 				$items_data[ $i ] = $order_fee;
