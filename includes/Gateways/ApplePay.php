@@ -45,6 +45,18 @@ class ApplePay extends ReepayGateway {
 		$this->supports     = array(
 			'products',
 			'refunds',
+			'add_payment_method',
+			'tokenization',
+			'subscriptions',
+			'subscription_cancellation',
+			'subscription_suspension',
+			'subscription_reactivation',
+			'subscription_amount_changes',
+			'subscription_date_changes',
+			'subscription_payment_method_change',
+			'subscription_payment_method_change_customer',
+			'subscription_payment_method_change_admin',
+			'multiple_subscriptions',
 		);
 		$this->logos        = array( 'applepay' );
 
@@ -55,6 +67,9 @@ class ApplePay extends ReepayGateway {
 		if ( 'yes' === $this->enabled ) {
 			add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_additional_assets' ), 10000 );
 		}
+
+		add_action( 'wp_ajax_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
+		add_action( 'wp_ajax_nopriv_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
 	}
 
 	/**
@@ -73,5 +88,18 @@ class ApplePay extends ReepayGateway {
 			});
 			"
 		);
+	}
+
+	/**
+	 * If There are no payment fields show the description if set.
+	 *
+	 * @return void
+	 */
+	public function payment_fields() {
+		parent::payment_fields();
+
+		$this->tokenization_script();
+		$this->saved_payment_methods();
+		$this->save_payment_method_checkbox();
 	}
 }
