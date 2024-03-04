@@ -46,7 +46,7 @@ class WoocommerceExists {
 </div>
 OUTPUT;
 
-		echo sprintf(
+		printf(
 			$template,
 			esc_html__(
 				'WooCommerce is inactive or missing.',

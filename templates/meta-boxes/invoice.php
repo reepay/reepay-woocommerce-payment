@@ -53,8 +53,8 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 		<li class="reepay-admin-section-li-small" style="display: flex;  align-items: center;">
 			<?php if ( isset( $card_logo ) ) : ?>
 				<img style="max-width: 70px; margin-right: 0"
-					 src="<?php echo $card_logo; ?>"
-					 class="reepay-admin-card-logo"/>
+					src="<?php echo $card_logo; ?>"
+					class="reepay-admin-card-logo"/>
 			<?php endif; ?>
 			<?php echo esc_html( rp_format_credit_card( $order_data['transactions'][0]['card_transaction']['masked_card'] ) ); ?>
 		</li>
@@ -86,7 +86,7 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 				&nbsp;
 			</span>
 			<?php echo rp_make_initial_amount( $order_data['authorized_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ); ?>
-	   </span>
+		</span>
 	</li>
 
 	<li class="reepay-admin-section-li">

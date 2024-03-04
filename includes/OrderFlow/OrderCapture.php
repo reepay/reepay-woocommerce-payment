@@ -93,9 +93,9 @@ class OrderCapture {
 		$order    = wc_get_order( $order_id );
 
 		if ( rp_is_order_paid_via_reepay( $order ) &&
-			 empty( $item->get_meta( 'settled' ) ) &&
-			 floatval( $item->get_data()['total'] ) > 0 &&
-			 $this->check_capture_allowed( $order )
+			empty( $item->get_meta( 'settled' ) ) &&
+			floatval( $item->get_data()['total'] ) > 0 &&
+			$this->check_capture_allowed( $order )
 		) {
 			$price = self::get_item_price( $item_id, $order );
 
@@ -163,12 +163,11 @@ class OrderCapture {
 			if ( ! rp_hpos_is_order_page() ) {
 				return;
 			}
-		} else {
-			if ( ! isset( $_POST['post_type'] ) ||
-				 'shop_order' !== $_POST['post_type'] ||
-				 ! isset( $_POST['post_ID'] ) ) {
+		} elseif ( ! isset( $_POST['post_type'] ) ||
+				'shop_order' !== $_POST['post_type'] ||
+				! isset( $_POST['post_ID'] ) ) {
+
 				return;
-			}
 		}
 
 		if ( ! isset( $_POST['line_item_capture'] ) && ! isset( $_POST['all_items_capture'] ) ) {
@@ -255,7 +254,7 @@ class OrderCapture {
 	 *
 	 * @return bool
 	 */
-	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = false ) : bool {
+	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = false ): bool {
 		unset( $_POST['post_status'] ); // // Prevent order status changing by WooCommerce
 
 		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note );
@@ -356,7 +355,7 @@ class OrderCapture {
 	 */
 	public function check_capture_allowed( WC_Order $order ): bool {
 		if ( ! rp_is_order_paid_via_reepay( $order ) ||
-			 class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
+			class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
 			return false;
 		}
 
@@ -402,7 +401,7 @@ class OrderCapture {
 		$unit_price  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
 
 		return array(
-			'ordertext'       => $order_item->get_name(),
+			'ordertext'       => rp_clear_ordertext( $order_item->get_name() ),
 			'quantity'        => $order_item->get_quantity(),
 			'amount'          => rp_prepare_amount( $unit_price, $order->get_currency() ),
 			'vat'             => round( $tax_percent / 100, 2 ),

@@ -73,7 +73,6 @@ class ReepayCheckout extends ReepayGateway {
 		$this->private_key           = apply_filters( 'woocommerce_reepay_private_key', $this->settings['private_key'] ?: $this->private_key );
 		$this->private_key_test      = apply_filters( 'woocommerce_reepay_private_key_test', $this->settings['private_key_test'] ?: $this->private_key_test );
 		$this->test_mode             = $this->settings['test_mode'] ?: $this->test_mode;
-		$this->settle                = $this->settings['settle'] ?: $this->settle;
 		$this->language              = $this->settings['language'] ?: $this->language;
 		$this->save_cc               = $this->settings['save_cc'] ?: $this->save_cc;
 		$this->debug                 = $this->settings['debug'] ?: $this->debug;
@@ -83,6 +82,10 @@ class ReepayCheckout extends ReepayGateway {
 		$this->skip_order_lines      = $this->settings['skip_order_lines'] ?: $this->skip_order_lines;
 		$this->failed_webhooks_email = $this->settings['failed_webhooks_email'] ?: $this->failed_webhooks_email;
 		$this->handle_failover       = ! empty( $this->settings['handle_failover'] ) ?: $this->handle_failover;
+
+		if ( ! empty( $this->settings['settle'] ) && is_array( $this->settings['settle'] ) ) {
+			$this->settle = $this->settings['settle'];
+		}
 
 		if ( 'yes' === $this->save_cc ) {
 			$this->supports[] = 'add_payment_method';
@@ -551,8 +554,8 @@ class ReepayCheckout extends ReepayGateway {
 					<?php endif; ?>
 
 					<input type="hidden"
-						   name="<?php echo esc_attr( $this->get_field_key( $key ) ); ?>"
-						   value="<?php echo esc_attr( $is_webhook_configured ); ?>"/>
+							name="<?php echo esc_attr( $this->get_field_key( $key ) ); ?>"
+							value="<?php echo esc_attr( $is_webhook_configured ); ?>"/>
 				</fieldset>
 			</td>
 		</tr>
@@ -619,8 +622,8 @@ class ReepayCheckout extends ReepayGateway {
 
 		// The "Save card or use existed" form should be appeared when active or when the cart has a subscription.
 		if ( 'yes' === $this->save_cc ||
-			 wcs_cart_have_subscription() ||
-			 wcs_is_payment_change()
+			wcs_cart_have_subscription() ||
+			wcs_is_payment_change()
 		) {
 			$this->tokenization_script();
 

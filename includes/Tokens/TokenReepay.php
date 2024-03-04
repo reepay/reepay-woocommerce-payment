@@ -8,11 +8,12 @@
 namespace Reepay\Checkout\Tokens;
 
 use Exception;
+use Reepay\Checkout\Tokens\ReepayTokens;
 use WC_HTTPS;
 use WC_Payment_Gateway;
 use WC_Payment_Token;
+use WC_Payment_Tokens;
 use WC_Payment_Token_CC;
-use Reepay\Checkout\Tokens\ReepayTokens;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -68,7 +69,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 		ob_start();
 		?>
 		<img <?php echo $style; ?> src="<?php echo $img; ?>"
-								   alt="<?php echo wc_get_credit_card_type_label( $this->get_card_type() ); ?>"/>
+									alt="<?php echo wc_get_credit_card_type_label( $this->get_card_type() ); ?>"/>
 		<?php echo esc_html( $this->get_masked_card() ); ?>
 		<?php echo esc_html( $this->get_expiry_month() . '/' . substr( $this->get_expiry_year(), 2 ) ); ?>
 
@@ -77,6 +78,25 @@ class TokenReepay extends WC_Payment_Token_CC {
 		ob_end_clean();
 
 		return $display;
+	}
+
+	/**
+	 * Delete payment method in reepay side.
+	 *
+	 * @param bool $force_delete From parent.
+	 *
+	 * @return bool
+	 */
+	public function delete( $force_delete = false ) {
+		global $wp;
+
+		if ( isset( $wp->query_vars['delete-payment-method'] ) ) {
+			$token_id = absint( $wp->query_vars['delete-payment-method'] );
+			$token    = WC_Payment_Tokens::get( $token_id );
+			ReepayTokens::delete_card( $token );
+		}
+
+		return parent::delete();
 	}
 
 	/**
@@ -228,15 +248,12 @@ class TokenReepay extends WC_Payment_Token_CC {
 		 */
 		if ( ! empty( $method['method']['last4'] ) ) {
 			/* translators: 1: credit card type 2: last 4 digits */
-			echo sprintf( __( '%1$s ending in %2$s', 'woocommerce' ), esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) ), esc_html( $method['method']['last4'] ) );
-		} else {
-			if ( isset( $method['method']['brand'] ) ) {
+			printf( __( '%1$s ending in %2$s', 'woocommerce' ), esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) ), esc_html( $method['method']['last4'] ) );
+		} elseif ( isset( $method['method']['brand'] ) ) {
 				echo esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) );
-			} else {
-				echo esc_html( wc_get_credit_card_type_label( 'visa' ) );
-			}
+		} else {
+			echo esc_html( wc_get_credit_card_type_label( 'visa' ) );
 		}
-
 	}
 
 	/**

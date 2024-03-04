@@ -31,7 +31,7 @@ if ( ! function_exists( 'wcs_is_subscription_product' ) ) {
 	 */
 	function wcs_is_subscription_product( WC_Product $product ): bool {
 		return class_exists( WC_Subscriptions_Product::class, false ) &&
-			   WC_Subscriptions_Product::is_subscription( $product );
+				WC_Subscriptions_Product::is_subscription( $product );
 	}
 }
 
@@ -45,7 +45,7 @@ if ( ! function_exists( 'wcr_is_subscription_product' ) ) {
 	 */
 	function wcr_is_subscription_product( WC_Product $product ): bool {
 		return class_exists( WC_Reepay_Checkout::class, false ) &&
-			   WC_Reepay_Checkout::is_reepay_product( $product );
+				WC_Reepay_Checkout::is_reepay_product( $product );
 	}
 }
 
@@ -57,7 +57,7 @@ if ( ! function_exists( 'wcs_is_payment_change' ) ) {
 	 */
 	function wcs_is_payment_change(): bool {
 		return class_exists( WC_Subscriptions_Change_Payment_Gateway::class, false ) &&
-			   WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
+				WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
 	}
 }
 

@@ -520,7 +520,7 @@ class Webhook {
 		$attempts     = 0;
 		while ( $is_locked ) {
 			usleep( 500 );
-			$attempts ++;
+			++$attempts;
 			if ( $attempts > 30 ) {
 				break;
 			}

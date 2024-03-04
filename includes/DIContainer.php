@@ -125,5 +125,4 @@ class DIContainer {
 
 		return $object;
 	}
-
 }
