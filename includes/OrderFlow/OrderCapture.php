@@ -421,38 +421,17 @@ class OrderCapture {
 	/**
 	 * Get order item price for reepay.
 	 *
-	 * @param WC_Order_Item|int $order_item order item to get price and tax.
+	 * @param WC_Order_Item|WC_Order_Item_Product|int $order_item order item to get price and tax.
 	 * @param WC_Order          $order      current order.
 	 *
 	 * @return array
 	 * @noinspection PhpCastIsUnnecessaryInspection
 	 */
 	public static function get_item_price( $order_item, WC_Order $order ): array {
-		if ( is_int( $order_item ) ) {
-			$order_item = WC_Order_Factory::get_order_item( $order_item );
-		}
 
-		$price = array(
-			// get_line_total can return string.
-			'original' => (float) $order->get_line_total( $order_item, false, false ),
-		);
+		$price['original'] = $order->get_line_subtotal( $order_item, false, false );
 
-		$price['with_tax'] = $price['original'];
-
-		if ( ! empty( $order_item ) && ! is_array( $order_item ) && empty( $order_item->get_meta( '_is_card_fee' ) ) ) {
-			$tax_data = wc_tax_enabled() && method_exists( $order_item, 'get_taxes' ) ? $order_item->get_taxes() : false;
-			$taxes    = method_exists( $order, 'get_taxes' ) ? $order->get_taxes() : false;
-
-			if ( ! empty( $tax_data ) && ! empty( $taxes ) ) {
-				foreach ( $taxes as $tax ) {
-					$tax_item_id    = $tax->get_rate_id();
-					$tax_item_total = $tax_data['total'][ $tax_item_id ] ?? '';
-					if ( ! empty( $tax_item_total ) ) {
-						$price['with_tax'] += (float) $tax_item_total;
-					}
-				}
-			}
-		}
+		$price['with_tax'] = $order->get_line_subtotal( $order_item, true, false );
 
 		return $price;
 	}
