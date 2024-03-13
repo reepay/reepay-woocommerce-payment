@@ -91,7 +91,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @var string
 	 */
-	public string $language = 'en_US';
+	public string $language = '';
 
 	/**
 	 * Available payment logos
@@ -1537,6 +1537,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		$locale = get_locale();
+
+		// Wpml support
+		$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
+		if(!empty($languages) && count($languages) > 1){
+			$locale_wpml = apply_filters( 'wpml_current_language', get_locale() );
+			if(!empty($languages[$locale_wpml])){
+				$locale = $languages[$locale_wpml]['default_locale'];
+			}
+		}
+
 		if ( in_array(
 			$locale,
 			array( 'en_US', 'da_DK', 'sv_SE', 'no_NO', 'de_DE', 'es_ES', 'fr_FR', 'it_IT', 'nl_NL' ),
@@ -1579,6 +1589,33 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			'applepay'         => 'applepay',
 			'googlepay'        => 'googlepay',
 			'vipps'            => 'vipps',
+			'pp_ideal'           => 'ideal',
+			'pp_sepa'            => 'sepa',
+			'klarna_direct_bank_transfer' => 'klarna',
+			'klarna_direct_debit'            => 'klarna',
+			'pp_bancontact'            => 'bancontact',
+			'pp_blik_oc'            => 'blik',
+			'pp_eps'            => 'eps',
+			'pp_estonia_banks'            => 'card',
+			'pp_latvia_banks'            => 'card',
+			'pp_lithuania_banks'            => 'card',
+			'pp_giropay'            => 'giropay',
+			'pp_mb_way'            => 'mbway',
+			'pp_multibanco'            => 'multibanco',
+			'pp_mybank'            => 'mybank',
+			'pp_p24'            => 'p24',
+			'pp_paycoinq'            => 'paycoinq',
+			'pp_paysafecard'            => 'paysafecard',
+			'pp_paysera'            => 'paysera',
+			'pp_postfinance'            => 'postfinance',
+			'pp_satispay'            => 'satispay',
+			'pp_trustly'            => 'trustly',
+			'pp_verkkopankki'            => 'verkkopankki',
+			'pp_wechatpay'            => 'wechatpay',
+			'pp_santander'            => 'santander',
+			'offline_bank_transfer'            => 'card',
+			'offline_cash'            => 'card',
+			'offline_other'            => 'card',
 		);
 
 		if ( isset( $card_types[ $card_type ] ) ) {
