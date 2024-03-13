@@ -21,7 +21,7 @@ class PPMBWay extends ReepayGateway {
 	 * @var array
 	 */
 	public array $logos = array(
-		'mb_way',
+		'mbway',
 	);
 
 	/**
