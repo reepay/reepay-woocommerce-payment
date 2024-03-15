@@ -83,7 +83,7 @@ class OrderCapture {
 	/**
 	 * Hooked to woocommerce_after_order_fee_item_name. Print capture button.
 	 *
-	 * @param int    $item_id the id of the item being displayed.
+	 * @param int                                 $item_id the id of the item being displayed.
 	 * @param WC_Order_Item|WC_Order_Item_Product $item    the item being displayed.
 	 *
 	 * @throws Exception When `WC_Data_Store::load` validation fails.
@@ -212,8 +212,8 @@ class OrderCapture {
 		foreach ( $order->get_items() as $item ) {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
-				$price = self::get_item_price( $item, $order );
-				$total = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
+				$price     = self::get_item_price( $item, $order );
+				$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
 				if ( $total <= 0 && method_exists( $item, 'get_product' ) && $item->get_product() && wcs_is_subscription_product( $item->get_product() ) ) {
 					WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
@@ -225,12 +225,11 @@ class OrderCapture {
 			}
 		}
 
-
 		foreach ( $order->get_items( array( 'shipping', 'fee', 'pw_gift_card' ) ) as $item ) {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
-				$price = self::get_item_price( $item, $order );
-				$total = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
+				$price     = self::get_item_price( $item, $order );
+				$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
 				if ( 0 !== $total && $this->check_capture_allowed( $order ) ) {
 					$items_data[] = $item_data;
@@ -318,8 +317,8 @@ class OrderCapture {
 		unset( $_POST['post_status'] ); // Prevent order status changing by WooCommerce.
 
 		$item_data = $this->get_item_data( $item, $order );
-		$price = OrderCapture::get_item_price( $item, $order );
-		$total = $price['with_tax'];
+		$price     = self::get_item_price( $item, $order );
+		$total     = $price['with_tax'];
 
 		if ( $total <= 0 ) {
 			do_action( 'reepay_order_item_settled', $item, $order );
@@ -387,7 +386,7 @@ class OrderCapture {
 
 		foreach ( $order->get_items( 'pw_gift_card' ) as $line ) {
 			$amount_gift = apply_filters( 'pwgc_to_order_currency', floatval( $line->get_amount() ), $order );
-			$amount -= $amount_gift;
+			$amount     -= $amount_gift;
 		}
 
 		return $amount;
@@ -403,15 +402,15 @@ class OrderCapture {
 	 */
 	public function get_item_data( WC_Order_Item $order_item, WC_Order $order ): array {
 		$prices_incl_tax = wc_prices_include_tax();
-		$price = self::get_item_price( $order_item, $order );
+		$price           = self::get_item_price( $order_item, $order );
 
 		$tax         = $price['with_tax'] - $price['original'];
 		$tax_percent = ( $tax > 0 ) ? 100 / ( $price['original'] / $tax ) : 0;
 
-		if($order_item->is_type( 'pw_gift_card' )){
+		if ( $order_item->is_type( 'pw_gift_card' ) ) {
 			$unit_price = apply_filters( 'pwgc_to_order_currency', floatval( $order_item->get_amount() ) * -1, $order );
-		}else{
-			$unit_price  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
+		} else {
+			$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
 		}
 
 		return array(
@@ -427,14 +426,14 @@ class OrderCapture {
 	 * Get order item price for reepay.
 	 *
 	 * @param WC_Order_Item|WC_Order_Item_Product|int $order_item order item to get price and tax.
-	 * @param WC_Order          $order      current order.
+	 * @param WC_Order                                $order      current order.
 	 *
 	 * @return array
 	 * @noinspection PhpCastIsUnnecessaryInspection
 	 */
 	public static function get_item_price( $order_item, WC_Order $order ): array {
-		$price['original'] = floatval($order->get_line_total( $order_item, false, false ));
-		$price['with_tax'] = floatval($order->get_line_total( $order_item, true, false ));
+		$price['original'] = floatval( $order->get_line_total( $order_item, false, false ) );
+		$price['with_tax'] = floatval( $order->get_line_total( $order_item, true, false ) );
 
 		return $price;
 	}

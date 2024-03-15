@@ -1405,9 +1405,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			$price = OrderCapture::get_item_price( $order_item, $order );
 
-			$tax = $price['with_tax'] - $price['original'];
+			$tax         = $price['with_tax'] - $price['original'];
 			$tax_percent = ( $tax > 0 && $price > 0 ) ? round( 100 / ( $price['original'] / $tax ) ) : 0;
-			$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
+			$unit_price  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
 
 			if ( $only_not_settled && ! empty( $order_item->get_meta( 'settled' ) ) ) {
 				continue;
@@ -1432,7 +1432,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				$tax         = $price['with_tax'] - $price['original'];
 				$tax_percent = ( $tax > 0 ) ? 100 / ( $price['original'] / $tax ) : 0;
 
-				$unit_price  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $item_shipping->get_quantity(), 2 );
+				$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $item_shipping->get_quantity(), 2 );
 
 				if ( $only_not_settled && ! empty( $item_shipping->get_meta( 'settled' ) ) ) {
 					continue;
@@ -1538,12 +1538,12 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$locale = get_locale();
 
-		// Wpml support
+		// Wpml support.
 		$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
-		if(!empty($languages) && count($languages) > 1){
+		if ( ! empty( $languages ) && count( $languages ) > 1 ) {
 			$locale_wpml = apply_filters( 'wpml_current_language', get_locale() );
-			if(!empty($languages[$locale_wpml])){
-				$locale = $languages[$locale_wpml]['default_locale'];
+			if ( ! empty( $languages[ $locale_wpml ] ) ) {
+				$locale = $languages[ $locale_wpml ]['default_locale'];
 			}
 		}
 
@@ -1567,55 +1567,55 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 */
 	public function get_logo( string $card_type ): string {
 		$card_types = array(
-			'visa'             => 'visa',
-			'mc'               => 'mastercard',
-			'dankort'          => 'dankort',
-			'visa_dk'          => 'dankort',
-			'ffk'              => 'forbrugsforeningen',
-			'visa_elec'        => 'visa-electron',
-			'maestro'          => 'maestro',
-			'amex'             => 'american-express',
-			'diners'           => 'diners',
-			'discover'         => 'discover',
-			'jcb'              => 'jcb',
-			'mobilepay'        => 'mobilepay',
-			'ms_subscripiton'  => 'mobilepay',
-			'viabill'          => 'viabill',
-			'klarna_pay_later' => 'klarna',
-			'klarna_pay_now'   => 'klarna',
-			'resurs'           => 'resurs',
-			'china_union_pay'  => 'cup',
-			'paypal'           => 'paypal',
-			'applepay'         => 'applepay',
-			'googlepay'        => 'googlepay',
-			'vipps'            => 'vipps',
-			'pp_ideal'           => 'ideal',
-			'pp_sepa'            => 'sepa',
+			'visa'                        => 'visa',
+			'mc'                          => 'mastercard',
+			'dankort'                     => 'dankort',
+			'visa_dk'                     => 'dankort',
+			'ffk'                         => 'forbrugsforeningen',
+			'visa_elec'                   => 'visa-electron',
+			'maestro'                     => 'maestro',
+			'amex'                        => 'american-express',
+			'diners'                      => 'diners',
+			'discover'                    => 'discover',
+			'jcb'                         => 'jcb',
+			'mobilepay'                   => 'mobilepay',
+			'ms_subscripiton'             => 'mobilepay',
+			'viabill'                     => 'viabill',
+			'klarna_pay_later'            => 'klarna',
+			'klarna_pay_now'              => 'klarna',
+			'resurs'                      => 'resurs',
+			'china_union_pay'             => 'cup',
+			'paypal'                      => 'paypal',
+			'applepay'                    => 'applepay',
+			'googlepay'                   => 'googlepay',
+			'vipps'                       => 'vipps',
+			'pp_ideal'                    => 'ideal',
+			'pp_sepa'                     => 'sepa',
 			'klarna_direct_bank_transfer' => 'klarna',
-			'klarna_direct_debit'            => 'klarna',
-			'pp_bancontact'            => 'bancontact',
-			'pp_blik_oc'            => 'blik',
-			'pp_eps'            => 'eps',
+			'klarna_direct_debit'         => 'klarna',
+			'pp_bancontact'               => 'bancontact',
+			'pp_blik_oc'                  => 'blik',
+			'pp_eps'                      => 'eps',
 			'pp_estonia_banks'            => 'card',
-			'pp_latvia_banks'            => 'card',
-			'pp_lithuania_banks'            => 'card',
-			'pp_giropay'            => 'giropay',
-			'pp_mb_way'            => 'mbway',
-			'pp_multibanco'            => 'multibanco',
-			'pp_mybank'            => 'mybank',
-			'pp_p24'            => 'p24',
-			'pp_paycoinq'            => 'paycoinq',
-			'pp_paysafecard'            => 'paysafecard',
-			'pp_paysera'            => 'paysera',
-			'pp_postfinance'            => 'postfinance',
-			'pp_satispay'            => 'satispay',
-			'pp_trustly'            => 'trustly',
-			'pp_verkkopankki'            => 'verkkopankki',
-			'pp_wechatpay'            => 'wechatpay',
-			'pp_santander'            => 'santander',
-			'offline_bank_transfer'            => 'card',
-			'offline_cash'            => 'card',
-			'offline_other'            => 'card',
+			'pp_latvia_banks'             => 'card',
+			'pp_lithuania_banks'          => 'card',
+			'pp_giropay'                  => 'giropay',
+			'pp_mb_way'                   => 'mbway',
+			'pp_multibanco'               => 'multibanco',
+			'pp_mybank'                   => 'mybank',
+			'pp_p24'                      => 'p24',
+			'pp_paycoinq'                 => 'paycoinq',
+			'pp_paysafecard'              => 'paysafecard',
+			'pp_paysera'                  => 'paysera',
+			'pp_postfinance'              => 'postfinance',
+			'pp_satispay'                 => 'satispay',
+			'pp_trustly'                  => 'trustly',
+			'pp_verkkopankki'             => 'verkkopankki',
+			'pp_wechatpay'                => 'wechatpay',
+			'pp_santander'                => 'santander',
+			'offline_bank_transfer'       => 'card',
+			'offline_cash'                => 'card',
+			'offline_other'               => 'card',
 		);
 
 		if ( isset( $card_types[ $card_type ] ) ) {
