@@ -428,8 +428,8 @@ class OrderCapture {
 	 * @noinspection PhpCastIsUnnecessaryInspection
 	 */
 	public static function get_item_price( $order_item, WC_Order $order ): array {
-		$price['original'] = $order->get_line_subtotal( $order_item, false, false );
-		$price['with_tax'] = $order->get_line_subtotal( $order_item, true, false );
+		$price['original'] = $order->get_line_total( $order_item, false, false );
+		$price['with_tax'] = $order->get_line_total( $order_item, true, false );
 
 		return $price;
 	}
