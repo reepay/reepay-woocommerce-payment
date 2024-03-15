@@ -84,11 +84,11 @@ class OrderCapture {
 	 * Hooked to woocommerce_after_order_fee_item_name. Print capture button.
 	 *
 	 * @param int    $item_id the id of the item being displayed.
-	 * @param object $item    the item being displayed.
+	 * @param WC_Order_Item|WC_Order_Item_Product $item    the item being displayed.
 	 *
 	 * @throws Exception When `WC_Data_Store::load` validation fails.
 	 */
-	public function add_item_capture_button( int $item_id, object $item ) {
+	public function add_item_capture_button( int $item_id, $item ) {
 		$order_id = wc_get_order_id_by_order_item_id( $item_id );
 		$order    = wc_get_order( $order_id );
 
@@ -97,7 +97,7 @@ class OrderCapture {
 			floatval( $item->get_data()['total'] ) > 0 &&
 			$this->check_capture_allowed( $order )
 		) {
-			$price = self::get_item_price( $item_id, $order );
+			$price = self::get_item_price( $item, $order );
 
 			reepay()->get_template(
 				'admin/capture-item-button.php',
@@ -212,7 +212,8 @@ class OrderCapture {
 		foreach ( $order->get_items() as $item ) {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
-				$total     = $item_data['amount'] * $item_data['quantity'];
+				$price = self::get_item_price( $item, $order );
+				$total = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
 				if ( $total <= 0 && method_exists( $item, 'get_product' ) && $item->get_product() && wcs_is_subscription_product( $item->get_product() ) ) {
 					WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
@@ -224,10 +225,13 @@ class OrderCapture {
 			}
 		}
 
+
 		foreach ( $order->get_items( array( 'shipping', 'fee', 'pw_gift_card' ) ) as $item ) {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
-				$total     = $item_data['amount'] * $item_data['quantity'];
+				$price = self::get_item_price( $item, $order );
+				$total = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
+
 				if ( 0 !== $total && $this->check_capture_allowed( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
@@ -314,7 +318,8 @@ class OrderCapture {
 		unset( $_POST['post_status'] ); // Prevent order status changing by WooCommerce.
 
 		$item_data = $this->get_item_data( $item, $order );
-		$total     = $item_data['amount'] * $item_data['quantity'];
+		$price = OrderCapture::get_item_price( $item, $order );
+		$total = $price['with_tax'];
 
 		if ( $total <= 0 ) {
 			do_action( 'reepay_order_item_settled', $item, $order );
@@ -428,8 +433,8 @@ class OrderCapture {
 	 * @noinspection PhpCastIsUnnecessaryInspection
 	 */
 	public static function get_item_price( $order_item, WC_Order $order ): array {
-		$price['original'] = $order->get_line_total( $order_item, false, false );
-		$price['with_tax'] = $order->get_line_total( $order_item, true, false );
+		$price['original'] = floatval($order->get_line_total( $order_item, false, false ));
+		$price['with_tax'] = floatval($order->get_line_total( $order_item, true, false ));
 
 		return $price;
 	}

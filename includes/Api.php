@@ -710,6 +710,7 @@ class Api {
 			}
 		}
 
+
 		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
 			$request_data['amount'] = $amount;
 		} else {
@@ -736,7 +737,7 @@ class Api {
 				$order_data = $this->get_invoice_data( $order );
 				$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
 
-				if ( count( $request_data['order_lines'] ) > 1 && is_array( $line_item ) ) {
+				if ( !empty($request_data['order_lines']) && count( $request_data['order_lines'] ) > 1 && is_array( $line_item ) ) {
 					$request_data['amount'] = $remaining;
 					unset( $request_data['order_lines'] );
 
