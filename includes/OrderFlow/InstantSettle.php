@@ -103,7 +103,7 @@ class InstantSettle {
 				}
 			}
 
-			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items, true );
+			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items );
 			$order->add_meta_data( '_is_instant_settled', '1' );
 			$order->save_meta_data();
 		}
