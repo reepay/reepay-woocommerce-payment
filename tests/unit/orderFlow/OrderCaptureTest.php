@@ -50,7 +50,7 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 
 		$this->order_generator->order()->save();
 
-		$price = OrderCapture::get_item_price( $order_item_id, $this->order_generator->order() );
+		$price = OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() );
 
 		$this->expectOutputString(
 			reepay()->get_template(
@@ -891,7 +891,7 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 	 */
 	public function test_get_item_data_prices_include_tax() {
 		$product_name = 'test product';
-		$price        = 12.34;
+		$price        = 12;
 		$qty          = 2;
 		$tax_rate     = 10;
 
@@ -911,11 +911,12 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 
 		$this->order_generator->add_tax( $tax_rate );
 
+
 		$this->assertEqualsCanonicalizing(
 			array(
 				'ordertext'       => $product_name,
 				'quantity'        => $qty,
-				'amount'          => round( $price * ( 100 + $tax_rate ) ),
+				'amount'          => round( $price * ( 100 + $tax_rate )),
 				'vat'             => $tax_rate / 100,
 				'amount_incl_vat' => true,
 			),
@@ -944,8 +945,9 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 			array(
 				'original' => $price * $qty,
 				'with_tax' => $price * $qty,
+				'tax_percent' => 0,
 			),
-			OrderCapture::get_item_price( $order_item_id, $this->order_generator->order() )
+			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
 	}
 
@@ -972,8 +974,9 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 			array(
 				'original' => $sale_price * $qty,
 				'with_tax' => $sale_price * $qty,
+				'tax_percent' => 0,
 			),
-			OrderCapture::get_item_price( $order_item_id, $this->order_generator->order() )
+			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
 	}
 
@@ -1004,9 +1007,10 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 		$this->assertEqualsCanonicalizing(
 			array(
 				'original' => $sale_price * $qty,
-				'with_tax' => ( $sale_price * $qty ) * ( 1 + $tax_rate / 100 ),
+				'with_tax' => round(( $sale_price * $qty ) * ( 1 + $tax_rate / 100 ), 2),
+				'tax_percent' => round($tax_rate),
 			),
-			OrderCapture::get_item_price( $order_item_id, $this->order_generator->order() )
+			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
 	}
 
@@ -1026,8 +1030,9 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 			array(
 				'original' => $price,
 				'with_tax' => $price,
+				'tax_percent' => 0,
 			),
-			OrderCapture::get_item_price( $order_item_id, $this->order_generator->order() )
+			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
 	}
 
@@ -1047,8 +1052,9 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 			array(
 				'original' => $price,
 				'with_tax' => $price,
+				'tax_percent' => 0,
 			),
-			OrderCapture::get_item_price( $order_item_id, $this->order_generator->order() )
+			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
 	}
 }

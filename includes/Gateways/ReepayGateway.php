@@ -91,7 +91,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @var string
 	 */
-	public string $language = 'en_US';
+	public string $language = '';
 
 	/**
 	 * Available payment logos
@@ -134,6 +134,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @var string
 	 */
 	public string $skip_order_lines = 'no';
+
+	/**
+	 * If automatically cancel unpaid orders should be ignored
+	 *
+	 * @var string
+	 */
+	public string $enable_order_autocancel = 'no';
 
 	/**
 	 * Email address for notification about failed webhooks
@@ -691,8 +698,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public function get_icon(): string {
 		$logos = array_map(
 			function ( $logo ) {
+				$logo_url = $this->get_logo( $logo );
+
 				return array(
-					'src' => esc_url( reepay()->get_setting( 'images_url' ) . $logo . '.png' ),
+					'src' => $logo_url,
 					// translators: %s gateway title.
 					'alt' => esc_attr( sprintf( __( 'Pay with %s on Billwerk+', 'reepay-checkout-gateway' ), $this->get_title() ) ),
 				);
@@ -1322,15 +1331,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Apply settings from Reepay Checkout Gateway to other gateways. Use it in constructor
 	 */
 	protected function apply_parent_settings() {
-		$this->private_key      = (string) reepay()->get_setting( 'private_key' );
-		$this->private_key_test = (string) reepay()->get_setting( 'private_key_test' );
-		$this->test_mode        = (string) reepay()->get_setting( 'test_mode' );
-		$this->settle           = (array) reepay()->get_setting( 'settle' );
-		$this->language         = (string) reepay()->get_setting( 'language' );
-		$this->debug            = (string) reepay()->get_setting( 'debug' );
-		$this->payment_type     = (string) reepay()->get_setting( 'payment_type' );
-		$this->skip_order_lines = (string) reepay()->get_setting( 'skip_order_lines' );
-		$this->handle_failover  = (string) reepay()->get_setting( 'handle_failover' );
+		$this->private_key             = (string) reepay()->get_setting( 'private_key' );
+		$this->private_key_test        = (string) reepay()->get_setting( 'private_key_test' );
+		$this->test_mode               = (string) reepay()->get_setting( 'test_mode' );
+		$this->settle                  = (array) reepay()->get_setting( 'settle' );
+		$this->language                = (string) reepay()->get_setting( 'language' );
+		$this->debug                   = (string) reepay()->get_setting( 'debug' );
+		$this->payment_type            = (string) reepay()->get_setting( 'payment_type' );
+		$this->skip_order_lines        = (string) reepay()->get_setting( 'skip_order_lines' );
+		$this->handle_failover         = (string) reepay()->get_setting( 'handle_failover' );
+		$this->enable_order_autocancel = (string) reepay()->get_setting( 'enable_order_autocancel' );
 	}
 
 	/**
@@ -1395,44 +1405,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				continue;
 			}
 
-			$price = $order->get_line_subtotal( $order_item, false, false );
-			$this->log(
-				array(
-					'source' => 'Price',
-					'result' => $price,
-				)
-			);
+			$price = OrderCapture::get_item_price( $order_item, $order );
 
-			$price_with_tax = $order->get_line_subtotal( $order_item, true, false );
-			$this->log(
-				array(
-					'source' => 'Price with tax',
-					'result' => $price_with_tax,
-				)
-			);
-
-			$tax = $price_with_tax - $price;
-			$this->log(
-				array(
-					'source' => 'Tax amount',
-					'result' => $tax,
-				)
-			);
-
-			$tax_percent = ( $tax > 0 && $price > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
-			$this->log(
-				array(
-					'source' => 'Tax percent',
-					'result' => $tax_percent,
-				)
-			);
-			$unit_price = round( ( $prices_incl_tax ? $price_with_tax : $price ) / $order_item->get_quantity(), 2 );
-			$this->log(
-				array(
-					'source' => 'Unit price',
-					'result' => $unit_price,
-				)
-			);
+			$tax_percent = $price['tax_percent'];
+			$unit_price  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
 
 			if ( $only_not_settled && ! empty( $order_item->get_meta( 'settled' ) ) ) {
 				continue;
@@ -1454,9 +1430,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 				$price = OrderCapture::get_item_price( $item_shipping, $order );
 
-				$tax         = $price['with_tax'] - $price['original'];
-				$tax_percent = ( $tax > 0 ) ? 100 / ( $price['original'] / $tax ) : 0;
-				$unit_price  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $item_shipping->get_quantity(), 2 );
+				$tax_percent = $price['tax_percent'];
+
+				$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $item_shipping->get_quantity(), 2 );
 
 				if ( $only_not_settled && ! empty( $item_shipping->get_meta( 'settled' ) ) ) {
 					continue;
@@ -1561,6 +1537,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		$locale = get_locale();
+
+		// Wpml support.
+		$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
+		if ( ! empty( $languages ) && count( $languages ) > 1 ) {
+			$locale_wpml = apply_filters( 'wpml_current_language', get_locale() );
+			if ( ! empty( $languages[ $locale_wpml ] ) ) {
+				$locale = $languages[ $locale_wpml ]['default_locale'];
+			}
+		}
+
 		if ( in_array(
 			$locale,
 			array( 'en_US', 'da_DK', 'sv_SE', 'no_NO', 'de_DE', 'es_ES', 'fr_FR', 'it_IT', 'nl_NL' ),
@@ -1581,28 +1567,55 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 */
 	public function get_logo( string $card_type ): string {
 		$card_types = array(
-			'visa'             => 'visa',
-			'mc'               => 'mastercard',
-			'dankort'          => 'dankort',
-			'visa_dk'          => 'dankort',
-			'ffk'              => 'forbrugsforeningen',
-			'visa_elec'        => 'visa-electron',
-			'maestro'          => 'maestro',
-			'amex'             => 'american-express',
-			'diners'           => 'diners',
-			'discover'         => 'discover',
-			'jcb'              => 'jcb',
-			'mobilepay'        => 'mobilepay',
-			'ms_subscripiton'  => 'mobilepay',
-			'viabill'          => 'viabill',
-			'klarna_pay_later' => 'klarna',
-			'klarna_pay_now'   => 'klarna',
-			'resurs'           => 'resurs',
-			'china_union_pay'  => 'cup',
-			'paypal'           => 'paypal',
-			'applepay'         => 'applepay',
-			'googlepay'        => 'googlepay',
-			'vipps'            => 'vipps',
+			'visa'                        => 'visa',
+			'mc'                          => 'mastercard',
+			'dankort'                     => 'dankort',
+			'visa_dk'                     => 'dankort',
+			'ffk'                         => 'forbrugsforeningen',
+			'visa_elec'                   => 'visa-electron',
+			'maestro'                     => 'maestro',
+			'amex'                        => 'american-express',
+			'diners'                      => 'diners',
+			'discover'                    => 'discover',
+			'jcb'                         => 'jcb',
+			'mobilepay'                   => 'mobilepay',
+			'ms_subscripiton'             => 'mobilepay',
+			'viabill'                     => 'viabill',
+			'klarna_pay_later'            => 'klarna',
+			'klarna_pay_now'              => 'klarna',
+			'resurs'                      => 'resurs',
+			'china_union_pay'             => 'cup',
+			'paypal'                      => 'paypal',
+			'applepay'                    => 'applepay',
+			'googlepay'                   => 'googlepay',
+			'vipps'                       => 'vipps',
+			'ideal'                       => 'ideal',
+			'sepa'                        => 'sepa',
+			'klarna_direct_bank_transfer' => 'klarna',
+			'klarna_direct_debit'         => 'klarna',
+			'bancontact'                  => 'bancontact',
+			'blik_oc'                     => 'blik',
+			'eps'                         => 'eps',
+			'estonia_banks'               => 'card',
+			'latvia_banks'                => 'card',
+			'lithuania_banks'             => 'card',
+			'giropay'                     => 'giropay',
+			'mb_way'                      => 'mbway',
+			'multibanco'                  => 'multibanco',
+			'mybank'                      => 'mybank',
+			'p24'                         => 'p24',
+			'paycoinq'                    => 'paycoinq',
+			'paysafecard'                 => 'paysafecard',
+			'paysera'                     => 'paysera',
+			'postfinance'                 => 'postfinance',
+			'satispay'                    => 'satispay',
+			'trustly'                     => 'trustly',
+			'verkkopankki'                => 'verkkopankki',
+			'wechatpay'                   => 'wechatpay',
+			'santander'                   => 'santander',
+			'offline_bank_transfer'       => 'card',
+			'offline_cash'                => 'card',
+			'offline_other'               => 'card',
 		);
 
 		if ( isset( $card_types[ $card_type ] ) ) {
