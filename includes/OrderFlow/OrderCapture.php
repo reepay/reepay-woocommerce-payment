@@ -318,7 +318,7 @@ class OrderCapture {
 
 		$item_data = $this->get_item_data( $item, $order );
 		$price     = self::get_item_price( $item, $order );
-		$total     = $price['with_tax'];
+		$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
 		if ( $total <= 0 ) {
 			do_action( 'reepay_order_item_settled', $item, $order );
