@@ -404,8 +404,7 @@ class OrderCapture {
 		$prices_incl_tax = wc_prices_include_tax();
 		$price           = self::get_item_price( $order_item, $order );
 
-		$tax         = $price['with_tax'] - $price['original'];
-		$tax_percent = ( $tax > 0 ) ? 100 / ( $price['original'] / $tax ) : 0;
+		$tax_percent = $price['tax_percent'];
 
 		if ( $order_item->is_type( 'pw_gift_card' ) ) {
 			$unit_price = apply_filters( 'pwgc_to_order_currency', floatval( $order_item->get_amount() ) * -1, $order );
@@ -432,8 +431,19 @@ class OrderCapture {
 	 * @noinspection PhpCastIsUnnecessaryInspection
 	 */
 	public static function get_item_price( $order_item, WC_Order $order ): array {
+		$discount = floatval( $order_item->get_meta( '_line_discount' ) );
+		if(empty($discount)){
+			$discount = 0;
+		}
+
 		$price['original'] = floatval( $order->get_line_total( $order_item, false, false ) );
 		$price['with_tax'] = floatval( $order->get_line_total( $order_item, true, false ) );
+
+		$tax = $price['with_tax'] - $price['original'];
+		$price['tax_percent'] = ( $tax > 0 && $price['original'] > 0 ) ? round( 100 / ( $price['original'] / $tax ) ) : 0;
+
+		$price['original'] += $discount;
+		$price['with_tax'] += $discount;
 
 		return $price;
 	}
