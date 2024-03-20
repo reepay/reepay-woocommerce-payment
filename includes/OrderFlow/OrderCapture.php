@@ -432,14 +432,14 @@ class OrderCapture {
 	 */
 	public static function get_item_price( $order_item, WC_Order $order ): array {
 		$discount = floatval( $order_item->get_meta( '_line_discount' ) );
-		if(empty($discount)){
+		if ( empty( $discount ) ) {
 			$discount = 0;
 		}
 
 		$price['original'] = floatval( $order->get_line_total( $order_item, false, false ) );
 		$price['with_tax'] = floatval( $order->get_line_total( $order_item, true, false ) );
 
-		$tax = $price['with_tax'] - $price['original'];
+		$tax                  = $price['with_tax'] - $price['original'];
 		$price['tax_percent'] = ( $tax > 0 && $price['original'] > 0 ) ? round( 100 / ( $price['original'] / $tax ) ) : 0;
 
 		$price['original'] += $discount;
