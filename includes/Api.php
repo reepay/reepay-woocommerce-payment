@@ -690,7 +690,7 @@ class Api {
 	 *
 	 * @ToDO refactor function. $amount is useless.
 	 */
-	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false, bool $instant_note = false ) {
+	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false, bool $instant_note = true ) {
 		$this->log( sprintf( 'Settle: %s, %s', $order->get_id(), $amount ) );
 
 		$handle = rp_get_order_handle( $order );
@@ -736,7 +736,7 @@ class Api {
 				$order_data = $this->get_invoice_data( $order );
 				$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
 
-				if ( count( $request_data['order_lines'] ) > 1 && is_array( $line_item ) ) {
+				if ( ! empty( $request_data['order_lines'] ) && count( $request_data['order_lines'] ) > 1 && is_array( $line_item ) ) {
 					$request_data['amount'] = $remaining;
 					unset( $request_data['order_lines'] );
 

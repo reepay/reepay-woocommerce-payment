@@ -103,7 +103,7 @@ class InstantSettle {
 				}
 			}
 
-			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items, true );
+			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items );
 			$order->add_meta_data( '_is_instant_settled', '1' );
 			$order->save_meta_data();
 		}
@@ -166,6 +166,12 @@ class InstantSettle {
 
 			if ( self::can_product_be_settled_instantly( $product ) ) {
 				$items_data[] = $order_item;
+			}
+		}
+
+		if ( ! empty( $items_data ) ) {
+			foreach ( $order->get_items( 'pw_gift_card' ) as $line ) {
+				$items_data[] = $line;
 			}
 		}
 
