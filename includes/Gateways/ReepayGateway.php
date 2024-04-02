@@ -339,7 +339,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$current_name = str_replace( 'reepay_', '', $this->id );
 
-		if ( ! empty( $gateways_reepay ) ) {
+		if ( ! empty( $gateways_reepay ) and !is_wp_error($gateways_reepay) ) {
 			foreach ( $gateways_reepay as $app ) {
 				if ( stripos( $app['type'], $current_name ) !== false ) {
 					return true;
