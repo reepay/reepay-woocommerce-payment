@@ -223,7 +223,7 @@ class WC_ReepayCheckout {
 		 *
 		 * @var Api $api
 		 */
-		$api = $this->di()->get( API::class );
+		$api = $this->di()->get( Api::class );
 		$api->set_logging_source( $source );
 
 		return $api;

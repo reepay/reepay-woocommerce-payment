@@ -257,8 +257,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$result = reepay()->api( $this )->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
 		if ( is_wp_error( $result ) ) {
-			if ( $result->get_error_code() === API::ERROR_CODES['Customer has been deleted'] ||
-				$result->get_error_code() === API::ERROR_CODES['Customer not found'] ) {
+			if ( $result->get_error_code() === Api::ERROR_CODES['Customer has been deleted'] ||
+				$result->get_error_code() === Api::ERROR_CODES['Customer not found'] ) {
 				$params = array(
 					'locale'          => $this->get_language(),
 					'button_text'     => __( 'Add card', 'reepay-checkout-gateway' ),
@@ -339,7 +339,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$current_name = str_replace( 'reepay_', '', $this->id );
 
-		if ( ! empty( $gateways_reepay ) ) {
+		if ( ! empty( $gateways_reepay ) && ! is_wp_error( $gateways_reepay ) ) {
 			foreach ( $gateways_reepay as $app ) {
 				if ( stripos( $app['type'], $current_name ) !== false ) {
 					return true;
@@ -1208,11 +1208,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				if ( in_array(
 					$result->get_error_code(),
 					array(
-						API::ERROR_CODES['Invoice already authorized'],
-						API::ERROR_CODES['Invoice already settled'],
-						API::ERROR_CODES['Invoice already cancelled'],
-						API::ERROR_CODES['Customer cannot be changed on invoice'],
-						API::ERROR_CODES['Currency change not allowed'],
+						Api::ERROR_CODES['Invoice already authorized'],
+						Api::ERROR_CODES['Invoice already settled'],
+						Api::ERROR_CODES['Invoice already cancelled'],
+						Api::ERROR_CODES['Customer cannot be changed on invoice'],
+						Api::ERROR_CODES['Currency change not allowed'],
 					),
 					true
 				) ) {
