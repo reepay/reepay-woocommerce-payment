@@ -1,5 +1,5 @@
 jQuery(function ($) {
-    'use strict';
+    'use strict'
 
     window.wc_reepay_thankyou = {
         xhr: false,
@@ -12,13 +12,13 @@ jQuery(function ($) {
             this.checkPayment(function (err, data) {
                 var status_elm = $('#order-status-checking'),
                     success_elm = $('#order-success'),
-                    failed_elm = $('#order-failed');
+                    failed_elm = $('#order-failed')
 
                 switch (data.state) {
                     case 'paid':
-                        status_elm.hide();
-                        success_elm.show();
-                        break;
+                        status_elm.hide()
+                        success_elm.show()
+                        break
                     case 'reload':
                         $('.woocommerce-order').block({
                             message: WC_Reepay_Thankyou.check_message,
@@ -26,30 +26,30 @@ jQuery(function ($) {
                                 background: '#fff',
                                 opacity: 0.6
                             }
-                        });
+                        })
                         setTimeout(function () {
-                            location.reload();
-                        }, 2000);
+                            location.reload()
+                        }, 2000)
 
-                        break;
+                        break
                     case 'failed':
                     case 'aborted':
-                        status_elm.hide();
-                        failed_elm.append('<p class="transaction-error">' + data.message + "</p>");
-                        failed_elm.show();
-                        break;
+                        status_elm.hide()
+                        failed_elm.append('<p class="transaction-error">' + data.message + "</p>")
+                        failed_elm.show()
+                        break
                     default:
-                        window.wc_reepay_thankyou.attempts++;
+                        window.wc_reepay_thankyou.attempts++
 
                         if (window.wc_reepay_thankyou.attempts > 6) {
-                            return;
+                            return
                         }
 
                         setTimeout(function () {
-                            window.wc_reepay_thankyou.init();
-                        }, 10000);
+                            window.wc_reepay_thankyou.init()
+                        }, 10000)
                 }
-            });
+            })
         },
 
         /**
@@ -63,7 +63,7 @@ jQuery(function ($) {
                     background: '#fff',
                     opacity: 0.6
                 }
-            });
+            })
 
             return $.ajax({
                 type: 'POST',
@@ -76,14 +76,14 @@ jQuery(function ($) {
                 },
                 dataType: 'json'
             }).always(function () {
-                $('.woocommerce-order').unblock();
+                $('.woocommerce-order').unblock()
             }).done(function (response) {
-                callback(null, response.data);
-            });
+                callback(null, response.data)
+            })
         },
-    };
+    }
 
     $(document).ready(function () {
-        window.wc_reepay_thankyou.init();
-    });
-});
+        window.wc_reepay_thankyou.init()
+    })
+})

@@ -559,7 +559,7 @@ class Api {
 	 * @return array|mixed|object|WP_Error
 	 * @see ReepayGateway::payment_methods.
 	 */
-	public function recurring( array $payment_methods, WC_Order $order, array $data, $token = false, $payment_text = '' ) {
+	public function recurring( array $payment_methods, WC_Order $order, array $data, $token = false, string $payment_text = '' ) {
 		$params = array(
 			'locale'          => $data['language'],
 			'create_customer' => array(

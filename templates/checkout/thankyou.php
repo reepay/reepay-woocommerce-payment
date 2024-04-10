@@ -27,7 +27,7 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 		color: red;
 	}
 </style>
-<div class="woocommerce-order">
+<div class="woocommerce-order woocommerce-order--thankyou">
 
 	<?php
 	if ( $order ) :
