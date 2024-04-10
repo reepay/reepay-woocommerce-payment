@@ -266,7 +266,11 @@ class TokenReepay extends WC_Payment_Token_CC {
 	 * @return string
 	 */
 	public static function wc_get_saved_payment_method_option_html( string $html, WC_Payment_Token $token, WC_Payment_Gateway $gateway ): string {
-		if ( rp_is_reepay_payment_method( $token->get_gateway_id() ) ) {
+		$gateway_id = $token->get_gateway_id();
+		if ( 'reepay_mobilepay_subscriptions' === $gateway_id ) {
+			return '';
+		}
+		if ( rp_is_reepay_payment_method( $gateway_id ) ) {
 			$html = html_entity_decode( $html, ENT_COMPAT | ENT_XHTML, 'UTF-8' );
 		}
 
