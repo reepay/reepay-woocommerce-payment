@@ -288,7 +288,7 @@ abstract class ReepayTokens {
 	public static function delete_card( WC_Payment_Token $token ) {
 		$result = reepay()->api( 'api-delete-card' )->delete_payment_method( $token->get_token() );
 
-		if ( is_wp_error( $result ) ) {
+		if ( is_wp_error( $result ) && $result->get_error_code() !== 40 ) {
 			return false;
 		}
 
