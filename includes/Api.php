@@ -711,7 +711,7 @@ class Api {
 		}
 
 		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
-			$request_data['amount'] = $amount;
+			$request_data['amount'] = rp_prepare_amount( $amount, $order->get_currency() );
 		} else {
 			$request_data['order_lines'] = $items_data;
 		}
