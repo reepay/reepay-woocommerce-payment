@@ -84,6 +84,8 @@ jQuery(function ($) {
     }
 
     $(document).ready(function () {
-        window.wc_reepay_thankyou.init()
+        if($('.woocommerce-order--thankyou').length) {
+            window.wc_reepay_thankyou.init()
+        }
     })
 })
