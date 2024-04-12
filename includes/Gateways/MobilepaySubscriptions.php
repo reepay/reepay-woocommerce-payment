@@ -90,7 +90,6 @@ class MobilepaySubscriptions extends ReepayGateway {
 		parent::payment_fields();
 
 		$this->tokenization_script();
-		$this->saved_payment_methods();
 		$this->save_payment_method_checkbox();
 	}
 }
