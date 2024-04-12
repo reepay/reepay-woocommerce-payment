@@ -39,10 +39,10 @@ class PPSepa extends ReepayGateway {
 	 * PPSepa constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_pp_sepa';
-		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - SEPA Direct Debit', 'reepay-checkout-gateway' );
-		$this->supports     = array(
+		$this->id                     = 'reepay_pp_sepa';
+		$this->has_fields             = true;
+		$this->method_title           = __( 'Billwerk+ - SEPA Direct Debit', 'reepay-checkout-gateway' );
+		$this->supports               = array(
 			'products',
 			'refunds',
 			'add_payment_method',
@@ -58,7 +58,8 @@ class PPSepa extends ReepayGateway {
 			'subscription_payment_method_change_admin',
 			'multiple_subscriptions',
 		);
-		$this->logos        = array( 'sepa' );
+		$this->logos                  = array( 'sepa' );
+		$this->unsupported_currencies = array( 'EUR' );
 
 		parent::__construct();
 
@@ -66,6 +67,7 @@ class PPSepa extends ReepayGateway {
 
 		add_action( 'wp_ajax_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
 		add_action( 'wp_ajax_nopriv_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
+		add_filter( 'woocommerce_available_payment_gateways', array( $this, 'exclude_payment_gateway_based_on_currency' ) );
 	}
 
 

@@ -171,6 +171,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	private string $logging_source;
 
 	/**
+	 * Currencies for which payment method is not displayed
+	 *
+	 * @var string[]
+	 */
+	protected array $unsupported_currencies = array();
+
+	/**
 	 * ReepayGateway constructor.
 	 */
 	public function __construct() {
@@ -1656,5 +1663,29 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'default'     => $this->method_title,
 			),
 		);
+	}
+
+	/**
+	 * Exclude payment method if the order contains an unsupported currency
+	 *
+	 * @param WC_Payment_Gateway[] $available_gateways gateways.
+	 *
+	 * @return array
+	 */
+	public function exclude_payment_gateway_based_on_currency( array $available_gateways ): array {
+		$current_currencies = array();
+		foreach ( WC()->cart->get_cart() as $cart_item ) {
+			$item_data            = $cart_item['data'];
+			$currency             = $item_data->get_currency();
+			$current_currencies[] = $currency;
+		}
+		foreach ( $available_gateways as $gateway_id => $gateway ) {
+			if ( $gateway_id === $this->id && array_intersect( $this->unsupported_currencies, $current_currencies ) ) {
+				unset( $available_gateways[ $gateway_id ] );
+				break;
+			}
+		}
+
+		return $available_gateways;
 	}
 }
