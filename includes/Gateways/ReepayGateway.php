@@ -1673,6 +1673,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @return array
 	 */
 	public function exclude_payment_gateway_based_on_currency( array $available_gateways ): array {
+		if ( is_null( WC()->cart ) ) {
+			return $available_gateways;
+		}
 		$current_currencies = array();
 		foreach ( WC()->cart->get_cart() as $cart_item ) {
 			$item_data            = $cart_item['data'];
