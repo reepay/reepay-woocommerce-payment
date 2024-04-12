@@ -8,6 +8,7 @@
 namespace Reepay\Checkout\Tokens;
 
 use Exception;
+use Reepay\Checkout\Api;
 use WC_Order;
 use WC_Subscription;
 use WC_Payment_Token;
@@ -288,7 +289,7 @@ abstract class ReepayTokens {
 	public static function delete_card( WC_Payment_Token $token ) {
 		$result = reepay()->api( 'api-delete-card' )->delete_payment_method( $token->get_token() );
 
-		if ( is_wp_error( $result ) && $result->get_error_code() !== 40 ) {
+		if ( is_wp_error( $result ) && $result->get_error_code() !== Api::ERROR_CODES['Payment method not found'] ) {
 			return false;
 		}
 
