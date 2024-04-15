@@ -171,6 +171,21 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	private string $logging_source;
 
 	/**
+	 * Currencies for which payment method is not displayed
+	 * (If $supported_currencies is empty)
+	 *
+	 * @var string[]
+	 */
+	protected array $unsupported_currencies = array();
+
+	/**
+	 * Show payment method only for these currencies
+	 *
+	 * @var string[]
+	 */
+	protected array $supported_currencies = array();
+
+	/**
 	 * ReepayGateway constructor.
 	 */
 	public function __construct() {
@@ -1656,5 +1671,42 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'default'     => $this->method_title,
 			),
 		);
+	}
+
+	/**
+	 * Exclude payment method if the order contains an unsupported currency
+	 *
+	 * @param WC_Payment_Gateway[] $available_gateways gateways.
+	 *
+	 * @return array
+	 */
+	public function exclude_payment_gateway_based_on_currency( array $available_gateways ): array {
+		if ( is_null( WC()->cart ) ) {
+			return $available_gateways;
+		}
+		$current_currencies = array();
+		foreach ( WC()->cart->get_cart() as $cart_item ) {
+			$item_data = $cart_item['data'];
+			$currency  = get_woocommerce_currency();
+			if ( method_exists( $item_data, 'get_currency' ) ) {
+				$currency = $item_data->get_currency();
+			}
+			$current_currencies[] = $currency;
+		}
+		foreach ( $available_gateways as $gateway_id => $gateway ) {
+			if ( $gateway_id === $this->id ) {
+				if ( ! empty( $this->supported_currencies ) ) {
+					if ( ! empty( array_diff( $current_currencies, $this->supported_currencies ) ) ) {
+						unset( $available_gateways[ $gateway_id ] );
+						break;
+					}
+				} elseif ( ! empty( $this->unsupported_currencies ) && array_intersect( $this->unsupported_currencies, $current_currencies ) ) {
+					unset( $available_gateways[ $gateway_id ] );
+					break;
+				}
+			}
+		}
+
+		return $available_gateways;
 	}
 }

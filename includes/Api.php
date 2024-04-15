@@ -559,7 +559,7 @@ class Api {
 	 * @return array|mixed|object|WP_Error
 	 * @see ReepayGateway::payment_methods.
 	 */
-	public function recurring( array $payment_methods, WC_Order $order, array $data, $token = false, $payment_text = '' ) {
+	public function recurring( array $payment_methods, WC_Order $order, array $data, $token = false, string $payment_text = '' ) {
 		$params = array(
 			'locale'          => $data['language'],
 			'create_customer' => array(
@@ -711,7 +711,7 @@ class Api {
 		}
 
 		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
-			$request_data['amount'] = $amount;
+			$request_data['amount'] = rp_prepare_amount( $amount, $order->get_currency() );
 		} else {
 			$request_data['order_lines'] = $items_data;
 		}
