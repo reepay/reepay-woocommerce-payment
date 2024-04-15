@@ -1678,8 +1678,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 		$current_currencies = array();
 		foreach ( WC()->cart->get_cart() as $cart_item ) {
-			$item_data            = $cart_item['data'];
-			$currency             = $item_data->get_currency();
+			$item_data = $cart_item['data'];
+			$currency  = get_woocommerce_currency();
+			if ( method_exists( $item_data, 'get_currency' ) ) {
+				$currency = $item_data->get_currency();
+			}
 			$current_currencies[] = $currency;
 		}
 		foreach ( $available_gateways as $gateway_id => $gateway ) {
