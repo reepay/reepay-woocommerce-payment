@@ -172,14 +172,21 @@ jQuery(document).ready(function ($) {
     });
 
     $(document).on('click', '#woocommerce-order-actions .button', function (e) {
-        var order_id = $("#reepay_order_id").data('order-id');
-        var amount = $('#reepay_order_total').data('order-total');
-        var authorized = $('#reepay_order_total_authorized').val();
-        var settled = $('#reepay_order_total_settled').val();
-        var formatted_amount = $("#reepay_order_total").val();
-        if (amount > 0 && settled < authorized && $("#order_status option:selected").val() == 'wc-completed') {
+        const orderId = $("#reepay_order_id").data('order-id')
+        const amount = $('#reepay_order_total').data('order-total')
+        const authorized = $('#reepay_order_total_authorized').val()
+        const $inputSettled = $('#reepay_order_total_settled')
+        const settled = $inputSettled.val()
+        const initialSettled = $inputSettled.data('initial-amount')
+        const currency = $('#reepay_currency').val()
+        const formatted_amount = parseFloat(amount) - parseFloat(initialSettled)
+        let $form = $('#post')
+        if ($form.length === 0) {
+            $form = $('#order')
+        }
+        if (amount > 0 && settled < authorized && $("#order_status option:selected").val() === 'wc-completed') {
             e.preventDefault();
-            const settle = window.confirm('You are about to change the order status. Do you want to capture the remaining amount of ' + formatted_amount + ' at the same time? Click OK to continue with settle. Click Cancel to continue without settle.');
+            const settle = window.confirm(`'You are about to change the order status. Do you want to capture the remaining amount of ${formatted_amount} ${currency} at the same time? Click OK to continue with settle. Click Cancel to continue without settle.'`)
 
             $.ajax({
                 url: Reepay_Admin.ajax_url,
@@ -187,7 +194,7 @@ jQuery(document).ready(function ($) {
                 data: {
                     action: 'reepay_set_complete_settle_transient',
                     nonce: Reepay_Admin.nonce,
-                    order_id: order_id,
+                    order_id: orderId,
                     settle_order: Number(settle)
                 },
                 beforeSend: function () {
@@ -195,20 +202,20 @@ jQuery(document).ready(function ($) {
                 success: function () {
                 },
                 error: function (response) {
-                    alert("error response: " + JSON.stringify(response));
+                    alert("error response: " + JSON.stringify(response))
                 },
                 complete: function () {
-                    $('#post').submit();
+                    $form.submit()
                 }
-            });
+            })
 
         } else {
-            $('#post').submit();
+            $form.submit()
         }
-    });
+    })
 
     $('#reepay-capture_partly_amount-field, #reepay-refund_partly_amount-field').inputmask({
         alias: "currency",
         groupSeparator: ''
-    });
-});
+    })
+})
