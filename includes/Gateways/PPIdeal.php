@@ -39,10 +39,10 @@ class PPIdeal extends ReepayGateway {
 	 * PPIdeal constructor.
 	 */
 	public function __construct() {
-		$this->id                     = 'reepay_pp_ideal';
-		$this->has_fields             = true;
-		$this->method_title           = __( 'Billwerk+ - iDEAL', 'reepay-checkout-gateway' );
-		$this->supports               = array(
+		$this->id                   = 'reepay_pp_ideal';
+		$this->has_fields           = true;
+		$this->method_title         = __( 'Billwerk+ - iDEAL', 'reepay-checkout-gateway' );
+		$this->supports             = array(
 			'products',
 			'refunds',
 			'add_payment_method',
@@ -58,8 +58,8 @@ class PPIdeal extends ReepayGateway {
 			'subscription_payment_method_change_admin',
 			'multiple_subscriptions',
 		);
-		$this->logos                  = array( 'ideal' );
-		$this->unsupported_currencies = array( 'EUR' );
+		$this->logos                = array( 'ideal' );
+		$this->supported_currencies = array( 'EUR' );
 
 		parent::__construct();
 

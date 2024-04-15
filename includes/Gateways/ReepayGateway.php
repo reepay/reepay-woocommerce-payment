@@ -172,10 +172,18 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 	/**
 	 * Currencies for which payment method is not displayed
+	 * (If $supported_currencies is empty)
 	 *
 	 * @var string[]
 	 */
 	protected array $unsupported_currencies = array();
+
+	/**
+	 * Show payment method only for these currencies
+	 *
+	 * @var string[]
+	 */
+	protected array $supported_currencies = array();
 
 	/**
 	 * ReepayGateway constructor.
@@ -1030,7 +1038,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			);
 		}
 
-		$have_sub = ( class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) || wcs_cart_have_subscription();
+		$have_sub = ( class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription_in_products( $order ) ) || wcs_cart_have_subscription();
 
 		$only_items_lines = array();
 
@@ -1686,9 +1694,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$current_currencies[] = $currency;
 		}
 		foreach ( $available_gateways as $gateway_id => $gateway ) {
-			if ( $gateway_id === $this->id && array_intersect( $this->unsupported_currencies, $current_currencies ) ) {
-				unset( $available_gateways[ $gateway_id ] );
-				break;
+			if ( $gateway_id === $this->id ) {
+				if ( ! empty( $this->supported_currencies ) ) {
+					if ( ! empty( array_diff( $current_currencies, $this->supported_currencies ) ) ) {
+						unset( $available_gateways[ $gateway_id ] );
+						break;
+					}
+				} elseif ( ! empty( $this->unsupported_currencies ) && array_intersect( $this->unsupported_currencies, $current_currencies ) ) {
+					unset( $available_gateways[ $gateway_id ] );
+					break;
+				}
 			}
 		}
 
