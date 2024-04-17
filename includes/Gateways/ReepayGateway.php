@@ -772,10 +772,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					}
 				}
 			} catch ( Exception $e ) {
-				return array(
-					'messages' => __( 'Wrong Request. Try again', 'reepay-checkout-gateway' ),
-					'result'   => 'failure',
-				);
+				wc_add_notice( __( 'Wrong Request. Try again', 'reepay-checkout-gateway' ), 'error' );
+
+				return false;
 			}
 		}
 
@@ -950,10 +949,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					} catch ( Exception $e ) {
 						$order->add_order_note( $e->getMessage() );
 
-						return array(
-							'result'  => 'failure',
-							'message' => $e->getMessage(),
-						);
+						wc_add_notice( $e->getMessage(), 'error' );
+
+						return false;
 					}
 				}
 
@@ -966,10 +964,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				} catch ( Exception $e ) {
 					$order->add_order_note( $e->getMessage() );
 
-					return array(
-						'result'  => 'failure',
-						'message' => $e->getMessage(),
-					);
+					wc_add_notice( $e->getMessage(), 'error' );
+
+					return false;
 				}
 
 				if ( wcr_cart_only_reepay_subscriptions() ) {
