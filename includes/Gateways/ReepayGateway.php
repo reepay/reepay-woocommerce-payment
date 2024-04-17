@@ -9,6 +9,7 @@ namespace Reepay\Checkout\Gateways;
 
 use Exception;
 use Reepay\Checkout\Api;
+use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
 use SitePress;
 use Reepay\Checkout\LoggingTrait;
 use Reepay\Checkout\Tokens\TokenReepay;
@@ -985,6 +986,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 								'customer'       => $method['customer'],
 							);
 
+							// Check PW Gift cards.
+							$exist_gift_card = PWGiftCardsIntegration::check_exist_gift_cards_in_order( $order );
+							if ( $exist_gift_card ) {
+								wc_add_notice( __( 'Gift Cards cannot be used with Reepay subscriptions.', 'reepay-checkout-gateway' ), 'error' );
+
+								return false;
+							}
+
 							do_action( 'reepay_create_subscription', $data, $order );
 
 							try {
@@ -1504,18 +1513,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		// Add "PW Gift Cards" support.
-		foreach ( $order->get_items( 'pw_gift_card' ) as $line ) {
-			$amount = apply_filters( 'pwgc_to_order_currency', floatval( $line->get_amount() ) * -1, $order );
-
-			$items[] = array(
-				// translators: gift card code.
-				'ordertext'       => sprintf( __( 'PW gift card (%s)', 'reepay-checkout-gateway' ), $line->get_card_number() ),
-				'quantity'        => 1,
-				'amount'          => rp_prepare_amount( $amount, $order->get_currency() ),
-				'vat'             => 0,
-				'amount_incl_vat' => $prices_incl_tax,
-			);
-		}
+		$items = array_merge( $items, PWGiftCardsIntegration::get_order_lines_for_reepay( $order, $prices_incl_tax ) );
 
 		// Add "Gift Up!" discount.
 		if ( defined( 'GIFTUP_ORDER_META_CODE_KEY' ) &&

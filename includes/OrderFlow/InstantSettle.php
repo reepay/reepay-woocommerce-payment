@@ -8,6 +8,7 @@
 namespace Reepay\Checkout\OrderFlow;
 
 use Reepay\Checkout\Gateways\ReepayGateway;
+use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
 use stdClass;
 use WC_Order;
 use WC_Order_Item;
@@ -170,7 +171,7 @@ class InstantSettle {
 		}
 
 		if ( ! empty( $items_data ) ) {
-			foreach ( $order->get_items( 'pw_gift_card' ) as $line ) {
+			foreach ( $order->get_items( PWGiftCardsIntegration::KEY_PW_GIFT_ITEMS ) as $line ) {
 				$items_data[] = $line;
 			}
 		}
