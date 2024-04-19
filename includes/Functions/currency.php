@@ -49,7 +49,7 @@ if ( ! function_exists( 'rp_get_currency_multiplier' ) ) {
 		 * key is currency value is minor units
 		 * for currencies that doesn't have minor units, value must be 1
 		 *
-		 * @var string[]
+		 * @var string[] $currency_minor_units
 		 */
 		$currency_minor_units = array( 'ISK' => 1 );
 
