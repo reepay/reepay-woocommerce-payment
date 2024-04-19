@@ -11,7 +11,7 @@ use Exception;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
 use SitePress;
-use Reepay\Checkout\LoggingTrait;
+use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\ReepayTokens;
 use WC_Admin_Settings;

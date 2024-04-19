@@ -12,6 +12,7 @@ use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\OrderFlow\InstantSettle;
 use Reepay\Checkout\OrderFlow\OrderCapture;
 use Reepay\Checkout\Actions\ReepayCustomer;
+use Reepay\Checkout\Utils\LoggingTrait;
 use WC_Order;
 use Reepay\Checkout\OrderFlow\OrderStatuses;
 use WC_Order_Item;

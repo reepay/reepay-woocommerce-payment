@@ -8,7 +8,7 @@
 namespace Reepay\Checkout\OrderFlow;
 
 use Exception;
-use Reepay\Checkout\LoggingTrait;
+use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Tokens\ReepayTokens;
 use WC_Order_Item_Fee;
 use WC_Subscriptions_Manager;

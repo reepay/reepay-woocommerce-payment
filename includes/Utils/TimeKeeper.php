@@ -2,7 +2,7 @@
 /**
  * A class to help tests that depend on time()
  *
- * @package Reepay\Checkout\Functions
+ * @package Reepay\Checkout\Utils
  */
 
 namespace Reepay\Checkout\Utils;
@@ -10,7 +10,7 @@ namespace Reepay\Checkout\Utils;
 /**
  * Class
  *
- * @package Reepay\Checkout\Functions
+ * @package Reepay\Checkout\Utils
  */
 class TimeKeeper {
 	/**
@@ -21,7 +21,9 @@ class TimeKeeper {
 	public static ?int $current_time = null;
 
 	/**
-	 * Sets the current time (USE IN TESTS ONLY).
+	 * USE IN TESTS ONLY
+	 *
+	 * Sets the current time for time-dependent functions
 	 *
 	 * @param int $time New current time in Unix timestamp format.
 	 *
