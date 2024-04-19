@@ -10,7 +10,7 @@ namespace Reepay\Checkout\Gateways;
 
 use Exception;
 use Reepay\Checkout\Api;
-use Reepay\Checkout\LoggingTrait;
+use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Plugin\Statistics;
 use Reepay\Checkout\Tokens\ReepayTokens;
 use Reepay\Checkout\Tokens\TokenReepay;

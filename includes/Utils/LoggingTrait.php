@@ -2,13 +2,18 @@
 /**
  * Trait for logging
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Utils
  */
 
-namespace Reepay\Checkout;
+namespace Reepay\Checkout\Utils;
 
 defined( 'ABSPATH' ) || exit();
 
+/**
+ * Class logging
+ *
+ * @package Reepay\Checkout\Utils
+ */
 trait LoggingTrait {
 	/**
 	 * Logging method.

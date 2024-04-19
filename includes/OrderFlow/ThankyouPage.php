@@ -8,7 +8,7 @@
 namespace Reepay\Checkout\OrderFlow;
 
 use Exception;
-use Reepay\Checkout\LoggingTrait;
+use Reepay\Checkout\Utils\LoggingTrait;
 use WC_Order_Item_Product;
 
 defined( 'ABSPATH' ) || exit();

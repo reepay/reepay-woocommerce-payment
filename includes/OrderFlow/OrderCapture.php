@@ -8,6 +8,7 @@
 namespace Reepay\Checkout\OrderFlow;
 
 use Exception;
+use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
 use WC_Order;
 use WC_Order_Factory;
 use WC_Order_Item;
@@ -225,7 +226,7 @@ class OrderCapture {
 			}
 		}
 
-		foreach ( $order->get_items( array( 'shipping', 'fee', 'pw_gift_card' ) ) as $item ) {
+		foreach ( $order->get_items( array( 'shipping', 'fee', PWGiftCardsIntegration::KEY_PW_GIFT_ITEMS ) ) as $item ) {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
 				$price     = self::get_item_price( $item, $order );
@@ -384,10 +385,7 @@ class OrderCapture {
 			}
 		}
 
-		foreach ( $order->get_items( 'pw_gift_card' ) as $line ) {
-			$amount_gift = apply_filters( 'pwgc_to_order_currency', floatval( $line->get_amount() ), $order );
-			$amount     -= $amount_gift;
-		}
+		$amount -= PWGiftCardsIntegration::get_amount_gift_cards_from_order( $order );
 
 		return $amount;
 	}
@@ -406,8 +404,8 @@ class OrderCapture {
 
 		$tax_percent = $price['tax_percent'];
 
-		if ( $order_item->is_type( 'pw_gift_card' ) ) {
-			$unit_price = apply_filters( 'pwgc_to_order_currency', floatval( $order_item->get_amount() ) * -1, $order );
+		if ( $order_item->is_type( PWGiftCardsIntegration::KEY_PW_GIFT_ITEMS ) ) {
+			$unit_price = PWGiftCardsIntegration::get_negative_amount_from_order_item( $order, $order_item );
 		} else {
 			$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
 		}
