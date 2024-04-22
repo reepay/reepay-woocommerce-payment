@@ -23,7 +23,7 @@ class Gateways {
 	 *
 	 * @var array
 	 */
-	const PAYMENT_METHODS = array(
+	public const PAYMENT_METHODS = array(
 		'reepay_checkout',
 
 		'reepay_anyday',
