@@ -976,34 +976,33 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 						return false;
 					} elseif ( ! empty( $method ) ) {
-
-						if ( 'active' === $method['state'] ) {
-							$data = array(
-								'payment_method' => $method['id'],
-								'customer'       => $method['customer'],
-							);
-
-							// Check PW Gift cards.
-							$exist_gift_card = PWGiftCardsIntegration::check_exist_gift_cards_in_order( $order );
-							if ( $exist_gift_card ) {
-								wc_add_notice( __( 'Gift Cards cannot be used with Reepay subscriptions.', 'reepay-checkout-gateway' ), 'error' );
-
-								return false;
-							}
-
-							do_action( 'reepay_create_subscription', $data, $order );
-
-							try {
-								foreach ( $order->get_meta( '_reepay_another_orders' ) ?: array() as $order_id ) {
-									ReepayTokens::save_card_info_to_order( wc_get_order( $order_id ), $token->get_token() );
-								}
-							} catch ( Exception $e ) {
-								wc_get_order( $order_id )->add_order_note( $e->getMessage() );
-							}
-						} else {
+						if ( 'active' !== $method['state'] ) {
 							wc_add_notice( __( 'You payment method has failed, please choose another or add new', 'error' ), 'error' );
 
 							return false;
+						}
+
+						$data = array(
+							'payment_method' => $method['id'],
+							'customer'       => $method['customer'],
+						);
+
+						// Check PW Gift cards.
+						$exist_gift_card = PWGiftCardsIntegration::check_exist_gift_cards_in_order( $order );
+						if ( $exist_gift_card ) {
+							wc_add_notice( __( 'Gift Cards cannot be used with Reepay subscriptions.', 'reepay-checkout-gateway' ), 'error' );
+
+							return false;
+						}
+
+						do_action( 'reepay_create_subscription', $data, $order );
+
+						try {
+							foreach ( $order->get_meta( '_reepay_another_orders' ) ?: array() as $order_id ) {
+								ReepayTokens::save_card_info_to_order( wc_get_order( $order_id ), $token->get_token() );
+							}
+						} catch ( Exception $e ) {
+							wc_get_order( $order_id )->add_order_note( $e->getMessage() );
 						}
 					}
 				} elseif ( wcs_cart_have_subscription() ) {
