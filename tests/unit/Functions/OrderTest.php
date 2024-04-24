@@ -14,8 +14,6 @@ use Reepay\Checkout\Utils\TimeKeeper;
 class OrderTest extends Reepay_UnitTestCase {
 	/**
 	 * Set up before class
-	 *
-	 * @return void
 	 */
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
