@@ -1459,7 +1459,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				}
 
 				$items[] = array(
-					'ordertext'       => $item_shipping->get_name(),
+					'ordertext'       => rp_clear_ordertext( $item_shipping->get_name() ),
 					'quantity'        => $item_shipping->get_quantity(),
 					'amount'          => rp_prepare_amount( $unit_price, $order->get_currency() ),
 					'vat'             => round( $tax_percent / 100, 2 ),
@@ -1484,7 +1484,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 
 			$items[] = array(
-				'ordertext'       => $order_fee->get_name(),
+				'ordertext'       => rp_clear_ordertext( $order_fee->get_name() ),
 				'quantity'        => 1,
 				'amount'          => rp_prepare_amount( $prices_incl_tax ? $fee_with_tax : $fee, $order->get_currency() ),
 				'vat'             => round( $tax_percent / 100, 2 ),
@@ -1508,13 +1508,12 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			);
 		}
 
-		// Add "PW Gift Cards" support.
-		$items = array_merge( $items, PWGiftCardsIntegration::get_order_lines_for_reepay( $order, $prices_incl_tax ) );
-
 		// Add "Gift Up!" discount.
 		if ( defined( 'GIFTUP_ORDER_META_CODE_KEY' ) &&
 			defined( 'GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY' )
 		) {
+            // Add "PW Gift Cards" support.
+            $items = array_merge( $items, PWGiftCardsIntegration::get_order_lines_for_reepay( $order, $prices_incl_tax ) );
 			if ( $order->meta_exists( GIFTUP_ORDER_META_CODE_KEY ) ) {
 				$code              = $order->get_meta( GIFTUP_ORDER_META_CODE_KEY );
 				$requested_balance = $order->get_meta( GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY );
