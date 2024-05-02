@@ -139,7 +139,7 @@ class ThankyouPage {
 			 *
 			 * @var WC_Order_Item_Product $item
 			 */
-			if ( $order->get_total() <= 0 && wcs_is_subscription_product( $item->get_product() ) ) {
+			if ( intval( $order->get_total() ) <= 0 && wcs_is_subscription_product( $item->get_product() ) ) {
 				$ret = array(
 					'state'   => 'paid',
 					'message' => 'Subscription is activated in trial',
