@@ -123,14 +123,14 @@ class MetaBoxes {
 	/**
 	 * Function to show customer meta box content
 	 *
-	 * @param mixed $x    not used.
+	 * @param mixed $x not used.
 	 * @param array $meta additional info. Get arguments by 'args' key.
 	 */
 	public function generate_meta_box_content_customer( $x, array $meta ) {
 		/**
 		 * Set types of args variables
 		 *
-		 * @var WC_Order $order
+		 * @var WC_Order       $order
 		 * @var ReepayCheckout $gateway
 		 */
 		$order      = $meta['args']['order'];
@@ -147,8 +147,10 @@ class MetaBoxes {
 			$handle = reepay()->api( $order )->get_customer_handle_by_order( $order->get_id() );
 		}
 
+		$user = get_user_by( 'id', $order->get_customer_id() );
+
 		$template_args = array(
-			'email'  => $order->get_billing_email(),
+			'email'  => $user->get( 'user_email' ),
 			'handle' => $handle,
 			'link'   => $this->dashboard_url . 'customers/customers/customer/' . $handle,
 		);
@@ -162,14 +164,14 @@ class MetaBoxes {
 	/**
 	 * Function to show customer meta box content
 	 *
-	 * @param mixed $x    not used.
+	 * @param mixed $x not used.
 	 * @param array $meta additional info. Get arguments by 'args' key.
 	 */
 	public function generate_meta_box_content_invoice( $x, array $meta ) {
 		/**
 		 * Set types of args variables
 		 *
-		 * @var WC_Order $order
+		 * @var WC_Order       $order
 		 * @var ReepayCheckout $gateway
 		 */
 		$order   = $meta['args']['order'];
@@ -205,14 +207,14 @@ class MetaBoxes {
 	/**
 	 * Function to show customer meta box content
 	 *
-	 * @param mixed $x    not used.
+	 * @param mixed $x not used.
 	 * @param array $meta additional info. Get arguments by 'args' key.
 	 */
 	public function generate_meta_box_content_subscription( $x, array $meta ) {
 		/**
 		 * Set types of args variables
 		 *
-		 * @var WC_Order $order
+		 * @var WC_Order       $order
 		 * @var ReepayCheckout $gateway
 		 */
 		$order      = $meta['args']['order'];
