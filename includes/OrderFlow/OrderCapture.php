@@ -232,7 +232,7 @@ class OrderCapture {
 				$price     = self::get_item_price( $item, $order );
 				$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
-				if ( 0 !== $total && $this->check_capture_allowed( $order ) ) {
+				if ( 0.0 !== $total && $this->check_capture_allowed( $order ) ) {
 					$items_data[] = $item_data;
 					$line_items[] = $item;
 					$total_all   += $total;

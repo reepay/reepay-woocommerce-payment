@@ -46,6 +46,9 @@ class PWGiftCardsIntegration {
 	 */
 	public static function get_order_lines_for_reepay( WC_Order $order, bool $including_vat ): array {
 		$items = array();
+		if ( ! class_exists( 'WC_Order_Item_PW_Gift_Card' ) ) {
+			return $items;
+		}
 
 		/**
 		 * Class from PW WooCommerce Gift Cards plugin
@@ -99,7 +102,7 @@ class PWGiftCardsIntegration {
 	 * @return float|int
 	 */
 	public static function get_amount_from_order_item( WC_Order $order, $order_item ) {
-		if ( is_a( $order_item, 'WC_Order_Item_PW_Gift_Card' ) ) {
+		if ( class_exists( 'WC_Order_Item_PW_Gift_Card' ) && is_a( $order_item, 'WC_Order_Item_PW_Gift_Card' ) ) {
 			return apply_filters( 'pwgc_to_order_currency', floatval( $order_item->get_amount() ), $order );
 		} else {
 			return 0;
