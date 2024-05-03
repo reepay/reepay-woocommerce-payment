@@ -1416,6 +1416,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			 * @var WC_Order_Item_Product $order_item
 			 */
 
+			if ( is_product_woosb( $order_item->get_product() ) ) {
+				continue;
+			}
+
 			if ( $order_item->get_product() && wcr_is_subscription_product( $order_item->get_product() ) ) {
 				$fee = $order_item->get_product()->get_meta( '_reepay_subscription_fee' );
 				if ( ! empty( $fee ) && ! empty( $fee['enabled'] ) && 'yes' === $fee['enabled'] ) {
@@ -1508,12 +1512,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			);
 		}
 
+		// Add "PW Gift Cards" support.
+		$items = array_merge( $items, PWGiftCardsIntegration::get_order_lines_for_reepay( $order, $prices_incl_tax ) );
+
 		// Add "Gift Up!" discount.
 		if ( defined( 'GIFTUP_ORDER_META_CODE_KEY' ) &&
 			defined( 'GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY' )
 		) {
-			// Add "PW Gift Cards" support.
-			$items = array_merge( $items, PWGiftCardsIntegration::get_order_lines_for_reepay( $order, $prices_incl_tax ) );
 			if ( $order->meta_exists( GIFTUP_ORDER_META_CODE_KEY ) ) {
 				$code              = $order->get_meta( GIFTUP_ORDER_META_CODE_KEY );
 				$requested_balance = $order->get_meta( GIFTUP_ORDER_META_REQUESTED_BALANCE_KEY );
