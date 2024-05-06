@@ -17,6 +17,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class VippsRecurring extends ReepayGateway {
+	public const ID = 'reepay_vipps_recurring';
+
 	/**
 	 * Logos
 	 *
@@ -39,7 +41,7 @@ class VippsRecurring extends ReepayGateway {
 	 * VippsRecurring constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_vipps_recurring';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - Vipps Recurring', 'reepay-checkout-gateway' );
 		$this->supports     = array(

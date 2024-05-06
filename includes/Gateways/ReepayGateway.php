@@ -904,16 +904,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$params['parameters']['mps_ttl'] = 'PT24H';
 		}
 
-		if ( 'reepay_applepay' === $order->get_payment_method() ) {
-			if ( apply_filters( 'wcs_cart_have_subscription', false ) ) {
-				if ( ! wcr_cart_only_reepay_subscriptions() ) {
-					wc_add_notice( __( 'This payment method cannot be used to pay for subscriptions and regular items in the same order.', 'reepay-checkout-gateway' ), 'error' );
-
-					return false;
-				}
-			}
-		}
-
 		// Try to charge with saved token.
 		if ( absint( $token_id ) > 0 ) {
 			$token = new TokenReepay( $token_id );

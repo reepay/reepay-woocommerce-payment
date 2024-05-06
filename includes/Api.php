@@ -8,7 +8,9 @@
 namespace Reepay\Checkout;
 
 use Exception;
+use Reepay\Checkout\Gateways\ApplePay;
 use Reepay\Checkout\Gateways\ReepayGateway;
+use Reepay\Checkout\Gateways\VippsRecurring;
 use Reepay\Checkout\OrderFlow\InstantSettle;
 use Reepay\Checkout\OrderFlow\OrderCapture;
 use Reepay\Checkout\Actions\ReepayCustomer;
@@ -599,8 +601,12 @@ class Api {
 			$params['payment_methods'] = $payment_methods;
 		}
 
-		if ( 'reepay_applepay' === $order->get_payment_method() ) {
+		if ( ApplePay::ID === $order->get_payment_method() ) {
 			$params['session_data']['applepay_recurring_amount'] = rp_prepare_amount( $order->get_total(), $order->get_currency() );
+		}
+
+		if ( VippsRecurring::ID === $order->get_payment_method() ) {
+			$params['session_data']['vipps_recurring_amount'] = rp_prepare_amount( $order->get_total(), $order->get_currency() );
 		}
 
 		return $this->request(
