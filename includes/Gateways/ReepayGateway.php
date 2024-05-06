@@ -880,7 +880,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		if ( $order->needs_shipping_address() ) {
-
 			$params['order']['shipping_address'] = array(
 				'attention'         => '',
 				'email'             => $order->get_billing_email(),
@@ -903,6 +902,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		if ( 'reepay_mobilepay_subscriptions' === $order->get_payment_method() ) {
 			$params['parameters']['mps_ttl'] = 'PT24H';
+		}
+
+		if ( 'reepay_applepay' === $order->get_payment_method() ) {
+			if ( apply_filters( 'wcs_cart_have_subscription', false ) ) {
+				if ( ! wcr_cart_only_reepay_subscriptions() ) {
+					wc_add_notice( __( 'This payment method cannot be used to pay for subscriptions and regular items in the same order.', 'reepay-checkout-gateway' ), 'error' );
+
+					return false;
+				}
+			}
 		}
 
 		// Try to charge with saved token.
@@ -1403,7 +1412,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @return array
 	 */
-	public function get_order_items( WC_Order $order, $only_not_settled = false ): array {
+	public function get_order_items( WC_Order $order, bool $only_not_settled = false ): array {
 		$prices_incl_tax = wc_prices_include_tax();
 
 		$items               = array();

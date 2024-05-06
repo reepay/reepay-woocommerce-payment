@@ -599,6 +599,10 @@ class Api {
 			$params['payment_methods'] = $payment_methods;
 		}
 
+		if ( 'reepay_applepay' === $order->get_payment_method() ) {
+			$params['session_data']['applepay_recurring_amount'] = rp_prepare_amount( $order->get_total(), $order->get_currency() );
+		}
+
 		return $this->request(
 			'POST',
 			'https://checkout-api.reepay.com/v1/session/recurring',
