@@ -14,6 +14,7 @@
  */
 
 use Reepay\Checkout\Api;
+use Reepay\Checkout\Api\Controller\MetaFieldsController;
 use Reepay\Checkout\DIContainer;
 use Reepay\Checkout\Gateways;
 use Reepay\Checkout\Gateways\ReepayGateway;
@@ -60,7 +61,7 @@ class WC_ReepayCheckout {
 	 * Constructor
 	 */
 	private function __construct() {
-		include_once dirname( __FILE__ ) . '/vendor/autoload.php';
+		include_once __DIR__ . '/vendor/autoload.php';
 
 		Statistics::get_instance( $this->get_setting( 'plugin_file' ) );
 
@@ -73,6 +74,8 @@ class WC_ReepayCheckout {
 		add_action( 'plugins_loaded', array( $this, 'include_classes' ), 0 );
 
 		load_plugin_textdomain( 'reepay-checkout-gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+
+		add_action( 'rest_api_init', array( $this, 'init_rest_api' ) );
 	}
 
 	/**
@@ -132,44 +135,53 @@ class WC_ReepayCheckout {
 			$plugin_data = get_plugin_data( __FILE__ );
 
 			$this->settings = array(
-				'plugin_version'          => $plugin_data['Version'],
+				'plugin_version'             => $plugin_data['Version'],
 
-				'plugin_file'             => __FILE__,
-				'plugin_basename'         => plugin_basename( __FILE__ ),
+				'plugin_file'                => __FILE__,
+				'plugin_basename'            => plugin_basename( __FILE__ ),
 
-				'plugin_url'              => plugin_dir_url( __FILE__ ),
-				'plugin_path'             => plugin_dir_path( __FILE__ ),
+				'plugin_url'                 => plugin_dir_url( __FILE__ ),
+				'plugin_path'                => plugin_dir_path( __FILE__ ),
 
-				'templates_url'           => plugin_dir_url( __FILE__ ) . 'templates/',
-				'templates_path'          => plugin_dir_path( __FILE__ ) . 'templates/',
+				'templates_url'              => plugin_dir_url( __FILE__ ) . 'templates/',
+				'templates_path'             => plugin_dir_path( __FILE__ ) . 'templates/',
 
-				'css_url'                 => plugin_dir_url( __FILE__ ) . 'assets/dist/css/',
-				'css_path'                => plugin_dir_path( __FILE__ ) . 'assets/dist/css/',
+				'css_url'                    => plugin_dir_url( __FILE__ ) . 'assets/dist/css/',
+				'css_path'                   => plugin_dir_path( __FILE__ ) . 'assets/dist/css/',
 
-				'js_url'                  => plugin_dir_url( __FILE__ ) . 'assets/dist/js/',
-				'js_path'                 => plugin_dir_path( __FILE__ ) . 'assets/dist/js/',
+				'js_url'                     => plugin_dir_url( __FILE__ ) . 'assets/dist/js/',
+				'js_path'                    => plugin_dir_path( __FILE__ ) . 'assets/dist/js/',
 
-				'images_url'              => plugin_dir_url( __FILE__ ) . 'assets/images/',
-				'images_path'             => plugin_dir_path( __FILE__ ) . 'assets/images/',
+				'images_url'                 => plugin_dir_url( __FILE__ ) . 'assets/images/',
+				'images_path'                => plugin_dir_path( __FILE__ ) . 'assets/images/',
 
-				'private_key'             => ! empty( $gateway_settings['private_key'] ) ? $gateway_settings['private_key'] : '',
-				'private_key_test'        => ! empty( $gateway_settings['private_key_test'] ) ? $gateway_settings['private_key_test'] : '',
-				'test_mode'               => ! empty( $gateway_settings['test_mode'] ) ? $gateway_settings['test_mode'] : '',
-				'settle'                  => ! empty( $gateway_settings['settle'] ) ? $gateway_settings['settle'] : array(),
-				'language'                => ! empty( $gateway_settings['language'] ) ? $gateway_settings['language'] : '',
-				'debug'                   => ! empty( $gateway_settings['debug'] ) ? $gateway_settings['debug'] : '',
-				'payment_type'            => ! empty( $gateway_settings['payment_type'] ) ? $gateway_settings['payment_type'] : '',
-				'skip_order_lines'        => ! empty( $gateway_settings['skip_order_lines'] ) ? $gateway_settings['skip_order_lines'] : '',
-				'enable_order_autocancel' => ! empty( $gateway_settings['enable_order_autocancel'] ) ? $gateway_settings['enable_order_autocancel'] : '',
-				'is_webhook_configured'   => ! empty( $gateway_settings['is_webhook_configured'] ) ? $gateway_settings['is_webhook_configured'] : '',
-				'handle_failover'         => ! empty( $gateway_settings['handle_failover'] ) ? $gateway_settings['handle_failover'] : '',
-				'payment_button_text'     => ! empty( $gateway_settings['payment_button_text'] ) ? $gateway_settings['payment_button_text'] : '',
+				'assets_url'                 => plugin_dir_url( __FILE__ ) . 'assets/',
+				'assets_path'                => plugin_dir_path( __FILE__ ) . 'assets/',
 
-				'enable_sync'       => ! empty( $gateway_settings['enable_sync'] ) ? $gateway_settings['enable_sync'] : '',
-				'status_created'    => ! empty( $gateway_settings['status_created'] ) ? $gateway_settings['status_created'] : '',
-				'status_authorized' => ! empty( $gateway_settings['status_authorized'] ) ? $gateway_settings['status_authorized'] : '',
-				'status_settled'    => ! empty( $gateway_settings['status_settled'] ) ? $gateway_settings['status_settled'] : '',
-				'logo_height'       => ! empty( $gateway_settings['logo_height'] ) ? $gateway_settings['logo_height'] : '',
+				'vite_url'                   => plugin_dir_url( __FILE__ ) . 'assets/dist/vite/',
+				'vite_path'                  => plugin_dir_path( __FILE__ ) . 'assets/dist/vite/',
+
+				'languages_path'             => plugin_dir_path( __FILE__ ) . 'languages/',
+
+				'private_key'                => ! empty( $gateway_settings['private_key'] ) ? $gateway_settings['private_key'] : '',
+				'private_key_test'           => ! empty( $gateway_settings['private_key_test'] ) ? $gateway_settings['private_key_test'] : '',
+				'test_mode'                  => ! empty( $gateway_settings['test_mode'] ) ? $gateway_settings['test_mode'] : '',
+				'settle'                     => ! empty( $gateway_settings['settle'] ) ? $gateway_settings['settle'] : array(),
+				'language'                   => ! empty( $gateway_settings['language'] ) ? $gateway_settings['language'] : '',
+				'debug'                      => ! empty( $gateway_settings['debug'] ) ? $gateway_settings['debug'] : '',
+				'show_meta_fields_in_orders' => ! empty( $gateway_settings['show_meta_fields_in_orders'] ) ? $gateway_settings['show_meta_fields_in_orders'] : '',
+				'show_meta_fields_in_users'  => ! empty( $gateway_settings['show_meta_fields_in_users'] ) ? $gateway_settings['show_meta_fields_in_users'] : '',
+				'payment_type'               => ! empty( $gateway_settings['payment_type'] ) ? $gateway_settings['payment_type'] : '',
+				'skip_order_lines'           => ! empty( $gateway_settings['skip_order_lines'] ) ? $gateway_settings['skip_order_lines'] : '',
+				'enable_order_autocancel'    => ! empty( $gateway_settings['enable_order_autocancel'] ) ? $gateway_settings['enable_order_autocancel'] : '',
+				'is_webhook_configured'      => ! empty( $gateway_settings['is_webhook_configured'] ) ? $gateway_settings['is_webhook_configured'] : '',
+				'handle_failover'            => ! empty( $gateway_settings['handle_failover'] ) ? $gateway_settings['handle_failover'] : '',
+				'payment_button_text'        => ! empty( $gateway_settings['payment_button_text'] ) ? $gateway_settings['payment_button_text'] : '',
+				'enable_sync'                => ! empty( $gateway_settings['enable_sync'] ) ? $gateway_settings['enable_sync'] : '',
+				'status_created'             => ! empty( $gateway_settings['status_created'] ) ? $gateway_settings['status_created'] : '',
+				'status_authorized'          => ! empty( $gateway_settings['status_authorized'] ) ? $gateway_settings['status_authorized'] : '',
+				'status_settled'             => ! empty( $gateway_settings['status_settled'] ) ? $gateway_settings['status_settled'] : '',
+				'logo_height'                => ! empty( $gateway_settings['logo_height'] ) ? $gateway_settings['logo_height'] : '',
 			);
 		}
 
@@ -181,18 +193,18 @@ class WC_ReepayCheckout {
 	 */
 	public function reset_settings() {
 		$this->settings = null;
-		$this->get_setting('');
+		$this->get_setting( '' );
 	}
 
 	/**
 	 * Wrapper of wc_get_template function
 	 *
 	 * @param string $template Template name.
-	 * @param  array $args     Arguments.
-	 * @param  bool  $return   Return or echo template.
+	 * @param array  $args Arguments.
+	 * @param bool   $return_template Return or echo template.
 	 */
-	public function get_template( string $template, $args = array(), $return = false ) {
-		if ( $return ) {
+	public function get_template( string $template, array $args = array(), bool $return_template = false ) {
+		if ( $return_template ) {
 			ob_start();
 		}
 
@@ -203,7 +215,7 @@ class WC_ReepayCheckout {
 			$this->get_setting( 'templates_path' )
 		);
 
-		if ( $return ) {
+		if ( $return_template ) {
 			return ob_get_clean();
 		}
 
@@ -244,7 +256,7 @@ class WC_ReepayCheckout {
 	 * @return DIContainer
 	 */
 	public function di(): DIContainer {
-		if( is_null( $this->di_container ) ) {
+		if ( is_null( $this->di_container ) ) {
 			$this->di_container = new DIContainer();
 		}
 
@@ -276,6 +288,15 @@ class WC_ReepayCheckout {
 		new Reepay\Checkout\Frontend\Main();
 
 		new Reepay\Checkout\Actions\Main();
+	}
+
+	/**
+	 * Init rest api
+	 *
+	 * @return void
+	 */
+	public function init_rest_api(): void {
+		( new MetaFieldsController() )->register_routes();
 	}
 }
 

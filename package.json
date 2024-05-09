@@ -22,6 +22,7 @@
     "start": "gulp watch",
     "build:dev": "gulp build",
     "build": "gulp build --production",
+    "build:vite": "npm --prefix ./vite run build",
     "zip": "bash bin/zip.sh",
     "phpcs": "bash ./bin/phpcs.sh",
     "phpcs:full": "bash ./bin/phpcs.sh -full",

@@ -557,40 +557,37 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$data = wp_parse_args( $data, $defaults );
 
-		$is_active = $this->check_is_active();
-
-		ob_start();
-		?>
-		<tr valign="top">
-			<th scope="row" class="titledesc">
-				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?>
-					<?php echo $this->get_tooltip_html( $data ); ?>
-				</label>
-			</th>
-			<td class="forminp">
-				<fieldset>
-					<legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span>
-					</legend>
-
-					<?php if ( $is_active ) : ?>
-						<span style="color: green;">
-							<?php esc_html_e( 'Active', 'reepay-checkout-gateway' ); ?>
+		$is_active     = $this->check_is_active();
+		$active_text   = $is_active ? esc_html__( 'Active', 'reepay-checkout-gateway' ) : esc_html__( 'Inactive', 'reepay-checkout-gateway' );
+		$active_color  = $is_active ? 'green' : 'red';
+		$esc_field_key = esc_attr( $field_key );
+		$esc_is_active = esc_attr( $is_active );
+		$title         = wp_kses_post( $data['title'] );
+		$tooltip_html  = $this->get_tooltip_html( $data );
+		$html_output   = <<<HTML
+			<tr valign="top">
+				<th scope="row" class="titledesc">
+					<label for="{$esc_field_key}">{$title}
+						{$tooltip_html}
+					</label>
+				</th>
+				<td class="forminp">
+					<fieldset>
+						<legend class="screen-reader-text"><span>{$title}</span></legend>
+			
+						<span style="color: {$active_color};">
+							{$active_text}
 						</span>
-					<?php else : ?>
-						<span style="color: red;">
-							<?php esc_html_e( 'Inactive', 'reepay-checkout-gateway' ); ?>
-						</span>
-					<?php endif; ?>
+			
+						<input type="hidden" name="{$esc_field_key}"
+							   id="{$esc_field_key}"
+							   value="{$esc_is_active}"/>
+					</fieldset>
+				</td>
+			</tr>
+		HTML;
 
-					<input type="hidden" name="<?php echo esc_attr( $field_key ); ?>"
-							id="<?php echo esc_attr( $field_key ); ?>"
-							value="<?php echo esc_attr( $is_active ); ?>"/>
-				</fieldset>
-			</td>
-		</tr>
-		<?php
-
-		return ob_get_clean();
+		return $html_output;
 	}
 
 	/**

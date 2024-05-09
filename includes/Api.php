@@ -882,7 +882,7 @@ class Api {
 	 *
 	 * @return array|WP_Error
 	 */
-	public function refund( WC_Order $order, $amount = null, $reason = null ) {
+	public function refund( WC_Order $order, $amount = null, string $reason = null ) {
 		$handle = rp_get_order_handle( $order );
 		if ( empty( $handle ) ) {
 			return new WP_Error( 0, 'Unable to get order handle' );
