@@ -8,7 +8,7 @@
 namespace Reepay\Checkout\OrderFlow;
 
 use Exception;
-use Reepay\Checkout\LoggingTrait;
+use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Tokens\ReepayTokens;
 use WC_Order_Item_Fee;
 use WC_Subscriptions_Manager;
@@ -413,7 +413,7 @@ class Webhook {
 				break;
 			case 'customer_created':
 				$customer = $data['customer'];
-				$user_id  = rp_get_userid_by_handle( $customer );
+				$user_id  = rp_get_user_id_by_handle( $customer );
 				if ( ! $user_id ) {
 					if ( strpos( $customer, 'customer-' ) !== false ) {
 						$user_id = (int) str_replace( 'customer-', '', $customer );

@@ -26,5 +26,6 @@ class Main {
 		include_once __DIR__ . '/hpos.php';
 		include_once __DIR__ . '/order.php';
 		include_once __DIR__ . '/subscriptions.php';
+		include_once __DIR__ . '/woo-product-bundle.php';
 	}
 }

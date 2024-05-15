@@ -5,6 +5,8 @@
  * @package Reepay\Checkout\Functions
  */
 
+use Reepay\Checkout\Utils\TimeKeeper;
+
 defined( 'ABSPATH' ) || exit();
 
 if ( ! function_exists( 'rp_get_order_handle' ) ) {
@@ -16,7 +18,8 @@ if ( ! function_exists( 'rp_get_order_handle' ) ) {
 	 *
 	 * @return string
 	 */
-	function rp_get_order_handle( WC_Order $order, $unique = false ): ?string {
+	function rp_get_order_handle( WC_Order $order, bool $unique = false ): ?string {
+		$current_time = TimeKeeper::get();
 		if ( $unique ) {
 			$handle = null;
 			$order->delete_meta_data( '_reepay_order' );
@@ -26,7 +29,7 @@ if ( ! function_exists( 'rp_get_order_handle' ) ) {
 
 		if ( empty( $handle ) ) {
 			$handle = $unique ?
-				'order-' . $order->get_order_number() . '-' . time() :
+				'order-' . $order->get_order_number() . '-' . $current_time :
 				'order-' . $order->get_order_number();
 
 			$order->add_meta_data( '_reepay_order', $handle );

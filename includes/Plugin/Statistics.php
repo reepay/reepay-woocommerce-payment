@@ -7,7 +7,7 @@
 
 namespace Reepay\Checkout\Plugin;
 
-use Reepay\Checkout\LoggingTrait;
+use Reepay\Checkout\Utils\LoggingTrait;
 use WP_Error;
 use WP_Upgrader;
 

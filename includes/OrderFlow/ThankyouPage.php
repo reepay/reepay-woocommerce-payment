@@ -8,7 +8,7 @@
 namespace Reepay\Checkout\OrderFlow;
 
 use Exception;
-use Reepay\Checkout\LoggingTrait;
+use Reepay\Checkout\Utils\LoggingTrait;
 use WC_Order_Item_Product;
 
 defined( 'ABSPATH' ) || exit();
@@ -76,10 +76,6 @@ class ThankyouPage {
 	 * @return void
 	 */
 	public function thankyou_scripts() {
-		if ( ! is_order_received_page() ) {
-			return;
-		}
-
 		$order_key = isset( $_GET['key'] ) ? wc_clean( wp_unslash( $_GET['key'] ) ) : '';
 		$order     = wc_get_order( get_query_var( 'order-received', 0 ) );
 
@@ -143,7 +139,7 @@ class ThankyouPage {
 			 *
 			 * @var WC_Order_Item_Product $item
 			 */
-			if ( $order->get_total() <= 0 && wcs_is_subscription_product( $item->get_product() ) ) {
+			if ( intval( $order->get_total() ) <= 0 && wcs_is_subscription_product( $item->get_product() ) ) {
 				$ret = array(
 					'state'   => 'paid',
 					'message' => 'Subscription is activated in trial',

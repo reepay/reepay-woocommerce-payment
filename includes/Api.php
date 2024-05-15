@@ -12,6 +12,7 @@ use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\OrderFlow\InstantSettle;
 use Reepay\Checkout\OrderFlow\OrderCapture;
 use Reepay\Checkout\Actions\ReepayCustomer;
+use Reepay\Checkout\Utils\LoggingTrait;
 use WC_Order;
 use Reepay\Checkout\OrderFlow\OrderStatuses;
 use WC_Order_Item;
@@ -559,7 +560,7 @@ class Api {
 	 * @return array|mixed|object|WP_Error
 	 * @see ReepayGateway::payment_methods.
 	 */
-	public function recurring( array $payment_methods, WC_Order $order, array $data, $token = false, $payment_text = '' ) {
+	public function recurring( array $payment_methods, WC_Order $order, array $data, $token = false, string $payment_text = '' ) {
 		$params = array(
 			'locale'          => $data['language'],
 			'create_customer' => array(
@@ -690,7 +691,7 @@ class Api {
 	 *
 	 * @ToDO refactor function. $amount is useless.
 	 */
-	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false, bool $instant_note = false ) {
+	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false, bool $instant_note = true ) {
 		$this->log( sprintf( 'Settle: %s, %s', $order->get_id(), $amount ) );
 
 		$handle = rp_get_order_handle( $order );
@@ -711,7 +712,7 @@ class Api {
 		}
 
 		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
-			$request_data['amount'] = $amount;
+			$request_data['amount'] = rp_prepare_amount( $amount, $order->get_currency() );
 		} else {
 			$request_data['order_lines'] = $items_data;
 		}
@@ -736,7 +737,7 @@ class Api {
 				$order_data = $this->get_invoice_data( $order );
 				$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
 
-				if ( count( $request_data['order_lines'] ) > 1 && is_array( $line_item ) ) {
+				if ( ! empty( $request_data['order_lines'] ) && count( $request_data['order_lines'] ) > 1 && is_array( $line_item ) ) {
 					$request_data['amount'] = $remaining;
 					unset( $request_data['order_lines'] );
 

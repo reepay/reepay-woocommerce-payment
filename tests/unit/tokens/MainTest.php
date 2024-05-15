@@ -21,6 +21,9 @@ class MainTest extends Reepay_UnitTestCase {
 
 	private Main $tokens_main;
 
+	/**
+	 * Set up
+	 */
 	public function set_up() {
 		parent::set_up();
 

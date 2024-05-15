@@ -81,25 +81,6 @@ class TokenReepay extends WC_Payment_Token_CC {
 	}
 
 	/**
-	 * Delete payment method in reepay side.
-	 *
-	 * @param bool $force_delete From parent.
-	 *
-	 * @return bool
-	 */
-	public function delete( $force_delete = false ) {
-		global $wp;
-
-		if ( isset( $wp->query_vars['delete-payment-method'] ) ) {
-			$token_id = absint( $wp->query_vars['delete-payment-method'] );
-			$token    = WC_Payment_Tokens::get( $token_id );
-			ReepayTokens::delete_card( $token );
-		}
-
-		return parent::delete();
-	}
-
-	/**
 	 * Get card image url
 	 *
 	 * @return string

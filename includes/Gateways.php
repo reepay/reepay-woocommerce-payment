@@ -23,7 +23,7 @@ class Gateways {
 	 *
 	 * @var array
 	 */
-	const PAYMENT_METHODS = array(
+	public const PAYMENT_METHODS = array(
 		'reepay_checkout',
 
 		'reepay_anyday',
@@ -39,6 +39,34 @@ class Gateways {
 		'reepay_swish',
 		'reepay_viabill',
 		'reepay_vipps',
+		'reepay_vipps_recurring',
+		'reepay_pp_ideal',
+		'reepay_pp_sepa',
+		'reepay_klarna_direct_bank_transfer',
+		'reepay_klarna_direct_debit',
+		'reepay_pp_bancontact',
+		'reepay_pp_blik_oc',
+		'reepay_pp_eps',
+		'reepay_pp_estonia_banks',
+		'reepay_pp_giropay',
+		'reepay_pp_latvia_banks',
+		'reepay_pp_lithuania_banks',
+		'reepay_pp_mb_way',
+		'reepay_pp_multibanco',
+		'reepay_pp_mybank',
+		'reepay_pp_p24',
+		'reepay_pp_paycoinq',
+		'reepay_pp_paysafecard',
+		'reepay_pp_paysera',
+		'reepay_pp_postfinance',
+		'reepay_pp_satispay',
+		'reepay_pp_trustly',
+		'reepay_pp_verkkopankki',
+		'reepay_pp_wechatpay',
+		'reepay_pp_santander',
+		'reepay_offline_bank_transfer',
+		'reepay_offline_cash',
+		'reepay_offline_other',
 	);
 
 	/**
@@ -62,6 +90,34 @@ class Gateways {
 		Gateways\Swish::class,
 		Gateways\Viabill::class,
 		Gateways\Vipps::class,
+		Gateways\VippsRecurring::class,
+		Gateways\PPIdeal::class,
+		Gateways\PPSepa::class,
+		Gateways\KlarnaDBT::class,
+		Gateways\KlarnaDD::class,
+		Gateways\PPBancontact::class,
+		Gateways\PPBlik::class,
+		Gateways\PPEps::class,
+		Gateways\PPEstonianBanks::class,
+		Gateways\PPGiroPay::class,
+		Gateways\PPLatvianBanks::class,
+		Gateways\PPLithuanianBanks::class,
+		Gateways\PPMBWay::class,
+		Gateways\PPMultibanco::class,
+		Gateways\PPMybank::class,
+		Gateways\PPPr24::class,
+		Gateways\PPPaycoinq::class,
+		Gateways\PPPaySafeCard::class,
+		Gateways\PPPaysera::class,
+		Gateways\PPPostFinance::class,
+		Gateways\PPSatisPay::class,
+		Gateways\PPTrustly::class,
+		Gateways\PPVerkkoPankki::class,
+		Gateways\PPWeChatPay::class,
+		Gateways\PPSantander::class,
+		Gateways\OfflineTransfer::class,
+		Gateways\OfflineCash::class,
+		Gateways\Other::class,
 	);
 
 	/**

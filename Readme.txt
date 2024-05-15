@@ -18,6 +18,8 @@ The Billwerk+ Payments plugin extends WooCommerce allowing you to take payments 
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.2 - Fixes, refactor, tests
+v 1.7.1 - New methods add, WPML detect language support, change order calculation
 v 1.7.0 - Emoji in title clear, Payment method delete fixes, Fatal and warnings fixes
 v 1.6.4 - Fix settle string fatal error
 v 1.6.3 - Woocommerce zero payment fixes

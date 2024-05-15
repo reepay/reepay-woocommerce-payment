@@ -7,12 +7,14 @@
 
 namespace Reepay\Checkout\Tests\Helpers;
 
+use Exception;
 use WC_Order;
 use WC_Order_Factory;
 use WC_Order_Item;
 use WC_Order_Item_Fee;
 use WC_Order_Item_Shipping;
 use WC_Order_Item_Tax;
+use WC_Subscription;
 use WC_Tax;
 
 /**
@@ -103,7 +105,7 @@ class OrderGenerator {
 	}
 
 	/**
-	 * Get Meta Data by Key.
+	 * Get metadata by key.
 	 *
 	 * @param string $key meta key.
 	 *
@@ -116,11 +118,12 @@ class OrderGenerator {
 	/**
 	 * Add product to order
 	 *
-	 * @param string $type            product type.
-	 * @param array  $product_data    product meta data.
+	 * @param string $type product type.
+	 * @param array  $product_data product meta data.
 	 * @param array  $order_item_data order item meta data.
 	 *
 	 * @return int order item id
+	 * @throws Exception
 	 */
 	public function add_product( string $type, array $product_data = array(), array $order_item_data = array() ): int {
 		$product_generator = new ProductGenerator( $type, $product_data );
@@ -136,7 +139,13 @@ class OrderGenerator {
 		return $order_item_id;
 	}
 
-	private function generate_woo_subscription( $product ) {
+	/**
+	 * @param $product
+	 *
+	 * @return WC_Subscription
+	 * @throws Exception
+	 */
+	private function generate_woo_subscription( $product ): WC_Subscription {
 		$sub = wcs_create_subscription(
 			array(
 				'order_id'         => $this->order->get_id(),

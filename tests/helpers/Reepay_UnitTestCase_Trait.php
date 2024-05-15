@@ -75,26 +75,22 @@ trait Reepay_UnitTestCase_Trait {
 	protected Api $api_mock;
 
 	/**
-	 * Runs the routine before setting up all tests.
+	 * Initializes necessary components and mocks
 	 */
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
+	public static function set_up_data_before_class() {
 		self::$options                 = new OptionsController();
 		self::$product_generator       = new ProductGenerator();
 		self::$instant_settle_instance = new InstantSettle();
 
-		self::$instant_settle_instance::set_order_capture(
+		InstantSettle::set_order_capture(
 			new OrderCaptureMock()
 		);
 	}
 
 	/**
-	 * Runs the routine before each test is executed.
+	 * Sets the data for each test method
 	 */
-	public function set_up() {
-		parent::set_up();
-
+	public function set_up_data() {
 		$this->order_statuses  = new OrderStatuses();
 		$this->order_capture   = new OrderCapture();
 		$this->order_generator = new OrderGenerator();

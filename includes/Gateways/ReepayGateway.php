@@ -9,8 +9,9 @@ namespace Reepay\Checkout\Gateways;
 
 use Exception;
 use Reepay\Checkout\Api;
+use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
 use SitePress;
-use Reepay\Checkout\LoggingTrait;
+use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\ReepayTokens;
 use WC_Admin_Settings;
@@ -91,7 +92,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @var string
 	 */
-	public string $language = 'en_US';
+	public string $language = '';
 
 	/**
 	 * Available payment logos
@@ -136,6 +137,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public string $skip_order_lines = 'no';
 
 	/**
+	 * If automatically cancel unpaid orders should be ignored
+	 *
+	 * @var string
+	 */
+	public string $enable_order_autocancel = 'no';
+
+	/**
 	 * Email address for notification about failed webhooks
 	 *
 	 * @var string
@@ -162,6 +170,21 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @var string
 	 */
 	private string $logging_source;
+
+	/**
+	 * Currencies for which payment method is not displayed
+	 * (If $supported_currencies is empty)
+	 *
+	 * @var string[]
+	 */
+	protected array $unsupported_currencies = array();
+
+	/**
+	 * Show payment method only for these currencies
+	 *
+	 * @var string[]
+	 */
+	protected array $supported_currencies = array();
 
 	/**
 	 * ReepayGateway constructor.
@@ -250,8 +273,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$result = reepay()->api( $this )->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
 		if ( is_wp_error( $result ) ) {
-			if ( $result->get_error_code() === API::ERROR_CODES['Customer has been deleted'] ||
-				$result->get_error_code() === API::ERROR_CODES['Customer not found'] ) {
+			if ( $result->get_error_code() === Api::ERROR_CODES['Customer has been deleted'] ||
+				$result->get_error_code() === Api::ERROR_CODES['Customer not found'] ) {
 				$params = array(
 					'locale'          => $this->get_language(),
 					'button_text'     => __( 'Add card', 'reepay-checkout-gateway' ),
@@ -332,7 +355,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$current_name = str_replace( 'reepay_', '', $this->id );
 
-		if ( ! empty( $gateways_reepay ) ) {
+		if ( ! empty( $gateways_reepay ) && ! is_wp_error( $gateways_reepay ) ) {
 			foreach ( $gateways_reepay as $app ) {
 				if ( stripos( $app['type'], $current_name ) !== false ) {
 					return true;
@@ -691,8 +714,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public function get_icon(): string {
 		$logos = array_map(
 			function ( $logo ) {
+				$logo_url = $this->get_logo( $logo );
+
 				return array(
-					'src' => esc_url( reepay()->get_setting( 'images_url' ) . $logo . '.png' ),
+					'src' => $logo_url,
 					// translators: %s gateway title.
 					'alt' => esc_attr( sprintf( __( 'Pay with %s on Billwerk+', 'reepay-checkout-gateway' ), $this->get_title() ) ),
 				);
@@ -747,10 +772,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					}
 				}
 			} catch ( Exception $e ) {
-				return array(
-					'messages' => __( 'Wrong Request. Try again', 'reepay-checkout-gateway' ),
-					'result'   => 'failure',
-				);
+				wc_add_notice( __( 'Wrong Request. Try again', 'reepay-checkout-gateway' ), 'error' );
+
+				return false;
 			}
 		}
 
@@ -925,10 +949,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					} catch ( Exception $e ) {
 						$order->add_order_note( $e->getMessage() );
 
-						return array(
-							'result'  => 'failure',
-							'message' => $e->getMessage(),
-						);
+						wc_add_notice( $e->getMessage(), 'error' );
+
+						return false;
 					}
 				}
 
@@ -941,10 +964,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				} catch ( Exception $e ) {
 					$order->add_order_note( $e->getMessage() );
 
-					return array(
-						'result'  => 'failure',
-						'message' => $e->getMessage(),
-					);
+					wc_add_notice( $e->getMessage(), 'error' );
+
+					return false;
 				}
 
 				if ( wcr_cart_only_reepay_subscriptions() ) {
@@ -954,26 +976,33 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 						return false;
 					} elseif ( ! empty( $method ) ) {
-
-						if ( 'active' === $method['state'] ) {
-							$data = array(
-								'payment_method' => $method['id'],
-								'customer'       => $method['customer'],
-							);
-
-							do_action( 'reepay_create_subscription', $data, $order );
-
-							try {
-								foreach ( $order->get_meta( '_reepay_another_orders' ) ?: array() as $order_id ) {
-									ReepayTokens::save_card_info_to_order( wc_get_order( $order_id ), $token->get_token() );
-								}
-							} catch ( Exception $e ) {
-								wc_get_order( $order_id )->add_order_note( $e->getMessage() );
-							}
-						} else {
+						if ( 'active' !== $method['state'] ) {
 							wc_add_notice( __( 'You payment method has failed, please choose another or add new', 'error' ), 'error' );
 
 							return false;
+						}
+
+						$data = array(
+							'payment_method' => $method['id'],
+							'customer'       => $method['customer'],
+						);
+
+						// Check PW Gift cards.
+						$exist_gift_card = PWGiftCardsIntegration::check_exist_gift_cards_in_order( $order );
+						if ( $exist_gift_card ) {
+							wc_add_notice( __( 'Gift Cards cannot be used with Reepay subscriptions.', 'reepay-checkout-gateway' ), 'error' );
+
+							return false;
+						}
+
+						do_action( 'reepay_create_subscription', $data, $order );
+
+						try {
+							foreach ( $order->get_meta( '_reepay_another_orders' ) ?: array() as $order_id ) {
+								ReepayTokens::save_card_info_to_order( wc_get_order( $order_id ), $token->get_token() );
+							}
+						} catch ( Exception $e ) {
+							wc_get_order( $order_id )->add_order_note( $e->getMessage() );
 						}
 					}
 				} elseif ( wcs_cart_have_subscription() ) {
@@ -1199,11 +1228,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				if ( in_array(
 					$result->get_error_code(),
 					array(
-						API::ERROR_CODES['Invoice already authorized'],
-						API::ERROR_CODES['Invoice already settled'],
-						API::ERROR_CODES['Invoice already cancelled'],
-						API::ERROR_CODES['Customer cannot be changed on invoice'],
-						API::ERROR_CODES['Currency change not allowed'],
+						Api::ERROR_CODES['Invoice already authorized'],
+						Api::ERROR_CODES['Invoice already settled'],
+						Api::ERROR_CODES['Invoice already cancelled'],
+						Api::ERROR_CODES['Customer cannot be changed on invoice'],
+						Api::ERROR_CODES['Currency change not allowed'],
 					),
 					true
 				) ) {
@@ -1322,15 +1351,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Apply settings from Reepay Checkout Gateway to other gateways. Use it in constructor
 	 */
 	protected function apply_parent_settings() {
-		$this->private_key      = (string) reepay()->get_setting( 'private_key' );
-		$this->private_key_test = (string) reepay()->get_setting( 'private_key_test' );
-		$this->test_mode        = (string) reepay()->get_setting( 'test_mode' );
-		$this->settle           = (array) reepay()->get_setting( 'settle' );
-		$this->language         = (string) reepay()->get_setting( 'language' );
-		$this->debug            = (string) reepay()->get_setting( 'debug' );
-		$this->payment_type     = (string) reepay()->get_setting( 'payment_type' );
-		$this->skip_order_lines = (string) reepay()->get_setting( 'skip_order_lines' );
-		$this->handle_failover  = (string) reepay()->get_setting( 'handle_failover' );
+		$this->private_key             = (string) reepay()->get_setting( 'private_key' );
+		$this->private_key_test        = (string) reepay()->get_setting( 'private_key_test' );
+		$this->test_mode               = (string) reepay()->get_setting( 'test_mode' );
+		$this->settle                  = (array) reepay()->get_setting( 'settle' );
+		$this->language                = (string) reepay()->get_setting( 'language' );
+		$this->debug                   = (string) reepay()->get_setting( 'debug' );
+		$this->payment_type            = (string) reepay()->get_setting( 'payment_type' );
+		$this->skip_order_lines        = (string) reepay()->get_setting( 'skip_order_lines' );
+		$this->handle_failover         = (string) reepay()->get_setting( 'handle_failover' );
+		$this->enable_order_autocancel = (string) reepay()->get_setting( 'enable_order_autocancel' );
 	}
 
 	/**
@@ -1386,6 +1416,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			 * @var WC_Order_Item_Product $order_item
 			 */
 
+			if ( is_product_woosb( $order_item->get_product() ) ) {
+				continue;
+			}
+
 			if ( $order_item->get_product() && wcr_is_subscription_product( $order_item->get_product() ) ) {
 				$fee = $order_item->get_product()->get_meta( '_reepay_subscription_fee' );
 				if ( ! empty( $fee ) && ! empty( $fee['enabled'] ) && 'yes' === $fee['enabled'] ) {
@@ -1395,44 +1429,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				continue;
 			}
 
-			$price = $order->get_line_subtotal( $order_item, false, false );
-			$this->log(
-				array(
-					'source' => 'Price',
-					'result' => $price,
-				)
-			);
+			$price = OrderCapture::get_item_price( $order_item, $order );
 
-			$price_with_tax = $order->get_line_subtotal( $order_item, true, false );
-			$this->log(
-				array(
-					'source' => 'Price with tax',
-					'result' => $price_with_tax,
-				)
-			);
-
-			$tax = $price_with_tax - $price;
-			$this->log(
-				array(
-					'source' => 'Tax amount',
-					'result' => $tax,
-				)
-			);
-
-			$tax_percent = ( $tax > 0 && $price > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
-			$this->log(
-				array(
-					'source' => 'Tax percent',
-					'result' => $tax_percent,
-				)
-			);
-			$unit_price = round( ( $prices_incl_tax ? $price_with_tax : $price ) / $order_item->get_quantity(), 2 );
-			$this->log(
-				array(
-					'source' => 'Unit price',
-					'result' => $unit_price,
-				)
-			);
+			$tax_percent = $price['tax_percent'];
+			$unit_price  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
 
 			if ( $only_not_settled && ! empty( $order_item->get_meta( 'settled' ) ) ) {
 				continue;
@@ -1454,16 +1454,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 				$price = OrderCapture::get_item_price( $item_shipping, $order );
 
-				$tax         = $price['with_tax'] - $price['original'];
-				$tax_percent = ( $tax > 0 ) ? 100 / ( $price['original'] / $tax ) : 0;
-				$unit_price  = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $item_shipping->get_quantity(), 2 );
+				$tax_percent = $price['tax_percent'];
+
+				$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $item_shipping->get_quantity(), 2 );
 
 				if ( $only_not_settled && ! empty( $item_shipping->get_meta( 'settled' ) ) ) {
 					continue;
 				}
 
 				$items[] = array(
-					'ordertext'       => $item_shipping->get_name(),
+					'ordertext'       => rp_clear_ordertext( $item_shipping->get_name() ),
 					'quantity'        => $item_shipping->get_quantity(),
 					'amount'          => rp_prepare_amount( $unit_price, $order->get_currency() ),
 					'vat'             => round( $tax_percent / 100, 2 ),
@@ -1488,7 +1488,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 
 			$items[] = array(
-				'ordertext'       => $order_fee->get_name(),
+				'ordertext'       => rp_clear_ordertext( $order_fee->get_name() ),
 				'quantity'        => 1,
 				'amount'          => rp_prepare_amount( $prices_incl_tax ? $fee_with_tax : $fee, $order->get_currency() ),
 				'vat'             => round( $tax_percent / 100, 2 ),
@@ -1513,18 +1513,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		// Add "PW Gift Cards" support.
-		foreach ( $order->get_items( 'pw_gift_card' ) as $line ) {
-			$amount = apply_filters( 'pwgc_to_order_currency', floatval( $line->get_amount() ) * -1, $order );
-
-			$items[] = array(
-				// translators: gift card code.
-				'ordertext'       => sprintf( __( 'PW gift card (%s)', 'reepay-checkout-gateway' ), $line->get_card_number() ),
-				'quantity'        => 1,
-				'amount'          => rp_prepare_amount( $amount, $order->get_currency() ),
-				'vat'             => 0,
-				'amount_incl_vat' => $prices_incl_tax,
-			);
-		}
+		$items = array_merge( $items, PWGiftCardsIntegration::get_order_lines_for_reepay( $order, $prices_incl_tax ) );
 
 		// Add "Gift Up!" discount.
 		if ( defined( 'GIFTUP_ORDER_META_CODE_KEY' ) &&
@@ -1561,6 +1550,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		$locale = get_locale();
+
+		// Wpml support.
+		$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
+		if ( ! empty( $languages ) && count( $languages ) > 1 ) {
+			$locale_wpml = apply_filters( 'wpml_current_language', get_locale() );
+			if ( ! empty( $languages[ $locale_wpml ] ) ) {
+				$locale = $languages[ $locale_wpml ]['default_locale'];
+			}
+		}
+
 		if ( in_array(
 			$locale,
 			array( 'en_US', 'da_DK', 'sv_SE', 'no_NO', 'de_DE', 'es_ES', 'fr_FR', 'it_IT', 'nl_NL' ),
@@ -1581,28 +1580,55 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 */
 	public function get_logo( string $card_type ): string {
 		$card_types = array(
-			'visa'             => 'visa',
-			'mc'               => 'mastercard',
-			'dankort'          => 'dankort',
-			'visa_dk'          => 'dankort',
-			'ffk'              => 'forbrugsforeningen',
-			'visa_elec'        => 'visa-electron',
-			'maestro'          => 'maestro',
-			'amex'             => 'american-express',
-			'diners'           => 'diners',
-			'discover'         => 'discover',
-			'jcb'              => 'jcb',
-			'mobilepay'        => 'mobilepay',
-			'ms_subscripiton'  => 'mobilepay',
-			'viabill'          => 'viabill',
-			'klarna_pay_later' => 'klarna',
-			'klarna_pay_now'   => 'klarna',
-			'resurs'           => 'resurs',
-			'china_union_pay'  => 'cup',
-			'paypal'           => 'paypal',
-			'applepay'         => 'applepay',
-			'googlepay'        => 'googlepay',
-			'vipps'            => 'vipps',
+			'visa'                        => 'visa',
+			'mc'                          => 'mastercard',
+			'dankort'                     => 'dankort',
+			'visa_dk'                     => 'dankort',
+			'ffk'                         => 'forbrugsforeningen',
+			'visa_elec'                   => 'visa-electron',
+			'maestro'                     => 'maestro',
+			'amex'                        => 'american-express',
+			'diners'                      => 'diners',
+			'discover'                    => 'discover',
+			'jcb'                         => 'jcb',
+			'mobilepay'                   => 'mobilepay',
+			'ms_subscripiton'             => 'mobilepay',
+			'viabill'                     => 'viabill',
+			'klarna_pay_later'            => 'klarna',
+			'klarna_pay_now'              => 'klarna',
+			'resurs'                      => 'resurs',
+			'china_union_pay'             => 'cup',
+			'paypal'                      => 'paypal',
+			'applepay'                    => 'applepay',
+			'googlepay'                   => 'googlepay',
+			'vipps'                       => 'vipps',
+			'ideal'                       => 'ideal',
+			'sepa'                        => 'sepa',
+			'klarna_direct_bank_transfer' => 'klarna',
+			'klarna_direct_debit'         => 'klarna',
+			'bancontact'                  => 'bancontact',
+			'blik_oc'                     => 'blik',
+			'eps'                         => 'eps',
+			'estonia_banks'               => 'card',
+			'latvia_banks'                => 'card',
+			'lithuania_banks'             => 'card',
+			'giropay'                     => 'giropay',
+			'mb_way'                      => 'mbway',
+			'multibanco'                  => 'multibanco',
+			'mybank'                      => 'mybank',
+			'p24'                         => 'p24',
+			'paycoinq'                    => 'paycoinq',
+			'paysafecard'                 => 'paysafecard',
+			'paysera'                     => 'paysera',
+			'postfinance'                 => 'postfinance',
+			'satispay'                    => 'satispay',
+			'trustly'                     => 'trustly',
+			'verkkopankki'                => 'verkkopankki',
+			'wechatpay'                   => 'wechatpay',
+			'santander'                   => 'santander',
+			'offline_bank_transfer'       => 'card',
+			'offline_cash'                => 'card',
+			'offline_other'               => 'card',
 		);
 
 		if ( isset( $card_types[ $card_type ] ) ) {
@@ -1643,5 +1669,42 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'default'     => $this->method_title,
 			),
 		);
+	}
+
+	/**
+	 * Exclude payment method if the order contains an unsupported currency
+	 *
+	 * @param WC_Payment_Gateway[] $available_gateways gateways.
+	 *
+	 * @return array
+	 */
+	public function exclude_payment_gateway_based_on_currency( array $available_gateways ): array {
+		if ( is_null( WC()->cart ) ) {
+			return $available_gateways;
+		}
+		$current_currencies = array();
+		foreach ( WC()->cart->get_cart() as $cart_item ) {
+			$item_data = $cart_item['data'];
+			$currency  = get_woocommerce_currency();
+			if ( method_exists( $item_data, 'get_currency' ) ) {
+				$currency = $item_data->get_currency();
+			}
+			$current_currencies[] = $currency;
+		}
+		foreach ( $available_gateways as $gateway_id => $gateway ) {
+			if ( $gateway_id === $this->id ) {
+				if ( ! empty( $this->supported_currencies ) ) {
+					if ( ! empty( array_diff( $current_currencies, $this->supported_currencies ) ) ) {
+						unset( $available_gateways[ $gateway_id ] );
+						break;
+					}
+				} elseif ( ! empty( $this->unsupported_currencies ) && array_intersect( $this->unsupported_currencies, $current_currencies ) ) {
+					unset( $available_gateways[ $gateway_id ] );
+					break;
+				}
+			}
+		}
+
+		return $available_gateways;
 	}
 }
