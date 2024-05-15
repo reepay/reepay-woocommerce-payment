@@ -142,7 +142,7 @@ class ViteAssetsLoader {
 	public static function dev( array $vite_entry_points, bool $admin_footer = true ) {
 		self::output_vite_dev();
 		foreach ( $vite_entry_points as $vite_entry_point ) {
-			self::output_vite_dev_entry_point( $vite_entry_point, $admin_footer );
+			self::output_vite_dev_entry_point( $vite_entry_point['file'], $admin_footer );
 		}
 	}
 
@@ -157,11 +157,11 @@ class ViteAssetsLoader {
 	 * @return void
 	 */
 	public static function production( array $vite_entry_points, string $build_path, string $build_url, $plugin_version = false ) {
-		$config = self::get_manifest_config( $build_path );
 		foreach ( $vite_entry_points as $vite_entry_point ) {
-			$entry_point_config = self::get_entry_point_config( $config, $vite_entry_point );
+			$config             = self::get_manifest_config( $build_path . $vite_entry_point['nested_path'] );
+			$entry_point_config = self::get_entry_point_config( $config, $vite_entry_point['file'] );
 			if ( $entry_point_config ) {
-				self::connecting_entry_point_scripts( $entry_point_config, $build_url, $plugin_version );
+				self::connecting_entry_point_scripts( $entry_point_config, $build_url . $vite_entry_point['nested_path'], $plugin_version );
 			}
 		}
 	}

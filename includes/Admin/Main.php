@@ -23,6 +23,7 @@ class Main {
 	 */
 	public function __construct() {
 		new PluginsPage();
+		new DebugPage();
 		new Ajax();
 		new MetaBoxes\Order();
 		new MetaBoxes\User();
@@ -78,7 +79,14 @@ class Main {
 		}
 
 		$vite_entry_points = array(
-			'src/admin/meta-fields/main.tsx',
+			array(
+				'nested_path' => '/meta-fields/',
+				'file'        => 'src/admin/meta-fields/main.tsx',
+			),
+			array(
+				'nested_path' => '/debug-page/',
+				'file'        => 'src/admin/debug-page/main.tsx',
+			),
 		);
 		if ( $debug ) {
 			ViteAssetsLoader::dev( $vite_entry_points );
@@ -91,7 +99,7 @@ class Main {
 			);
 			foreach ( $vite_entry_points as $vite_entry_point ) {
 				wp_set_script_translations(
-					$vite_entry_point,
+					$vite_entry_point['file'],
 					'reepay-checkout-gateway',
 					reepay()->get_setting( 'languages_path' )
 				);

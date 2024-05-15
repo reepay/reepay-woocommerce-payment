@@ -56,7 +56,8 @@ then
 fi
 
 status "Building Vite scripts... 🚀️"
-npm run build
+npm run build:meta-fields
+npm run build:debug-page
 
 cd ../
 

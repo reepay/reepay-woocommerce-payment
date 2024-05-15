@@ -14,6 +14,7 @@
  */
 
 use Reepay\Checkout\Api;
+use Reepay\Checkout\Api\Controller\DebugController;
 use Reepay\Checkout\Api\Controller\MetaFieldsController;
 use Reepay\Checkout\DIContainer;
 use Reepay\Checkout\Gateways;
@@ -297,6 +298,7 @@ class WC_ReepayCheckout {
 	 */
 	public function init_rest_api(): void {
 		( new MetaFieldsController() )->register_routes();
+		( new DebugController() )->register_routes();
 	}
 }
 
