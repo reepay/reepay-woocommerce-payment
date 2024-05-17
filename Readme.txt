@@ -2,7 +2,7 @@
 Contributors: reepaydenmark,aaitse
 Tags: payment, billwerk+, reepay, subscription, visa, mastercard, dankort, mobilepay, woocommerce
 Requires at least: 4.0
-Tested up to: 6.3
+Tested up to: 6.5.3
 Requires PHP: 7.4
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
