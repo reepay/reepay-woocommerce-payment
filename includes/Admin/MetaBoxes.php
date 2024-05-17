@@ -149,16 +149,18 @@ class MetaBoxes {
 
 		$user = get_user_by( 'id', $order->get_customer_id() );
 
-		$template_args = array(
-			'email'  => $user->get( 'user_email' ),
-			'handle' => $handle,
-			'link'   => $this->dashboard_url . 'customers/customers/customer/' . $handle,
-		);
+		if ( ! empty( $user ) ) {
+			$template_args = array(
+				'email'  => $user->get( 'user_email' ),
+				'handle' => $handle,
+				'link'   => $this->dashboard_url . 'customers/customers/customer/' . $handle,
+			);
 
-		reepay()->get_template(
-			'meta-boxes/customer.php',
-			$template_args
-		);
+			reepay()->get_template(
+				'meta-boxes/customer.php',
+				$template_args
+			);
+		}
 	}
 
 	/**
