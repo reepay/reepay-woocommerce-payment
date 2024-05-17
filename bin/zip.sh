@@ -46,6 +46,21 @@ composer install --optimize-autoloader --no-dev -q
 status "Generating build... 👷‍♀️"
 npm run build
 
+# Build Vite frontend
+cd ./vite
+
+if [ ! -d "./node_modules" ];
+then
+  status "Installing npm Vite dependencies... 🚀"
+  npm ci  --ignore-scripts
+fi
+
+status "Building Vite scripts... 🚀️"
+npm run build:meta-fields
+npm run build:debug-page
+
+cd ../
+
 # Copy all files
 status "Copying files... ✌️"
 FILES=(includes languages templates updates vendor Readme.txt reepay-woocommerce-payment.php)

@@ -323,6 +323,18 @@ class ReepayCheckout extends ReepayGateway {
 				'label'   => __( 'Enable logging', 'reepay-checkout-gateway' ),
 				'default' => 'yes',
 			),
+			'show_meta_fields_in_orders' => array(
+				'title'   => __( 'Show meta fields in orders', 'reepay-checkout-gateway' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable display', 'reepay-checkout-gateway' ),
+				'default' => 'no',
+			),
+			'show_meta_fields_in_users'  => array(
+				'title'   => __( 'Show meta fields in users', 'reepay-checkout-gateway' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable display', 'reepay-checkout-gateway' ),
+				'default' => 'no',
+			),
 			'hr6'                        => array(
 				'type' => 'separator',
 			),
