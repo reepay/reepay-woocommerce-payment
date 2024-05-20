@@ -1577,8 +1577,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public function get_logo( string $card_type ): string {
 		$card_types = array(
 			'visa'                        => 'visa',
-            'visa_elec'                   => 'visa-electron',
-            'visa-electron'               => 'visa-electron',
+			'visa_elec'                   => 'visa-electron',
+			'visa-electron'               => 'visa-electron',
 			'mc'                          => 'mastercard',
 			'mastercard'                  => 'mastercard',
 			'dankort'                     => 'dankort',
@@ -1607,13 +1607,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			'klarna_direct_debit'         => 'klarna',
 			'bancontact'                  => 'bancontact',
 			'blik_oc'                     => 'blik',
-			'blik'                     => 'blik',
+			'blik'                        => 'blik',
 			'eps'                         => 'eps',
 			'estonia_banks'               => 'card',
 			'latvia_banks'                => 'card',
 			'lithuania_banks'             => 'card',
 			'giropay'                     => 'giropay',
-			'mbway'                      => 'mbway',
+			'mbway'                       => 'mbway',
 			'multibanco'                  => 'multibanco',
 			'mybank'                      => 'mybank',
 			'p24'                         => 'p24',
@@ -1632,15 +1632,15 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		);
 
 		if ( isset( $card_types[ $card_type ] ) ) {
-            $logo_svg_path = reepay()->get_setting( 'images_path' ) . 'svg/' . $card_types[ $card_type ] . '.logo.svg';
-            $logo_png_path = reepay()->get_setting( 'images_path' ) . $card_types[ $card_type ] . '.png';
-            if(file_exists($logo_svg_path)){
-                return reepay()->get_setting( 'images_url' ) . 'svg/' . $card_types[ $card_type ] . '.logo.svg';
-            }elseif(file_exists($logo_png_path)){
-                return reepay()->get_setting( 'images_url' ) . $card_types[ $card_type ] . '.png';
-            }else{
-                return reepay()->get_setting( 'images_url' ) . 'svg/card.logo.svg';
-            }
+			$logo_svg_path = reepay()->get_setting( 'images_path' ) . 'svg/' . $card_types[ $card_type ] . '.logo.svg';
+			$logo_png_path = reepay()->get_setting( 'images_path' ) . $card_types[ $card_type ] . '.png';
+			if ( file_exists( $logo_svg_path ) ) {
+				return reepay()->get_setting( 'images_url' ) . 'svg/' . $card_types[ $card_type ] . '.logo.svg';
+			} elseif ( file_exists( $logo_png_path ) ) {
+				return reepay()->get_setting( 'images_url' ) . $card_types[ $card_type ] . '.png';
+			} else {
+				return reepay()->get_setting( 'images_url' ) . 'svg/card.logo.svg';
+			}
 		} else {
 			return reepay()->get_setting( 'images_url' ) . 'svg/card.logo.svg';
 		}
