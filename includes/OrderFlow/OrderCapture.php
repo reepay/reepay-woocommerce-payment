@@ -151,7 +151,7 @@ class OrderCapture {
 
 		$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
 
-		if ( 'completed' === $this_status_transition_to && ( '1' === $value || false === $value ) ) {
+		if ( 'completed' === $this_status_transition_to && 'no' === reepay()->get_setting( 'disable_auto_settle' ) && ( '1' === $value || false === $value ) ) {
 			$this->multi_settle( $order );
 		}
 	}

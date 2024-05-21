@@ -172,6 +172,7 @@ class WC_ReepayCheckout {
 				'debug'                      => ! empty( $gateway_settings['debug'] ) ? $gateway_settings['debug'] : '',
 				'show_meta_fields_in_orders' => ! empty( $gateway_settings['show_meta_fields_in_orders'] ) ? $gateway_settings['show_meta_fields_in_orders'] : '',
 				'show_meta_fields_in_users'  => ! empty( $gateway_settings['show_meta_fields_in_users'] ) ? $gateway_settings['show_meta_fields_in_users'] : '',
+				'disable_auto_settle'        => ! empty( $gateway_settings['disable_auto_settle'] ) ? $gateway_settings['disable_auto_settle'] : '',
 				'payment_type'               => ! empty( $gateway_settings['payment_type'] ) ? $gateway_settings['payment_type'] : '',
 				'skip_order_lines'           => ! empty( $gateway_settings['skip_order_lines'] ) ? $gateway_settings['skip_order_lines'] : '',
 				'enable_order_autocancel'    => ! empty( $gateway_settings['enable_order_autocancel'] ) ? $gateway_settings['enable_order_autocancel'] : '',
