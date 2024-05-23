@@ -1607,7 +1607,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			'klarna_direct_debit'         => 'klarna',
 			'bancontact'                  => 'bancontact',
 			'blik_oc'                     => 'blik',
-			'blik'                     => 'blik',
+			'blik'                        => 'blik',
 			'eps'                         => 'eps',
 			'estonia_banks'               => 'card',
 			'latvia_banks'                => 'card',
