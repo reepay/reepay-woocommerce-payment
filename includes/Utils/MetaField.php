@@ -46,6 +46,7 @@ class MetaField {
 		'_reepay_is_renewal',
 		'_reepay_membership_id',
 		'_payment_method_id',
+		'_real_total',
 
 		// user fields.
 		'reepay_customer_id',

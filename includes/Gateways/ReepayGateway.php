@@ -10,6 +10,7 @@ namespace Reepay\Checkout\Gateways;
 use Exception;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
+use Reepay\Checkout\Integrations\WPCProductBundlesWooCommerceIntegration;
 use SitePress;
 use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Tokens\TokenReepay;
@@ -1412,7 +1413,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			 * @var WC_Order_Item_Product $order_item
 			 */
 
-			if ( is_product_woosb( $order_item->get_product() ) ) {
+			if ( WPCProductBundlesWooCommerceIntegration::is_product_woosb( $order_item->get_product() ) ) {
 				continue;
 			}
 
