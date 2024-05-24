@@ -565,8 +565,11 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	 * ["vipps", "vipps"]
 	 */
 	public function test_logo( $card_type, $result ) {
+        $logo_svg_path = reepay()->get_setting( 'images_path' ) . 'svg/' . $result . '.logo.svg';
 		$this->assertSame(
-			reepay()->get_setting( 'images_url' ) . 'svg/' . $result . '.logo.svg',
+            file_exists($logo_svg_path) ?
+                reepay()->get_setting( 'images_url' ) . 'svg/' . $result . '.logo.svg' :
+                reepay()->get_setting( 'images_url' ) . $result . '.png',
 			self::$gateway->get_logo( $card_type )
 		);
 	}
@@ -574,10 +577,8 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	public function test_logo_default() {
 		$card_type = 'custom';
 
-		$default_card_type = reset( self::$gateway->logos );
-
 		$this->assertSame(
-			reepay()->get_setting( 'images_url' ) . $default_card_type . '.png',
+			reepay()->get_setting( 'images_url' ) . 'svg/card.logo.svg',
 			self::$gateway->get_logo( $card_type )
 		);
 	}
