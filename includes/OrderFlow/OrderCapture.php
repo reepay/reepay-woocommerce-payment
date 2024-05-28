@@ -9,6 +9,7 @@ namespace Reepay\Checkout\OrderFlow;
 
 use Exception;
 use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
+use Reepay\Checkout\Integrations\WPCProductBundlesWooCommerceIntegration;
 use WC_Order;
 use WC_Order_Factory;
 use WC_Order_Item;
@@ -151,7 +152,7 @@ class OrderCapture {
 
 		$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
 
-		if ( 'completed' === $this_status_transition_to && ( '1' === $value || false === $value ) ) {
+		if ( 'completed' === $this_status_transition_to && 'no' === reepay()->get_setting( 'disable_auto_settle' ) && ( '1' === $value || false === $value ) ) {
 			$this->multi_settle( $order );
 		}
 	}
@@ -380,6 +381,9 @@ class OrderCapture {
 		$amount = 0;
 
 		foreach ( $order->get_items( array( 'line_item', 'shipping', 'fee' ) ) as $item ) {
+			if ( WPCProductBundlesWooCommerceIntegration::is_order_item_bundle( $item ) ) {
+				continue;
+			}
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$amount += self::get_item_price( $item, $order )['with_tax'];
 			}
@@ -437,7 +441,7 @@ class OrderCapture {
 		$price['original'] = floatval( $order->get_line_total( $order_item, false, false ) );
 		$price['with_tax'] = floatval( $order->get_line_total( $order_item, true, false ) );
 
-		if ( is_active_plugin_woo_product_bundle() ) {
+		if ( WPCProductBundlesWooCommerceIntegration::is_active_plugin() ) {
 			$price_bundle = floatval( $order_item->get_meta( '_woosb_price' ) );
 			if ( ! empty( $price_bundle ) ) {
 				$price['original'] = $price_bundle;

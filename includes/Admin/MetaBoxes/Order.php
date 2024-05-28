@@ -166,21 +166,21 @@ class Order {
 		$user = get_user_by( 'id', $order->get_customer_id() );
 
 		if ( ! empty( $user ) ) {
-            $email = $user->get( 'user_email' );
-        }else{
-            $email = $order->get_billing_email();
-        }
+			$email = $user->get( 'user_email' );
+		} else {
+			$email = $order->get_billing_email();
+		}
 
-        $template_args = array(
-            'email'  => $email,
-            'handle' => $handle,
-            'link'   => $this->dashboard_url . 'customers/customers/customer/' . $handle,
-        );
+		$template_args = array(
+			'email'  => $email,
+			'handle' => $handle,
+			'link'   => $this->dashboard_url . 'customers/customers/customer/' . $handle,
+		);
 
-        reepay()->get_template(
-            'meta-boxes/customer.php',
-            $template_args
-        );
+		reepay()->get_template(
+			'meta-boxes/customer.php',
+			$template_args
+		);
 	}
 
 	/**
