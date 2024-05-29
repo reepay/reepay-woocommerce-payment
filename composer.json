@@ -28,5 +28,8 @@
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
+    },
+    "require": {
+        "ext-json": "*"
     }
 }

@@ -1,27 +1,25 @@
 <?php
 /**
- * Register reepay order metaboxes
+ * Register reepay order meta boxes
  *
- * @package Reepay\Checkout\Admin
+ * @package Reepay\Checkout\Admin\MetaBoxes
  */
 
-namespace Reepay\Checkout\Admin;
+namespace Reepay\Checkout\Admin\MetaBoxes;
 
-use Automattic\WooCommerce\Utilities\OrderUtil;
 use Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController;
 use Exception;
 use Reepay\Checkout\Gateways\ReepayCheckout;
 use WC_Order;
-use WP_Post;
 
 defined( 'ABSPATH' ) || exit();
 
 /**
- * Class MetaBoxes
+ * Class
  *
- * @package Reepay\Checkout\Admin
+ * @package Reepay\Checkout\Admin\MetaBoxes
  */
-class MetaBoxes {
+class Order {
 	/**
 	 * Reepay dashboard url
 	 *
@@ -30,7 +28,7 @@ class MetaBoxes {
 	private string $dashboard_url = 'https://admin.billwerk.plus/#/rp/';
 
 	/**
-	 * MetaBoxes constructor.
+	 * Constructor.
 	 */
 	public function __construct() {
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
@@ -50,34 +48,67 @@ class MetaBoxes {
 			$order_id = $_GET['post'];
 		}
 
-		if ( ! empty( $order_id ) ) {
-			$order = wc_get_order( $order_id );
-			if ( $order ) {
-				$order_data = $order->get_data();
+		if ( empty( $order_id ) ) {
+			return;
+		}
 
-				if ( empty( $order ) || ! rp_is_order_paid_via_reepay( $order ) ) {
-					return;
-				}
+		$order = wc_get_order( $order_id );
 
-				$gateway = rp_get_payment_method( $order );
+		if ( $order ) {
+			$order_data = $order->get_data();
 
-				if ( empty( $gateway ) ) {
-					return;
-				}
-
-				if ( ! empty( $order->get_meta( '_reepay_order' ) ) && 0 !== $order_data['parent_id'] ) {
-					$parent_order = wc_get_order( $order_data['parent_id'] );
-					$subscription = $parent_order->get_meta( '_reepay_subscription_handle' );
-				} elseif ( ! empty( $order->get_meta( '_reepay_subscription_handle_parent' ) ) ) {
-					$subscription = $order->get_meta( '_reepay_subscription_handle_parent' );
-				} else {
-					$subscription = $order->get_meta( '_reepay_subscription_handle' );
-				}
-
+			if ( reepay()->get_setting( 'show_meta_fields_in_orders' ) === 'yes' ) {
 				add_meta_box(
-					'reepay_checkout_customer',
-					__( 'Customer', 'reepay-checkout-gateway' ),
-					array( $this, 'generate_meta_box_content_customer' ),
+					'reepay_meta_fields',
+					__( 'Debug: Order meta fields', 'reepay-checkout-gateway' ),
+					array( $this, 'generate_meta_box_content_meta_fields' ),
+					$screen,
+					'normal',
+					'high',
+					array(
+						'order'     => $order,
+						'post_type' => get_current_screen()->post_type,
+					)
+				);
+			}
+
+			if ( empty( $order ) || ! rp_is_order_paid_via_reepay( $order ) ) {
+				return;
+			}
+
+			$gateway = rp_get_payment_method( $order );
+
+			if ( empty( $gateway ) ) {
+				return;
+			}
+
+			if ( ! empty( $order->get_meta( '_reepay_order' ) ) && 0 !== $order_data['parent_id'] ) {
+				$parent_order = wc_get_order( $order_data['parent_id'] );
+				$subscription = $parent_order->get_meta( '_reepay_subscription_handle' );
+			} elseif ( ! empty( $order->get_meta( '_reepay_subscription_handle_parent' ) ) ) {
+				$subscription = $order->get_meta( '_reepay_subscription_handle_parent' );
+			} else {
+				$subscription = $order->get_meta( '_reepay_subscription_handle' );
+			}
+
+			add_meta_box(
+				'reepay_checkout_customer',
+				__( 'Customer', 'reepay-checkout-gateway' ),
+				array( $this, 'generate_meta_box_content_customer' ),
+				$screen,
+				'side',
+				'high',
+				array(
+					'order'   => $order,
+					'gateway' => $gateway,
+				)
+			);
+
+			if ( ! empty( $order->get_transaction_id() ) ) {
+				add_meta_box(
+					'reepay_checkout_invoice',
+					__( 'Invoice', 'reepay-checkout-gateway' ),
+					array( $this, 'generate_meta_box_content_invoice' ),
 					$screen,
 					'side',
 					'high',
@@ -86,36 +117,21 @@ class MetaBoxes {
 						'gateway' => $gateway,
 					)
 				);
+			}
 
-				if ( ! empty( $order->get_transaction_id() ) ) {
-					add_meta_box(
-						'reepay_checkout_invoice',
-						__( 'Invoice', 'reepay-checkout-gateway' ),
-						array( $this, 'generate_meta_box_content_invoice' ),
-						$screen,
-						'side',
-						'high',
-						array(
-							'order'   => $order,
-							'gateway' => $gateway,
-						)
-					);
-				}
-
-				if ( ! empty( $subscription ) ) {
-					add_meta_box(
-						'reepay_checkout_subscription',
-						__( 'Subscription', 'reepay-checkout-gateway' ),
-						array( $this, 'generate_meta_box_content_subscription' ),
-						$screen,
-						'side',
-						'high',
-						array(
-							'order'   => $order,
-							'gateway' => $gateway,
-						)
-					);
-				}
+			if ( ! empty( $subscription ) ) {
+				add_meta_box(
+					'reepay_checkout_subscription',
+					__( 'Subscription', 'reepay-checkout-gateway' ),
+					array( $this, 'generate_meta_box_content_subscription' ),
+					$screen,
+					'side',
+					'high',
+					array(
+						'order'   => $order,
+						'gateway' => $gateway,
+					)
+				);
 			}
 		}
 	}
@@ -130,7 +146,7 @@ class MetaBoxes {
 		/**
 		 * Set types of args variables
 		 *
-		 * @var WC_Order       $order
+		 * @var WC_Order $order
 		 * @var ReepayCheckout $gateway
 		 */
 		$order      = $meta['args']['order'];
@@ -149,8 +165,14 @@ class MetaBoxes {
 
 		$user = get_user_by( 'id', $order->get_customer_id() );
 
+		if ( ! empty( $user ) ) {
+			$email = $user->get( 'user_email' );
+		} else {
+			$email = $order->get_billing_email();
+		}
+
 		$template_args = array(
-			'email'  => $user->get( 'user_email' ),
+			'email'  => $email,
 			'handle' => $handle,
 			'link'   => $this->dashboard_url . 'customers/customers/customer/' . $handle,
 		);
@@ -171,7 +193,7 @@ class MetaBoxes {
 		/**
 		 * Set types of args variables
 		 *
-		 * @var WC_Order       $order
+		 * @var WC_Order $order
 		 * @var ReepayCheckout $gateway
 		 */
 		$order   = $meta['args']['order'];
@@ -214,7 +236,7 @@ class MetaBoxes {
 		/**
 		 * Set types of args variables
 		 *
-		 * @var WC_Order       $order
+		 * @var WC_Order $order
 		 * @var ReepayCheckout $gateway
 		 */
 		$order      = $meta['args']['order'];
@@ -253,6 +275,30 @@ class MetaBoxes {
 
 		reepay()->get_template(
 			'meta-boxes/plan.php',
+			$template_args
+		);
+	}
+
+	/**
+	 *  Function to show meta fields content
+	 *
+	 * @param mixed              $x not used.
+	 * @param array{args: array} $meta additional info. Get arguments by 'args' key.
+	 *
+	 * @return void
+	 */
+	public function generate_meta_box_content_meta_fields( $x, array $meta ) {
+		/**
+		 * Args.
+		 *
+		 * @var array{post_type: string} $args
+		 */
+		$args          = $meta['args'];
+		$template_args = array(
+			'post_type' => $args['post_type'],
+		);
+		reepay()->get_template(
+			'meta-boxes/meta-fields.php',
 			$template_args
 		);
 	}

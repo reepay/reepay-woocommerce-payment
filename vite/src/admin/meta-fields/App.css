@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+#reepay_meta_fields > .inside {
+    @apply bw-mt-4;
+}

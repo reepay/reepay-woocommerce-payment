@@ -17,6 +17,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class ApplePay extends ReepayGateway {
+	public const ID = 'reepay_applepay';
+
 	/**
 	 * Logos
 	 *
@@ -39,7 +41,7 @@ class ApplePay extends ReepayGateway {
 	 * ApplePay constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_applepay';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - Apple Pay', 'reepay-checkout-gateway' );
 		$this->supports     = array(

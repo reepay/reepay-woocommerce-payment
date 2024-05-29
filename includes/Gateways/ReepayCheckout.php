@@ -9,15 +9,11 @@
 namespace Reepay\Checkout\Gateways;
 
 use Exception;
-use Reepay\Checkout\Api;
 use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Plugin\Statistics;
 use Reepay\Checkout\Tokens\ReepayTokens;
-use Reepay\Checkout\Tokens\TokenReepay;
-use Reepay\Checkout\Tokens\TokenReepayMS;
 use Reepay\Checkout\OrderFlow\InstantSettle;
 use Reepay\Checkout\OrderFlow\OrderStatuses;
-use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -82,7 +78,7 @@ class ReepayCheckout extends ReepayGateway {
 		$this->skip_order_lines        = $this->settings['skip_order_lines'] ?: $this->skip_order_lines;
 		$this->failed_webhooks_email   = $this->settings['failed_webhooks_email'] ?: $this->failed_webhooks_email;
 		$this->handle_failover         = ! empty( $this->settings['handle_failover'] ) ?: $this->handle_failover;
-		$this->enable_order_autocancel = $this->settings['enable_order_autocancel'] ?: $this->enable_order_autocancel;
+		$this->enable_order_autocancel = ! empty( $this->settings['enable_order_autocancel'] ) ?: $this->enable_order_autocancel;
 
 		if ( ! empty( $this->settings['settle'] ) && is_array( $this->settings['settle'] ) ) {
 			$this->settle = $this->settings['settle'];
@@ -308,6 +304,13 @@ class ReepayCheckout extends ReepayGateway {
 				),
 				'default' => 'en_US',
 			),
+			'disable_auto_settle'        => array(
+				'title'       => __( 'Auto-settle', 'reepay-checkout-gateway' ),
+				'description' => __( 'Disable settle orders on status changing to completed', 'reepay-checkout-gateway' ),
+				'type'        => 'checkbox',
+				'label'       => __( 'Disable auto-settle', 'reepay-checkout-gateway' ),
+				'default'     => 'no',
+			),
 			'save_cc'                    => array(
 				'title'   => __( 'Allow Credit Card saving', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
@@ -322,6 +325,18 @@ class ReepayCheckout extends ReepayGateway {
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable logging', 'reepay-checkout-gateway' ),
 				'default' => 'yes',
+			),
+			'show_meta_fields_in_orders' => array(
+				'title'   => __( 'Show meta fields in orders', 'reepay-checkout-gateway' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable display', 'reepay-checkout-gateway' ),
+				'default' => 'no',
+			),
+			'show_meta_fields_in_users'  => array(
+				'title'   => __( 'Show meta fields in users', 'reepay-checkout-gateway' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable display', 'reepay-checkout-gateway' ),
+				'default' => 'no',
 			),
 			'hr6'                        => array(
 				'type' => 'separator',
@@ -411,7 +426,7 @@ class ReepayCheckout extends ReepayGateway {
 	/**
 	 * Generate separator HTML
 	 *
-	 * @param string $key  Field key.
+	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
 	 * @return string
@@ -424,7 +439,7 @@ class ReepayCheckout extends ReepayGateway {
 	/**
 	 * Generate WebHook Status HTML.
 	 *
-	 * @param string $key  Field key.
+	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
 	 * @return string
@@ -473,7 +488,7 @@ class ReepayCheckout extends ReepayGateway {
 	/**
 	 * Generate WebHook Status HTML.
 	 *
-	 * @param string $key  Field key.
+	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
 	 * @return string
@@ -499,10 +514,7 @@ class ReepayCheckout extends ReepayGateway {
 			<th></th>
 			<td class="forminp">
 				<fieldset>
-					<button name="save"
-							class="button-primary woocommerce-save-button"
-							type="submit"
-							value="Save changes">
+					<button name="save" class="button-primary woocommerce-save-button" type="submit" value="Save changes">
 						<?php _e( 'Save and verify', 'reepay-checkout-gateway' ); ?>
 					</button>
 				</fieldset>
@@ -515,7 +527,7 @@ class ReepayCheckout extends ReepayGateway {
 	/**
 	 * Generate WebHook Status HTML.
 	 *
-	 * @param string $key  Field key.
+	 * @param string $key Field key.
 	 * @param array  $data Field data.
 	 *
 	 * @return string
@@ -558,15 +570,12 @@ class ReepayCheckout extends ReepayGateway {
 					<?php else : ?>
 						<span style="color: red;">
 							<?php esc_html_e( 'Configuration is required.', 'reepay-checkout-gateway' ); ?>
-						</span>
-						<p>
+						</span>                        <p>
 							<?php esc_html_e( 'Please check api credentials and save the settings. Webhook will be installed automatically.', 'reepay-checkout-gateway' ); ?>
 						</p>
 					<?php endif; ?>
 
-					<input type="hidden"
-							name="<?php echo esc_attr( $this->get_field_key( $key ) ); ?>"
-							value="<?php echo esc_attr( $is_webhook_configured ); ?>"/>
+					<input type="hidden" name="<?php echo esc_attr( $this->get_field_key( $key ) ); ?>" value="<?php echo esc_attr( $is_webhook_configured ); ?>"/>
 				</fieldset>
 			</td>
 		</tr>
@@ -649,9 +658,8 @@ class ReepayCheckout extends ReepayGateway {
 	/**
 	 * Ajax: Finalize Payment. Used only to change the payment method
 	 *
-	 * @see ReepayGateway::change_payment_method
-	 *
 	 * @throws Exception If wrong request data.
+	 * @see ReepayGateway::change_payment_method
 	 */
 	public function reepay_finalize() {
 		try {
@@ -716,7 +724,7 @@ class ReepayCheckout extends ReepayGateway {
 						OrderStatuses::set_authorized_status(
 							$order,
 							sprintf(
-								// translators: %1$s authorized amount, %2$s transaction id.
+							// translators: %1$s authorized amount, %2$s transaction id.
 								__( 'Payment has been authorized. Amount: %s.', 'reepay-checkout-gateway' ),
 								wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ) )
 							),
@@ -730,7 +738,7 @@ class ReepayCheckout extends ReepayGateway {
 						OrderStatuses::set_settled_status(
 							$order,
 							sprintf(
-								// translators: %1$s settled amount, transaction id.
+							// translators: %1$s settled amount, transaction id.
 								__( 'Payment has been settled. Amount: %s.', 'reepay-checkout-gateway' ),
 								wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ) )
 							),

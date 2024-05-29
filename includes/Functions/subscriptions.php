@@ -44,8 +44,7 @@ if ( ! function_exists( 'wcr_is_subscription_product' ) ) {
 	 * @return bool
 	 */
 	function wcr_is_subscription_product( WC_Product $product ): bool {
-		return class_exists( WC_Reepay_Checkout::class, false ) &&
-				WC_Reepay_Checkout::is_reepay_product( $product );
+		return class_exists( WC_Reepay_Checkout::class, false ) && WC_Reepay_Checkout::is_reepay_product( $product, array( 'woosb' ) );
 	}
 }
 
