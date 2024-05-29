@@ -52,7 +52,7 @@ cd ./vite
 if [ ! -d "./node_modules" ];
 then
   status "Installing npm Vite dependencies... 🚀"
-  npm ci  --ignore-scripts
+  npm ci
 fi
 
 status "Building Vite scripts... 🚀️"
