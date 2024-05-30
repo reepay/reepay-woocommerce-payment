@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Exception\BillwerkApiException;
+use Billwerk\Sdk\Model\Account\AccountModel;
 use Exception;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
@@ -378,32 +380,34 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Get reepay account info
+	 * Get billwerk account info
 	 *
-	 * @param bool $is_test use test or live reepay api keys.
+	 * @param bool $is_test use test or live billwerk api keys.
 	 *
-	 * @return array|mixed|object|WP_Error
+	 * @return null|AccountModel
+	 *
+	 * @throws BillwerkApiException Api exception.
 	 */
-	public function get_account_info( $is_test = false ) {
+	public function get_account_info( bool $is_test = false ): ?AccountModel {
 		if ( $this->is_gateway_settings_page() ) {
-			$key   = 'account_info';
-			$force = true;
+			$key            = 'account_info';
+			$force_live_key = true;
 
 			if ( $is_test ) {
-				$key   = 'account_info_test';
-				$force = false;
+				$key            = 'account_info_test';
+				$force_live_key = false;
 			}
 
 			$account_info = get_transient( $key );
 			if ( empty( $account_info ) ) {
-				$account_info = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account', array(), $force );
+				$account_info = reepay()->sdk( $force_live_key )->account()->get();
 				set_transient( $key, $account_info, 5 );
 			}
 
 			return $account_info;
 		}
 
-		return array();
+		return null;
 	}
 
 

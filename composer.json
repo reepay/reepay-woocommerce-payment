@@ -30,6 +30,9 @@
         }
     },
     "require": {
-        "ext-json": "*"
+        "ext-json": "*",
+        "billwerk/php-sdk": "^1.0",
+        "guzzlehttp/guzzle": "^7.0",
+        "ext-mbstring": "*"
     }
 }

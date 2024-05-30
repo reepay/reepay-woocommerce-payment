@@ -8,6 +8,7 @@
         "build:meta-fields": "tsc && vite build -c vite.config.meta-fields.ts",
         "dev:debug-page": "vite -c vite.config.debug-page.ts",
         "build:debug-page": "tsc && vite build -c vite.config.debug-page.ts",
+        "build": "tsc && vite build -c vite.config.debug-page.ts && vite build -c vite.config.meta-fields.ts",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
     },
     "dependencies": {

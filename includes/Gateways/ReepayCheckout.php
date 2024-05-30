@@ -8,6 +8,7 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Exception\BillwerkApiException;
 use Exception;
 use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Plugin\Statistics;
@@ -137,22 +138,22 @@ class ReepayCheckout extends ReepayGateway {
 				},
 			),
 			'account'                    => array(
-				'title'     => __( 'Account', 'reepay-checkout-gateway' ),
-				'type'      => 'account_info',
-				'show'      => function () {
+				'title'   => __( 'Account', 'reepay-checkout-gateway' ),
+				'type'    => 'account_info',
+				'show'    => function () {
 					return ! empty( $this->get_option( 'private_key' ) );
 				},
-				'info_type' => 'name',
-				'is_test'   => false,
+				'getter'  => 'getName',
+				'is_test' => false,
 			),
 			'state'                      => array(
-				'title'     => __( 'State', 'reepay-checkout-gateway' ),
-				'type'      => 'account_info',
-				'show'      => function () {
+				'title'   => __( 'State', 'reepay-checkout-gateway' ),
+				'type'    => 'account_info',
+				'show'    => function () {
 					return ! empty( $this->get_option( 'private_key' ) );
 				},
-				'info_type' => 'state',
-				'is_test'   => false,
+				'getter'  => 'getState',
+				'is_test' => false,
 			),
 			'is_webhook_configured_live' => array(
 				'type'    => 'webhook_status',
@@ -177,22 +178,22 @@ class ReepayCheckout extends ReepayGateway {
 				},
 			),
 			'account_test'               => array(
-				'title'     => __( 'Account', 'reepay-checkout-gateway' ),
-				'type'      => 'account_info',
-				'show'      => function () {
+				'title'   => __( 'Account', 'reepay-checkout-gateway' ),
+				'type'    => 'account_info',
+				'show'    => function () {
 					return ! empty( $this->get_option( 'private_key_test' ) );
 				},
-				'info_type' => 'name',
-				'is_test'   => true,
+				'getter'  => 'getName',
+				'is_test' => true,
 			),
 			'state_test'                 => array(
-				'title'     => __( 'State', 'reepay-checkout-gateway' ),
-				'type'      => 'account_info',
-				'show'      => function () {
+				'title'   => __( 'State', 'reepay-checkout-gateway' ),
+				'type'    => 'account_info',
+				'show'    => function () {
 					return ! empty( $this->get_option( 'private_key_test' ) );
 				},
-				'info_type' => 'state',
-				'is_test'   => true,
+				'getter'  => 'getState',
+				'is_test' => true,
 			),
 			'is_webhook_configured_test' => array(
 				'type'    => 'webhook_status',
@@ -449,10 +450,10 @@ class ReepayCheckout extends ReepayGateway {
 		$data = wp_parse_args(
 			$data,
 			array(
-				'title'     => '',
-				'info_type' => 'name',
-				'is_test'   => false,
-				'show'      => function () {
+				'title'   => '',
+				'getter'  => null,
+				'is_test' => false,
+				'show'    => function () {
 					return true;
 				},
 			)
@@ -462,7 +463,11 @@ class ReepayCheckout extends ReepayGateway {
 			return '';
 		}
 
-		$info = $this->get_account_info( $data['is_test'] );
+		try {
+			$account_info = $this->get_account_info( $data['is_test'] );
+		} catch ( BillwerkApiException $e ) {
+			$account_info = null;
+		}
 
 		ob_start();
 		?>
@@ -472,9 +477,9 @@ class ReepayCheckout extends ReepayGateway {
 			</th>
 			<td class="forminp">
 				<fieldset>
-					<?php if ( ! is_wp_error( $info ) && ! empty( $info[ $data['info_type'] ] ) ) : ?>
+					<?php if ( ! is_null( $account_info ) && ! is_null( $data['getter'] ) && ! empty( call_user_func( array( $account_info, $data['getter'] ) ) ) ) : ?>
 						<span>
-							<?php echo $info[ $data['info_type'] ]; ?>
+							<?php echo call_user_func( array( $account_info, $data['getter'] ) ); ?>
 						</span>
 					<?php endif; ?>
 				</fieldset>

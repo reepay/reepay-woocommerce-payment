@@ -13,6 +13,13 @@
  * @package Reepay\Checkout
  */
 
+use Billwerk\Sdk\BillwerkClientFactory;
+use Billwerk\Sdk\Sdk;
+use Billwerk\Sdk\Service\AccountService;
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\HttpFactory;
+use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\Api\Controller\DebugController;
 use Reepay\Checkout\Api\Controller\MetaFieldsController;
@@ -77,6 +84,9 @@ class WC_ReepayCheckout {
 		load_plugin_textdomain( 'reepay-checkout-gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
 		add_action( 'rest_api_init', array( $this, 'init_rest_api' ) );
+
+		$this->di()->set( RequestFactoryInterface::class, HttpFactory::class );
+		$this->di()->set( StreamFactoryInterface::class, HttpFactory::class );
 	}
 
 	/**
@@ -241,6 +251,45 @@ class WC_ReepayCheckout {
 		$api->set_logging_source( $source );
 
 		return $api;
+	}
+
+	/**
+	 * Get Billwerk sdk
+	 *
+	 * @param bool $force_live_key Force use live key.
+	 *
+	 * @return Sdk
+	 */
+	public function sdk( bool $force_live_key = false ): Sdk {
+		$api_key = ( ! $force_live_key && reepay()->get_setting( 'test_mode' ) === 'yes' )
+			? $this->get_setting( 'private_key_test' )
+			: $this->get_setting( 'private_key' );
+
+//		$request_factory = $this->di()->get( RequestFactoryInterface::class );
+//		if ( ! $request_factory instanceof RequestFactoryInterface ) {
+//			$request_factory = new HttpFactory();
+//		}
+//
+//		$stream_factory = $this->di()->get( StreamFactoryInterface::class );
+//		if ( ! $stream_factory instanceof StreamFactoryInterface ) {
+//			$stream_factory = new HttpFactory();
+//		}
+
+		$sdk = new Sdk(
+			new BillwerkClientFactory(
+				new Client(),
+				new HttpFactory(),
+				new HttpFactory(),
+			),
+			$api_key
+		);
+
+		$account_service = $this->di()->get( AccountService::class );
+		if ( $account_service instanceof AccountService ) {
+			$sdk->setAccountService( $account_service );
+		}
+
+		return $sdk;
 	}
 
 	/**
