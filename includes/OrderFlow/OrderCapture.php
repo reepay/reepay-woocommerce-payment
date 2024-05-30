@@ -360,8 +360,7 @@ class OrderCapture {
 	 * @return bool
 	 */
 	public function check_capture_allowed( WC_Order $order ): bool {
-		if ( ! rp_is_order_paid_via_reepay( $order ) ||
-			class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
+		if ( ! rp_is_order_paid_via_reepay( $order ) || ( class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) ) {
 			return false;
 		}
 
