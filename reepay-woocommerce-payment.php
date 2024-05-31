@@ -18,8 +18,6 @@ use Billwerk\Sdk\Sdk;
 use Billwerk\Sdk\Service\AccountService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\HttpFactory;
-use Psr\Http\Message\RequestFactoryInterface;
-use Psr\Http\Message\StreamFactoryInterface;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\Api\Controller\DebugController;
 use Reepay\Checkout\Api\Controller\MetaFieldsController;
@@ -30,6 +28,7 @@ use Reepay\Checkout\Plugin\LifeCycle;
 use Reepay\Checkout\Plugin\Statistics;
 use Reepay\Checkout\Plugin\WoocommerceExists;
 use Reepay\Checkout\Plugin\WoocommerceHPOS;
+use Reepay\Checkout\Utils\Logger\JsonLogger;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -40,30 +39,30 @@ class WC_ReepayCheckout {
 	/**
 	 * Class instance
 	 *
-	 * @var WC_ReepayCheckout
+	 * @var ?WC_ReepayCheckout
 	 */
-	private static $instance;
+	private static ?WC_ReepayCheckout $instance = null;
 
 	/**
 	 * Settings array
 	 *
 	 * @var array
 	 */
-	private $settings = array();
+	private array $settings = array();
 
 	/**
 	 * Gateways class instance
 	 *
-	 * @var Gateways
+	 * @var Gateways|null
 	 */
-	private $gateways = null;
+	private ?Gateways $gateways = null;
 
 	/**
 	 * Dependency injection container
 	 *
-	 * @var DIContainer
+	 * @var DIContainer|null
 	 */
-	private $di_container = null;
+	private ?DIContainer $di_container = null;
 
 	/**
 	 * Constructor
@@ -84,9 +83,6 @@ class WC_ReepayCheckout {
 		load_plugin_textdomain( 'reepay-checkout-gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
 		add_action( 'rest_api_init', array( $this, 'init_rest_api' ) );
-
-		$this->di()->set( RequestFactoryInterface::class, HttpFactory::class );
-		$this->di()->set( StreamFactoryInterface::class, HttpFactory::class );
 	}
 
 	/**
@@ -204,7 +200,7 @@ class WC_ReepayCheckout {
 	 * Reset options from database. Now using only for testing purposes
 	 */
 	public function reset_settings() {
-		$this->settings = null;
+		$this->settings = array();
 		$this->get_setting( '' );
 	}
 
@@ -265,16 +261,6 @@ class WC_ReepayCheckout {
 			? $this->get_setting( 'private_key_test' )
 			: $this->get_setting( 'private_key' );
 
-//		$request_factory = $this->di()->get( RequestFactoryInterface::class );
-//		if ( ! $request_factory instanceof RequestFactoryInterface ) {
-//			$request_factory = new HttpFactory();
-//		}
-//
-//		$stream_factory = $this->di()->get( StreamFactoryInterface::class );
-//		if ( ! $stream_factory instanceof StreamFactoryInterface ) {
-//			$stream_factory = new HttpFactory();
-//		}
-
 		$sdk = new Sdk(
 			new BillwerkClientFactory(
 				new Client(),
@@ -284,12 +270,28 @@ class WC_ReepayCheckout {
 			$api_key
 		);
 
-		$account_service = $this->di()->get( AccountService::class );
-		if ( $account_service instanceof AccountService ) {
-			$sdk->setAccountService( $account_service );
+		if ( $this->di()->is_set( AccountService::class ) ) {
+			$account_service = $this->di()->get( AccountService::class );
+			if ( $account_service instanceof AccountService ) {
+				$sdk->setAccountService( $account_service );
+			}
 		}
 
 		return $sdk;
+	}
+
+	/**
+	 * Get logger
+	 *
+	 * @param string $source Source log.
+	 *
+	 * @return JsonLogger
+	 */
+	public function log( string $source = 'billwerk' ): JsonLogger {
+		return new JsonLogger(
+			wp_upload_dir()['basedir'] . '/billwerk-logs',
+			$source
+		);
 	}
 
 	/**

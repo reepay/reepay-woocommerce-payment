@@ -70,6 +70,17 @@ class DIContainer {
 	}
 
 	/**
+	 * Check exist class in container
+	 *
+	 * @param string $id Identifier.
+	 *
+	 * @return bool
+	 */
+	public function is_set( string $id ): bool {
+		return isset( $this->classes[ $id ] );
+	}
+
+	/**
 	 * Finds an entry of the container by its identifier and returns it.
 	 *
 	 * @param string $id Identifier of the entry to look for.
