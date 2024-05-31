@@ -38,6 +38,13 @@ class JsonLogger {
 	private string $source = 'billwerk';
 
 	/**
+	 * Classes to ignore in backtrace
+	 *
+	 * @var array $ignore_classes_backtrace class names.
+	 */
+	private array $ignore_classes_backtrace = array();
+
+	/**
 	 * Class constructor
 	 *
 	 * @param string $directory_path Directory path logs.
@@ -108,6 +115,18 @@ class JsonLogger {
 	}
 
 	/**
+	 * Add ignored classes to backtrace
+	 *
+	 * @param array $names class names.
+	 *
+	 * @return self
+	 */
+	public function add_ignored_classes_backtrace( array $names ): self {
+		$this->ignore_classes_backtrace = array( ...$this->ignore_classes_backtrace, ...$names );
+		return $this;
+	}
+
+	/**
 	 * Get log backtrace
 	 *
 	 * @return array
@@ -115,7 +134,7 @@ class JsonLogger {
 	private function get_backtrace(): array {
 		$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
 
-		$ignore_classes = array( self::class );
+		$ignore_classes = array( self::class, ...$this->ignore_classes_backtrace );
 
 		$backtrace = array_filter(
 			$backtrace,

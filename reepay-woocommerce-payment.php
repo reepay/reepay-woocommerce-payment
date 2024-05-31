@@ -14,6 +14,7 @@
  */
 
 use Billwerk\Sdk\BillwerkClientFactory;
+use Billwerk\Sdk\BillwerkRequest;
 use Billwerk\Sdk\Sdk;
 use Billwerk\Sdk\Service\AccountService;
 use GuzzleHttp\Client;
@@ -29,6 +30,7 @@ use Reepay\Checkout\Plugin\Statistics;
 use Reepay\Checkout\Plugin\WoocommerceExists;
 use Reepay\Checkout\Plugin\WoocommerceHPOS;
 use Reepay\Checkout\Utils\Logger\JsonLogger;
+use Reepay\Checkout\Utils\Logger\SdkLogger;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -270,6 +272,10 @@ class WC_ReepayCheckout {
 			$api_key
 		);
 
+		$sdk->setLogger(
+			new SdkLogger()
+		);
+
 		if ( $this->di()->is_set( AccountService::class ) ) {
 			$account_service = $this->di()->get( AccountService::class );
 			if ( $account_service instanceof AccountService ) {
@@ -288,9 +294,14 @@ class WC_ReepayCheckout {
 	 * @return JsonLogger
 	 */
 	public function log( string $source = 'billwerk' ): JsonLogger {
-		return new JsonLogger(
+		return ( new JsonLogger(
 			wp_upload_dir()['basedir'] . '/billwerk-logs',
 			$source
+		) )->add_ignored_classes_backtrace(
+			array(
+				BillwerkRequest::class,
+				SdkLogger::class,
+			)
 		);
 	}
 
