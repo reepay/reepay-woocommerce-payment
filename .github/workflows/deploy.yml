@@ -1,0 +1,41 @@
+name: Deploy Plugin to Test Site
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get code
+        uses: actions/checkout@v4
+      - name: Extract branch name
+        run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+      - name: Deploy code via SSH
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_NAME }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          source: "./"
+          target: public_html/wp-content/plugins/billwerk-woocommerce-payment-${{ env.BRANCH_NAME }}
+#          script: |
+#            rsync -avz ./ public_html/wp-content/plugins/billwerk-woocommerce-payment-${{ env.BRANCH_NAME }}
+#  deploy:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v2
+#
+#      - name: Get current branch name
+#        id: get_branch
+#        run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+#
+#      - name: Setup SSH
+#        uses: webfactory/ssh-agent@v0.5.3
+#        with:
+#          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
