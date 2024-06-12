@@ -52,12 +52,11 @@ cd ./vite
 if [ ! -d "./node_modules" ];
 then
   status "Installing npm Vite dependencies... 🚀"
-  npm ci
+  bun i --frozen-lockfile
 fi
 
 status "Building Vite scripts... 🚀️"
-npm run build:meta-fields
-npm run build:debug-page
+bun run build
 
 cd ../
 

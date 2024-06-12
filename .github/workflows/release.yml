@@ -1,11 +1,11 @@
 name: Release
 run-name: Release
 
-on: 
+on:
   push:
     tags:
-    - 'v*'
-    
+      - 'v*'
+
 permissions:
   contents: write
 
@@ -15,40 +15,56 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-
-      # Get composer cache directory
-    -   id:     get-composer-cache-directory
-        name:   Get Composer caches directory path
-        run:    echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-        shell:  bash
-
-      # Mount composer cache directory
-    -   id:     mount-composer-cache-directory
-        name:   Mount composer cache directory
-        uses:   actions/cache@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-            path:           ${{ steps.get-composer-cache-directory.outputs.dir }}
-            key:            ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-            restore-keys:   ${{ runner.os }}-composer-
-          
-      # Mount composer cache directory
-    -   id:     mount-npm-cache-directory
-        name:   Mount npm cache directory
-        uses:   actions/cache@v3
-        with:
-            path:           node_modules
-            key:            ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
-            restore-keys:   ${{ runner.os }}-npm-
+          node-version: 20
 
-    - name: Zip code
-      run: |
-        chmod 777 ./bin/zip.sh
-        sudo bash ./bin/zip.sh
-      shell: bash
-      
-    - uses: ncipollo/release-action@v1
-      with:
-        artifactErrorsFailBuild: true
-        allowUpdates: true
-        artifacts: "./build/reepay-woocommerce-payment.zip"
+      - name: Install Bun
+        run: npm install -g bun
+
+      - uses: actions/checkout@v3
+
+      - name: Get Composer caches directory path
+        run: echo "COMPOSER_CACHE_DIR=$(composer config cache-files-dir)" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.COMPOSER_CACHE_DIR }}
+          key: "${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}"
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: "${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}"
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Cache vite dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            vite/node_modules
+          key: "${{ runner.os }}-vite-${{ hashFiles('vite/bun.lockb') }}"
+          restore-keys: |
+            ${{ runner.os }}-vite-
+
+      - name: Build and zip project
+        run: |
+          chmod +x ./bin/zip.sh
+          ./bin/zip.sh
+        shell: bash
+
+      - uses: ncipollo/release-action@v1
+        with:
+          artifactErrorsFailBuild: true
+          allowUpdates: true
+          artifacts: "./build/reepay-woocommerce-payment.zip"
