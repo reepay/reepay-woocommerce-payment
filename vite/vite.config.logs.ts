@@ -16,14 +16,13 @@ export default defineConfig({
     build: {
         manifest: true,
         emptyOutDir: true,
-        chunkSizeWarningLimit: 2000,
         copyPublicDir: false,
         rollupOptions: {
             input: {
-                'debug-page': 'src/admin/debug-page/main.tsx',
+                'meta-fields': 'src/admin/logs-page/main.tsx',
             },
             output: {
-                dir: '../assets/dist/vite/debug-page',
+                dir: '../assets/dist/vite/logs-page',
                 format: 'iife',
             },
         },

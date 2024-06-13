@@ -21,6 +21,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\HttpFactory;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\Api\Controller\DebugController;
+use Reepay\Checkout\Api\Controller\LogsController;
 use Reepay\Checkout\Api\Controller\MetaFieldsController;
 use Reepay\Checkout\DIContainer;
 use Reepay\Checkout\Gateways;
@@ -295,7 +296,8 @@ class WC_ReepayCheckout {
 	 */
 	public function log( string $source = 'billwerk' ): JsonLogger {
 		return ( new JsonLogger(
-			wp_upload_dir()['basedir'] . '/billwerk-logs',
+			wp_upload_dir()['basedir'] . '/' . JsonLogger::FOLDER,
+			wp_upload_dir()['baseurl'] . '/' . JsonLogger::FOLDER,
 			$source
 		) )->add_ignored_classes_backtrace(
 			array(
@@ -362,6 +364,7 @@ class WC_ReepayCheckout {
 	public function init_rest_api(): void {
 		( new MetaFieldsController() )->register_routes();
 		( new DebugController() )->register_routes();
+		( new LogsController() )->register_routes();
 	}
 }
 

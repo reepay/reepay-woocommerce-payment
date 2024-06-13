@@ -1,5 +1,4 @@
 import React from 'react'
-import './App.css'
 import { Provider, useDispatch } from 'react-redux'
 import { Dispatch, store } from '@/admin/meta-fields/store'
 import List from '@/admin/meta-fields/components/List'

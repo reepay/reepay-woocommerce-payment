@@ -8,6 +8,11 @@
 namespace Reepay\Checkout\Utils\Logger;
 
 use DateTime;
+use Exception;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use Reepay\Checkout\Utils\FilesystemUtil;
+use SplFileInfo;
 use WP_Filesystem_Base;
 
 /**
@@ -16,6 +21,7 @@ use WP_Filesystem_Base;
  * @package Reepay\Checkout\Utils\Logger
  */
 class JsonLogger {
+	public const FOLDER = 'billwerk-logs';
 	/**
 	 * Wp Filesystem
 	 *
@@ -29,6 +35,13 @@ class JsonLogger {
 	 * @var string $directory_path
 	 */
 	private string $directory_path;
+
+	/**
+	 * Directory url logs
+	 *
+	 * @var string $directory_url
+	 */
+	private string $directory_url;
 
 	/**
 	 * Source log.
@@ -48,17 +61,16 @@ class JsonLogger {
 	 * Class constructor
 	 *
 	 * @param string $directory_path Directory path logs.
+	 * @param string $directory_url Directory url logs.
 	 * @param string $source Source log.
+	 *
+	 * @throws Exception Filesystem error.
 	 */
-	public function __construct( string $directory_path, string $source ) {
-		global $wp_filesystem;
+	public function __construct( string $directory_path, string $directory_url, string $source ) {
+		$this->wp_filesystem = FilesystemUtil::get_wp_filesystem();
 
-		if ( empty( $wp_filesystem ) ) {
-			WP_Filesystem();
-		}
-
-		$this->wp_filesystem  = $wp_filesystem;
 		$this->directory_path = $directory_path;
+		$this->directory_url  = $directory_url;
 		$this->source         = $source;
 	}
 
@@ -180,6 +192,53 @@ class JsonLogger {
 
 		$log_entry_json = wp_json_encode( $log_array );
 		$this->wp_filesystem->put_contents( $log_file_path, $log_entry_json, FS_CHMOD_FILE );
+	}
+
+	/**
+	 * Get file information
+	 *
+	 * @param SplFileInfo $file file path.
+	 *
+	 * @return array
+	 */
+	public function get_file_details( SplFileInfo $file ): array {
+		$pathname    = $file->getPathname();
+		$split_path  = explode( self::FOLDER, $pathname );
+		$nested_path = null;
+		if ( $split_path ) {
+			$nested_path = $this->directory_url . $split_path[1];
+		}
+		return array(
+			'name'     => $file->getBasename( '.json' ),
+			'url'      => set_url_scheme( $nested_path ?? $pathname ),
+			'size'     => filesize( $pathname ),
+			'created'  => gmdate( DATE_ATOM, filectime( $pathname ) ),
+			'modified' => gmdate( DATE_ATOM, filemtime( $pathname ) ),
+		);
+	}
+
+	/**
+	 * Get files logs
+	 *
+	 * @return array
+	 */
+	public function get_files(): array {
+		$rii   = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $this->directory_path ) );
+		$files = array();
+
+		/**
+		 * File log
+		 *
+		 * @var $file SplFileInfo
+		 */
+		foreach ( $rii as $file ) {
+			if ( ! $file->isFile() ) {
+				continue;
+			}
+			$files[] = $this->get_file_details( $file );
+		}
+
+		return $files;
 	}
 
 	/**
