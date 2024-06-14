@@ -20,13 +20,17 @@ export interface ILogBacktrace {
     args?: string[]
 }
 
-export interface ILog {
+export interface IDefaultLog {
     timestamp: string
     level: LogLevel
     message: string
-    context: object
     backtrace: ILogBacktrace[]
+    context: object
+}
+
+export interface ILog extends IDefaultLog {
     select?: SelectLogFieldEnum
+    id: string
 }
 
 export interface ILogFile {
@@ -43,5 +47,5 @@ export interface ILogTab {
     activeFile?: ILogFile
     files: ILogFile[]
     logs: ILog[]
-    openLogs: number[]
+    openLogs: string[]
 }

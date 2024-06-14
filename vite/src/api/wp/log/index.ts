@@ -1,7 +1,8 @@
 import { WpApiInstance, WpInstance } from '@/api/wp'
 import { PREFIX } from '@/const'
-import { ILogFile, ILog } from '@/types/WpLog'
+import { ILogFile, IDefaultLog } from '@/types/WpLog'
 import { validationApiData } from '@/utils/api'
+import moment from 'moment'
 
 const namespace = `${PREFIX}/v1`
 
@@ -13,8 +14,10 @@ export const LogApi = {
         )
         return data
     },
-    async logs(logUrl: string): Promise<ILog[]> {
-        const { data } = await WpInstance.get<ILog[]>(logUrl)
+    async logs(logUrl: string): Promise<IDefaultLog[]> {
+        const { data } = await WpInstance.get<IDefaultLog[]>(
+            `${logUrl}?t=${moment().unix()}`,
+        )
         validationApiData(data)
         return data
     },

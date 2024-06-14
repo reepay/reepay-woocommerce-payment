@@ -6,12 +6,14 @@ import {
     ChevronLeftIcon,
     ChevronDoubleUpIcon,
     ChevronDoubleDownIcon,
+    ArrowPathIcon,
 } from '@heroicons/react/16/solid'
 import { twJoin } from 'tailwind-merge'
 import LogItem from '@/admin/logs-page/components/LogItem'
-import { useDispatch } from 'react-redux'
-import { Dispatch, store } from '@/admin/logs-page/store'
+import { useDispatch, useSelector } from 'react-redux'
+import { Dispatch, RootState, store } from '@/admin/logs-page/store'
 import { twm } from '@/utils/twm'
+import { getErrorMessage } from '@/utils/error'
 
 interface LogButtonProps {
     className?: string
@@ -51,6 +53,10 @@ const LogsList: React.FC<LogsListProps> = ({ logs, onClose }) => {
     const dispatch = useDispatch<Dispatch>()
     const activeTab = store.select.logs.getActiveTab(store.getState())
 
+    const { loading, error } = useSelector(
+        (rootState: RootState) => rootState.loading.effects.logs.fetchLogs,
+    )
+
     return (
         <>
             <div className={twJoin('bw-flex bw-gap-2')}>
@@ -77,7 +83,19 @@ const LogsList: React.FC<LogsListProps> = ({ logs, onClose }) => {
                     onClick={() =>
                         dispatch.logs.setOpenLogs({
                             tabId: activeTab.id,
-                            logs: activeTab.logs.map((_, index) => index),
+                            logs: activeTab.logs.map((log) => log.id),
+                        })
+                    }
+                />
+                <LogButton
+                    Icon={ArrowPathIcon}
+                    label={__('Reload', 'reepay-checkout-gateway')}
+                    className={'bw-bg-emerald-200 bw-text-emerald-600'}
+                    classNameIcon={'bw-text-emerald-600'}
+                    onClick={() =>
+                        dispatch.logs.fetchLogs({
+                            tabId: activeTab.id,
+                            activeFile: activeTab.activeFile,
                         })
                     }
                 />
@@ -87,15 +105,20 @@ const LogsList: React.FC<LogsListProps> = ({ logs, onClose }) => {
                     'bw-mt-4 bw-grid bw-grid-cols-1 bw-gap-2 bw-divide-y bw-divide-solid bw-divide-neutral-200',
                 )}
             >
-                {logs.map((log, index) => {
-                    return (
-                        <LogItem
-                            log={log}
-                            logIndex={index}
-                            key={index + log.timestamp}
-                        />
-                    )
-                })}
+                {loading && (
+                    <div>{__('Loading...', 'reepay-checkout-gateway')}</div>
+                )}
+                {(error as Error) && <div>{getErrorMessage(error)}</div>}
+                {!loading &&
+                    !error &&
+                    logs.map((log, index) => {
+                        return (
+                            <LogItem
+                                log={log}
+                                key={index + log.timestamp}
+                            />
+                        )
+                    })}
             </div>
         </>
     )

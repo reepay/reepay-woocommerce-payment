@@ -30,6 +30,10 @@ const TabContent: React.FC<TabContentProps> = ({ tab }) => {
                 <LogsList
                     logs={tab.logs}
                     onClose={() => {
+                        dispatch.logs.setLogs({
+                            tabId: tab.id,
+                            logs: [],
+                        })
                         dispatch.logs.setActiveFile({
                             tab,
                             file: undefined,

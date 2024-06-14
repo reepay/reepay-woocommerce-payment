@@ -1,8 +1,15 @@
 import { createModel } from '@rematch/core'
 import { RootModel } from '.'
-import { ILog, ILogFile, ILogTab, SelectLogFieldEnum } from '@/types/WpLog'
+import {
+    IDefaultLog,
+    ILog,
+    ILogFile,
+    ILogTab,
+    SelectLogFieldEnum,
+} from '@/types/WpLog'
 import { v4 as uuidv4 } from 'uuid'
 import { LogApi } from '@/api/wp/log'
+import { reverse } from 'lodash'
 
 type LogsState = {
     activeTabId: string | null
@@ -50,7 +57,27 @@ export const logsModel = createModel<RootModel>()({
         setLogs(state, { tabId, logs }: { tabId: string; logs: ILog[] }) {
             const targetTab = state.tabs.find((item) => item.id === tabId)
             if (targetTab) {
-                targetTab.logs = logs.map((log) => ({ id: uuidv4(), ...log }))
+                targetTab.logs = logs
+            }
+        },
+        setReverseLogs(
+            state,
+            { tabId, logs }: { tabId: string; logs: IDefaultLog[] },
+        ) {
+            const targetTab = state.tabs.find((item) => item.id === tabId)
+            if (!targetTab) return
+
+            reverse(logs)
+            const currentLogsCount = targetTab.logs.length
+
+            const newLogs = logs.map((log) => ({ id: uuidv4(), ...log }))
+            if (currentLogsCount > 0) {
+                targetTab.logs = [
+                    ...newLogs.slice(0, logs.length - currentLogsCount),
+                    ...targetTab.logs,
+                ]
+            } else {
+                targetTab.logs = newLogs
             }
         },
         setActiveFile(state, { tab, file }: { tab: ILogTab; file?: ILogFile }) {
@@ -72,16 +99,21 @@ export const logsModel = createModel<RootModel>()({
             state,
             {
                 tabId,
-                logIndex,
+                logId,
                 field,
-            }: { tabId: string; logIndex: number; field: SelectLogFieldEnum },
+            }: { tabId: string; logId: string; field: SelectLogFieldEnum },
         ) {
             const targetTab = state.tabs.find((item) => item.id === tabId)
             if (targetTab) {
-                targetTab.logs[logIndex].select = field
+                const targetLog = targetTab.logs.find(
+                    (item) => item.id === logId,
+                )
+                if (targetLog) {
+                    targetLog.select = field
+                }
             }
         },
-        setOpenLogs(state, { tabId, logs }: { tabId: string; logs: number[] }) {
+        setOpenLogs(state, { tabId, logs }: { tabId: string; logs: string[] }) {
             const targetTab = state.tabs.find((item) => item.id === tabId)
             if (targetTab) {
                 targetTab.openLogs = logs
@@ -89,14 +121,14 @@ export const logsModel = createModel<RootModel>()({
         },
         toggleOpenLog(
             state,
-            { tabId, logIndex }: { tabId: string; logIndex: number },
+            { tabId, logId }: { tabId: string; logId: string },
         ) {
             const targetTab = state.tabs.find((item) => item.id === tabId)
             if (targetTab) {
                 targetTab.openLogs =
-                    targetTab.openLogs.includes(logIndex) ?
-                        targetTab.openLogs.filter((index) => index !== logIndex)
-                    :   [...targetTab.openLogs, logIndex]
+                    targetTab.openLogs.includes(logId) ?
+                        targetTab.openLogs.filter((id) => id !== logId)
+                    :   [...targetTab.openLogs, logId]
             }
         },
     },
@@ -133,12 +165,12 @@ export const logsModel = createModel<RootModel>()({
             tabId,
             activeFile,
         }: {
-            tabId: string | null
+            tabId?: string
             activeFile?: ILogFile
         }) {
             if (!activeFile || !tabId) return
             const logs = await LogApi.logs(activeFile.url)
-            dispatch.logs.setLogs({ tabId, logs })
+            dispatch.logs.setReverseLogs({ tabId, logs })
         },
     }),
 })

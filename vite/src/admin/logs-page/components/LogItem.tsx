@@ -11,7 +11,6 @@ import ReactJson from 'react-json-view'
 
 type LogItemProps = {
     log: ILog
-    logIndex: number
 }
 
 const OpenIcon: React.FC<{
@@ -26,7 +25,7 @@ const OpenIcon: React.FC<{
     )
 }
 
-const LogItem: React.FC<LogItemProps> = ({ log, logIndex }) => {
+const LogItem: React.FC<LogItemProps> = ({ log }) => {
     const dispatch = useDispatch<Dispatch>()
     const activeTabId = store.select.logs.getActiveTabId(store.getState())
     const openLogs = store.select.logs.getActiveOpenLogs(store.getState())
@@ -40,7 +39,7 @@ const LogItem: React.FC<LogItemProps> = ({ log, logIndex }) => {
                 onClick={() => {
                     dispatch.logs.toggleOpenLog({
                         tabId: activeTabId,
-                        logIndex,
+                        logId: log.id,
                     })
                 }}
             >
@@ -54,14 +53,14 @@ const LogItem: React.FC<LogItemProps> = ({ log, logIndex }) => {
                     </div>
                     <OpenIcon
                         Icon={
-                            !openLogs.includes(logIndex) ?
+                            !openLogs.includes(log.id) ?
                                 ChevronDownIcon
                             :   ChevronUpIcon
                         }
                     />
                 </div>
             </ResetButton>
-            {openLogs.includes(logIndex) && (
+            {openLogs.includes(log.id) && (
                 <div
                     className={twJoin(
                         'bw-break-words bw-border-l-0 bw-border-r-0 bw-pt-2',
@@ -80,7 +79,7 @@ const LogItem: React.FC<LogItemProps> = ({ log, logIndex }) => {
                                 onClick={() => {
                                     dispatch.logs.setSelectInLog({
                                         tabId: activeTabId,
-                                        logIndex,
+                                        logId: log.id,
                                         field,
                                     })
                                 }}
