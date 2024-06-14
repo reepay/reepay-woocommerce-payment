@@ -30,14 +30,14 @@ class PPSantander extends ReepayGateway {
 	 * @var array
 	 */
 	public array $payment_methods = array(
-		'pp_santander',
+		'pe_santander',
 	);
 
 	/**
 	 * PPSantander constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_pp_santander';
+		$this->id           = 'reepay_pe_santander';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - Santander', 'reepay-checkout-gateway' );
 		$this->supports     = array(
