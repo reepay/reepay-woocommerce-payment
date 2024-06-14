@@ -63,7 +63,7 @@ class Gateways {
 		'reepay_pp_trustly',
 		'reepay_pp_verkkopankki',
 		'reepay_pp_wechatpay',
-		'reepay_pp_santander',
+		'reepay_pe_santander',
 		'reepay_offline_bank_transfer',
 		'reepay_offline_cash',
 		'reepay_offline_other',
