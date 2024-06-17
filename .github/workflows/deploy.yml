@@ -1,0 +1,79 @@
+name: Deploy Plugin to Test Site
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Bun
+        run: npm install -g bun
+
+      - name: Get code
+        uses: actions/checkout@v4
+
+      - name: Extract branch name
+        run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
+      - name: Get Composer caches directory path
+        run: echo "COMPOSER_CACHE_DIR=$(composer config cache-files-dir)" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.COMPOSER_CACHE_DIR }}
+          key: "${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}"
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: "${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}"
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Cache vite dependencies
+        uses: actions/cache@v4
+        with:
+          path: vite/node_modules
+          key: "${{ runner.os }}-vite-${{ hashFiles('vite/bun.lockb') }}"
+          restore-keys: |
+            ${{ runner.os }}-vite-
+
+      - name: Update Plugin Name
+        run: |
+          export TZ=Europe/Moscow
+          BRANCH_NAME=${{ env.BRANCH_NAME }}
+          CURRENT_DATE=$(date +"%d.%m.%Y %H:%M:%S")
+          sed -i "s/\(Plugin Name: .*\)/\1 (${BRANCH_NAME})/" reepay-woocommerce-payment.php
+          sed -i "s/\(Description: .*\)/\1 (Upload date: ${CURRENT_DATE})/" reepay-woocommerce-payment.php
+
+      - name: Build and zip project
+        run: |
+          chmod +x ./bin/zip.sh
+          ./bin/zip.sh
+        shell: bash
+
+      - name: Deploy code via SSH
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_NAME }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          source: "build/reepay-woocommerce-payment/*"
+          target: public_html/wp-content/plugins/billwerk-woocommerce-payment-${{ env.BRANCH_NAME }}
+          rm: true
+          overwrite: true
+          strip_components: 2

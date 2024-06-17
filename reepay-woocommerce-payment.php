@@ -13,8 +13,15 @@
  * @package Reepay\Checkout
  */
 
+use Billwerk\Sdk\BillwerkClientFactory;
+use Billwerk\Sdk\BillwerkRequest;
+use Billwerk\Sdk\Sdk;
+use Billwerk\Sdk\Service\AccountService;
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\HttpFactory;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\Api\Controller\DebugController;
+use Reepay\Checkout\Api\Controller\LogsController;
 use Reepay\Checkout\Api\Controller\MetaFieldsController;
 use Reepay\Checkout\DIContainer;
 use Reepay\Checkout\Gateways;
@@ -23,6 +30,8 @@ use Reepay\Checkout\Plugin\LifeCycle;
 use Reepay\Checkout\Plugin\Statistics;
 use Reepay\Checkout\Plugin\WoocommerceExists;
 use Reepay\Checkout\Plugin\WoocommerceHPOS;
+use Reepay\Checkout\Utils\Logger\JsonLogger;
+use Reepay\Checkout\Utils\Logger\SdkLogger;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -33,30 +42,30 @@ class WC_ReepayCheckout {
 	/**
 	 * Class instance
 	 *
-	 * @var WC_ReepayCheckout
+	 * @var ?WC_ReepayCheckout
 	 */
-	private static $instance;
+	private static ?WC_ReepayCheckout $instance = null;
 
 	/**
 	 * Settings array
 	 *
 	 * @var array
 	 */
-	private $settings = array();
+	private array $settings = array();
 
 	/**
 	 * Gateways class instance
 	 *
-	 * @var Gateways
+	 * @var Gateways|null
 	 */
-	private $gateways = null;
+	private ?Gateways $gateways = null;
 
 	/**
 	 * Dependency injection container
 	 *
-	 * @var DIContainer
+	 * @var DIContainer|null
 	 */
-	private $di_container = null;
+	private ?DIContainer $di_container = null;
 
 	/**
 	 * Constructor
@@ -194,7 +203,7 @@ class WC_ReepayCheckout {
 	 * Reset options from database. Now using only for testing purposes
 	 */
 	public function reset_settings() {
-		$this->settings = null;
+		$this->settings = array();
 		$this->get_setting( '' );
 	}
 
@@ -241,6 +250,61 @@ class WC_ReepayCheckout {
 		$api->set_logging_source( $source );
 
 		return $api;
+	}
+
+	/**
+	 * Get Billwerk sdk
+	 *
+	 * @param bool $force_live_key Force use live key.
+	 *
+	 * @return Sdk
+	 */
+	public function sdk( bool $force_live_key = false ): Sdk {
+		$api_key = ( ! $force_live_key && reepay()->get_setting( 'test_mode' ) === 'yes' )
+			? $this->get_setting( 'private_key_test' )
+			: $this->get_setting( 'private_key' );
+
+		$sdk = new Sdk(
+			new BillwerkClientFactory(
+				new Client(),
+				new HttpFactory(),
+				new HttpFactory(),
+			),
+			$api_key
+		);
+
+		$sdk->setLogger(
+			new SdkLogger()
+		);
+
+		if ( $this->di()->is_set( AccountService::class ) ) {
+			$account_service = $this->di()->get( AccountService::class );
+			if ( $account_service instanceof AccountService ) {
+				$sdk->setAccountService( $account_service );
+			}
+		}
+
+		return $sdk;
+	}
+
+	/**
+	 * Get logger
+	 *
+	 * @param string $source Source log.
+	 *
+	 * @return JsonLogger
+	 */
+	public function log( string $source = 'billwerk' ): JsonLogger {
+		return ( new JsonLogger(
+			wp_upload_dir()['basedir'] . '/' . JsonLogger::FOLDER,
+			wp_upload_dir()['baseurl'] . '/' . JsonLogger::FOLDER,
+			$source
+		) )->add_ignored_classes_backtrace(
+			array(
+				BillwerkRequest::class,
+				SdkLogger::class,
+			)
+		);
 	}
 
 	/**
@@ -300,6 +364,7 @@ class WC_ReepayCheckout {
 	public function init_rest_api(): void {
 		( new MetaFieldsController() )->register_routes();
 		( new DebugController() )->register_routes();
+		( new LogsController() )->register_routes();
 	}
 }
 

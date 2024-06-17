@@ -8,6 +8,9 @@ export default {
             boxShadow: {
                 'input-error': '0 0 0 1px #ef4444',
             },
+            flex: {
+                '0-0-auto': '0 0 auto',
+            },
         },
     },
     plugins: [],

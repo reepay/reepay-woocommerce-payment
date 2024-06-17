@@ -3,46 +3,47 @@ run-name: PHPUnit - Master
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    types: [ opened, reopened, synchronize ]
     branches: [ "master" ]
 
 jobs:
-  run:    
+  run:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest]
-        php-versions: ['7.4', '8.0', '8.1', '8.2']
+        operating-system: [ ubuntu-latest ]
+        php-versions: [ '7.4', '8.0', '8.1', '8.2' ]
     name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v1
+      - name: Checkout
+        # @TODO update version
+        uses: actions/checkout@v1
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: ${{ matrix.php-versions }}
-        extension-csv: mbstring, intl #optional, setup extensions
-        ini-values-csv: post_max_size=256M, short_open_tag=On #optional, setup php.ini configuration
-        coverage: xdebug #optional, setup coverage driver
-        pecl: false #optional, setup PECL
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          extension-csv: mbstring, intl #optional, setup extensions
+          ini-values-csv: post_max_size=256M, short_open_tag=On #optional, setup php.ini configuration
+          coverage: xdebug #optional, setup coverage driver
+          pecl: false #optional, setup PECL
 
-    - name: Check PHP Version
-      run: php -v
+      - name: Check PHP Version
+        run: php -v
 
-    - name: Composer install
-      run: | 
+      - name: Composer install
+        run: |
           composer update
           composer install --optimize-autoloader --prefer-dist
 
-    -   name: Set up MySQL
+      - name: Set up MySQL
         run: |
-            sudo /etc/init.d/mysql start
-            mysql --user="root" --password="root" --execute="ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';"
-            
-    - name: Install WP Tests
-      run: bash bin/install-wp-tests.sh wordpress_test root root
-      
-    - name: phpunit tests
-      run: npm run phpunit:full
+          sudo /etc/init.d/mysql start
+          mysql --user="root" --password="root" --execute="ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';"
+
+      - name: Install WP Tests
+        run: bash bin/install-wp-tests.sh wordpress_test root root
+
+      - name: phpunit tests
+        run: npm run phpunit:full

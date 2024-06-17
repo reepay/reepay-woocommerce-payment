@@ -24,6 +24,7 @@ class Main {
 	public function __construct() {
 		new PluginsPage();
 		new DebugPage();
+		new LogsPage();
 		new Ajax();
 		new MetaBoxes\Order();
 		new MetaBoxes\User();
@@ -37,7 +38,8 @@ class Main {
 	 * @param string $hook current page hook.
 	 */
 	public function admin_enqueue_scripts( string $hook ) {
-		$debug = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG;
+		$debug    = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG;
+		$vite_dev = defined( 'VITE_DEV' ) && VITE_DEV;
 		if ( 'post.php' === $hook || rp_hpos_is_order_page() ) {
 			$suffix = $debug ? '' : '.min';
 
@@ -87,8 +89,12 @@ class Main {
 				'nested_path' => '/debug-page/',
 				'file'        => 'src/admin/debug-page/main.tsx',
 			),
+			array(
+				'nested_path' => '/logs-page/',
+				'file'        => 'src/admin/logs-page/main.tsx',
+			),
 		);
-		if ( $debug ) {
+		if ( $vite_dev ) {
 			ViteAssetsLoader::dev( $vite_entry_points );
 		} else {
 			ViteAssetsLoader::production(

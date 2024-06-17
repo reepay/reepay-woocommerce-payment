@@ -23,7 +23,7 @@
             <directory suffix="Test.php">./tests/unit/orderFlow</directory>
         </testsuite>
         <testsuite name="Gateways tested">
-            <directory suffix="Test.php">./tests/unit/gatewaysTests</directory>
+            <directory suffix="Test.php">tests/unit/GatewaysTests</directory>
         </testsuite>
         <testsuite name="Tokens tested">
             <directory suffix="Test.php">./tests/unit/tokens</directory>

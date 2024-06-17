@@ -5,11 +5,17 @@
  * @package Reepay\Checkout
  */
 
+namespace Reepay\Checkout\Tests\Unit\GatewaysTests;
+
+use Billwerk\Sdk\Exception\BillwerkApiException;
+use Billwerk\Sdk\Model\Account\AccountModel;
+use Exception;
 use Reepay\Checkout\Gateways\ReepayCheckout;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\Tests\Helpers\OrderItemsGenerator;
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
+use WP_Error;
 
 class ReepayGatewayTestChild extends ReepayGateway {
 
@@ -53,7 +59,6 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	 * ["swish"]
 	 * ["viabill"]
 	 * ["vipps"]
-	 *
 	 */
 	public function test_check_is_active( string $gateway ) {
 		self::$gateway->id = 'reepay_' . $gateway;
@@ -97,45 +102,52 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * @param bool $is_test use test or live reepay api keys.
+	 * Test get_account_info
+	 *
+	 * @param bool $is_test use test or live billwerk api keys.
 	 *
 	 * @testWith
 	 * [true]
 	 * [false]
-	 */
-	public function test_get_account_info_not_on_settings_page( bool $is_test ) {
-		$this->assertFalse( self::$gateway->is_gateway_settings_page() );
-		$this->assertEmpty( self::$gateway->get_account_info( $is_test ) );
-	}
-
-	/**
-	 * @param bool $is_test use test or live reepay api keys.
-	 *
-	 * @testWith
-	 * [true]
-	 * [false]
+	 * @throws BillwerkApiException Api Error.
 	 */
 	public function test_get_account_info( bool $is_test ) {
 		$_GET['tab']       = 'checkout';
 		$_GET['section']   = 'checkout';
 		self::$gateway->id = 'checkout';
 
-		$result = array(
-			'handle' => 'test_1234',
-		);
+		$account = ( new AccountModel() )
+			->setHandle( 'test_1234' );
 
-		$this->api_mock->method( 'request' )->willReturn( $result );
-		$this->assertSame(
-			$result,
+		$this->account_service_mock
+			->method( 'get' )
+			->willReturnOnConsecutiveCalls( $account, $account );
+
+		self::assertSame(
+			$account,
 			self::$gateway->get_account_info( $is_test )
 		);
 
-		$this->api_mock->method( 'request' )->willReturn( 'unused' );
-		$this->assertSame(
-			$result,
+		self::assertEquals(
+			$account,
 			self::$gateway->get_account_info( $is_test ),
 			'transient cache error'
 		);
+	}
+
+	/**
+	 * Test get_account_info not on settings page
+	 *
+	 * @param bool $is_test use test or live reepay api keys.
+	 *
+	 * @testWith
+	 * [true]
+	 * [false]
+	 * @throws BillwerkApiException Api Error.
+	 */
+	public function test_get_account_info_not_on_settings_page( bool $is_test ) {
+		$this->assertFalse( self::$gateway->is_gateway_settings_page() );
+		$this->assertNull( self::$gateway->get_account_info( $is_test ) );
 	}
 
 	/**
@@ -169,7 +181,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	public function test_capture_payment_with_cancelled_order() {
 		$this->order_generator->set_meta( '_reepay_order_cancelled', '1' );
 
-		$this->expectException(Exception::class);
+		$this->expectException( Exception::class );
 
 		self::$gateway->capture_payment( $this->order_generator->order() );
 	}
@@ -177,7 +189,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	public function test_capture_payment_with_api_error() {
 		$this->api_mock->method( 'capture_payment' )->willReturn( new WP_Error() );
 
-		$this->expectException(Exception::class);
+		$this->expectException( Exception::class );
 
 		self::$gateway->capture_payment( $this->order_generator->order() );
 	}
@@ -185,7 +197,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	public function test_cancel_payment_with_cancelled_order() {
 		$this->order_generator->set_meta( '_reepay_order_cancelled', '1' );
 
-		$this->expectException(Exception::class);
+		$this->expectException( Exception::class );
 
 		self::$gateway->cancel_payment( $this->order_generator->order() );
 	}
@@ -193,7 +205,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	public function test_cancel_payment_with_api_error() {
 		$this->api_mock->method( 'cancel_payment' )->willReturn( new WP_Error() );
 
-		$this->expectException(Exception::class);
+		$this->expectException( Exception::class );
 
 		self::$gateway->cancel_payment( $this->order_generator->order() );
 	}
@@ -201,15 +213,15 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	public function test_refund_payment_with_cancelled_order() {
 		$this->order_generator->set_meta( '_reepay_order_cancelled', '1' );
 
-		$this->expectException(Exception::class);
-		$this->expectExceptionMessage('Order is already canceled');
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Order is already canceled' );
 
 		self::$gateway->refund_payment( $this->order_generator->order() );
 	}
 
 	public function test_refund_payment_with_impossible_to_cancel_order() {
-		$this->expectException(Exception::class);
-		$this->expectExceptionMessage('Payment can\'t be refunded.');
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Payment can\'t be refunded.' );
 
 		self::$gateway->refund_payment( $this->order_generator->order() );
 	}
@@ -232,8 +244,8 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 		$this->api_mock->method( 'can_refund' )->willReturn( true );
 
 		if ( $expect_error ) {
-			$this->expectException(Exception::class);
-			$this->expectExceptionMessage('Refund amount must be greater than 0.');
+			$this->expectException( Exception::class );
+			$this->expectExceptionMessage( 'Refund amount must be greater than 0.' );
 		} else {
 			$this->expectNotToPerformAssertions();
 		}
@@ -281,17 +293,19 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 		$order_items_generator = new OrderItemsGenerator(
 			$this->order_generator,
 			array(
-				'include_tax' => $include_tax,
+				'include_tax'      => $include_tax,
 				'only_not_settled' => $only_not_settled,
 			)
 		);
 
 		$order_items_generator->generate_line_item();
-		$order_items_generator->generate_line_item( array(
-			'order_item_meta' => array(
-				'settled' => true
+		$order_items_generator->generate_line_item(
+			array(
+				'order_item_meta' => array(
+					'settled' => true,
+				),
 			)
-		) );
+		);
 
 		$this->assertSame(
 			$order_items_generator->get_order_items(),
@@ -315,47 +329,57 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 		$order_items_generator = new OrderItemsGenerator(
 			$this->order_generator,
 			array(
-				'include_tax' => $include_tax,
+				'include_tax'      => $include_tax,
 				'only_not_settled' => $only_not_settled,
 			)
 		);
 
-		$order_items_generator->generate_line_item(array(
-			'type' => 'rp_sub'
-		));
-		$order_items_generator->generate_line_item( array(
-			'type' => 'rp_sub',
-			'order_item_meta' => array(
-				'settled' => true
+		$order_items_generator->generate_line_item(
+			array(
+				'type' => 'rp_sub',
 			)
-		) );
-		$order_items_generator->generate_line_item(array(
-			'type' => 'rp_sub',
-			'product_meta' => array(
-				'_reepay_subscription_fee' => array(
-					'enabled' => 'yes',
-					'text' => 'test'
+		);
+		$order_items_generator->generate_line_item(
+			array(
+				'type'            => 'rp_sub',
+				'order_item_meta' => array(
+					'settled' => true,
 				),
-				'_line_discount' => 10
 			)
-		));
-		$order_items_generator->generate_line_item( array(
-			'type' => 'rp_sub',
-			'product_meta' => array(
-				'name' => 'Product #-1',
-				'_reepay_subscription_fee' => array(
-					'enabled' => 'yes',
-					'text' => 'test'
+		);
+		$order_items_generator->generate_line_item(
+			array(
+				'type'         => 'rp_sub',
+				'product_meta' => array(
+					'_reepay_subscription_fee' => array(
+						'enabled' => 'yes',
+						'text'    => 'test',
+					),
+					'_line_discount'           => 10,
 				),
-				'_line_discount' => 10
-			),
-			'order_item_meta' => array(
-				'settled' => true
 			)
-		) );
-		$order_items_generator->generate_fee_item(array(
-			'name' => 'Product #-1 - test'
-		));
+		);
+		$order_items_generator->generate_line_item(
+			array(
+				'type'            => 'rp_sub',
+				'product_meta'    => array(
+					'name'                     => 'Product #-1',
+					'_reepay_subscription_fee' => array(
+						'enabled' => 'yes',
+						'text'    => 'test',
+					),
+					'_line_discount'           => 10,
+				),
+				'order_item_meta' => array(
+					'settled' => true,
+				),
+			)
+		);
+		$order_items_generator->generate_fee_item(
+			array(
+				'name' => 'Product #-1 - test',
+			)
+		);
 
 		$this->assertSame(
 			array(),
@@ -377,27 +401,33 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 		$order_items_generator = new OrderItemsGenerator(
 			$this->order_generator,
 			array(
-				'include_tax' => $include_tax,
+				'include_tax'      => $include_tax,
 				'only_not_settled' => $only_not_settled,
 			)
 		);
 
-		$order_items_generator->generate_line_item([
-			'price' => 200,
-			'quantity' => 3,
-			'tax' => 5
-		]);
-
-		$order_items_generator->generate_shipping_item([
-			'price' => 300
-		]);
-
-		$order_items_generator->generate_shipping_item( array(
-			'price' => 300,
-			'meta' => array(
-				'settled' => true
+		$order_items_generator->generate_line_item(
+			array(
+				'price'    => 200,
+				'quantity' => 3,
+				'tax'      => 5,
 			)
-		) );
+		);
+
+		$order_items_generator->generate_shipping_item(
+			array(
+				'price' => 300,
+			)
+		);
+
+		$order_items_generator->generate_shipping_item(
+			array(
+				'price' => 300,
+				'meta'  => array(
+					'settled' => true,
+				),
+			)
+		);
 
 		$this->assertSame(
 			$order_items_generator->get_order_items(),
@@ -419,17 +449,19 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 		$order_items_generator = new OrderItemsGenerator(
 			$this->order_generator,
 			array(
-				'include_tax' => $include_tax,
+				'include_tax'      => $include_tax,
 				'only_not_settled' => $only_not_settled,
 			)
 		);
 
 		$order_items_generator->generate_fee_item();
-		$order_items_generator->generate_fee_item( array(
-			'meta' => array(
-				'settled' => true
+		$order_items_generator->generate_fee_item(
+			array(
+				'meta' => array(
+					'settled' => true,
+				),
 			)
-		) );
+		);
 
 		$this->assertSame(
 			$order_items_generator->get_order_items(),
@@ -453,20 +485,24 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 		$order_items_generator = new OrderItemsGenerator(
 			$this->order_generator,
 			array(
-				'include_tax' => $include_tax,
+				'include_tax'      => $include_tax,
 				'only_not_settled' => $only_not_settled,
 			)
 		);
 
-		$order_items_generator->generate_line_item(array(
-			'type' => 'rp_sub'
-		));
-		$order_items_generator->generate_fee_item();
-		$order_items_generator->generate_fee_item( array(
-			'meta' => array(
-				'settled' => true
+		$order_items_generator->generate_line_item(
+			array(
+				'type' => 'rp_sub',
 			)
-		) );
+		);
+		$order_items_generator->generate_fee_item();
+		$order_items_generator->generate_fee_item(
+			array(
+				'meta' => array(
+					'settled' => true,
+				),
+			)
+		);
 
 		$this->assertSame(
 			$order_items_generator->get_order_items(),
@@ -488,19 +524,23 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 		$order_items_generator = new OrderItemsGenerator(
 			$this->order_generator,
 			array(
-				'include_tax' => $include_tax,
+				'include_tax'      => $include_tax,
 				'only_not_settled' => $only_not_settled,
 			)
 		);
 
-		$order_items_generator->generate_line_item(array(
-			'price' => 99
-		));
+		$order_items_generator->generate_line_item(
+			array(
+				'price' => 99,
+			)
+		);
 
-		$order_items_generator->add_total_discount( array(
-			'amount' => 15,
-			'tax' => 7
-		) );
+		$order_items_generator->add_total_discount(
+			array(
+				'amount' => 15,
+				'tax'    => 7,
+			)
+		);
 
 		$this->assertSame(
 			$order_items_generator->get_order_items(),
@@ -530,7 +570,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	 * [false, false]
 	 * [false, true]
 	 * [true, false]
-	 * [true, true]
+	 * [true, true] 
 	 */
 	public function test_get_order_items_giftup( bool $include_tax, bool $only_not_settled ) {
 		$this->markTestIncomplete();
@@ -565,11 +605,11 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	 * ["vipps", "vipps"]
 	 */
 	public function test_logo( $card_type, $result ) {
-        $logo_svg_path = reepay()->get_setting( 'images_path' ) . 'svg/' . $result . '.logo.svg';
+		$logo_svg_path = reepay()->get_setting( 'images_path' ) . 'svg/' . $result . '.logo.svg';
 		$this->assertSame(
-            file_exists($logo_svg_path) ?
-                reepay()->get_setting( 'images_url' ) . 'svg/' . $result . '.logo.svg' :
-                reepay()->get_setting( 'images_url' ) . $result . '.png',
+			file_exists( $logo_svg_path ) ?
+				reepay()->get_setting( 'images_url' ) . 'svg/' . $result . '.logo.svg' :
+				reepay()->get_setting( 'images_url' ) . $result . '.png',
 			self::$gateway->get_logo( $card_type )
 		);
 	}

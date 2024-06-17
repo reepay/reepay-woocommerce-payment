@@ -757,6 +757,7 @@ class Api {
 						$request_data
 					);
 				} else {
+					// @TODO $line_item can be an array
 					$price = OrderCapture::get_item_price( $line_item, $order );
 					if ( $remaining > 0 &&
 						round( $remaining / 100 ) === $price['with_tax'] &&

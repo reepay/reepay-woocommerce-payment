@@ -8,6 +8,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\PaymentMethodEnum;
+use Billwerk\Sdk\Exception\BillwerkApiException;
 use Exception;
 use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Plugin\Statistics;
@@ -137,22 +139,22 @@ class ReepayCheckout extends ReepayGateway {
 				},
 			),
 			'account'                    => array(
-				'title'     => __( 'Account', 'reepay-checkout-gateway' ),
-				'type'      => 'account_info',
-				'show'      => function () {
+				'title'   => __( 'Account', 'reepay-checkout-gateway' ),
+				'type'    => 'account_info',
+				'show'    => function () {
 					return ! empty( $this->get_option( 'private_key' ) );
 				},
-				'info_type' => 'name',
-				'is_test'   => false,
+				'getter'  => 'getName',
+				'is_test' => false,
 			),
 			'state'                      => array(
-				'title'     => __( 'State', 'reepay-checkout-gateway' ),
-				'type'      => 'account_info',
-				'show'      => function () {
+				'title'   => __( 'State', 'reepay-checkout-gateway' ),
+				'type'    => 'account_info',
+				'show'    => function () {
 					return ! empty( $this->get_option( 'private_key' ) );
 				},
-				'info_type' => 'state',
-				'is_test'   => false,
+				'getter'  => 'getState',
+				'is_test' => false,
 			),
 			'is_webhook_configured_live' => array(
 				'type'    => 'webhook_status',
@@ -177,22 +179,22 @@ class ReepayCheckout extends ReepayGateway {
 				},
 			),
 			'account_test'               => array(
-				'title'     => __( 'Account', 'reepay-checkout-gateway' ),
-				'type'      => 'account_info',
-				'show'      => function () {
+				'title'   => __( 'Account', 'reepay-checkout-gateway' ),
+				'type'    => 'account_info',
+				'show'    => function () {
 					return ! empty( $this->get_option( 'private_key_test' ) );
 				},
-				'info_type' => 'name',
-				'is_test'   => true,
+				'getter'  => 'getName',
+				'is_test' => true,
 			),
 			'state_test'                 => array(
-				'title'     => __( 'State', 'reepay-checkout-gateway' ),
-				'type'      => 'account_info',
-				'show'      => function () {
+				'title'   => __( 'State', 'reepay-checkout-gateway' ),
+				'type'    => 'account_info',
+				'show'    => function () {
 					return ! empty( $this->get_option( 'private_key_test' ) );
 				},
-				'info_type' => 'state',
-				'is_test'   => true,
+				'getter'  => 'getState',
+				'is_test' => true,
 			),
 			'is_webhook_configured_test' => array(
 				'type'    => 'webhook_status',
@@ -245,31 +247,62 @@ class ReepayCheckout extends ReepayGateway {
 				'type'        => 'multiselect',
 				'css'         => 'height: 250px',
 				'options'     => array(
-					'card'             => 'All available debit / credit cards',
-					'dankort'          => 'Dankort',
-					'visa'             => 'VISA',
-					'visa_dk'          => 'VISA/Dankort',
-					'visa_elec'        => 'VISA Electron',
-					'mc'               => 'MasterCard',
-					'amex'             => 'American Express',
-					'mobilepay'        => 'MobilePay',
-					'viabill'          => 'ViaBill',
-					'klarna_pay_later' => 'Klarna Pay Later',
-					'klarna_pay_now'   => 'Klarna Pay Now',
-					'klarna_slice_it'  => 'Klarna Slice It',
-					'resurs'           => 'Resurs Bank',
-					'swish'            => 'Swish',
-					'diners'           => 'Diners Club',
-					'maestro'          => 'Maestro',
-					'laser'            => 'Laser',
-					'discover'         => 'Discover',
-					'jcb'              => 'JCB',
-					'china_union_pay'  => 'China Union Pay',
-					'ffk'              => 'Forbrugsforeningen',
-					'paypal'           => 'PayPal',
-					'applepay'         => 'Apple Pay',
-					'googlepay'        => 'Google Pay',
-					'vipps'            => 'Vipps',
+					PaymentMethodEnum::CARD                => 'All available debit / credit cards',
+					PaymentMethodEnum::DANKORT             => 'Dankort',
+					PaymentMethodEnum::VISA                => 'VISA',
+					PaymentMethodEnum::VISA_ELEC           => 'VISA Electron',
+					PaymentMethodEnum::MC                  => 'MasterCard',
+					PaymentMethodEnum::AMEX                => 'American Express',
+					PaymentMethodEnum::MOBILEPAY           => 'MobilePay Online',
+					PaymentMethodEnum::MOBILEPAY_SUBSCRIPTIONS => 'MobilePay Subscriptions',
+					PaymentMethodEnum::VIABILL             => 'ViaBill',
+					PaymentMethodEnum::ANYDAY              => 'AnyDay',
+					PaymentMethodEnum::RESURS              => 'Resurs Bank',
+					PaymentMethodEnum::SWISH               => 'Swish',
+					PaymentMethodEnum::VIPPS               => 'Vipps',
+					PaymentMethodEnum::VIPPS_RECURRING     => 'Vipps Recurring',
+					PaymentMethodEnum::DINERS              => 'Diners Club',
+					PaymentMethodEnum::MAESTRO             => 'Maestro',
+					PaymentMethodEnum::LASER               => 'Laser',
+					PaymentMethodEnum::DISCOVER            => 'Discover',
+					PaymentMethodEnum::JCB                 => 'JCB',
+					PaymentMethodEnum::CHINA_UNION_PAY     => 'China Union Pay',
+					PaymentMethodEnum::FFK                 => 'Forbrugsforeningen',
+					PaymentMethodEnum::PAYPAL              => 'PayPal',
+					PaymentMethodEnum::APPLEPAY            => 'Apple Pay',
+					PaymentMethodEnum::GOOGLEPAY           => 'Google Pay',
+					PaymentMethodEnum::KLARNA_PAY_LATER    => 'Klarna Pay Later',
+					PaymentMethodEnum::KLARNA_PAY_NOW      => 'Klarna Pay Now',
+					PaymentMethodEnum::KLARNA_SLICE_IT     => 'Klarna Slice It',
+					PaymentMethodEnum::KLARNA_DIRECT_BANK_TRANSFER => 'Klarna Direct Bank Transfer',
+					PaymentMethodEnum::KLARNA_DIRECT_DEBIT => 'Klarna Direct Debit',
+					PaymentMethodEnum::IDEAL               => 'iDEAL',
+					PaymentMethodEnum::BLIK                => 'BLIK',
+					PaymentMethodEnum::P24                 => 'Przelewy24 (P24)',
+					PaymentMethodEnum::VERKKOPANKKI        => 'Finnish banks',
+					PaymentMethodEnum::GIROPAY             => 'giropay',
+					PaymentMethodEnum::SEPA                => 'SEPA Direct Debit',
+					PaymentMethodEnum::BANCOMATPAY         => 'BANCOMAT Pay',
+					PaymentMethodEnum::BANCONTACT          => 'Bancontact',
+					PaymentMethodEnum::EPS                 => 'EPS',
+					PaymentMethodEnum::ESTONIA_BANKS       => 'Estonian Banks',
+					PaymentMethodEnum::LATVIA_BANKS        => 'Latvian Banks',
+					PaymentMethodEnum::LITHUANIA_BANKS     => 'Lithuanian Banks',
+					PaymentMethodEnum::MB_WAY              => 'MB Way',
+					PaymentMethodEnum::MULTIBANCO          => 'Multibanco',
+					PaymentMethodEnum::MYBANK              => 'mBank',
+					PaymentMethodEnum::PAYCONIQ            => 'Payconiq',
+					PaymentMethodEnum::PAYSAFECARD         => 'Paysafecard',
+					PaymentMethodEnum::PAYSERA             => 'Paysera',
+					PaymentMethodEnum::POSTFINANCE         => 'PostFinance',
+					PaymentMethodEnum::SATISPAY            => 'Satisfy',
+					PaymentMethodEnum::TRUSTLY             => 'Trustly',
+					PaymentMethodEnum::TWINT               => 'Twint',
+					PaymentMethodEnum::WECHATPAY           => 'WeChat Pay',
+					PaymentMethodEnum::SANTANDER           => 'Santander',
+					PaymentMethodEnum::OFFLINE_BANK_TRANSFER => 'Bank Transfer',
+					PaymentMethodEnum::OFFLINE_CASH        => 'Cash',
+					PaymentMethodEnum::OFFLINE_OTHER       => 'Other',
 				),
 				'default'     => array(),
 			),
@@ -351,24 +384,43 @@ class ReepayCheckout extends ReepayGateway {
 				'css'            => 'height: 250px',
 				'options'        => array(
 					'dankort'            => __( 'Dankort', 'reepay-checkout-gateway' ),
+					'anyday'             => __( 'Anyday', 'reepay-checkout-gateway' ),
+					'applepay'           => __( 'ApplePay', 'reepay-checkout-gateway' ),
+					'googlepay'          => __( 'Google pay', 'reepay-checkout-gateway' ),
+					'klarna'             => __( 'Klarna', 'reepay-checkout-gateway' ),
+					'mobilepay'          => __( 'MobilePay Online', 'reepay-checkout-gateway' ),
+					'paypal'             => __( 'Paypal', 'reepay-checkout-gateway' ),
+					'resurs'             => __( 'Resurs Bank', 'reepay-checkout-gateway' ),
+					'swish'              => __( 'Resurs Bank', 'reepay-checkout-gateway' ),
+					'viabill'            => __( 'Viabill', 'reepay-checkout-gateway' ),
+					'vipps'              => __( 'Vipps', 'reepay-checkout-gateway' ),
+					'ideal'              => __( 'iDEAL', 'reepay-checkout-gateway' ),
+					'sepa'               => __( 'SEPA', 'reepay-checkout-gateway' ),
+					'bancontact'         => __( 'Bancontact', 'reepay-checkout-gateway' ),
+					'blik'               => __( 'BLIK', 'reepay-checkout-gateway' ),
+					'eps'                => __( 'EPS', 'reepay-checkout-gateway' ),
+					'giropay'            => __( 'GiroPay', 'reepay-checkout-gateway' ),
+					'mbway'              => __( 'MB Way', 'reepay-checkout-gateway' ),
+					'multibanco'         => __( 'Multibanco', 'reepay-checkout-gateway' ),
+					'mybank'             => __( 'MyBank', 'reepay-checkout-gateway' ),
+					'paycoinq'           => __( 'Paycoinq', 'reepay-checkout-gateway' ),
+					'paysafecard'        => __( 'Paysafecard', 'reepay-checkout-gateway' ),
+					'paysera'            => __( 'Paysera', 'reepay-checkout-gateway' ),
+					'postfinance'        => __( 'PostFinance', 'reepay-checkout-gateway' ),
+					'satispay'           => __( 'Satisfy', 'reepay-checkout-gateway' ),
+					'trustly'            => __( 'Trustly', 'reepay-checkout-gateway' ),
+					'wechatpay'          => __( 'WeChat Pay', 'reepay-checkout-gateway' ),
+					'santander'          => __( 'Santander', 'reepay-checkout-gateway' ),
 					'visa'               => __( 'Visa', 'reepay-checkout-gateway' ),
 					'mastercard'         => __( 'MasterCard', 'reepay-checkout-gateway' ),
 					'visa-electron'      => __( 'Visa Electron', 'reepay-checkout-gateway' ),
 					'maestro'            => __( 'Maestro', 'reepay-checkout-gateway' ),
-					'paypal'             => __( 'Paypal', 'reepay-checkout-gateway' ),
-					'mobilepay'          => __( 'MobilePay Online', 'reepay-checkout-gateway' ),
-					'applepay'           => __( 'ApplePay', 'reepay-checkout-gateway' ),
-					'klarna'             => __( 'Klarna', 'reepay-checkout-gateway' ),
-					'viabill'            => __( 'Viabill', 'reepay-checkout-gateway' ),
-					'resurs'             => __( 'Resurs Bank', 'reepay-checkout-gateway' ),
 					'forbrugsforeningen' => __( 'Forbrugsforeningen', 'reepay-checkout-gateway' ),
 					'amex'               => __( 'AMEX', 'reepay-checkout-gateway' ),
 					'jcb'                => __( 'JCB', 'reepay-checkout-gateway' ),
 					'diners'             => __( 'Diners Club', 'reepay-checkout-gateway' ),
 					'unionpay'           => __( 'Unionpay', 'reepay-checkout-gateway' ),
 					'discover'           => __( 'Discover', 'reepay-checkout-gateway' ),
-					'googlepay'          => __( 'Google pay', 'reepay-checkout-gateway' ),
-					'vipps'              => __( 'Vipps', 'reepay-checkout-gateway' ),
 				),
 				'select_buttons' => true,
 				'default'        => array(),
@@ -449,10 +501,10 @@ class ReepayCheckout extends ReepayGateway {
 		$data = wp_parse_args(
 			$data,
 			array(
-				'title'     => '',
-				'info_type' => 'name',
-				'is_test'   => false,
-				'show'      => function () {
+				'title'   => '',
+				'getter'  => null,
+				'is_test' => false,
+				'show'    => function () {
 					return true;
 				},
 			)
@@ -462,7 +514,11 @@ class ReepayCheckout extends ReepayGateway {
 			return '';
 		}
 
-		$info = $this->get_account_info( $data['is_test'] );
+		try {
+			$account_info = $this->get_account_info( $data['is_test'] );
+		} catch ( BillwerkApiException $e ) {
+			$account_info = null;
+		}
 
 		ob_start();
 		?>
@@ -472,9 +528,9 @@ class ReepayCheckout extends ReepayGateway {
 			</th>
 			<td class="forminp">
 				<fieldset>
-					<?php if ( ! is_wp_error( $info ) && ! empty( $info[ $data['info_type'] ] ) ) : ?>
+					<?php if ( ! is_null( $account_info ) && ! is_null( $data['getter'] ) && ! empty( call_user_func( array( $account_info, $data['getter'] ) ) ) ) : ?>
 						<span>
-							<?php echo $info[ $data['info_type'] ]; ?>
+							<?php echo call_user_func( array( $account_info, $data['getter'] ) ); ?>
 						</span>
 					<?php endif; ?>
 				</fieldset>

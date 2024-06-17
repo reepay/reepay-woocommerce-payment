@@ -1,14 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
-import wpResolve from './plugins/rollup-plugin-wp-resolve'
 import { join } from 'path'
 import copy from 'rollup-plugin-copy'
+import wpDependencyExtraction from 'rollup-plugin-wordpress-dependency-extraction'
 
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [
         react(),
-        wpResolve(),
+        wpDependencyExtraction(),
         copy({
             targets: [{ src: 'public/*', dest: '../assets/dist/vite' }],
         }),

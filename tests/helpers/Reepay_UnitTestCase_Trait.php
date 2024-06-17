@@ -7,7 +7,15 @@
 
 namespace Reepay\Checkout\Tests\Helpers;
 
+use Billwerk\Sdk\BillwerkClientFactory;
+use Billwerk\Sdk\Sdk;
+use Billwerk\Sdk\Service\AccountService;
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\HttpFactory;
 use PHPUnit\Framework\MockObject\MockObject;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\OrderFlow\InstantSettle;
 use Reepay\Checkout\OrderFlow\OrderCapture;
@@ -75,6 +83,20 @@ trait Reepay_UnitTestCase_Trait {
 	protected Api $api_mock;
 
 	/**
+	 * Api account service mock
+	 *
+	 * @var AccountService|MockObject
+	 */
+	protected AccountService $account_service_mock;
+
+	/**
+	 * Sdk api mock
+	 *
+	 * @var Sdk|MockObject
+	 */
+	protected Sdk $sdk_mock;
+
+	/**
 	 * Initializes necessary components and mocks
 	 */
 	public static function set_up_data_before_class() {
@@ -101,6 +123,9 @@ trait Reepay_UnitTestCase_Trait {
 				'enable_sync' => 'no',
 			)
 		);
+
+		$this->account_service_mock = $this->createMock( AccountService::class );
+		reepay()->di()->set( AccountService::class, $this->account_service_mock );
 
 		$this->api_mock = $this->getMockBuilder( Api::class )->getMock();
 		reepay()->di()->set( Api::class, $this->api_mock );
