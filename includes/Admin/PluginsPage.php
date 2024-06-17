@@ -66,47 +66,45 @@ class PluginsPage {
 	 *
 	 * @param mixed $links Plugin Row Meta.
 	 * @param mixed $file  Plugin Base file.
-	 * 
+	 *
 	 * @return links
 	 */
 	public function rollback_link( $links, $file ): array {
 		if ( reepay()->get_setting( 'plugin_basename' ) === $file ) {
-			$rollback_link = null;
+			$rollback_link    = null;
 			$plugin_file_path = WP_PLUGIN_DIR . '/wp-rollback/wp-rollback.php';
-			if ( !file_exists( $plugin_file_path ) ) {
+			if ( ! file_exists( $plugin_file_path ) ) {
 				/**
 				 * Generate install WP-Rollback plguin URL
 				 */
-				error_log('Install link');
-				$action = 'install-plugin';
-				$slug = 'wp-rollback';
-				$url = wp_nonce_url(
+				$action        = 'install-plugin';
+				$slug          = 'wp-rollback';
+				$url           = wp_nonce_url(
 					add_query_arg(
 						array(
 							'action' => $action,
-							'plugin' => $slug
+							'plugin' => $slug,
 						),
 						admin_url( 'update.php' )
 					),
-					$action.'_'.$slug
+					$action . '_' . $slug
 				);
 				$rollback_link = "<a href='$url'>" . esc_html__( 'Rollback using WP Rollback', 'reepay-checkout-gateway' ) . '</a>';
-			} elseif (!in_array('wp-rollback/wp-rollback.php', apply_filters('active_plugins', get_option('active_plugins')))){
+			} elseif ( ! in_array( 'wp-rollback/wp-rollback.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ), true ) ) {
 				/**
 				 * Generate activate WP-Rollback plguin URL
 				 */
-				$path = 'wp-rollback/wp-rollback.php';
-				$url = wp_nonce_url(admin_url('plugins.php?action=activate&plugin='.$path), 'activate-plugin_'.$path);
+				$path          = 'wp-rollback/wp-rollback.php';
+				$url           = wp_nonce_url( admin_url( 'plugins.php?action=activate&plugin=' . $path ), 'activate-plugin_' . $path );
 				$rollback_link = "<a href='$url'>" . esc_html__( 'Activate Rollback', 'reepay-checkout-gateway' ) . '</a>';
 			}
 
-			if($rollback_link){
+			if ( $rollback_link ) {
 				array_push(
 					$links,
 					$rollback_link
 				);
 			}
-
 		}
 
 		return $links;
