@@ -9,6 +9,7 @@ namespace Reepay\Checkout\Gateways;
 
 use Billwerk\Sdk\Exception\BillwerkApiException;
 use Billwerk\Sdk\Model\Account\AccountModel;
+use Billwerk\Sdk\Model\Account\WebhookSettingsUpdateModel;
 use Exception;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
@@ -442,93 +443,30 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Valid keys entered and webhook url registered in reepay
 	 *
 	 * @return bool
-	 *
-	 * @throws Exception Never, just for phpcs.
 	 */
 	public function is_webhook_configured(): bool {
 		try {
-			$response = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
-			if ( is_wp_error( $response ) ) {
-				if ( ! empty( $response->get_error_code() ) ) {
-					throw new Exception( $response->get_error_message(), intval( $response->get_error_code() ) );
-				}
-			}
-
+			$settings    = reepay()->sdk()->account()->getWebHookSettings();
 			$webhook_url = self::get_webhook_url();
+			$alert_email = is_email( $this->failed_webhooks_email ) ? $this->failed_webhooks_email : '';
 
-			$alert_emails = $response['alert_emails'];
-
-			// The webhook settings of the payment plugin.
-			$alert_email = '';
-			if ( ! empty( $this->settings['failed_webhooks_email'] ) &&
-				is_email( $this->settings['failed_webhooks_email'] )
-			) {
-				$alert_email = $this->settings['failed_webhooks_email'];
-			}
-
-			$exist_waste_urls = false;
-
-			$urls = array();
-
-			foreach ( $response['urls'] as $url ) {
-				if ( ( strpos( $url, $webhook_url ) === false || // either another site or exact url match.
-					$url === $webhook_url ) &&
-					strpos( $url, 'WC_Gateway_Reepay_Checkout' ) === false ) {
-					$urls[] = $url;
-				} else {
-					$exist_waste_urls = true;
-				}
-			}
-
-			// Verify the webhook settings.
-			if ( ! $exist_waste_urls &&
-				in_array( $webhook_url, $urls, true )
-				&& ( empty( $alert_email ) || in_array( $alert_email, $alert_emails, true ) )
-			) {
+			if ( in_array( $webhook_url, $settings->getUrls(), true ) ) {
 				return true;
 			}
 
-			// Update the webhook settings.
-			if ( ! in_array( $webhook_url, $urls, true ) ) {
-				$urls[] = $webhook_url;
-			}
-
-			if ( ! empty( $alert_email ) && is_email( $alert_email ) ) {
-				$alert_emails[] = $alert_email;
-			}
-
-			$data = array(
-				'urls'         => array_unique( $urls ),
-				'disabled'     => false,
-				'alert_emails' => array_unique( $alert_emails ),
-			);
-
-			$response = reepay()->api( $this )->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
-			if ( is_wp_error( $response ) ) {
-				throw new Exception( $response->get_error_message(), $response->get_error_code() );
-			}
-
-			$this->log(
-				array(
-					'source' => 'WebHook has been successfully created/updated',
-					$response,
-				)
+			reepay()->sdk()->account()->updateWebHookSettings(
+				( new WebhookSettingsUpdateModel() )
+					->setUrls( array_unique( array( ...$settings->getUrls(), $webhook_url ) ) )
+					->setDisabled( false )
+					->setAlertEmails( array_unique( array( ...$settings->getAlertEmails(), $alert_email ) ) )
 			);
 
 			WC_Admin_Settings::add_message( __( 'Billwerk+: WebHook has been successfully created/updated', 'reepay-checkout-gateway' ) );
 		} catch ( Exception $e ) {
-			$this->log(
-				array(
-					'source' => 'WebHook creation/update has been failed',
-					'error'  => $e->getMessage(),
-				)
-			);
-
 			WC_Admin_Settings::add_error( __( 'Unable to retrieve the webhook settings. Wrong api credentials?', 'reepay-checkout-gateway' ) );
 
 			return false;
 		}
-
 		return true;
 	}
 
@@ -569,7 +507,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$esc_is_active = esc_attr( $is_active );
 		$title         = wp_kses_post( $data['title'] );
 		$tooltip_html  = $this->get_tooltip_html( $data );
-		$html_output   = <<<HTML
+		return <<<HTML
 			<tr valign="top">
 				<th scope="row" class="titledesc">
 					<label for="{$esc_field_key}">{$title}
@@ -591,8 +529,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				</td>
 			</tr>
 		HTML;
-
-		return $html_output;
 	}
 
 	/**

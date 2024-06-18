@@ -1,28 +1,35 @@
 <?php
 /**
- * Class ReepayCheckoutTest
+ * Test
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit\Gateways
  */
 
-namespace Reepay\Checkout\Tests\Unit\GatewaysTests;
+namespace Reepay\Checkout\Tests\Unit\Gateways;
 
 use Billwerk\Sdk\Exception\BillwerkApiException;
 use Billwerk\Sdk\Model\Account\AccountModel;
+use Billwerk\Sdk\Model\Account\WebhookSettingsModel;
 use Exception;
-use Reepay\Checkout\Gateways\ReepayCheckout;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\Tests\Helpers\OrderItemsGenerator;
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 use WP_Error;
 
+/**
+ * Test class child
+ *
+ * @package Reepay\Checkout\Tests\Unit\Gateways
+ */
 class ReepayGatewayTestChild extends ReepayGateway {
 
 }
 
 /**
- * ReepayGatewayTest.
+ * Test class
+ *
+ * @package Reepay\Checkout\Tests\Unit\Gateways
  */
 class ReepayGatewayTest extends Reepay_UnitTestCase {
 
@@ -39,6 +46,24 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 
 		update_option( 'woocommerce_calc_taxes', 'no' );
 		update_option( 'woocommerce_prices_include_tax', 'no' );
+	}
+
+	/**
+	 * Test is_webhook_configured
+	 *
+	 * @see ReepayGateway::is_webhook_configured()
+	 * @todo add check exceptions
+	 * @return void
+	 */
+	public function test_is_webhook_configured() {
+		$webhook_url = self::$gateway::get_webhook_url();
+		$settings    = ( new WebhookSettingsModel() )
+			->setUrls( array( $webhook_url ) );
+
+		$this->account_service_mock
+			->method( 'getWebHookSettings' )
+			->willReturnOnConsecutiveCalls( $settings );
+		$this::assertTrue( self::$gateway->is_webhook_configured() );
 	}
 
 	/**

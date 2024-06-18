@@ -23,13 +23,13 @@ use Reepay\Checkout\Api;
 use Reepay\Checkout\Api\Controller\DebugController;
 use Reepay\Checkout\Api\Controller\LogsController;
 use Reepay\Checkout\Api\Controller\MetaFieldsController;
-use Reepay\Checkout\DIContainer;
 use Reepay\Checkout\Gateways;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\Plugin\LifeCycle;
 use Reepay\Checkout\Plugin\Statistics;
 use Reepay\Checkout\Plugin\WoocommerceExists;
 use Reepay\Checkout\Plugin\WoocommerceHPOS;
+use Reepay\Checkout\Utils\DIContainer;
 use Reepay\Checkout\Utils\Logger\JsonLogger;
 use Reepay\Checkout\Utils\Logger\SdkLogger;
 

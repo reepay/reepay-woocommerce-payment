@@ -520,25 +520,29 @@ class ReepayCheckout extends ReepayGateway {
 			$account_info = null;
 		}
 
-		ob_start();
-		?>
-		<tr valign="top">
-			<th scope="row" class="titledesc">
-				<label><?php echo wp_kses_post( $data['title'] ); ?></label>
-			</th>
-			<td class="forminp">
-				<fieldset>
-					<?php if ( ! is_null( $account_info ) && ! is_null( $data['getter'] ) && ! empty( call_user_func( array( $account_info, $data['getter'] ) ) ) ) : ?>
-						<span>
-							<?php echo call_user_func( array( $account_info, $data['getter'] ) ); ?>
-						</span>
-					<?php endif; ?>
-				</fieldset>
-			</td>
-		</tr>
-		<?php
+		$html = <<<HTML
+			<tr valign="top">
+				<th scope="row" class="titledesc">
+					<label>%s</label>
+				</th>
+				<td class="forminp">
+					<fieldset>
+						%s
+					</fieldset>
+				</td>
+			</tr>
+		HTML;
 
-		return ob_get_clean();
+		$label = wp_kses_post( $data['title'] );
+		$span  = <<<HTML
+			<span>%s</span>
+		HTML;
+
+		if ( ! is_null( $account_info ) && ! is_null( $data['getter'] ) && ! empty( call_user_func( array( $account_info, $data['getter'] ) ) ) ) {
+			$span = sprintf( $span, call_user_func( array( $account_info, $data['getter'] ) ) );
+		}
+
+		return sprintf( $html, $label, $span );
 	}
 
 	/**
@@ -564,20 +568,20 @@ class ReepayCheckout extends ReepayGateway {
 			return '';
 		}
 
-		ob_start();
-		?>
-		<tr valign="top">
-			<th></th>
-			<td class="forminp">
-				<fieldset>
-					<button name="save" class="button-primary woocommerce-save-button" type="submit" value="Save changes">
-						<?php _e( 'Save and verify', 'reepay-checkout-gateway' ); ?>
-					</button>
-				</fieldset>
-			</td>
-		</tr>
-		<?php
-		return ob_get_clean();
+		$html = <<<HTML
+			<tr valign="top">
+				<th></th>
+				<td class="forminp">
+					<fieldset>
+						<button name="save" class="button-primary woocommerce-save-button" type="submit" value="Save changes">
+							%s
+						</button>
+					</fieldset>
+				</td>
+			</tr>
+		HTML;
+
+		return sprintf( $html, __( 'Save and verify', 'reepay-checkout-gateway' ) );
 	}
 
 	/**
@@ -587,6 +591,7 @@ class ReepayCheckout extends ReepayGateway {
 	 * @param array  $data Field data.
 	 *
 	 * @return string
+	 * @throws Exception Exception.
 	 * @see WC_Settings_API::generate_settings_html
 	 */
 	public function generate_webhook_status_html( string $key, array $data ): string {
@@ -609,35 +614,48 @@ class ReepayCheckout extends ReepayGateway {
 		$is_webhook_configured = $this->is_webhook_configured();
 		$this->test_mode       = $default_test_mode;
 
-		ob_start();
-		?>
-		<tr valign="top">
-			<th scope="row" class="titledesc">
-				<label><?php _e( 'Webhook', 'reepay-checkout-gateway' ); ?></label>
-			</th>
-			<td class="forminp">
-				<fieldset>
-					<?php
-					if ( $is_webhook_configured ) :
-						?>
-						<span style="color: green;">
-							<?php esc_html_e( 'Active', 'reepay-checkout-gateway' ); ?>
-						</span>
-					<?php else : ?>
-						<span style="color: red;">
-							<?php esc_html_e( 'Configuration is required.', 'reepay-checkout-gateway' ); ?>
-						</span>                        <p>
-							<?php esc_html_e( 'Please check api credentials and save the settings. Webhook will be installed automatically.', 'reepay-checkout-gateway' ); ?>
-						</p>
-					<?php endif; ?>
+		$html = <<<HTML
+			<tr valign="top">
+				<th scope="row" class="titledesc">
+					<label>%s</label>
+				</th>
+				<td class="forminp">
+					<fieldset>
+						%s
+						<input type="hidden" name="%s" value="%s"/>
+					</fieldset>
+				</td>
+			</tr>
+		HTML;
 
-					<input type="hidden" name="<?php echo esc_attr( $this->get_field_key( $key ) ); ?>" value="<?php echo esc_attr( $is_webhook_configured ); ?>"/>
-				</fieldset>
-			</td>
-		</tr>
-		<?php
+		$label       = __( 'Webhook', 'reepay-checkout-gateway' );
+		$input_name  = esc_attr( $this->get_field_key( $key ) );
+		$input_value = esc_attr( $is_webhook_configured );
 
-		return ob_get_clean();
+		if ( $is_webhook_configured ) {
+			$span = <<<HTML
+				<span style="color: green;">
+					%s
+				</span>
+			HTML;
+			$span = sprintf( $span, esc_html__( 'Active', 'reepay-checkout-gateway' ) );
+		} else {
+			$span = <<<HTML
+				<span style="color: red;">
+					%s
+				</span>
+				<p>
+					%s
+				</p>
+			HTML;
+			$span = sprintf(
+				$span,
+				esc_html__( 'Configuration is required.', 'reepay-checkout-gateway' ),
+				esc_html__( 'Please check api credentials and save the settings. Webhook will be installed automatically.', 'reepay-checkout-gateway' )
+			);
+		}
+
+		return sprintf( $html, $label, $span, $input_name, $input_value );
 	}
 
 	/**

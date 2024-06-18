@@ -2,8 +2,10 @@
 /**
  * Class GatewaysTest
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit
  */
+
+namespace Reepay\Checkout\Tests\Unit;
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
@@ -13,7 +15,7 @@ use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
  *
  * @covers \Reepay\Checkout\Gateways
  */
-class Gateways extends Reepay_UnitTestCase {
+class GatewaysTest extends Reepay_UnitTestCase {
 	/**
 	 * Test get_gateway
 	 *

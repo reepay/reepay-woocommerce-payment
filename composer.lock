@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "48f4ba2911d22f4aa2f162726bec87af",
+    "content-hash": "07ac69b8c135aa1b98e5ddde8ab3b6e2",
     "packages": [
         {
             "name": "billwerk/php-sdk",
-            "version": "v1.0.7",
+            "version": "v1.0.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/0zd0/billwerk-sdk-php.git",
-                "reference": "e8632117fe9b4e0328e64678477f5a281c0ee198"
+                "reference": "beb3c6255a9790695011c8f266d055d053bbeb5b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/0zd0/billwerk-sdk-php/zipball/e8632117fe9b4e0328e64678477f5a281c0ee198",
-                "reference": "e8632117fe9b4e0328e64678477f5a281c0ee198",
+                "url": "https://api.github.com/repos/0zd0/billwerk-sdk-php/zipball/beb3c6255a9790695011c8f266d055d053bbeb5b",
+                "reference": "beb3c6255a9790695011c8f266d055d053bbeb5b",
                 "shasum": ""
             },
             "require": {
@@ -49,9 +49,9 @@
             "description": "Api SDK for Billwerk+",
             "support": {
                 "issues": "https://github.com/0zd0/billwerk-sdk-php/issues",
-                "source": "https://github.com/0zd0/billwerk-sdk-php/tree/v1.0.7"
+                "source": "https://github.com/0zd0/billwerk-sdk-php/tree/v1.0.9"
             },
-            "time": "2024-06-11T18:34:11+00:00"
+            "time": "2024-06-18T18:14:56+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -801,16 +801,16 @@
         },
         {
             "name": "myclabs/deep-copy",
-            "version": "1.11.1",
+            "version": "1.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/myclabs/DeepCopy.git",
-                "reference": "7284c22080590fb39f2ffa3e9057f10a4ddd0e0c"
+                "reference": "3a6b9a42cd8f8771bd4295d13e1423fa7f3d942c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/myclabs/DeepCopy/zipball/7284c22080590fb39f2ffa3e9057f10a4ddd0e0c",
-                "reference": "7284c22080590fb39f2ffa3e9057f10a4ddd0e0c",
+                "url": "https://api.github.com/repos/myclabs/DeepCopy/zipball/3a6b9a42cd8f8771bd4295d13e1423fa7f3d942c",
+                "reference": "3a6b9a42cd8f8771bd4295d13e1423fa7f3d942c",
                 "shasum": ""
             },
             "require": {
@@ -818,11 +818,12 @@
             },
             "conflict": {
                 "doctrine/collections": "<1.6.8",
-                "doctrine/common": "<2.13.3 || >=3,<3.2.2"
+                "doctrine/common": "<2.13.3 || >=3 <3.2.2"
             },
             "require-dev": {
                 "doctrine/collections": "^1.6.8",
                 "doctrine/common": "^2.13.3 || ^3.2.2",
+                "phpspec/prophecy": "^1.10",
                 "phpunit/phpunit": "^7.5.20 || ^8.5.23 || ^9.5.13"
             },
             "type": "library",
@@ -848,7 +849,7 @@
             ],
             "support": {
                 "issues": "https://github.com/myclabs/DeepCopy/issues",
-                "source": "https://github.com/myclabs/DeepCopy/tree/1.11.1"
+                "source": "https://github.com/myclabs/DeepCopy/tree/1.12.0"
             },
             "funding": [
                 {
@@ -856,7 +857,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-03-08T13:26:56+00:00"
+            "time": "2024-06-12T14:39:25+00:00"
         },
         {
             "name": "phar-io/manifest",
