@@ -60,7 +60,6 @@ class VippsRecurring extends ReepayGateway {
 			'subscription_payment_method_change_admin',
 			'multiple_subscriptions',
 		);
-		$this->logos        = array( 'vipps' );
 
 		parent::__construct();
 

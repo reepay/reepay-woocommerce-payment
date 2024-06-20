@@ -8,8 +8,12 @@
 namespace Reepay\Checkout\Gateways;
 
 use Billwerk\Sdk\Exception\BillwerkApiException;
+use Billwerk\Sdk\Exception\BillwerkClientException;
+use Billwerk\Sdk\Exception\BillwerkNetworkException;
+use Billwerk\Sdk\Exception\BillwerkRequestException;
 use Billwerk\Sdk\Model\Account\AccountModel;
 use Billwerk\Sdk\Model\Account\WebhookSettingsUpdateModel;
+use Billwerk\Sdk\Model\Agreement\AgreementGetAllModel;
 use Exception;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
@@ -349,19 +353,24 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Check if payment method activated in reepay
 	 *
 	 * @return bool
+	 * @throws Exception Exception.
 	 */
 	public function check_is_active(): bool {
-		$gateways_reepay = get_transient( 'gateways_reepay' );
-		if ( empty( $gateways_reepay ) ) {
-			$gateways_reepay = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/agreement?only_active=true' );
-			set_transient( 'gateways_reepay', $gateways_reepay, 5 );
+		$current_name  = str_replace( 'reepay_', '', $this->id );
+		$key_transient = 'billwerk_active_agreements';
+		$agreements    = get_transient( $key_transient );
+		if ( empty( $agreements ) ) {
+			$agreements = reepay()->sdk()->agreement()->all( ( new AgreementGetAllModel() )->setOnlyActive( true ) );
+			set_transient( $key_transient, $agreements, 5 );
 		}
 
-		$current_name = str_replace( 'reepay_', '', $this->id );
+		if ( ! is_array( $agreements ) ) {
+			return false;
+		}
 
-		if ( ! empty( $gateways_reepay ) && ! is_wp_error( $gateways_reepay ) ) {
-			foreach ( $gateways_reepay as $app ) {
-				if ( stripos( $app['type'], $current_name ) !== false ) {
+		foreach ( $agreements as $agreement ) {
+			if ( $agreement->getType() ) {
+				if ( stripos( $agreement->getType(), $current_name ) !== false ) {
 					return true;
 				}
 			}

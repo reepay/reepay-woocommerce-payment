@@ -44,7 +44,6 @@ class Swish extends ReepayGateway {
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'swish' );
 
 		parent::__construct();
 

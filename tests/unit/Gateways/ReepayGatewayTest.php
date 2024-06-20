@@ -7,24 +7,18 @@
 
 namespace Reepay\Checkout\Tests\Unit\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
 use Billwerk\Sdk\Exception\BillwerkApiException;
 use Billwerk\Sdk\Model\Account\AccountModel;
 use Billwerk\Sdk\Model\Account\WebhookSettingsModel;
+use Billwerk\Sdk\Model\Agreement\AgreementModel;
 use Exception;
 use Reepay\Checkout\Gateways\ReepayGateway;
+use Reepay\Checkout\Tests\Helpers\GatewayForTesting;
 use Reepay\Checkout\Tests\Helpers\OrderItemsGenerator;
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 use WP_Error;
-
-/**
- * Test class child
- *
- * @package Reepay\Checkout\Tests\Unit\Gateways
- */
-class ReepayGatewayTestChild extends ReepayGateway {
-
-}
 
 /**
  * Test class
@@ -32,15 +26,25 @@ class ReepayGatewayTestChild extends ReepayGateway {
  * @package Reepay\Checkout\Tests\Unit\Gateways
  */
 class ReepayGatewayTest extends Reepay_UnitTestCase {
+	/**
+	 * Gateway for testing
+	 *
+	 * @var GatewayForTesting $gateway
+	 */
+	public static GatewayForTesting $gateway;
 
-	public static ReepayGatewayTestChild $gateway;
-
+	/**
+	 * Set up before class
+	 */
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
 
-		self::$gateway = new ReepayGatewayTestChild();
+		self::$gateway = new GatewayForTesting();
 	}
 
+	/**
+	 * Tear down after class
+	 */
 	public static function tear_down_after_class() {
 		parent::tear_down_after_class();
 
@@ -49,10 +53,18 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * Test is_webhook_configured
+	 * Agreement types
+	 *
+	 * @return array
+	 */
+	public function agreement_type_provider(): array {
+		return array_map( fn( $gateway ) => array( $gateway ), AgreementTypeEnum::getAll() );
+	}
+
+	/**
+	 * Test function is_webhook_configured
 	 *
 	 * @see ReepayGateway::is_webhook_configured()
-	 * @todo add check exceptions
 	 * @return void
 	 */
 	public function test_is_webhook_configured() {
@@ -62,39 +74,26 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 
 		$this->account_service_mock
 			->method( 'getWebHookSettings' )
-			->willReturnOnConsecutiveCalls( $settings );
+			->willReturnOnConsecutiveCalls( $settings, $this->throwException( new BillwerkApiException() ) );
+
 		$this::assertTrue( self::$gateway->is_webhook_configured() );
+		$this::assertFalse( self::$gateway->is_webhook_configured() );
 	}
 
 	/**
+	 * Test function check_is_active
+	 *
 	 * @param string $gateway gateway id.
 	 *
-	 * @testWith
-	 * ["anyday"]
-	 * ["applepay"]
-	 * ["googlepay"]
-	 * ["klarna_pay_later"]
-	 * ["klarna_pay_now"]
-	 * ["klarna_slice_it"]
-	 * ["mobilepay"]
-	 * ["mobilepay_subscriptions"]
-	 * ["paypal"]
-	 * ["checkout"]
-	 * ["resurs"]
-	 * ["swish"]
-	 * ["viabill"]
-	 * ["vipps"]
+	 * @dataProvider agreement_type_provider
+	 * @throws Exception Exception.
+	 * @see ReepayGateway::check_is_active()
 	 */
 	public function test_check_is_active( string $gateway ) {
 		self::$gateway->id = 'reepay_' . $gateway;
-
-		$this->api_mock->method( 'request' )->willReturn(
-			array(
-				array(
-					'type' => $gateway,
-				),
-			)
-		);
+		$this->agreement_service_mock
+			->method( 'all' )
+			->willReturn( array( ( new AgreementModel() )->setType( $gateway ) ) );
 
 		$this->assertTrue( self::$gateway->check_is_active() );
 	}
@@ -595,7 +594,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	 * [false, false]
 	 * [false, true]
 	 * [true, false]
-	 * [true, true] 
+	 * [true, true]
 	 */
 	public function test_get_order_items_giftup( bool $include_tax, bool $only_not_settled ) {
 		$this->markTestIncomplete();

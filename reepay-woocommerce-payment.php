@@ -17,6 +17,14 @@ use Billwerk\Sdk\BillwerkClientFactory;
 use Billwerk\Sdk\BillwerkRequest;
 use Billwerk\Sdk\Sdk;
 use Billwerk\Sdk\Service\AccountService;
+use Billwerk\Sdk\Service\AgreementService;
+use Billwerk\Sdk\Service\ChargeService;
+use Billwerk\Sdk\Service\CustomerService;
+use Billwerk\Sdk\Service\InvoiceService;
+use Billwerk\Sdk\Service\PaymentMethodService;
+use Billwerk\Sdk\Service\RefundService;
+use Billwerk\Sdk\Service\SessionService;
+use Billwerk\Sdk\Service\TransactionService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\HttpFactory;
 use Reepay\Checkout\Api;
@@ -277,14 +285,35 @@ class WC_ReepayCheckout {
 			new SdkLogger()
 		);
 
-		if ( $this->di()->is_set( AccountService::class ) ) {
-			$account_service = $this->di()->get( AccountService::class );
-			if ( $account_service instanceof AccountService ) {
-				$sdk->setAccountService( $account_service );
-			}
-		}
+		$this->set_service_if_available( AccountService::class, $sdk, 'setAccountService' );
+		$this->set_service_if_available( AgreementService::class, $sdk, 'setAgreementService' );
+		$this->set_service_if_available( ChargeService::class, $sdk, 'setChargeService' );
+		$this->set_service_if_available( CustomerService::class, $sdk, 'setCustomerService' );
+		$this->set_service_if_available( InvoiceService::class, $sdk, 'setInvoiceService' );
+		$this->set_service_if_available( PaymentMethodService::class, $sdk, 'setPaymentMethodService' );
+		$this->set_service_if_available( RefundService::class, $sdk, 'setRefundService' );
+		$this->set_service_if_available( SessionService::class, $sdk, 'setSessionService' );
+		$this->set_service_if_available( TransactionService::class, $sdk, 'setTransactionService' );
 
 		return $sdk;
+	}
+
+	/**
+	 * Sets the service in the SDK if the service is available in the DI container.
+	 *
+	 * @param string $service_class The class name of the service.
+	 * @param Sdk    $sdk The SDK instance.
+	 * @param string $set_method The method to set the service in the SDK.
+	 *
+	 * @return void
+	 */
+	private function set_service_if_available( string $service_class, Sdk $sdk, string $set_method ) {
+		if ( $this->di()->is_set( $service_class ) ) {
+			$service = $this->di()->get( $service_class );
+			if ( $service instanceof $service_class ) {
+				$sdk->$set_method( $service );
+			}
+		}
 	}
 
 	/**

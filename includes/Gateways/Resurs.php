@@ -44,7 +44,6 @@ class Resurs extends ReepayGateway {
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'resurs' );
 
 		parent::__construct();
 

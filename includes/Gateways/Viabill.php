@@ -44,7 +44,6 @@ class Viabill extends ReepayGateway {
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'viabill' );
 
 		parent::__construct();
 

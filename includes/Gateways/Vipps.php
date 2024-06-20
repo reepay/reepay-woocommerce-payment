@@ -46,7 +46,6 @@ class Vipps extends ReepayGateway {
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'vipps' );
 
 		parent::__construct();
 

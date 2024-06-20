@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "billwerk/php-sdk",
-            "version": "v1.0.9",
+            "version": "v1.0.15",
             "source": {
                 "type": "git",
                 "url": "https://github.com/0zd0/billwerk-sdk-php.git",
-                "reference": "beb3c6255a9790695011c8f266d055d053bbeb5b"
+                "reference": "bd4bab10ae6ce717fdfb567314463dcf36405355"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/0zd0/billwerk-sdk-php/zipball/beb3c6255a9790695011c8f266d055d053bbeb5b",
-                "reference": "beb3c6255a9790695011c8f266d055d053bbeb5b",
+                "url": "https://api.github.com/repos/0zd0/billwerk-sdk-php/zipball/bd4bab10ae6ce717fdfb567314463dcf36405355",
+                "reference": "bd4bab10ae6ce717fdfb567314463dcf36405355",
                 "shasum": ""
             },
             "require": {
@@ -49,9 +49,9 @@
             "description": "Api SDK for Billwerk+",
             "support": {
                 "issues": "https://github.com/0zd0/billwerk-sdk-php/issues",
-                "source": "https://github.com/0zd0/billwerk-sdk-php/tree/v1.0.9"
+                "source": "https://github.com/0zd0/billwerk-sdk-php/tree/v1.0.15"
             },
-            "time": "2024-06-18T18:14:56+00:00"
+            "time": "2024-06-20T20:43:02+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
