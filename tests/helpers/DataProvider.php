@@ -2,18 +2,30 @@
 /**
  * Class DataProvider
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Helpers
  */
 
 namespace Reepay\Checkout\Tests\Helpers;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
 use Reepay\Checkout\Gateways;
 use WC_Gateway_COD;
 
 /**
  * Class HELPERS
+ *
+ * @package Reepay\Checkout\Tests\Helpers
  */
 abstract class DataProvider {
+	/**
+	 * Agreement types
+	 *
+	 * @return array
+	 */
+	public static function agreement_types(): array {
+		return array_map( fn( $gateway ) => array( $gateway ), AgreementTypeEnum::getAll() );
+	}
+
 	/**
 	 * Get payment methods for tests. Use as dataProvider.
 	 *

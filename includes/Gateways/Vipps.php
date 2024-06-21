@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -15,7 +17,7 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class Vipps extends ReepayGateway {
-	public const ID = 'reepay_vipps';
+	public const ID = 'reepay_' . AgreementTypeEnum::VIPPS;
 
 	/**
 	 * Logos

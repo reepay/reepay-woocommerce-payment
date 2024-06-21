@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -15,6 +17,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class Resurs extends ReepayGateway {
+	public const ID = 'reepay_' . AgreementTypeEnum::RESURS;
+
 	/**
 	 * Logos
 	 *
@@ -37,7 +41,7 @@ class Resurs extends ReepayGateway {
 	 * Resurs constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_resurs';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - Resurs Bank', 'reepay-checkout-gateway' );
 		$this->supports     = array(

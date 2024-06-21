@@ -25,6 +25,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class ReepayCheckout extends ReepayGateway {
+	public const ID = 'reepay_checkout';
+
 	use LoggingTrait;
 
 	/**
@@ -45,7 +47,7 @@ class ReepayCheckout extends ReepayGateway {
 	 * ReepayCheckout constructor.
 	 */
 	public function __construct() {
-		$this->id             = 'reepay_checkout';
+		$this->id             = self::ID;
 		$this->logging_source = $this->id;
 		$this->has_fields     = true;
 		$this->method_title   = __( 'Billwerk+ Payments', 'reepay-checkout-gateway' );

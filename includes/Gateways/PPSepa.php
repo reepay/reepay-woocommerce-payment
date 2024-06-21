@@ -7,6 +7,7 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
 use Reepay\Checkout\Frontend\Assets;
 
 defined( 'ABSPATH' ) || exit();
@@ -17,6 +18,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class PPSepa extends ReepayGateway {
+	public const ID = 'reepay_' . AgreementTypeEnum::PP_SEPA;
+
 	/**
 	 * Logos
 	 *
@@ -39,7 +42,7 @@ class PPSepa extends ReepayGateway {
 	 * PPSepa constructor.
 	 */
 	public function __construct() {
-		$this->id                   = 'reepay_pp_sepa';
+		$this->id                   = self::ID;
 		$this->has_fields           = true;
 		$this->method_title         = __( 'Billwerk+ - SEPA Direct Debit', 'reepay-checkout-gateway' );
 		$this->supports             = array(
@@ -58,7 +61,6 @@ class PPSepa extends ReepayGateway {
 			'subscription_payment_method_change_admin',
 			'multiple_subscriptions',
 		);
-		$this->logos                = array( 'sepa' );
 		$this->supported_currencies = array( 'EUR' );
 
 		parent::__construct();

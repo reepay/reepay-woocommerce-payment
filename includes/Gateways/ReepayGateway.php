@@ -181,7 +181,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 	/**
 	 * Currencies for which payment method is not displayed
-	 * (If $supported_currencies is empty)
+	 * (If supported_currencies is empty)
 	 *
 	 * @var string[]
 	 */
@@ -369,6 +369,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		foreach ( $agreements as $agreement ) {
+			if ( $agreement->getVippsRecurringAgreement() && VippsRecurring::ID === $this->id ) {
+				return true;
+			}
+			if ( $agreement->getOfflineAgreement() ) {
+				if ( stripos( $agreement->getOfflineAgreement()->getPaymentType(), $current_name ) !== false ) {
+					return true;
+				}
+			}
 			if ( $agreement->getType() ) {
 				if ( stripos( $agreement->getType(), $current_name ) !== false ) {
 					return true;
@@ -376,6 +384,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 		}
 
+		$this->update_option( 'enabled', 'no' );
 		return false;
 	}
 

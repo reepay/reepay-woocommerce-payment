@@ -53,15 +53,6 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * Agreement types
-	 *
-	 * @return array
-	 */
-	public function agreement_type_provider(): array {
-		return array_map( fn( $gateway ) => array( $gateway ), AgreementTypeEnum::getAll() );
-	}
-
-	/**
 	 * Test function is_webhook_configured
 	 *
 	 * @see ReepayGateway::is_webhook_configured()
@@ -85,7 +76,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	 *
 	 * @param string $gateway gateway id.
 	 *
-	 * @dataProvider agreement_type_provider
+	 * @dataProvider \Reepay\Checkout\Tests\Helpers\DataProvider::agreement_types()
 	 * @throws Exception Exception.
 	 * @see ReepayGateway::check_is_active()
 	 */

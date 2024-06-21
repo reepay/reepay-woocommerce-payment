@@ -44,7 +44,7 @@ class GatewaysTest extends Reepay_UnitTestCase {
 	 * @param bool         $is_reepay is reepay gateway.
 	 *
 	 * @dataProvider \Reepay\Checkout\Tests\Helpers\DataProvider::payment_methods
-	 *  @see rp_is_reepay_payment_method
+	 * @see rp_is_reepay_payment_method
 	 * @group functions_gateways
 	 */
 	public function test_rp_is_reepay_payment_method( string $method_name, $class_name, bool $is_reepay ) {

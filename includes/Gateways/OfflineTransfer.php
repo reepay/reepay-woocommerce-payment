@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\OfflineAgreementPaymentTypeEnum;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -15,6 +17,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class OfflineTransfer extends ReepayGateway {
+	public const ID = 'reepay_' . OfflineAgreementPaymentTypeEnum::OFFLINE_BANK_TRANSFER;
+
 	/**
 	 * Logos
 	 *
@@ -37,7 +41,7 @@ class OfflineTransfer extends ReepayGateway {
 	 * PPSepa constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_offline_bank_transfer';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - Bank Transfer', 'reepay-checkout-gateway' );
 		$this->supports     = array(

@@ -7,6 +7,7 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
 use Reepay\Checkout\Frontend\Assets;
 
 defined( 'ABSPATH' ) || exit();
@@ -17,6 +18,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class Googlepay extends ReepayGateway {
+	public const ID = 'reepay_' . AgreementTypeEnum::GOOGLEPAY;
+
 	/**
 	 * Logos
 	 *
@@ -39,14 +42,13 @@ class Googlepay extends ReepayGateway {
 	 * Googlepay constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_googlepay';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - Google Pay', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'googlepay' );
 
 		parent::__construct();
 

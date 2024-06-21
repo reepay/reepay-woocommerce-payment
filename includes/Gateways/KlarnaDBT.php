@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -15,6 +17,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class KlarnaDBT extends ReepayGateway {
+	public const ID = 'reepay_' . AgreementTypeEnum::KLARNA_DIRECT_BANK_TRANSFER;
+
 	/**
 	 * Logos
 	 *
@@ -37,14 +41,13 @@ class KlarnaDBT extends ReepayGateway {
 	 * KlarnaDBT constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_klarna_direct_bank_transfer';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - Klarna Direct Bank Transfer', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'klarna' );
 
 		parent::__construct();
 
