@@ -39,7 +39,7 @@ class PPBancontact extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_pp_bancontact';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - Bancontact', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - Bancontact', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

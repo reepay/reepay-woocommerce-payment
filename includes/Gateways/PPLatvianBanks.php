@@ -39,7 +39,7 @@ class PPLatvianBanks extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_pp_latvia_banks';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - Latvian Banks', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - Latvian Banks', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

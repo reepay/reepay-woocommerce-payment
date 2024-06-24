@@ -43,7 +43,7 @@ class ApplePay extends ReepayGateway {
 	public function __construct() {
 		$this->id           = self::ID;
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - Apple Pay', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - Apple Pay', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

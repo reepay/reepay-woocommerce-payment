@@ -39,7 +39,7 @@ class PPVerkkoPankki extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_pp_verkkopankki';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - Finland Banks', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - Finland Banks', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',
