@@ -433,7 +433,14 @@ class OrderCapture {
 	 * @noinspection PhpCastIsUnnecessaryInspection
 	 */
 	public static function get_item_price( $order_item, WC_Order $order ): array {
-		$discount = floatval( $order_item->get_meta( '_line_discount' ) );
+		/**
+		 * Condition check $order_item is_object or is_array
+		 */
+		if (is_object($order_item) && method_exists($order_item, 'get_meta')) {
+			$discount = floatval( $order_item->get_meta( '_line_discount' ) );
+		} elseif (is_array($order_item)) {
+			$discount = floatval( $order_item[0]->get_meta( '_line_discount' ) );
+		}
 		if ( empty( $discount ) ) {
 			$discount = 0;
 		}
