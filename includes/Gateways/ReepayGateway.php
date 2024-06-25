@@ -194,6 +194,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 */
 	protected array $supported_currencies = array();
 
+	public const KEY_TRANSIENT_AGREEMENT = 'billwerk_active_agreements';
+
 	/**
 	 * ReepayGateway constructor.
 	 */
@@ -356,12 +358,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @throws Exception Exception.
 	 */
 	public function check_is_active(): bool {
-		$current_name  = str_replace( 'reepay_', '', $this->id );
-		$key_transient = 'billwerk_active_agreements';
-		$agreements    = get_transient( $key_transient );
+		$current_name = str_replace( 'reepay_', '', $this->id );
+		$agreements   = get_transient( self::KEY_TRANSIENT_AGREEMENT );
 		if ( empty( $agreements ) ) {
 			$agreements = reepay()->sdk()->agreement()->all( ( new AgreementGetAllModel() )->setOnlyActive( true ) );
-			set_transient( $key_transient, $agreements, 5 );
+			set_transient( self::KEY_TRANSIENT_AGREEMENT, $agreements, 5 );
 		}
 
 		if ( ! is_array( $agreements ) ) {

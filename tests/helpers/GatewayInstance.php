@@ -14,6 +14,5 @@ use Reepay\Checkout\Gateways\ReepayGateway;
  *
  * @package Reepay\Checkout\Tests\Helpers
  */
-class GatewayForTesting extends ReepayGateway {
-
+class GatewayInstance extends ReepayGateway {
 }

@@ -76,6 +76,14 @@ class WC_ReepayCheckout {
 	private ?DIContainer $di_container = null;
 
 	/**
+	 * Path inside the plugin
+	 * (for tests)
+	 *
+	 * @var string $images_nested_path
+	 */
+	private string $images_nested_path = 'assets/images/';
+
+	/**
 	 * Constructor
 	 */
 	private function __construct() {
@@ -170,8 +178,8 @@ class WC_ReepayCheckout {
 				'js_url'                     => plugin_dir_url( __FILE__ ) . 'assets/dist/js/',
 				'js_path'                    => plugin_dir_path( __FILE__ ) . 'assets/dist/js/',
 
-				'images_url'                 => plugin_dir_url( __FILE__ ) . 'assets/images/',
-				'images_path'                => plugin_dir_path( __FILE__ ) . 'assets/images/',
+				'images_url'                 => plugin_dir_url( __FILE__ ) . $this->images_nested_path,
+				'images_path'                => plugin_dir_path( __FILE__ ) . $this->images_nested_path,
 
 				'assets_url'                 => plugin_dir_url( __FILE__ ) . 'assets/',
 				'assets_path'                => plugin_dir_path( __FILE__ ) . 'assets/',
@@ -213,6 +221,17 @@ class WC_ReepayCheckout {
 	public function reset_settings() {
 		$this->settings = array();
 		$this->get_setting( '' );
+	}
+
+	/**
+	 * For tests
+	 *
+	 * @param string $images_nested_path images path.
+	 *
+	 * @return void
+	 */
+	public function set_images_nested_path( string $images_nested_path ): void {
+		$this->images_nested_path = $images_nested_path;
 	}
 
 	/**
