@@ -21,6 +21,7 @@ class PluginsPage {
 	public function __construct() {
 		add_filter( 'plugin_action_links_' . reepay()->get_setting( 'plugin_basename' ), array( $this, 'add_action_links' ) );
 		add_filter( 'plugin_row_meta', array( $this, 'add_plugin_row_meta' ), 10, 2 );
+		add_filter( 'plugin_row_meta', array( $this, 'rollback_link' ), 20, 2 );
 	}
 
 	/**
@@ -55,6 +56,55 @@ class PluginsPage {
 					'pricing' => '<a target="_blank" href="https://reepay.com/pricing/">' . esc_html__( 'Pricing', 'reepay-checkout-gateway' ) . '</a>',
 				)
 			);
+		}
+
+		return $links;
+	}
+
+	/**
+	 * Show Rollback plugin install, activate URL
+	 *
+	 * @param mixed $links Plugin Row Meta.
+	 * @param mixed $file  Plugin Base file.
+	 *
+	 * @return links
+	 */
+	public function rollback_link( $links, $file ): array {
+		if ( reepay()->get_setting( 'plugin_basename' ) === $file ) {
+			$rollback_link    = null;
+			$plugin_file_path = WP_PLUGIN_DIR . '/wp-rollback/wp-rollback.php';
+			if ( ! file_exists( $plugin_file_path ) ) {
+				/**
+				 * Generate install WP-Rollback plguin URL
+				 */
+				$action        = 'install-plugin';
+				$slug          = 'wp-rollback';
+				$url           = wp_nonce_url(
+					add_query_arg(
+						array(
+							'action' => $action,
+							'plugin' => $slug,
+						),
+						admin_url( 'update.php' )
+					),
+					$action . '_' . $slug
+				);
+				$rollback_link = "<a href='$url'>" . esc_html__( 'Rollback using WP Rollback', 'reepay-checkout-gateway' ) . '</a>';
+			} elseif ( ! in_array( 'wp-rollback/wp-rollback.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ), true ) ) {
+				/**
+				 * Generate activate WP-Rollback plguin URL
+				 */
+				$path          = 'wp-rollback/wp-rollback.php';
+				$url           = wp_nonce_url( admin_url( 'plugins.php?action=activate&plugin=' . $path ), 'activate-plugin_' . $path );
+				$rollback_link = "<a href='$url'>" . esc_html__( 'Activate Rollback', 'reepay-checkout-gateway' ) . '</a>';
+			}
+
+			if ( $rollback_link ) {
+				array_push(
+					$links,
+					$rollback_link
+				);
+			}
 		}
 
 		return $links;
