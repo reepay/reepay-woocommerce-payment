@@ -172,5 +172,16 @@ export const logsModel = createModel<RootModel>()({
             const logs = await LogApi.logs(activeFile.url)
             dispatch.logs.setReverseLogs({ tabId, logs })
         },
+        async cleanLogs({
+            tabId,
+            activeFile,
+        }: {
+            tabId?: string
+            activeFile?: ILogFile
+        }) {
+            if (!activeFile || !tabId) return
+            await LogApi.clean(activeFile.path)
+            dispatch.logs.setLogs({ tabId, logs: [] })
+        },
     }),
 })

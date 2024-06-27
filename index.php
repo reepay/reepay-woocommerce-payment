@@ -28,9 +28,9 @@ use Billwerk\Sdk\Service\TransactionService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\HttpFactory;
 use Reepay\Checkout\Api;
-use Reepay\Checkout\Api\Controller\DebugController;
-use Reepay\Checkout\Api\Controller\LogsController;
-use Reepay\Checkout\Api\Controller\MetaFieldsController;
+use Reepay\Checkout\RestApi\Controller\DebugController;
+use Reepay\Checkout\RestApi\Controller\LogsController;
+use Reepay\Checkout\RestApi\Controller\MetaFieldsController;
 use Reepay\Checkout\Gateways;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\Plugin\LifeCycle;
@@ -341,6 +341,7 @@ class WC_ReepayCheckout {
 	 * @param string $source Source log.
 	 *
 	 * @return JsonLogger
+	 * @throws Exception Exception.
 	 */
 	public function log( string $source = 'billwerk' ): JsonLogger {
 		return ( new JsonLogger(
@@ -416,13 +417,6 @@ class WC_ReepayCheckout {
 	}
 }
 
-/**
- * Get reepay checkout instance
- *
- * @return WC_ReepayCheckout
- */
-function reepay(): WC_ReepayCheckout {
-	return WC_ReepayCheckout::get_instance();
-}
+require_once 'main-class-shortcut.php';
 
 reepay();

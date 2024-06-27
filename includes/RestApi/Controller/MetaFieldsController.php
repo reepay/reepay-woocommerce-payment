@@ -2,10 +2,10 @@
 /**
  * Controller meta fields
  *
- * @package Reepay\Checkout\Api\Controller
+ * @package Reepay\Checkout\RestApi\Controller
  */
 
-namespace Reepay\Checkout\Api\Controller;
+namespace Reepay\Checkout\RestApi\Controller;
 
 use Reepay\Checkout\Utils\MetaField;
 use WC_Meta_Data;
@@ -20,7 +20,7 @@ use WP_REST_Server;
 /**
  * Class controller
  *
- * @package Reepay\Checkout\Api\Controller
+ * @package Reepay\Checkout\RestApi\Controller
  */
 class MetaFieldsController extends WP_REST_Controller {
 	public const EXCLUDE_KEYS_META_FIELDS = array(

@@ -634,12 +634,12 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * @param $card_type
-	 * @param $result
+	 * Test function get_logo
 	 *
-
+	 * @see ReepayGateway::get_logo()
+	 * @return void
 	 */
-	public function test_get_logo(  ) {
+	public function test_get_logo() {
 		$this->assertSame(
 			reepay()->get_setting( 'images_url' ) . 'svg/card.logo.svg',
 			self::$gateway->get_logo( 'non_exist' )
@@ -659,19 +659,6 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 		$instance = reepay();
 		$instance->set_images_nested_path( 'stub' );
 		$instance->reset_settings();
-		$instance->get_setting( 'images_url' );
-
-		$this->assertSame(
-			$instance->get_setting( 'images_url' ) . 'svg/card.logo.svg',
-			self::$gateway->get_logo( $card_type )
-		);
-	}
-
-	public function test_get_logo_if_non_exist_file() {
-		$instance = reepay();
-		$instance->set_images_nested_path( 'stub' );
-		$instance->reset_settings();
-		$card_type = 'visa';
 		$instance->get_setting( 'images_url' );
 
 		$this->assertSame(
