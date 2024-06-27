@@ -36,5 +36,11 @@
         "billwerk/php-sdk": "^1.0",
         "guzzlehttp/guzzle": "^7.0",
         "ext-mbstring": "*"
+    },
+    "scripts": {
+        "phpcs": "./bin/phpcs.sh",
+        "phpcs:full": "./bin/phpcs.sh -full",
+        "phpcs:fix": "./bin/phpcs.sh -fix",
+        "zip": "./bin/zip.sh"
     }
 }

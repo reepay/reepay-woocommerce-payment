@@ -62,7 +62,7 @@ cd ../
 
 # Copy all files
 status "Copying files... ✌️"
-FILES=(includes languages templates updates vendor Readme.txt reepay-woocommerce-payment.php)
+FILES=(includes languages templates updates vendor Readme.txt index.php main-class-shortcut.php)
 
 for file in ${FILES[@]}; do
   cp -R $file $BUILD_DIR
