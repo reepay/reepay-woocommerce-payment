@@ -7,6 +7,7 @@
  * Version: 1.7.3
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
+ * Requires Plugins: woocommerce
  * WC requires at least: 3.0.0
  * WC tested up to: 7.5.0
  *
