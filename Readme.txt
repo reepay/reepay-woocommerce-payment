@@ -18,7 +18,7 @@ The Billwerk+ Payments plugin extends WooCommerce allowing you to take payments 
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
-v 1.7.4 - Add link install the WP Rollback plugin
+v 1.7.4 - Added link to install or activate WP Rollback plugin.
 v 1.7.3 - Logo fixes, WP last support, Order text clear
 v 1.7.2 - Fixes, refactor, tests
 v 1.7.1 - New methods add, WPML detect language support, change order calculation
