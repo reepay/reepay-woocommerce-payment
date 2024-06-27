@@ -17,6 +17,7 @@ use WC_Order_Item_Product;
 use WC_Product;
 use WC_Reepay_Renewals;
 use WC_Subscriptions_Manager;
+use WC_Order_Item_Fee;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -211,6 +212,37 @@ class OrderCapture {
 		$line_items = array();
 		$total_all  = 0;
 
+		$invoice_data = reepay()->api( $order )->get_invoice_by_handle( 'order-'.$order->get_id() );
+		if (array_key_exists('order_lines', $invoice_data)) {
+			rp_get_payment_method( $order )->log('order lines pass');
+			foreach ( $invoice_data['order_lines'] as $invoice_line ) {
+				$is_exist = false;
+				foreach ( $order->get_items( 'fee' ) as $item ) {
+					if ( $item['name'] === $invoice_line['ordertext'] ) {
+						$is_exist = true;
+					}
+				}
+
+				if ( ! $is_exist ) {
+					rp_get_payment_method( $order )->log('order lines not exit');
+					if ( 'surcharge_fee' === $invoice_line['origin'] ) {
+						$fees_item = new WC_Order_Item_Fee();
+						$fees_item->set_name( $invoice_line['ordertext'] );
+						$fees_item->set_amount( floatval( $invoice_line['unit_amount'] ) / 100 );
+						$fees_item->set_total( floatval( $invoice_line['amount'] ) / 100 );
+						$fees_item->set_tax_class( 'zero-rate' );
+						$fees_item->add_meta_data( '_is_card_fee', true );
+						$order->add_item( $fees_item );
+						rp_get_payment_method( $order )->log('add order lines success');
+					}
+
+					$order->calculate_totals();
+					$order->save();
+					$order->calculate_totals();
+				}
+			}
+		}
+
 		foreach ( $order->get_items() as $item ) {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
@@ -260,6 +292,7 @@ class OrderCapture {
 	 * @return bool
 	 */
 	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = true ): bool {
+		rp_get_payment_method( $order )->log('function settle_items OrderCapture.php Line 263');
 		unset( $_POST['post_status'] ); // // Prevent order status changing by WooCommerce
 
 		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note );
@@ -310,6 +343,7 @@ class OrderCapture {
 	 * @see OrderCapture::complete_settle
 	 */
 	public function settle_item( WC_Order_Item $item, WC_Order $order ): bool {
+		rp_get_payment_method( $order )->log('function settle_item OrderCapture.php Line 314');
 		$settled = $item->get_meta( 'settled' );
 
 		if ( ! empty( $settled ) ) {
@@ -440,6 +474,7 @@ class OrderCapture {
 			$discount = floatval( $order_item->get_meta( '_line_discount' ) );
 		} elseif (is_array($order_item)) {
 			$discount = floatval( $order_item[0]->get_meta( '_line_discount' ) );
+			$order_item = $order_item[0];
 		}
 		if ( empty( $discount ) ) {
 			$discount = 0;
