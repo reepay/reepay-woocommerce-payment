@@ -212,9 +212,8 @@ class OrderCapture {
 		$line_items = array();
 		$total_all  = 0;
 
-		$invoice_data = reepay()->api( $order )->get_invoice_by_handle( 'order-'.$order->get_id() );
-		if (array_key_exists('order_lines', $invoice_data)) {
-			rp_get_payment_method( $order )->log('order lines pass');
+		$invoice_data = reepay()->api( $order )->get_invoice_by_handle( 'order-' . $order->get_id() );
+		if ( array_key_exists( 'order_lines', $invoice_data ) ) {
 			foreach ( $invoice_data['order_lines'] as $invoice_line ) {
 				$is_exist = false;
 				foreach ( $order->get_items( 'fee' ) as $item ) {
@@ -224,7 +223,6 @@ class OrderCapture {
 				}
 
 				if ( ! $is_exist ) {
-					rp_get_payment_method( $order )->log('order lines not exit');
 					if ( 'surcharge_fee' === $invoice_line['origin'] ) {
 						$fees_item = new WC_Order_Item_Fee();
 						$fees_item->set_name( $invoice_line['ordertext'] );
@@ -233,7 +231,6 @@ class OrderCapture {
 						$fees_item->set_tax_class( 'zero-rate' );
 						$fees_item->add_meta_data( '_is_card_fee', true );
 						$order->add_item( $fees_item );
-						rp_get_payment_method( $order )->log('add order lines success');
 					}
 
 					$order->calculate_totals();
@@ -468,10 +465,10 @@ class OrderCapture {
 		/**
 		 * Condition check $order_item is_object or is_array
 		 */
-		if (is_object($order_item) && method_exists($order_item, 'get_meta')) {
+		if ( is_object( $order_item ) && method_exists( $order_item, 'get_meta' ) ) {
 			$discount = floatval( $order_item->get_meta( '_line_discount' ) );
-		} elseif (is_array($order_item)) {
-			$discount = floatval( $order_item[0]->get_meta( '_line_discount' ) );
+		} elseif ( is_array( $order_item ) ) {
+			$discount   = floatval( $order_item[0]->get_meta( '_line_discount' ) );
 			$order_item = $order_item[0];
 		}
 		if ( empty( $discount ) ) {
