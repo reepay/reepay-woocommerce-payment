@@ -292,7 +292,6 @@ class OrderCapture {
 	 * @return bool
 	 */
 	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = true ): bool {
-		rp_get_payment_method( $order )->log('function settle_items OrderCapture.php Line 263');
 		unset( $_POST['post_status'] ); // // Prevent order status changing by WooCommerce
 
 		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note );
@@ -343,7 +342,6 @@ class OrderCapture {
 	 * @see OrderCapture::complete_settle
 	 */
 	public function settle_item( WC_Order_Item $item, WC_Order $order ): bool {
-		rp_get_payment_method( $order )->log('function settle_item OrderCapture.php Line 314');
 		$settled = $item->get_meta( 'settled' );
 
 		if ( ! empty( $settled ) ) {
