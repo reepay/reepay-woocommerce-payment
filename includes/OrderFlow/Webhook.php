@@ -163,8 +163,6 @@ class Webhook {
 					$data['transaction']
 				);
 
-				do_action( 'reepay_instant_settle', $order );
-
 				self::unlock_order( $order->get_id() );
 
 				$data['order_id'] = $order->get_id();
@@ -190,6 +188,7 @@ class Webhook {
 								$fees_item->set_name( $invoice_line['ordertext'] );
 								$fees_item->set_amount( floatval( $invoice_line['unit_amount'] ) / 100 );
 								$fees_item->set_total( floatval( $invoice_line['amount'] ) / 100 );
+								$fees_item->set_tax_class( 'zero-rate' );
 								$fees_item->add_meta_data( '_is_card_fee', true );
 								$order->add_item( $fees_item );
 							}
@@ -200,6 +199,8 @@ class Webhook {
 						}
 					}
 				}
+
+				do_action( 'reepay_instant_settle', $order );
 
 				break;
 			case 'invoice_settled':

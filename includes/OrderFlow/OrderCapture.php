@@ -17,6 +17,7 @@ use WC_Order_Item_Product;
 use WC_Product;
 use WC_Reepay_Renewals;
 use WC_Subscriptions_Manager;
+use WC_Order_Item_Fee;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -210,6 +211,34 @@ class OrderCapture {
 		$items_data = array();
 		$line_items = array();
 		$total_all  = 0;
+
+		$invoice_data = reepay()->api( $order )->get_invoice_by_handle( 'order-' . $order->get_id() );
+		if ( array_key_exists( 'order_lines', $invoice_data ) ) {
+			foreach ( $invoice_data['order_lines'] as $invoice_line ) {
+				$is_exist = false;
+				foreach ( $order->get_items( 'fee' ) as $item ) {
+					if ( $item['name'] === $invoice_line['ordertext'] ) {
+						$is_exist = true;
+					}
+				}
+
+				if ( ! $is_exist ) {
+					if ( 'surcharge_fee' === $invoice_line['origin'] ) {
+						$fees_item = new WC_Order_Item_Fee();
+						$fees_item->set_name( $invoice_line['ordertext'] );
+						$fees_item->set_amount( floatval( $invoice_line['unit_amount'] ) / 100 );
+						$fees_item->set_total( floatval( $invoice_line['amount'] ) / 100 );
+						$fees_item->set_tax_class( 'zero-rate' );
+						$fees_item->add_meta_data( '_is_card_fee', true );
+						$order->add_item( $fees_item );
+					}
+
+					$order->calculate_totals();
+					$order->save();
+					$order->calculate_totals();
+				}
+			}
+		}
 
 		foreach ( $order->get_items() as $item ) {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
@@ -433,7 +462,15 @@ class OrderCapture {
 	 * @noinspection PhpCastIsUnnecessaryInspection
 	 */
 	public static function get_item_price( $order_item, WC_Order $order ): array {
-		$discount = floatval( $order_item->get_meta( '_line_discount' ) );
+		/**
+		 * Condition check $order_item is_object or is_array
+		 */
+		if ( is_object( $order_item ) && method_exists( $order_item, 'get_meta' ) ) {
+			$discount = floatval( $order_item->get_meta( '_line_discount' ) );
+		} elseif ( is_array( $order_item ) ) {
+			$discount   = floatval( $order_item[0]->get_meta( '_line_discount' ) );
+			$order_item = $order_item[0];
+		}
 		if ( empty( $discount ) ) {
 			$discount = 0;
 		}
