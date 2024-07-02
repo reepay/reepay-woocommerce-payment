@@ -112,7 +112,7 @@ class InstantSettle {
 			 * @param WC_Order $order order to get items.
 			 */
 			$invoice = reepay()->api( $order )->get_invoice_data( $order );
-			if ( 'settled' === $invoice['state'] ) {
+			if ( isset($invoice['state']) && 'settled' === $invoice['state'] ) {
 				$order->add_meta_data( '_is_instant_settled', '1' );
 				$order->save_meta_data();
 			}
