@@ -213,7 +213,7 @@ class OrderCapture {
 		$total_all  = 0;
 
 		$invoice_data = reepay()->api( $order )->get_invoice_by_handle( 'order-' . $order->get_id() );
-		if ( is_array($invoice_data) && array_key_exists( 'order_lines', $invoice_data ) ) {
+		if ( is_array( $invoice_data ) && array_key_exists( 'order_lines', $invoice_data ) ) {
 			foreach ( $invoice_data['order_lines'] as $invoice_line ) {
 				$is_exist = false;
 				foreach ( $order->get_items( 'fee' ) as $item ) {
