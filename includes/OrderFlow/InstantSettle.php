@@ -111,7 +111,7 @@ class InstantSettle {
 			 *
 			 * @param WC_Order $order order to get items.
 			 */
-			if ( $order->get_meta( '_is_unit_test' ) != 1 ) {
+			if ( $order->get_meta( '_is_unit_test' ) !== 1 ) {
 				$invoice = reepay()->api( $order )->get_invoice_data( $order );
 			} else {
 				// Bypress live call for unit test.

@@ -212,7 +212,7 @@ class OrderCapture {
 		$line_items = array();
 		$total_all  = 0;
 
-		if ( $order->get_meta( '_is_unit_test' ) != 1 ) { // Bypress live call for unit test.
+		if ( $order->get_meta( '_is_unit_test' ) !== 1 ) { // Bypress live call for unit test.
 			$invoice_data = reepay()->api( $order )->get_invoice_by_handle( 'order-' . $order->get_id() );
 			if ( is_array( $invoice_data ) && array_key_exists( 'order_lines', $invoice_data ) ) {
 				foreach ( $invoice_data['order_lines'] as $invoice_line ) {
