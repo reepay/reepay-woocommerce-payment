@@ -409,7 +409,7 @@ class Api {
 	 *
 	 * @return bool
 	 */
-	public function can_capture( $order, $amount = null ): bool {
+	public function can_capture( $order, float $amount = null ): bool {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
@@ -510,7 +510,7 @@ class Api {
 	 *
 	 * @return array|WP_Error|Bool
 	 */
-	public function capture_payment( $order, $amount = null ) {
+	public function capture_payment( $order, float $amount = null ) {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
@@ -628,7 +628,7 @@ class Api {
 	 * @return array|WP_Error
 	 * @throws Exception If charge error.
 	 */
-	public function charge( WC_Order $order, string $token, ?float $amount = null, $order_items = null, $settle = false ) {
+	public function charge( WC_Order $order, string $token, ?float $amount = null, array $order_items = null, bool $settle = false ) {
 		$currency = $order->get_currency();
 
 		$params = array(

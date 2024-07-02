@@ -183,6 +183,6 @@ class Gateways {
 	 * @return ReepayCheckout
 	 */
 	public function checkout(): ?ReepayCheckout {
-		return $this->gateways['reepay_checkout'] ?? null;
+		return $this->gateways[ Gateways\ReepayCheckout::ID ] ?? null;
 	}
 }

@@ -49,6 +49,7 @@ class Webhook {
 	 * WebHook Callback
 	 *
 	 * @return void
+	 * @throws Exception Exception.
 	 */
 	public function return_handler() {
 		http_response_code( 200 );
