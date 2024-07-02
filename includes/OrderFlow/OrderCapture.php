@@ -211,33 +211,31 @@ class OrderCapture {
 		$items_data = array();
 		$line_items = array();
 		$total_all  = 0;
+		
+		$invoice_data = reepay()->api( $order )->get_invoice_by_handle( 'order-' . $order->get_id() );
+		if ( is_array( $invoice_data ) && array_key_exists( 'order_lines', $invoice_data ) ) {
+			foreach ( $invoice_data['order_lines'] as $invoice_line ) {
+				$is_exist = false;
+				foreach ( $order->get_items( 'fee' ) as $item ) {
+					if ( $item['name'] === $invoice_line['ordertext'] ) {
+						$is_exist = true;
+					}
+				}
 
-		if ( $order->get_meta( '_is_unit_test' ) !== 1 ) { // Bypress live call for unit test.
-			$invoice_data = reepay()->api( $order )->get_invoice_by_handle( 'order-' . $order->get_id() );
-			if ( is_array( $invoice_data ) && array_key_exists( 'order_lines', $invoice_data ) ) {
-				foreach ( $invoice_data['order_lines'] as $invoice_line ) {
-					$is_exist = false;
-					foreach ( $order->get_items( 'fee' ) as $item ) {
-						if ( $item['name'] === $invoice_line['ordertext'] ) {
-							$is_exist = true;
-						}
+				if ( ! $is_exist ) {
+					if ( 'surcharge_fee' === $invoice_line['origin'] ) {
+						$fees_item = new WC_Order_Item_Fee();
+						$fees_item->set_name( $invoice_line['ordertext'] );
+						$fees_item->set_amount( floatval( $invoice_line['unit_amount'] ) / 100 );
+						$fees_item->set_total( floatval( $invoice_line['amount'] ) / 100 );
+						$fees_item->set_tax_class( 'zero-rate' );
+						$fees_item->add_meta_data( '_is_card_fee', true );
+						$order->add_item( $fees_item );
 					}
 
-					if ( ! $is_exist ) {
-						if ( 'surcharge_fee' === $invoice_line['origin'] ) {
-							$fees_item = new WC_Order_Item_Fee();
-							$fees_item->set_name( $invoice_line['ordertext'] );
-							$fees_item->set_amount( floatval( $invoice_line['unit_amount'] ) / 100 );
-							$fees_item->set_total( floatval( $invoice_line['amount'] ) / 100 );
-							$fees_item->set_tax_class( 'zero-rate' );
-							$fees_item->add_meta_data( '_is_card_fee', true );
-							$order->add_item( $fees_item );
-						}
-
-						$order->calculate_totals();
-						$order->save();
-						$order->calculate_totals();
-					}
+					$order->calculate_totals();
+					$order->save();
+					$order->calculate_totals();
 				}
 			}
 		}
