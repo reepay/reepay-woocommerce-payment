@@ -27,6 +27,9 @@ class InstantSettleTest extends Reepay_UnitTestCase {
 			)
 		);
 
+		// Bypress live call to billwerk on 2024-07-02
+		$this->order_generator->set_meta('_is_unit_test', '1');
+
 		$this->order_generator->add_product(
 			'simple',
 			array(
@@ -78,6 +81,9 @@ class InstantSettleTest extends Reepay_UnitTestCase {
 				InstantSettle::SETTLE_PHYSICAL,
 			)
 		);
+		
+		// Bypress live call to billwerk on 2024-07-02
+		$this->order_generator->set_meta('_is_unit_test', '1');
 
 		$this->order_generator->add_product(
 			'simple',
