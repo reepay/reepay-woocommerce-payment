@@ -1,11 +1,11 @@
 <?php
 /**
- * Controller debug
+ * Controller logs
  *
- * @package Reepay\Checkout\Api\Controller
+ * @package Reepay\Checkout\RestApi\Controller
  */
 
-namespace Reepay\Checkout\Api\Controller;
+namespace Reepay\Checkout\RestApi\Controller;
 
 use WP_Error;
 use WP_REST_Controller;
@@ -16,15 +16,15 @@ use WP_REST_Server;
 /**
  * Class controller
  *
- * @package Reepay\Checkout\Api\Controller
+ * @package Reepay\Checkout\RestApi\Controller
  */
-class DebugController extends WP_REST_Controller {
+class LogsController extends WP_REST_Controller {
 	/**
 	 * Constructor
 	 */
 	public function __construct() {
 		$this->namespace = 'billwerk/v1';
-		$this->rest_base = 'debug';
+		$this->rest_base = 'logs';
 	}
 
 	/**
@@ -39,7 +39,19 @@ class DebugController extends WP_REST_Controller {
 			array(
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
-					'callback'            => array( $this, 'run_debug' ),
+					'callback'            => array( $this, 'get_logs' ),
+					'permission_callback' => array( $this, 'get_items_permissions_check' ),
+				),
+				'schema' => array( $this, 'get_item_schema' ),
+			)
+		);
+		register_rest_route(
+			$this->namespace,
+			"/$this->rest_base/clean",
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'clean_file_log' ),
 					'permission_callback' => array( $this, 'get_items_permissions_check' ),
 				),
 				'schema' => array( $this, 'get_item_schema' ),
@@ -48,21 +60,31 @@ class DebugController extends WP_REST_Controller {
 	}
 
 	/**
-	 * Run debug code
+	 * Clean file log
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 *
 	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
 	 */
-	public function run_debug( WP_REST_Request $request ) {
-		$code = $request['code'];
-		ob_start();
+	public function clean_file_log( WP_REST_Request $request ) {
+		$log_path = (string) $request['logPath'];
 
-		// @codingStandardsIgnoreStart
-		eval( '?>' . $code );
-		// @codingStandardsIgnoreEnd
+		reepay()->log()->clean_file_log( $log_path );
 
-		return rest_ensure_response( array( 'message' => ob_get_clean() ) );
+		return rest_ensure_response( array() );
+	}
+
+	/**
+	 * Retrieves files logs
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 *
+	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
+	 */
+	public function get_logs( WP_REST_Request $request ) {
+		$files = reepay()->log()->get_files();
+
+		return rest_ensure_response( $files );
 	}
 
 	/**

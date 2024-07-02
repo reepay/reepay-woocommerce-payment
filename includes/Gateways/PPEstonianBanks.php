@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -15,6 +17,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class PPEstonianBanks extends ReepayGateway {
+	public const ID = 'reepay_' . AgreementTypeEnum::PP_ESTONIA_BANKS;
+
 	/**
 	 * Logos
 	 *
@@ -37,7 +41,7 @@ class PPEstonianBanks extends ReepayGateway {
 	 * PPEstonianBanks constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_pp_estonia_banks';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - Estonian Banks', 'reepay-checkout-gateway' );
 		$this->supports     = array(

@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -15,6 +17,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class Anyday extends ReepayGateway {
+	public const ID = 'reepay_' . AgreementTypeEnum::ANYDAY;
+
 	/**
 	 * Logos
 	 *
@@ -37,14 +41,13 @@ class Anyday extends ReepayGateway {
 	 * Anyday constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_anyday';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - Anyday', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'anyday' );
 
 		parent::__construct();
 

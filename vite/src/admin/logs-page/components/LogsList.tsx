@@ -7,6 +7,7 @@ import {
     ChevronDoubleUpIcon,
     ChevronDoubleDownIcon,
     ArrowPathIcon,
+    TrashIcon,
 } from '@heroicons/react/16/solid'
 import { twJoin } from 'tailwind-merge'
 import LogItem from '@/admin/logs-page/components/LogItem'
@@ -60,45 +61,66 @@ const LogsList: React.FC<LogsListProps> = ({ logs, onClose }) => {
     return (
         <>
             <div className={twJoin('bw-flex bw-gap-2')}>
-                <LogButton
-                    className={'bw-bg-blue-200 bw-text-blue-500'}
-                    classNameIcon={'bw-text-blue-500'}
-                    Icon={ChevronLeftIcon}
-                    label={__('Close', 'reepay-checkout-gateway')}
-                    onClick={() => onClose()}
-                />
-                <LogButton
-                    Icon={ChevronDoubleUpIcon}
-                    label={__('Collapse all', 'reepay-checkout-gateway')}
-                    onClick={() =>
-                        dispatch.logs.setOpenLogs({
-                            tabId: activeTab.id,
-                            logs: [],
-                        })
-                    }
-                />
-                <LogButton
-                    Icon={ChevronDoubleDownIcon}
-                    label={__('Expand all', 'reepay-checkout-gateway')}
-                    onClick={() =>
-                        dispatch.logs.setOpenLogs({
-                            tabId: activeTab.id,
-                            logs: activeTab.logs.map((log) => log.id),
-                        })
-                    }
-                />
-                <LogButton
-                    Icon={ArrowPathIcon}
-                    label={__('Reload', 'reepay-checkout-gateway')}
-                    className={'bw-bg-emerald-200 bw-text-emerald-600'}
-                    classNameIcon={'bw-text-emerald-600'}
-                    onClick={() =>
-                        dispatch.logs.fetchLogs({
-                            tabId: activeTab.id,
-                            activeFile: activeTab.activeFile,
-                        })
-                    }
-                />
+                <div className={twJoin('bw-flex bw-gap-2')}>
+                    <LogButton
+                        className={'bw-bg-blue-200 bw-text-blue-500'}
+                        classNameIcon={'bw-text-blue-500'}
+                        Icon={ChevronLeftIcon}
+                        label={__('Close', 'reepay-checkout-gateway')}
+                        onClick={() => onClose()}
+                    />
+                    <LogButton
+                        Icon={ChevronDoubleUpIcon}
+                        label={__('Collapse all', 'reepay-checkout-gateway')}
+                        onClick={() =>
+                            dispatch.logs.setOpenLogs({
+                                tabId: activeTab.id,
+                                logs: [],
+                            })
+                        }
+                    />
+                    <LogButton
+                        Icon={ChevronDoubleDownIcon}
+                        label={__('Expand all', 'reepay-checkout-gateway')}
+                        onClick={() =>
+                            dispatch.logs.setOpenLogs({
+                                tabId: activeTab.id,
+                                logs: activeTab.logs.map((log) => log.id),
+                            })
+                        }
+                    />
+                    <LogButton
+                        Icon={ArrowPathIcon}
+                        label={__('Reload', 'reepay-checkout-gateway')}
+                        className={'bw-bg-emerald-200 bw-text-emerald-600'}
+                        classNameIcon={'bw-text-emerald-600'}
+                        onClick={() =>
+                            dispatch.logs.fetchLogs({
+                                tabId: activeTab.id,
+                                activeFile: activeTab.activeFile,
+                            })
+                        }
+                    />
+                </div>
+                <div
+                    className={twJoin(
+                        'bw-ml-auto bw-flex bw-items-center bw-gap-3',
+                    )}
+                >
+                    <div className="">{logs.length} entries</div>
+                    <LogButton
+                        Icon={TrashIcon}
+                        label={__('Clean', 'reepay-checkout-gateway')}
+                        className={'bw-bg-red-200 bw-text-red-600'}
+                        classNameIcon={'bw-text-red-600'}
+                        onClick={() =>
+                            dispatch.logs.cleanLogs({
+                                tabId: activeTab.id,
+                                activeFile: activeTab.activeFile,
+                            })
+                        }
+                    />
+                </div>
             </div>
             <div
                 className={twJoin(
@@ -111,14 +133,14 @@ const LogsList: React.FC<LogsListProps> = ({ logs, onClose }) => {
                 {(error as Error) && <div>{getErrorMessage(error)}</div>}
                 {!loading &&
                     !error &&
-                    logs.map((log, index) => {
-                        return (
+                    (logs.length > 0 ?
+                        logs.map((log, index) => (
                             <LogItem
                                 log={log}
                                 key={index + log.timestamp}
                             />
-                        )
-                    })}
+                        ))
+                    :   <div>{__('Empty', 'reepay-checkout-gateway')}</div>)}
             </div>
         </>
     )

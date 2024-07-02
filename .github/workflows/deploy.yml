@@ -57,8 +57,8 @@ jobs:
           export TZ=Europe/Moscow
           BRANCH_NAME=${{ env.BRANCH_NAME }}
           CURRENT_DATE=$(date +"%d.%m.%Y %H:%M:%S")
-          sed -i "s/\(Plugin Name: .*\)/\1 (${BRANCH_NAME})/" reepay-woocommerce-payment.php
-          sed -i "s/\(Description: .*\)/\1 (Upload date: ${CURRENT_DATE})/" reepay-woocommerce-payment.php
+          sed -i "s/\(Plugin Name: .*\)/\1 (${BRANCH_NAME})/" index.php
+          sed -i "s/\(Description: .*\)/\1 (Upload date: ${CURRENT_DATE})/" index.php
 
       - name: Build and zip project
         run: |

@@ -39,7 +39,7 @@ tests_add_filter(
 		HPOS_STATE::init();
 		PLUGINS_STATE::activate_plugins();
 
-		require_once __DIR__ . '/../../reepay-woocommerce-payment.php';
+		require_once __DIR__ . '/../../index.php';
 	}
 );
 

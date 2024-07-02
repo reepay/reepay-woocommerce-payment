@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\OfflineAgreementPaymentTypeEnum;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -15,6 +17,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class OfflineCash extends ReepayGateway {
+	public const ID = 'reepay_' . OfflineAgreementPaymentTypeEnum::OFFLINE_CASH;
+
 	/**
 	 * Logos
 	 *
@@ -37,7 +41,7 @@ class OfflineCash extends ReepayGateway {
 	 * OfflineCash constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_offline_cash';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - Cash', 'reepay-checkout-gateway' );
 		$this->supports     = array(

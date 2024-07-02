@@ -21,4 +21,14 @@ export const LogApi = {
         validationApiData(data)
         return data
     },
+    async clean(logPath: string): Promise<IDefaultLog[]> {
+        const { data } = await WpApiInstance.post<IDefaultLog[]>(
+            `${namespace}/logs/clean`,
+            {
+                logPath,
+            },
+        )
+        validationApiData(data)
+        return data
+    },
 }

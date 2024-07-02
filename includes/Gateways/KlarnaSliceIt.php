@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -15,6 +17,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class KlarnaSliceIt extends ReepayGateway {
+	public const ID = 'reepay_' . AgreementTypeEnum::KLARNA_SLICE_IT;
+
 	/**
 	 * Logos
 	 *
@@ -37,14 +41,13 @@ class KlarnaSliceIt extends ReepayGateway {
 	 * KlarnaSliceIt constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_klarna_slice_it';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - Klarna Slice It', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'klarna' );
 
 		parent::__construct();
 

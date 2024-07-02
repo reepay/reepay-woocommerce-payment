@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -15,6 +17,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class PPBlik extends ReepayGateway {
+	public const ID = 'reepay_' . AgreementTypeEnum::PP_BLIK_OC;
+
 	/**
 	 * Logos
 	 *
@@ -37,7 +41,7 @@ class PPBlik extends ReepayGateway {
 	 * PPBlik constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_pp_blik_oc';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - BLIK', 'reepay-checkout-gateway' );
 		$this->supports     = array(

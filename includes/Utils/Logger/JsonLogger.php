@@ -55,7 +55,28 @@ class JsonLogger {
 	 *
 	 * @var array $ignore_classes_backtrace class names.
 	 */
-	private array $ignore_classes_backtrace = array();
+	private array $ignore_classes_backtrace = array( 'WP', 'WP_Hook', 'WC_API' );
+
+	/**
+	 * Functions to ignore in backtrace
+	 *
+	 * @var array|string[] functions.
+	 */
+	private array $ignore_functions_backtrace = array( 'get_backtrace', 'log' );
+
+	/**
+	 * Directories to ignore in backtrace
+	 *
+	 * @var array|string[] $ignore_directories_backtrace
+	 */
+	private array $ignore_directories_backtrace = array( 'wp-includes' );
+
+	/**
+	 * Files to ignore in backtrace
+	 *
+	 * @var array|string[] $ignore_files_backtrace
+	 */
+	private array $ignore_files_backtrace = array( 'index.php', 'wp-blog-header.php' );
 
 	/**
 	 * Class constructor
@@ -146,12 +167,21 @@ class JsonLogger {
 	private function get_backtrace(): array {
 		$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
 
-		$ignore_classes = array( self::class, ...$this->ignore_classes_backtrace );
-
 		$backtrace = array_filter(
 			$backtrace,
-			function ( $trace ) use ( $ignore_classes ) {
-				return ! ( isset( $trace['class'] ) && in_array( $trace['class'], $ignore_classes, true ) );
+			function ( $trace ) {
+				foreach ( $this->ignore_directories_backtrace as $ignore_directory ) {
+					if ( isset( $trace['file'] ) && strpos( $trace['file'], $ignore_directory ) !== false ) {
+						return false;
+					}
+				}
+
+				$filename = isset( $trace['file'] ) ? basename( $trace['file'] ) : '';
+				return ! (
+					( isset( $trace['class'] ) && in_array( $trace['class'], $this->ignore_classes_backtrace, true ) ) ||
+					( isset( $trace['function'] ) && in_array( $trace['function'], $this->ignore_functions_backtrace, true ) ) ||
+					( in_array( $filename, $this->ignore_files_backtrace, true ) )
+				);
 			}
 		);
 
@@ -161,9 +191,9 @@ class JsonLogger {
 	/**
 	 * Logging to file
 	 *
-	 * @param string                 $level level log.
-	 * @param string|array|int|float $message message log.
-	 * @param array                  $context context log.
+	 * @param string           $level level log.
+	 * @param string|int|float $message message log.
+	 * @param array            $context context log.
 	 *
 	 * @return void
 	 */
@@ -211,6 +241,7 @@ class JsonLogger {
 		return array(
 			'name'     => $file->getBasename( '.json' ),
 			'url'      => set_url_scheme( $nested_path ?? $pathname ),
+			'path'     => $pathname,
 			'size'     => filesize( $pathname ),
 			'created'  => gmdate( DATE_ATOM, filectime( $pathname ) ),
 			'modified' => gmdate( DATE_ATOM, filemtime( $pathname ) ),
@@ -242,10 +273,24 @@ class JsonLogger {
 	}
 
 	/**
+	 * Clean file log
+	 *
+	 * @param string $log_path file log path.
+	 *
+	 * @return void
+	 */
+	public function clean_file_log( string $log_path ) {
+		if ( file_exists( $log_path ) ) {
+			$log_entry_json = wp_json_encode( array() );
+			$this->wp_filesystem->put_contents( $log_path, $log_entry_json, FS_CHMOD_FILE );
+		}
+	}
+
+	/**
 	 * Adds info level message.
 	 *
-	 * @param string|array|int|float $message message log.
-	 * @param array                  $context context log.
+	 * @param string|int|float $message message log.
+	 * @param array            $context context log.
 	 *
 	 * @return void
 	 */
@@ -256,8 +301,8 @@ class JsonLogger {
 	/**
 	 * Adds debug level message.
 	 *
-	 * @param string|array|int|float $message message log.
-	 * @param array                  $context context log.
+	 * @param string|int|float $message message log.
+	 * @param array            $context context log.
 	 *
 	 * @return void
 	 */
@@ -268,8 +313,8 @@ class JsonLogger {
 	/**
 	 * Adds error level message.
 	 *
-	 * @param string|array|int|float $message message log.
-	 * @param array                  $context context log.
+	 * @param string|int|float $message message log.
+	 * @param array            $context context log.
 	 *
 	 * @return void
 	 */
@@ -280,8 +325,8 @@ class JsonLogger {
 	/**
 	 * Adds error level message.
 	 *
-	 * @param string|array|int|float $message message log.
-	 * @param array                  $context context log.
+	 * @param string|int|float $message message log.
+	 * @param array            $context context log.
 	 *
 	 * @return void
 	 */

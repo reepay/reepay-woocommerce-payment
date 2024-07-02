@@ -7,14 +7,17 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
- * Class PPSantander
+ * Class PESantander
  *
  * @package Reepay\Checkout\Gateways
  */
-class PPSantander extends ReepayGateway {
+class PESantander extends ReepayGateway {
+	public const ID = 'reepay_' . AgreementTypeEnum::PE_SANTANDER;
 	/**
 	 * Logos
 	 *
@@ -34,10 +37,10 @@ class PPSantander extends ReepayGateway {
 	);
 
 	/**
-	 * PPSantander constructor.
+	 * PESantander constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_pe_santander';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - Santander', 'reepay-checkout-gateway' );
 		$this->supports     = array(

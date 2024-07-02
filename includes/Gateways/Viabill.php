@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -15,6 +17,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class Viabill extends ReepayGateway {
+	public const ID = 'reepay_' . AgreementTypeEnum::VIABILL;
+
 	/**
 	 * Logos
 	 *
@@ -37,14 +41,13 @@ class Viabill extends ReepayGateway {
 	 * Viabill constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_viabill';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - ViaBill', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'viabill' );
 
 		parent::__construct();
 
