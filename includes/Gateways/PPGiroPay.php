@@ -39,7 +39,7 @@ class PPGiroPay extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_pp_giropay';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - GiroPay', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - GiroPay', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

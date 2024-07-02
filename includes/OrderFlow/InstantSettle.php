@@ -105,8 +105,17 @@ class InstantSettle {
 			}
 
 			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items );
-			$order->add_meta_data( '_is_instant_settled', '1' );
-			$order->save_meta_data();
+
+			/**
+			 * Recheck the invoice before adding the order meta data _is_instant_settled.
+			 *
+			 * @param WC_Order $order order to get items.
+			 */
+			$invoice = reepay()->api( $order )->get_invoice_data( $order );
+			if ( isset( $invoice['state'] ) && 'settled' === $invoice['state'] ) {
+				$order->add_meta_data( '_is_instant_settled', '1' );
+				$order->save_meta_data();
+			}
 		}
 	}
 

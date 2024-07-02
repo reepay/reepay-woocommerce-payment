@@ -203,7 +203,7 @@ class Subscriptions {
 			'post_meta' => array(
 				'_reepay_token' => array(
 					'value' => $token,
-					'label' => 'Billwerk+ Token',
+					'label' => 'Billwerk+ Pay Token',
 				),
 			),
 		);
@@ -226,7 +226,7 @@ class Subscriptions {
 
 			$tokens = explode( ',', $payment_meta['post_meta']['_reepay_token']['value'] );
 			if ( count( $tokens ) > 1 ) {
-				throw new Exception( 'Only one "Billwerk+ Token" is allowed.' );
+				throw new Exception( 'Only one "Billwerk+ Pay Token" is allowed.' );
 			}
 
 			$token = ReepayTokens::get_payment_token( $tokens[0] );
@@ -236,7 +236,7 @@ class Subscriptions {
 			}
 
 			if ( $token->get_user_id() !== $subscription->get_user_id() ) {
-				throw new Exception( 'Access denied for this "Billwerk+ Token" value.' );
+				throw new Exception( 'Access denied for this "Billwerk+ Pay Token" value.' );
 			}
 		}
 	}

@@ -57,7 +57,7 @@ OUTPUT;
 				'reepay-checkout-gateway'
 			),
 			__(
-				'WooCommerce Billwerk+ Payments Gateway isn\'t active now.',
+				'WooCommerce Billwerk+ Pay Gateway isn\'t active now.',
 				'reepay-checkout-gateway'
 			)
 		);

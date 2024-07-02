@@ -41,7 +41,7 @@ class PPIdeal extends ReepayGateway {
 	public function __construct() {
 		$this->id                   = 'reepay_pp_ideal';
 		$this->has_fields           = true;
-		$this->method_title         = __( 'Billwerk+ - iDEAL', 'reepay-checkout-gateway' );
+		$this->method_title         = __( 'Billwerk+ Pay - iDEAL', 'reepay-checkout-gateway' );
 		$this->supports             = array(
 			'products',
 			'refunds',

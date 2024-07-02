@@ -39,7 +39,7 @@ class KlarnaDBT extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_klarna_direct_bank_transfer';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - Klarna Direct Bank Transfer', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - Klarna Direct Bank Transfer', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

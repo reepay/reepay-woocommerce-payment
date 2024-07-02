@@ -39,7 +39,7 @@ class Swish extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_swish';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - Swish', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - Swish', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

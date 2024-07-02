@@ -39,7 +39,7 @@ class Paypal extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_paypal';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - PayPal', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - PayPal', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

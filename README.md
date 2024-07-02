@@ -1,6 +1,6 @@
-# Reepay Woocommerce Payment Plugin
+# Billwerk+ Pay
 
-The Official Reepay Woocommerce plugin has been made for you to use on your wordpress site. Click below to download and install.
+The Billwerk+ Pay Woocommerce plugin has been made for you to use on your wordpress site. Click below to download and install.
 
 Use the reepay plugin for:
 * Regular Payments

@@ -39,7 +39,7 @@ class Other extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_offline_other';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - Other', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - Other', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',
