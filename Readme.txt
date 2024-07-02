@@ -18,8 +18,14 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
-v 1.7.5 - Change all mentions of "Billwerk Payments" and "Billwerk+ Payments" to "Billwerk+ Pay".
-v 1.7.4 - Added link to install or activate WP Rollback plugin.
+v 1.7.5 - 
+* [Improvement] - Product namechange to "Billwerk+ Pay".
+* [Fix] - Including card fee in the order line prevented the order from being auto-captured.
+* [Fix] - WooCommerce subscription renewal orders were not auto-captured and their status remained incomplete.
+
+v 1.7.4 - 
+* Added link to install or activate WP Rollback plugin.
+
 v 1.7.3 - Logo fixes, WP last support, Order text clear
 v 1.7.2 - Fixes, refactor, tests
 v 1.7.1 - New methods add, WPML detect language support, change order calculation
