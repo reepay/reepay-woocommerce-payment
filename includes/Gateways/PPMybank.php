@@ -39,7 +39,7 @@ class PPMybank extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_pp_mybank';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - MBank', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - MBank', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

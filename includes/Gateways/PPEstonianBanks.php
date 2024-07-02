@@ -39,7 +39,7 @@ class PPEstonianBanks extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_pp_estonia_banks';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - Estonian Banks', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - Estonian Banks', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

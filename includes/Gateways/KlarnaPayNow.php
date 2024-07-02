@@ -39,7 +39,7 @@ class KlarnaPayNow extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_klarna_pay_now';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - Klarna Pay Now', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - Klarna Pay Now', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

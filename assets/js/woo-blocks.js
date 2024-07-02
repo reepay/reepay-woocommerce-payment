@@ -26,7 +26,7 @@ if (window.wc
         document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="${settings.cssPath}">`);
     }
 
-    const label = decodeEntities(settings.title) || __('Billwerk+ Payments', 'reepay-checkout-gateway');
+    const label = decodeEntities(settings.title) || __('Billwerk+ Pay', 'reepay-checkout-gateway');
 
     if (settings.tokens) {
         settings.tokens.push({

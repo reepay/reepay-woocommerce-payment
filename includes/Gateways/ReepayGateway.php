@@ -511,7 +511,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				)
 			);
 
-			WC_Admin_Settings::add_message( __( 'Billwerk+: WebHook has been successfully created/updated', 'reepay-checkout-gateway' ) );
+			WC_Admin_Settings::add_message( __( 'Billwerk+ Pay: WebHook has been successfully created/updated', 'reepay-checkout-gateway' ) );
 		} catch ( Exception $e ) {
 			$this->log(
 				array(
@@ -717,7 +717,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				return array(
 					'src' => $logo_url,
 					// translators: %s gateway title.
-					'alt' => esc_attr( sprintf( __( 'Pay with %s on Billwerk+', 'reepay-checkout-gateway' ), $this->get_title() ) ),
+					'alt' => esc_attr( sprintf( __( 'Pay with %s on Billwerk+ Pay', 'reepay-checkout-gateway' ), $this->get_title() ) ),
 				);
 			},
 			array_filter( (array) $this->logos, 'strlen' )
@@ -1653,9 +1653,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'is_reepay_configured' => array(
-				'title'   => __( 'Status in Billwerk+', 'reepay-checkout-gateway' ),
+				'title'   => __( 'Status in Billwerk+ Pay', 'reepay-checkout-gateway' ),
 				'type'    => 'gateway_status',
-				'label'   => __( 'Status in Billwerk+', 'reepay-checkout-gateway' ),
+				'label'   => __( 'Status in Billwerk+ Pay', 'reepay-checkout-gateway' ),
 				'default' => $this->test_mode,
 			),
 			'enabled'              => array(

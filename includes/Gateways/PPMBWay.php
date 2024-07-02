@@ -39,7 +39,7 @@ class PPMBWay extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_pp_mb_way';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - MB Way', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - MB Way', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

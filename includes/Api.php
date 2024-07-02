@@ -245,7 +245,7 @@ class Api {
 				401,
 				sprintf(
 					// translators: %s - url to gateway settings.
-					__( 'Billwerk+: API key not specified. Specify it in <a href="%s" target="_blank">gateway settings</a>', 'reepay-checkout-gateway' ),
+					__( 'Billwerk+ Pay: API key not specified. Specify it in <a href="%s" target="_blank">gateway settings</a>', 'reepay-checkout-gateway' ),
 					admin_url( 'admin.php?page=wc-settings&tab=checkout&section=reepay_checkout' )
 				)
 			);
@@ -304,7 +304,7 @@ class Api {
 					if ( $this->request_retry ) {
 						$this->request_retry = false;
 
-						return new WP_Error( 0, __( 'Billwerk+: Request rate limit exceeded', 'reepay-checkout-gateway' ) );
+						return new WP_Error( 0, __( 'Billwerk+ Pay: Request rate limit exceeded', 'reepay-checkout-gateway' ) );
 					}
 
 					// Wait and try it again.
@@ -373,7 +373,7 @@ class Api {
 		$handle = rp_get_order_handle( $order );
 
 		if ( empty( $handle ) ) {
-			return new WP_Error( 400, 'Empty Billwerk+ invoice handle', 'empty_handle' );
+			return new WP_Error( 400, 'Empty Billwerk+ Pay invoice handle', 'empty_handle' );
 		}
 
 		$order_data = $this->get_invoice_by_handle( $handle );

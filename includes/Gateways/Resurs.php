@@ -39,7 +39,7 @@ class Resurs extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_resurs';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - Resurs Bank', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - Resurs Bank', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

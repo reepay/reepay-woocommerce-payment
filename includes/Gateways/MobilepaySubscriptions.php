@@ -41,7 +41,7 @@ class MobilepaySubscriptions extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_mobilepay_subscriptions';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ - Mobilepay Subscriptions', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - Mobilepay Subscriptions', 'reepay-checkout-gateway' );
 
 		$this->supports = array(
 			'products',
