@@ -114,7 +114,12 @@ class Webhook {
 					throw new Exception( 'Missing Invoice parameter' );
 				}
 
-				$order = rp_get_order_by_handle( $data['invoice'] );
+				if(isset($data['subscription'])){
+					$order = rp_get_not_subs_order_by_handle( $data['invoice'] );
+				}else{
+					$order = rp_get_order_by_handle( $data['invoice'] );
+				}
+
 				if ( ! $order ) {
 					$this->log( sprintf( 'WebHook: Order is not found. Invoice: %s', $data['invoice'] ) );
 
@@ -208,7 +213,12 @@ class Webhook {
 					throw new Exception( 'Missing Invoice parameter' );
 				}
 
-				$order = rp_get_order_by_handle( $data['invoice'] );
+				if(isset($data['subscription'])){
+					$order = rp_get_not_subs_order_by_handle( $data['invoice'] );
+				}else{
+					$order = rp_get_order_by_handle( $data['invoice'] );
+				}
+
 				if ( ! $order ) {
 					$this->log( sprintf( 'WebHook: Order is not found. Invoice: %s', $data['invoice'] ) );
 
