@@ -1,6 +1,6 @@
 <?php
 /**
- * PP Santander gateway
+ * PE Santander gateway
  *
  * @package Reepay\Checkout\Gateways
  */
@@ -10,11 +10,11 @@ namespace Reepay\Checkout\Gateways;
 defined( 'ABSPATH' ) || exit();
 
 /**
- * Class PPSantander
+ * Class PESantander
  *
  * @package Reepay\Checkout\Gateways
  */
-class PPSantander extends ReepayGateway {
+class PESantander extends ReepayGateway {
 	/**
 	 * Logos
 	 *
@@ -30,14 +30,14 @@ class PPSantander extends ReepayGateway {
 	 * @var array
 	 */
 	public array $payment_methods = array(
-		'pp_santander',
+		'pe_santander',
 	);
 
 	/**
-	 * PPSantander constructor.
+	 * PESantander constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_pp_santander';
+		$this->id           = 'reepay_pe_santander';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ Pay - Santander', 'reepay-checkout-gateway' );
 		$this->supports     = array(
