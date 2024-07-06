@@ -22,6 +22,7 @@ use SitePress;
 use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\ReepayTokens;
+use WC_Abstract_Order;
 use WC_Admin_Settings;
 use WC_Countries;
 use WC_Order;
@@ -355,13 +356,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Check if payment method activated in reepay
 	 *
 	 * @return bool
-	 * @throws Exception Exception.
 	 */
 	public function check_is_active(): bool {
 		$current_name = str_replace( 'reepay_', '', $this->id );
 		$agreements   = get_transient( self::KEY_TRANSIENT_AGREEMENT );
 		if ( empty( $agreements ) ) {
-			$agreements = reepay()->sdk()->agreement()->all( ( new AgreementGetAllModel() )->setOnlyActive( true ) );
+			try {
+				$agreements = reepay()->sdk()->agreement()->all( ( new AgreementGetAllModel() )->setOnlyActive( true ) );
+			} catch ( Exception $e ) {
+				return false;
+			}
 			set_transient( self::KEY_TRANSIENT_AGREEMENT, $agreements, 5 );
 		}
 
@@ -553,13 +557,15 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Check if order can be captured
 	 *
-	 * @param mixed       $order  order to check.
-	 * @param float|false $amount amount to capture.
+	 * @param WC_Abstract_Order|int $order order to check.
+	 * @param float|false           $amount amount to capture.
 	 *
 	 * @return bool
 	 */
 	public function can_capture( $order, $amount = false ): bool {
-		$order = wc_get_order( $order );
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
 		return reepay()->api( $this )->can_capture( $order, $amount );
 	}
 

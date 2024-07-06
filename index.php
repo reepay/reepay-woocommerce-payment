@@ -342,7 +342,6 @@ class WC_ReepayCheckout {
 	 * @param string $source Source log.
 	 *
 	 * @return JsonLogger
-	 * @throws Exception Exception.
 	 */
 	public function log( string $source = 'billwerk' ): JsonLogger {
 		return ( new JsonLogger(

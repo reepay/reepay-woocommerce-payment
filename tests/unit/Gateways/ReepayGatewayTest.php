@@ -1,6 +1,6 @@
 <?php
 /**
- * Test
+ * Unit test
  *
  * @package Reepay\Checkout\Tests\Unit\Gateways
  */
@@ -129,6 +129,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 						),
 				),
 				array(),
+				$this->throwException( new BillwerkApiException() ),
 			);
 
 		self::$gateway->id = 'reepay_' . $gateway;
@@ -146,6 +147,8 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 		$this->assertTrue( self::$gateway->check_is_active() );
 
 		delete_transient( self::$gateway::KEY_TRANSIENT_AGREEMENT );
+		$this->assertFalse( self::$gateway->check_is_active() );
+
 		$this->assertFalse( self::$gateway->check_is_active() );
 	}
 

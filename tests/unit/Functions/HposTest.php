@@ -1,9 +1,11 @@
 <?php
 /**
- * Class HposTest
+ * Unit test
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit\Functions
  */
+
+namespace Reepay\Checkout\Tests\Unit\Functions;
 
 use Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController;
 use Automattic\WooCommerce\Utilities\OrderUtil;
@@ -11,7 +13,7 @@ use Reepay\Checkout\Tests\Helpers\HPOS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
 /**
- * HposTest.
+ * Test class
  */
 class HposTest extends Reepay_UnitTestCase {
 	/**

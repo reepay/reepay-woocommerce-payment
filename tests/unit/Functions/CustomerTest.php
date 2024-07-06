@@ -7,12 +7,14 @@
 
 namespace Reepay\Checkout\Tests\Unit\Functions;
 
+use Billwerk\Sdk\Model\Customer\CustomerCollectionModel;
+use Billwerk\Sdk\Model\Customer\CustomerModel;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 use Reepay\Checkout\Utils\TimeKeeper;
 use WP_Error;
 
 /**
- * Test Class
+ * Test class
  *
  * @package Reepay\Checkout\Tests\Unit\Functions
  */
@@ -98,15 +100,15 @@ class CustomerTest extends Reepay_UnitTestCase {
 	 * @group functions_customer
 	 */
 	public function test_rp_get_customer_exists_in_api() {
-		$this->api_mock
-			->method( 'request' )
+		$this->customer_service_mock
+			->method( 'get' )
 			->willReturn(
-				array(
-					'content' => array(
-						array(
-							'handle' => 'rp-custom-handle-1',
-						),
-					),
+				( new CustomerCollectionModel() )
+				->setContent(
+					array(
+						( new CustomerModel() )
+						->setHandle( 'rp-custom-handle-1' ),
+					)
 				)
 			);
 

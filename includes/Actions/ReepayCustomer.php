@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Actions;
 
+use Billwerk\Sdk\Model\Customer\CustomerCollectionGetModel;
+use Billwerk\Sdk\Model\Customer\CustomerGetModel;
 use Exception;
 use WC_Customer;
 
@@ -33,33 +35,49 @@ class ReepayCustomer {
 	}
 
 	/**
-	 * Set reepay user handle
+	 * Set reepay user handle.
+	 * Returns an empty string if not set
 	 *
-	 * @param int $user_id user id to set handle.
+	 * @param int|WC_Customer $user_id user id to set handle.
 	 */
-	public static function set_reepay_handle( int $user_id ): string {
-		$customer = new WC_Customer( $user_id );
+	public static function set_reepay_handle( $user_id ): string {
+		try {
+			$wc_customer = new WC_Customer( $user_id );
+		} catch ( Exception $e ) {
+			reepay()->log()->error( $e->getMessage() );
+			return '';
+		}
 
-		$email = $customer->get_billing_email();
-		if ( empty( $email ) && ! empty( $_POST['billing_email'] ) ) {
-			$email = $_POST['billing_email'];
+		$email = $wc_customer->get_billing_email();
+		if ( empty( $email ) ) {
+			$email = $_POST['billing_email'] ?? '';
 		}
 
 		if ( empty( $email ) ) {
-			$email = $customer->get_email();
+			$email = $wc_customer->get_email();
 		}
 
 		if ( empty( $email ) ) {
 			return '';
 		}
 
-		$reepay_customers = reepay()->api( 'reepay_user_register' )->request( 'GET', "https://api.reepay.com/v1/list/customer?email=$email" );
+		try {
+			$list = reepay()->sdk()->customer()->list(
+				( new CustomerCollectionGetModel() )
+					->setEmail( $email )
+			);
 
-		if ( is_wp_error( $reepay_customers ) || empty( $reepay_customers['content'][0] ) ) {
+			$customers = $list->getContent();
+		} catch ( Exception $e ) {
 			return '';
 		}
 
-		$customer_handle = $reepay_customers['content'][0]['handle'];
+		if ( count( $customers ) === 0 ) {
+			return '';
+		}
+
+		$customer        = $customers[0];
+		$customer_handle = $customer->getHandle();
 
 		update_user_meta( $user_id, 'reepay_customer_id', $customer_handle );
 
@@ -67,26 +85,33 @@ class ReepayCustomer {
 	}
 
 	/**
-	 * Check exist customer in reepay with same handle but another data
+	 * Check exist customer in reepay with same handle but another email
 	 *
 	 * @param int    $user_id user id to set handle.
 	 * @param string $handle user id to set handle.
 	 */
 	public static function have_same_handle( int $user_id, string $handle ): bool {
-		$user_reepay = reepay()->api( 'reepay_user_register' )->request(
-			'GET',
-			'https://api.reepay.com/v1/customer/' . $handle,
-		);
+		try {
+			$customer = reepay()->sdk()->customer()->get(
+				( new CustomerGetModel() )
+					->setHandle( $handle )
+			);
+		} catch ( Exception $e ) {
+			$customer = null;
+		}
 
-		if ( ! empty( $user_reepay ) && ! is_wp_error( $user_reepay ) ) {
-			$customer = new WC_Customer( $user_id );
-			$email    = $customer->get_billing_email();
-
-			if ( empty( $email ) && ! empty( $_POST['billing_email'] ) ) {
-				$email = $_POST['billing_email'];
+		if ( ! is_null( $customer ) ) {
+			try {
+				$wc_customer = new WC_Customer( $user_id );
+			} catch ( Exception $e ) {
+				return false;
 			}
 
-			if ( ! empty( $email ) && $user_reepay['email'] !== $email ) {
+			$email = $wc_customer->get_billing_email();
+			if ( empty( $email ) ) {
+				$email = $_POST['billing_email'] ?? '';
+			}
+			if ( ! empty( $email ) && $customer->getEmail() !== $email ) {
 				return true;
 			}
 		}

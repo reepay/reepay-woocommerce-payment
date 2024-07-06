@@ -25,9 +25,9 @@ class JsonLogger {
 	/**
 	 * Wp Filesystem
 	 *
-	 * @var WP_Filesystem_Base $wp_filesystem
+	 * @var null|WP_Filesystem_Base $wp_filesystem
 	 */
-	private WP_Filesystem_Base $wp_filesystem;
+	private ?WP_Filesystem_Base $wp_filesystem = null;
 
 	/**
 	 * Directory path logs
@@ -84,11 +84,13 @@ class JsonLogger {
 	 * @param string $directory_path Directory path logs.
 	 * @param string $directory_url Directory url logs.
 	 * @param string $source Source log.
-	 *
-	 * @throws Exception Filesystem error.
 	 */
 	public function __construct( string $directory_path, string $directory_url, string $source ) {
-		$this->wp_filesystem = FilesystemUtil::get_wp_filesystem();
+		try {
+			$this->wp_filesystem = FilesystemUtil::get_wp_filesystem();
+		} catch ( Exception $e ) {
+			$this->wp_filesystem = null;
+		}
 
 		$this->directory_path = $directory_path;
 		$this->directory_url  = $directory_url;
@@ -198,6 +200,9 @@ class JsonLogger {
 	 * @return void
 	 */
 	private function log( string $level, $message, array $context = array() ) {
+		if ( is_null( $this->wp_filesystem ) ) {
+			return;
+		}
 		$log_entry = array(
 			'timestamp' => gmdate( 'c' ),
 			'level'     => $level,
@@ -280,7 +285,7 @@ class JsonLogger {
 	 * @return void
 	 */
 	public function clean_file_log( string $log_path ) {
-		if ( file_exists( $log_path ) ) {
+		if ( ! is_null( $this->wp_filesystem ) && file_exists( $log_path ) ) {
 			$log_entry_json = wp_json_encode( array() );
 			$this->wp_filesystem->put_contents( $log_path, $log_entry_json, FS_CHMOD_FILE );
 		}

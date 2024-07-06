@@ -1,15 +1,16 @@
 <?php
 /**
- * Class ThankyouPage
+ * Unit test
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit\OrderFlow
  */
+
+namespace Reepay\Checkout\Tests\Unit\OrderFlow;
 
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
-
 /**
- * ThankyouPage.
+ * Test class
  *
  * @covers \Reepay\Checkout\OrderFlow\ThankyouPage
  */

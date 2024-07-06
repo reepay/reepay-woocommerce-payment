@@ -420,7 +420,7 @@ class Api {
 
 		$result = $this->get_invoice_data( $order );
 		if ( is_wp_error( $result ) ) {
-			$this->log(
+			reepay()->log()->error(
 				sprintf(
 					'Payment can\'t be captured. Error: %s. Order ID: %s',
 					$result->get_error_message(),

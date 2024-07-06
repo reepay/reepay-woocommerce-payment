@@ -1,19 +1,23 @@
 <?php
 /**
- * Class ReepayTokensTest
+ *  Unit test
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit\Tokens
  */
 
+namespace Reepay\Checkout\Tests\Unit\Tokens;
+
+use Exception;
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase_Trait_Tokens;
 use Reepay\Checkout\Tokens\ReepayTokens;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayMS;
+use WP_Error;
 
 /**
- * ReepayTokensTest.
+ * Test class
  *
  * @covers \Reepay\Checkout\Tokens\ReepayTokens
  */

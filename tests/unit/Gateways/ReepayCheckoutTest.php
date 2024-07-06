@@ -1,8 +1,8 @@
 <?php
 /**
- * Test
+ *  Unit test
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit\Gateways
  */
 
 namespace Reepay\Checkout\Tests\Unit\Gateways;

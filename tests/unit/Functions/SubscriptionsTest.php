@@ -1,16 +1,19 @@
 <?php
 /**
- * Class GatewaysTest
+ * Unit test
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit\Functions
  */
+
+namespace Reepay\Checkout\Tests\Unit\Functions;
 
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\CartGenerator;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
+use WC_Subscriptions_Change_Payment_Gateway;
 
 /**
- * CurrencyTest.
+ * Test class
  */
 class SubscriptionsTest extends Reepay_UnitTestCase {
 	/**

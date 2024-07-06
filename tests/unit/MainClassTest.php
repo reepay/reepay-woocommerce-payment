@@ -1,14 +1,17 @@
 <?php
 /**
- * Class MainClassTest
+ * Unit test
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit
  */
 
+namespace Reepay\Checkout\Tests\Unit;
+
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
+use WC_ReepayCheckout;
 
 /**
- * Class MainClassTest
+ * Test class
  */
 class MainClassTest extends Reepay_UnitTestCase {
 	/**

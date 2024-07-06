@@ -1,6 +1,6 @@
 <?php
 /**
- * Class GatewaysTest
+ * Unit test
  *
  * @package Reepay\Checkout\Tests\Unit\Functions
  */
@@ -10,7 +10,7 @@ namespace Reepay\Checkout\Tests\Unit\Functions;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
 /**
- * Test Class
+ * Test class
  *
  * @package Reepay\Checkout\Tests\Unit\Functions
  */
