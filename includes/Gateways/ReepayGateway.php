@@ -8,7 +8,12 @@
 namespace Reepay\Checkout\Gateways;
 
 use Billwerk\Sdk\Exception\BillwerkApiException;
+use Billwerk\Sdk\Exception\BillwerkClientException;
+use Billwerk\Sdk\Exception\BillwerkNetworkException;
+use Billwerk\Sdk\Exception\BillwerkRequestException;
 use Billwerk\Sdk\Model\Account\AccountModel;
+use Billwerk\Sdk\Model\Account\WebhookSettingsUpdateModel;
+use Billwerk\Sdk\Model\Agreement\AgreementGetAllModel;
 use Exception;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
@@ -17,6 +22,7 @@ use SitePress;
 use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\ReepayTokens;
+use WC_Abstract_Order;
 use WC_Admin_Settings;
 use WC_Countries;
 use WC_Order;
@@ -176,7 +182,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 	/**
 	 * Currencies for which payment method is not displayed
-	 * (If $supported_currencies is empty)
+	 * (If supported_currencies is empty)
 	 *
 	 * @var string[]
 	 */
@@ -188,6 +194,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @var string[]
 	 */
 	protected array $supported_currencies = array();
+
+	public const KEY_TRANSIENT_AGREEMENT = 'billwerk_active_agreements';
 
 	/**
 	 * ReepayGateway constructor.
@@ -350,22 +358,38 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @return bool
 	 */
 	public function check_is_active(): bool {
-		$gateways_reepay = get_transient( 'gateways_reepay' );
-		if ( empty( $gateways_reepay ) ) {
-			$gateways_reepay = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/agreement?only_active=true' );
-			set_transient( 'gateways_reepay', $gateways_reepay, 5 );
+		$current_name = str_replace( 'reepay_', '', $this->id );
+		$agreements   = get_transient( self::KEY_TRANSIENT_AGREEMENT );
+		if ( empty( $agreements ) ) {
+			try {
+				$agreements = reepay()->sdk()->agreement()->all( ( new AgreementGetAllModel() )->setOnlyActive( true ) );
+			} catch ( Exception $e ) {
+				return false;
+			}
+			set_transient( self::KEY_TRANSIENT_AGREEMENT, $agreements, 5 );
 		}
 
-		$current_name = str_replace( 'reepay_', '', $this->id );
+		if ( ! is_array( $agreements ) ) {
+			return false;
+		}
 
-		if ( ! empty( $gateways_reepay ) && ! is_wp_error( $gateways_reepay ) ) {
-			foreach ( $gateways_reepay as $app ) {
-				if ( stripos( $app['type'], $current_name ) !== false ) {
+		foreach ( $agreements as $agreement ) {
+			if ( $agreement->getVippsRecurringAgreement() && VippsRecurring::ID === $this->id ) {
+				return true;
+			}
+			if ( $agreement->getOfflineAgreement() ) {
+				if ( stripos( $agreement->getOfflineAgreement()->getPaymentType(), $current_name ) !== false ) {
+					return true;
+				}
+			}
+			if ( $agreement->getType() ) {
+				if ( stripos( $agreement->getType(), $current_name ) !== false ) {
 					return true;
 				}
 			}
 		}
 
+		$this->update_option( 'enabled', 'no' );
 		return false;
 	}
 
@@ -442,93 +466,30 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Valid keys entered and webhook url registered in reepay
 	 *
 	 * @return bool
-	 *
-	 * @throws Exception Never, just for phpcs.
 	 */
 	public function is_webhook_configured(): bool {
 		try {
-			$response = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
-			if ( is_wp_error( $response ) ) {
-				if ( ! empty( $response->get_error_code() ) ) {
-					throw new Exception( $response->get_error_message(), intval( $response->get_error_code() ) );
-				}
-			}
-
+			$settings    = reepay()->sdk()->account()->getWebHookSettings();
 			$webhook_url = self::get_webhook_url();
+			$alert_email = is_email( $this->failed_webhooks_email ) ? $this->failed_webhooks_email : '';
 
-			$alert_emails = $response['alert_emails'];
-
-			// The webhook settings of the payment plugin.
-			$alert_email = '';
-			if ( ! empty( $this->settings['failed_webhooks_email'] ) &&
-				is_email( $this->settings['failed_webhooks_email'] )
-			) {
-				$alert_email = $this->settings['failed_webhooks_email'];
-			}
-
-			$exist_waste_urls = false;
-
-			$urls = array();
-
-			foreach ( $response['urls'] as $url ) {
-				if ( ( strpos( $url, $webhook_url ) === false || // either another site or exact url match.
-					$url === $webhook_url ) &&
-					strpos( $url, 'WC_Gateway_Reepay_Checkout' ) === false ) {
-					$urls[] = $url;
-				} else {
-					$exist_waste_urls = true;
-				}
-			}
-
-			// Verify the webhook settings.
-			if ( ! $exist_waste_urls &&
-				in_array( $webhook_url, $urls, true )
-				&& ( empty( $alert_email ) || in_array( $alert_email, $alert_emails, true ) )
-			) {
+			if ( in_array( $webhook_url, $settings->getUrls(), true ) ) {
 				return true;
 			}
 
-			// Update the webhook settings.
-			if ( ! in_array( $webhook_url, $urls, true ) ) {
-				$urls[] = $webhook_url;
-			}
-
-			if ( ! empty( $alert_email ) && is_email( $alert_email ) ) {
-				$alert_emails[] = $alert_email;
-			}
-
-			$data = array(
-				'urls'         => array_unique( $urls ),
-				'disabled'     => false,
-				'alert_emails' => array_unique( $alert_emails ),
-			);
-
-			$response = reepay()->api( $this )->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
-			if ( is_wp_error( $response ) ) {
-				throw new Exception( $response->get_error_message(), $response->get_error_code() );
-			}
-
-			$this->log(
-				array(
-					'source' => 'WebHook has been successfully created/updated',
-					$response,
-				)
+			reepay()->sdk()->account()->updateWebHookSettings(
+				( new WebhookSettingsUpdateModel() )
+					->setUrls( array_unique( array( ...$settings->getUrls(), $webhook_url ) ) )
+					->setDisabled( false )
+					->setAlertEmails( array_unique( array( ...$settings->getAlertEmails(), $alert_email ) ) )
 			);
 
 			WC_Admin_Settings::add_message( __( 'Billwerk+: WebHook has been successfully created/updated', 'reepay-checkout-gateway' ) );
 		} catch ( Exception $e ) {
-			$this->log(
-				array(
-					'source' => 'WebHook creation/update has been failed',
-					'error'  => $e->getMessage(),
-				)
-			);
-
 			WC_Admin_Settings::add_error( __( 'Unable to retrieve the webhook settings. Wrong api credentials?', 'reepay-checkout-gateway' ) );
 
 			return false;
 		}
-
 		return true;
 	}
 
@@ -569,7 +530,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$esc_is_active = esc_attr( $is_active );
 		$title         = wp_kses_post( $data['title'] );
 		$tooltip_html  = $this->get_tooltip_html( $data );
-		$html_output   = <<<HTML
+		return <<<HTML
 			<tr valign="top">
 				<th scope="row" class="titledesc">
 					<label for="{$esc_field_key}">{$title}
@@ -591,20 +552,20 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				</td>
 			</tr>
 		HTML;
-
-		return $html_output;
 	}
 
 	/**
 	 * Check if order can be captured
 	 *
-	 * @param mixed       $order  order to check.
-	 * @param float|false $amount amount to capture.
+	 * @param WC_Abstract_Order|int $order order to check.
+	 * @param float|false           $amount amount to capture.
 	 *
 	 * @return bool
 	 */
 	public function can_capture( $order, $amount = false ): bool {
-		$order = wc_get_order( $order );
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
 		return reepay()->api( $this )->can_capture( $order, $amount );
 	}
 

@@ -7,6 +7,7 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
 use Reepay\Checkout\Frontend\Assets;
 
 defined( 'ABSPATH' ) || exit();
@@ -17,6 +18,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class PPIdeal extends ReepayGateway {
+	public const ID = 'reepay_' . AgreementTypeEnum::PP_IDEAL;
+
 	/**
 	 * Logos
 	 *
@@ -39,7 +42,7 @@ class PPIdeal extends ReepayGateway {
 	 * PPIdeal constructor.
 	 */
 	public function __construct() {
-		$this->id                   = 'reepay_pp_ideal';
+		$this->id                   = self::ID;
 		$this->has_fields           = true;
 		$this->method_title         = __( 'Billwerk+ - iDEAL', 'reepay-checkout-gateway' );
 		$this->supports             = array(
@@ -58,7 +61,6 @@ class PPIdeal extends ReepayGateway {
 			'subscription_payment_method_change_admin',
 			'multiple_subscriptions',
 		);
-		$this->logos                = array( 'ideal' );
 		$this->supported_currencies = array( 'EUR' );
 
 		parent::__construct();

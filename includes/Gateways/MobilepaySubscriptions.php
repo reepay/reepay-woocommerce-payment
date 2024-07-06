@@ -7,6 +7,7 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
 use Reepay\Checkout\Api;
 
 defined( 'ABSPATH' ) || exit();
@@ -17,6 +18,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class MobilepaySubscriptions extends ReepayGateway {
+	public const ID = 'reepay_' . AgreementTypeEnum::MOBILEPAY_SUBSCRIPTIONS;
+
 	/**
 	 * Logos
 	 *
@@ -39,7 +42,7 @@ class MobilepaySubscriptions extends ReepayGateway {
 	 * MobilepaySubscriptions constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_mobilepay_subscriptions';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - Mobilepay Subscriptions', 'reepay-checkout-gateway' );
 
@@ -59,8 +62,6 @@ class MobilepaySubscriptions extends ReepayGateway {
 			'subscription_payment_method_change_admin',
 			'multiple_subscriptions',
 		);
-
-		$this->logos = array( 'mobilepay' );
 
 		parent::__construct();
 

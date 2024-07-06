@@ -7,6 +7,7 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
 use Reepay\Checkout\Frontend\Assets;
 
 defined( 'ABSPATH' ) || exit();
@@ -17,7 +18,7 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class ApplePay extends ReepayGateway {
-	public const ID = 'reepay_applepay';
+	public const ID = 'reepay_' . AgreementTypeEnum::APPLEPAY;
 
 	/**
 	 * Logos
@@ -60,7 +61,6 @@ class ApplePay extends ReepayGateway {
 			'subscription_payment_method_change_admin',
 			'multiple_subscriptions',
 		);
-		$this->logos        = array( 'applepay' );
 
 		parent::__construct();
 

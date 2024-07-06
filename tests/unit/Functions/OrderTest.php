@@ -1,15 +1,17 @@
 <?php
 /**
- * Class GatewaysTest
+ * Unit test
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit\Functions
  */
+
+namespace Reepay\Checkout\Tests\Unit\Functions;
 
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 use Reepay\Checkout\Utils\TimeKeeper;
 
 /**
- * CurrencyTest.
+ * Test class
  */
 class OrderTest extends Reepay_UnitTestCase {
 	/**

@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -15,6 +17,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class Paypal extends ReepayGateway {
+	public const ID = 'reepay_' . AgreementTypeEnum::PAYPAL;
+
 	/**
 	 * Logos
 	 *
@@ -37,14 +41,13 @@ class Paypal extends ReepayGateway {
 	 * Paypal constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_paypal';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - PayPal', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',
 		);
-		$this->logos        = array( 'paypal' );
 
 		parent::__construct();
 

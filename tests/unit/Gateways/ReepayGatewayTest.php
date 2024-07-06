@@ -1,39 +1,56 @@
 <?php
 /**
- * Class ReepayCheckoutTest
+ * Unit test
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit\Gateways
  */
 
-namespace Reepay\Checkout\Tests\Unit\GatewaysTests;
+namespace Reepay\Checkout\Tests\Unit\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
+use Billwerk\Sdk\Enum\OfflineAgreementPaymentTypeEnum;
+use Billwerk\Sdk\Enum\OfflineAgreementSettleTypeEnum;
 use Billwerk\Sdk\Exception\BillwerkApiException;
 use Billwerk\Sdk\Model\Account\AccountModel;
+use Billwerk\Sdk\Model\Account\WebhookSettingsModel;
+use Billwerk\Sdk\Model\Agreement\AgreementModel;
+use Billwerk\Sdk\Model\Agreement\OfflineAgreementModel;
+use Billwerk\Sdk\Model\Agreement\VippsRecurringAgreementModel;
 use Exception;
-use Reepay\Checkout\Gateways\ReepayCheckout;
+use Reepay\Checkout\Gateways\OfflineCash;
 use Reepay\Checkout\Gateways\ReepayGateway;
+use Reepay\Checkout\Gateways\VippsRecurring;
+use Reepay\Checkout\Tests\Helpers\GatewayInstance;
 use Reepay\Checkout\Tests\Helpers\OrderItemsGenerator;
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 use WP_Error;
 
-class ReepayGatewayTestChild extends ReepayGateway {
-
-}
-
 /**
- * ReepayGatewayTest.
+ * Test class
+ *
+ * @package Reepay\Checkout\Tests\Unit\Gateways
  */
 class ReepayGatewayTest extends Reepay_UnitTestCase {
+	/**
+	 * Gateway for testing
+	 *
+	 * @var GatewayInstance $gateway
+	 */
+	public static GatewayInstance $gateway;
 
-	public static ReepayGatewayTestChild $gateway;
-
+	/**
+	 * Set up before class
+	 */
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
 
-		self::$gateway = new ReepayGatewayTestChild();
+		self::$gateway = new GatewayInstance();
 	}
 
+	/**
+	 * Tear down after class
+	 */
 	public static function tear_down_after_class() {
 		parent::tear_down_after_class();
 
@@ -42,63 +59,115 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * @param string $gateway gateway id.
+	 * Test function get_webhook_url
 	 *
-	 * @testWith
-	 * ["anyday"]
-	 * ["applepay"]
-	 * ["googlepay"]
-	 * ["klarna_pay_later"]
-	 * ["klarna_pay_now"]
-	 * ["klarna_slice_it"]
-	 * ["mobilepay"]
-	 * ["mobilepay_subscriptions"]
-	 * ["paypal"]
-	 * ["checkout"]
-	 * ["resurs"]
-	 * ["swish"]
-	 * ["viabill"]
-	 * ["vipps"]
+	 * @return void
+	 * @see ReepayGateway::get_webhook_url()
 	 */
-	public function test_check_is_active( string $gateway ) {
-		self::$gateway->id = 'reepay_' . $gateway;
-
-		$this->api_mock->method( 'request' )->willReturn(
-			array(
-				array(
-					'type' => $gateway,
-				),
-			)
-		);
-
-		$this->assertTrue( self::$gateway->check_is_active() );
+	public function test_get_webhook_url() {
+		$webhook_url = self::$gateway::get_webhook_url();
+		self::assertSame( WC()->api_request_url( '' ) . 'WC_Gateway_Reepay/', $webhook_url );
 	}
 
 	/**
-	 * @param string $gateway gateway id.
+	 * Test function is_webhook_configured
 	 *
-	 * @testWith
-	 * ["anyday"]
-	 * ["applepay"]
-	 * ["googlepay"]
-	 * ["klarna_pay_later"]
-	 * ["klarna_pay_now"]
-	 * ["klarna_slice_it"]
-	 * ["mobilepay"]
-	 * ["mobilepay_subscriptions"]
-	 * ["paypal"]
-	 * ["checkout"]
-	 * ["resurs"]
-	 * ["swish"]
-	 * ["viabill"]
-	 * ["vipps"]
+	 * @see ReepayGateway::is_webhook_configured()
+	 * @return void
 	 */
-	public function test_is_gateway_settings_page( string $gateway ) {
+	public function test_is_webhook_configured() {
+		$webhook_url = self::$gateway::get_webhook_url();
+		$settings    = ( new WebhookSettingsModel() )
+			->setUrls( array( $webhook_url ) );
+
+		$this->account_service_mock
+			->method( 'getWebHookSettings' )
+			->willReturnOnConsecutiveCalls(
+				$settings,
+				$this->throwException( new BillwerkApiException() ),
+				( new WebhookSettingsModel() )
+					->setUrls( array( 'https://' ) )
+					->setAlertEmails( array() ),
+			);
+
+		$this::assertTrue( self::$gateway->is_webhook_configured() );
+
+		$this::assertFalse( self::$gateway->is_webhook_configured() );
+
+		$this->account_service_mock
+			->method( 'updateWebHookSettings' )
+			->willReturnOnConsecutiveCalls(
+				new WebhookSettingsModel()
+			);
+		$this::assertTrue( self::$gateway->is_webhook_configured() );
+	}
+
+	/**
+	 * Test function check_is_active
+	 *
+	 * @throws Exception Exception.
+	 * @see ReepayGateway::check_is_active()
+	 */
+	public function test_check_is_active() {
+		$gateway = AgreementTypeEnum::VIABILL;
+		$this->agreement_service_mock
+			->method( 'all' )
+			->willReturnOnConsecutiveCalls(
+				array( ( new AgreementModel() )->setType( $gateway ) ),
+				array(
+					( new AgreementModel() )
+						->setType( VippsRecurring::ID )
+						->setVippsRecurringAgreement(
+							new VippsRecurringAgreementModel()
+						),
+				),
+				array(
+					( new AgreementModel() )
+						->setOfflineAgreement(
+							( new OfflineAgreementModel() )
+							->setPaymentType( OfflineAgreementPaymentTypeEnum::OFFLINE_CASH )
+						),
+				),
+				array(),
+				$this->throwException( new BillwerkApiException() ),
+			);
+
+		self::$gateway->id = 'reepay_' . $gateway;
+		$this->assertTrue( self::$gateway->check_is_active() );
+
+		set_transient( self::$gateway::KEY_TRANSIENT_AGREEMENT, '1' );
+		$this->assertFalse( self::$gateway->check_is_active() );
+
+		delete_transient( self::$gateway::KEY_TRANSIENT_AGREEMENT );
+		self::$gateway->id = VippsRecurring::ID;
+		$this->assertTrue( self::$gateway->check_is_active() );
+
+		delete_transient( self::$gateway::KEY_TRANSIENT_AGREEMENT );
+		self::$gateway->id = OfflineCash::ID;
+		$this->assertTrue( self::$gateway->check_is_active() );
+
+		delete_transient( self::$gateway::KEY_TRANSIENT_AGREEMENT );
+		$this->assertFalse( self::$gateway->check_is_active() );
+
+		$this->assertFalse( self::$gateway->check_is_active() );
+	}
+
+	/**
+	 * Test function is_gateway_settings_page
+	 *
+	 * @return void
+	 * @see ReepayGateway::is_gateway_settings_page()
+	 */
+	public function test_is_gateway_settings_page() {
+		$gateway           = 'gateway';
 		$_GET['tab']       = 'checkout';
 		$_GET['section']   = $gateway;
 		self::$gateway->id = $gateway;
 
 		$this->assertTrue( self::$gateway->is_gateway_settings_page() );
+
+		$_GET['section'] = '357';
+		$this->assertFalse( self::$gateway->is_gateway_settings_page() );
 	}
 
 	/**
@@ -121,7 +190,10 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 
 		$this->account_service_mock
 			->method( 'get' )
-			->willReturnOnConsecutiveCalls( $account, $account );
+			->willReturnOnConsecutiveCalls(
+				$account,
+				$account,
+			);
 
 		self::assertSame(
 			$account,
@@ -133,21 +205,9 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 			self::$gateway->get_account_info( $is_test ),
 			'transient cache error'
 		);
-	}
 
-	/**
-	 * Test get_account_info not on settings page
-	 *
-	 * @param bool $is_test use test or live reepay api keys.
-	 *
-	 * @testWith
-	 * [true]
-	 * [false]
-	 * @throws BillwerkApiException Api Error.
-	 */
-	public function test_get_account_info_not_on_settings_page( bool $is_test ) {
-		$this->assertFalse( self::$gateway->is_gateway_settings_page() );
-		$this->assertNull( self::$gateway->get_account_info( $is_test ) );
+		$_GET['tab'] = '357';
+		self::assertNull( self::$gateway->get_account_info( $is_test ) );
 	}
 
 	/**
@@ -570,55 +630,42 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	 * [false, false]
 	 * [false, true]
 	 * [true, false]
-	 * [true, true] 
+	 * [true, true]
 	 */
 	public function test_get_order_items_giftup( bool $include_tax, bool $only_not_settled ) {
 		$this->markTestIncomplete();
 	}
 
 	/**
-	 * @param $card_type
-	 * @param $result
+	 * Test function get_logo
 	 *
-	 * @testWith
-	 * ["visa", "visa"]
-	 * ["mc", "mastercard"]
-	 * ["dankort", "dankort"]
-	 * ["visa_dk", "dankort"]
-	 * ["ffk", "forbrugsforeningen"]
-	 * ["visa_elec", "visa-electron"]
-	 * ["maestro", "maestro"]
-	 * ["amex", "american-express"]
-	 * ["diners", "diners"]
-	 * ["discover", "discover"]
-	 * ["jcb", "jcb"]
-	 * ["mobilepay", "mobilepay"]
-	 * ["ms_subscripiton", "mobilepay"]
-	 * ["viabill", "viabill"]
-	 * ["klarna_pay_later", "klarna"]
-	 * ["klarna_pay_now", "klarna"]
-	 * ["resurs", "resurs"]
-	 * ["china_union_pay", "cup"]
-	 * ["paypal", "paypal"]
-	 * ["applepay", "applepay"]
-	 * ["googlepay", "googlepay"]
-	 * ["vipps", "vipps"]
+	 * @see ReepayGateway::get_logo()
+	 * @return void
 	 */
-	public function test_logo( $card_type, $result ) {
-		$logo_svg_path = reepay()->get_setting( 'images_path' ) . 'svg/' . $result . '.logo.svg';
-		$this->assertSame(
-			file_exists( $logo_svg_path ) ?
-				reepay()->get_setting( 'images_url' ) . 'svg/' . $result . '.logo.svg' :
-				reepay()->get_setting( 'images_url' ) . $result . '.png',
-			self::$gateway->get_logo( $card_type )
-		);
-	}
-
-	public function test_logo_default() {
-		$card_type = 'custom';
-
+	public function test_get_logo() {
 		$this->assertSame(
 			reepay()->get_setting( 'images_url' ) . 'svg/card.logo.svg',
+			self::$gateway->get_logo( 'non_exist' )
+		);
+
+		$this->assertSame(
+			reepay()->get_setting( 'images_url' ) . 'visa-electron.png',
+			self::$gateway->get_logo( 'visa_elec' )
+		);
+
+		$card_type = 'visa';
+		$this->assertSame(
+			reepay()->get_setting( 'images_url' ) . 'svg/' . $card_type . '.logo.svg',
+			self::$gateway->get_logo( $card_type )
+		);
+
+		$instance = reepay();
+		$instance->set_images_nested_path( 'stub' );
+		$instance->reset_settings();
+		$instance->get_setting( 'images_url' );
+
+		$this->assertSame(
+			$instance->get_setting( 'images_url' ) . 'svg/card.logo.svg',
 			self::$gateway->get_logo( $card_type )
 		);
 	}

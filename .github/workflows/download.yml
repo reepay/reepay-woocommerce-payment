@@ -37,9 +37,7 @@ jobs:
       - name: Cache npm dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.npm
-            node_modules
+          path: node_modules
           key: "${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}"
           restore-keys: |
             ${{ runner.os }}-node-
@@ -47,9 +45,7 @@ jobs:
       - name: Cache vite dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.npm
-            vite/node_modules
+          path: vite/node_modules
           key: "${{ runner.os }}-vite-${{ hashFiles('vite/bun.lockb') }}"
           restore-keys: |
             ${{ runner.os }}-vite-

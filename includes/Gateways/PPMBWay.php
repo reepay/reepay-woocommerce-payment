@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Gateways;
 
+use Billwerk\Sdk\Enum\AgreementTypeEnum;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -15,6 +17,8 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Gateways
  */
 class PPMBWay extends ReepayGateway {
+	public const ID = 'reepay_' . AgreementTypeEnum::PP_MB_WAY;
+
 	/**
 	 * Logos
 	 *
@@ -37,7 +41,7 @@ class PPMBWay extends ReepayGateway {
 	 * PPMBWay constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_pp_mb_way';
+		$this->id           = self::ID;
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ - MB Way', 'reepay-checkout-gateway' );
 		$this->supports     = array(

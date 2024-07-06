@@ -36,6 +36,7 @@ export interface ILog extends IDefaultLog {
 export interface ILogFile {
     name: string
     url: string
+    path: string
     created: string
     modified: string
     size: number

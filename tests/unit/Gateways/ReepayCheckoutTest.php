@@ -1,15 +1,19 @@
 <?php
 /**
- * Class ReepayCheckoutTest
+ *  Unit test
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit\Gateways
  */
+
+namespace Reepay\Checkout\Tests\Unit\Gateways;
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
 /**
- * AnydayTest.
+ * Test class
+ *
+ * @package Reepay\Checkout\Tests\Unit\Gateways
  */
 class ReepayCheckoutTest extends Reepay_UnitTestCase {
 	/**

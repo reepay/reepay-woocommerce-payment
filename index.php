@@ -7,6 +7,7 @@
  * Version: 1.7.3
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
+ * Requires Plugins: woocommerce
  * WC requires at least: 3.0.0
  * WC tested up to: 7.5.0
  *
@@ -17,19 +18,27 @@ use Billwerk\Sdk\BillwerkClientFactory;
 use Billwerk\Sdk\BillwerkRequest;
 use Billwerk\Sdk\Sdk;
 use Billwerk\Sdk\Service\AccountService;
+use Billwerk\Sdk\Service\AgreementService;
+use Billwerk\Sdk\Service\ChargeService;
+use Billwerk\Sdk\Service\CustomerService;
+use Billwerk\Sdk\Service\InvoiceService;
+use Billwerk\Sdk\Service\PaymentMethodService;
+use Billwerk\Sdk\Service\RefundService;
+use Billwerk\Sdk\Service\SessionService;
+use Billwerk\Sdk\Service\TransactionService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\HttpFactory;
 use Reepay\Checkout\Api;
-use Reepay\Checkout\Api\Controller\DebugController;
-use Reepay\Checkout\Api\Controller\LogsController;
-use Reepay\Checkout\Api\Controller\MetaFieldsController;
-use Reepay\Checkout\DIContainer;
+use Reepay\Checkout\RestApi\Controller\DebugController;
+use Reepay\Checkout\RestApi\Controller\LogsController;
+use Reepay\Checkout\RestApi\Controller\MetaFieldsController;
 use Reepay\Checkout\Gateways;
 use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\Plugin\LifeCycle;
 use Reepay\Checkout\Plugin\Statistics;
 use Reepay\Checkout\Plugin\WoocommerceExists;
 use Reepay\Checkout\Plugin\WoocommerceHPOS;
+use Reepay\Checkout\Utils\DIContainer;
 use Reepay\Checkout\Utils\Logger\JsonLogger;
 use Reepay\Checkout\Utils\Logger\SdkLogger;
 
@@ -66,6 +75,14 @@ class WC_ReepayCheckout {
 	 * @var DIContainer|null
 	 */
 	private ?DIContainer $di_container = null;
+
+	/**
+	 * Path inside the plugin
+	 * (for tests)
+	 *
+	 * @var string $images_nested_path
+	 */
+	private string $images_nested_path = 'assets/images/';
 
 	/**
 	 * Constructor
@@ -162,8 +179,8 @@ class WC_ReepayCheckout {
 				'js_url'                     => plugin_dir_url( __FILE__ ) . 'assets/dist/js/',
 				'js_path'                    => plugin_dir_path( __FILE__ ) . 'assets/dist/js/',
 
-				'images_url'                 => plugin_dir_url( __FILE__ ) . 'assets/images/',
-				'images_path'                => plugin_dir_path( __FILE__ ) . 'assets/images/',
+				'images_url'                 => plugin_dir_url( __FILE__ ) . $this->images_nested_path,
+				'images_path'                => plugin_dir_path( __FILE__ ) . $this->images_nested_path,
 
 				'assets_url'                 => plugin_dir_url( __FILE__ ) . 'assets/',
 				'assets_path'                => plugin_dir_path( __FILE__ ) . 'assets/',
@@ -205,6 +222,17 @@ class WC_ReepayCheckout {
 	public function reset_settings() {
 		$this->settings = array();
 		$this->get_setting( '' );
+	}
+
+	/**
+	 * For tests
+	 *
+	 * @param string $images_nested_path images path.
+	 *
+	 * @return void
+	 */
+	public function set_images_nested_path( string $images_nested_path ): void {
+		$this->images_nested_path = $images_nested_path;
 	}
 
 	/**
@@ -277,14 +305,35 @@ class WC_ReepayCheckout {
 			new SdkLogger()
 		);
 
-		if ( $this->di()->is_set( AccountService::class ) ) {
-			$account_service = $this->di()->get( AccountService::class );
-			if ( $account_service instanceof AccountService ) {
-				$sdk->setAccountService( $account_service );
-			}
-		}
+		$this->set_service_if_available( AccountService::class, $sdk, 'setAccountService' );
+		$this->set_service_if_available( AgreementService::class, $sdk, 'setAgreementService' );
+		$this->set_service_if_available( ChargeService::class, $sdk, 'setChargeService' );
+		$this->set_service_if_available( CustomerService::class, $sdk, 'setCustomerService' );
+		$this->set_service_if_available( InvoiceService::class, $sdk, 'setInvoiceService' );
+		$this->set_service_if_available( PaymentMethodService::class, $sdk, 'setPaymentMethodService' );
+		$this->set_service_if_available( RefundService::class, $sdk, 'setRefundService' );
+		$this->set_service_if_available( SessionService::class, $sdk, 'setSessionService' );
+		$this->set_service_if_available( TransactionService::class, $sdk, 'setTransactionService' );
 
 		return $sdk;
+	}
+
+	/**
+	 * Sets the service in the SDK if the service is available in the DI container.
+	 *
+	 * @param string $service_class The class name of the service.
+	 * @param Sdk    $sdk The SDK instance.
+	 * @param string $set_method The method to set the service in the SDK.
+	 *
+	 * @return void
+	 */
+	private function set_service_if_available( string $service_class, Sdk $sdk, string $set_method ) {
+		if ( $this->di()->is_set( $service_class ) ) {
+			$service = $this->di()->get( $service_class );
+			if ( $service instanceof $service_class ) {
+				$sdk->$set_method( $service );
+			}
+		}
 	}
 
 	/**
@@ -368,13 +417,6 @@ class WC_ReepayCheckout {
 	}
 }
 
-/**
- * Get reepay checkout instance
- *
- * @return WC_ReepayCheckout
- */
-function reepay(): WC_ReepayCheckout {
-	return WC_ReepayCheckout::get_instance();
-}
+require_once 'main-class-shortcut.php';
 
 reepay();

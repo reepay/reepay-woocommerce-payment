@@ -1,9 +1,11 @@
 <?php
 /**
- * Class OrderCaptureTest
+ * Unit test
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit\OrderFlow
  */
+
+namespace Reepay\Checkout\Tests\Unit\OrderFlow;
 
 use Reepay\Checkout\Api;
 
@@ -11,9 +13,11 @@ use Reepay\Checkout\OrderFlow\OrderCapture;
 use Reepay\Checkout\Tests\Helpers\HPOS_STATE;
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
+use WC_Order_Factory;
+use WP_Error;
 
 /**
- * OrderCaptureTest.
+ * Test class
  *
  * @covers \Reepay\Checkout\OrderFlow\OrderCapture
  */

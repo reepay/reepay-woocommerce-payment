@@ -1,17 +1,20 @@
 <?php
 /**
- * Class InstantSettleTest
+ * Unit test
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit\OrderFlow
  */
+
+namespace Reepay\Checkout\Tests\Unit\OrderFlow;
 
 use Reepay\Checkout\OrderFlow\InstantSettle;
 
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
+use WC_Order_Factory;
 
 /**
- * InstantSettleTest.
+ * Test class
  *
  * @covers \Reepay\Checkout\OrderFlow\InstantSettle
  */

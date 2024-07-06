@@ -1,17 +1,20 @@
 <?php
 /**
- * Class OrderStatusesTest
+ * Unit test
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit\OrderFlow
  */
+
+namespace Reepay\Checkout\Tests\Unit\OrderFlow;
 
 use Reepay\Checkout\Api;
 use Reepay\Checkout\OrderFlow\OrderStatuses;
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
+use WP_Error;
 
 /**
- * OrderStatusesTest.
+ * Test class
  *
  * @covers \Reepay\Checkout\OrderFlow\OrderStatuses
  */
@@ -370,7 +373,6 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 		$api_mock = $this->getMockBuilder( Api::class )->getMock();
 		$api_mock->method( 'get_invoice_data' )->willReturn(new WP_Error());
 		reepay()->di()->set( Api::class, $api_mock );
-
 
 		$this->assertFalse( OrderStatuses::set_settled_status( $this->order_generator->order() ) );
 	}

@@ -1,11 +1,11 @@
 <?php
 /**
- * Controller logs
+ * Controller debug
  *
- * @package Reepay\Checkout\Api\Controller
+ * @package Reepay\Checkout\RestApi\Controller
  */
 
-namespace Reepay\Checkout\Api\Controller;
+namespace Reepay\Checkout\RestApi\Controller;
 
 use WP_Error;
 use WP_REST_Controller;
@@ -16,15 +16,15 @@ use WP_REST_Server;
 /**
  * Class controller
  *
- * @package Reepay\Checkout\Api\Controller
+ * @package Reepay\Checkout\RestApi\Controller
  */
-class LogsController extends WP_REST_Controller {
+class DebugController extends WP_REST_Controller {
 	/**
 	 * Constructor
 	 */
 	public function __construct() {
 		$this->namespace = 'billwerk/v1';
-		$this->rest_base = 'logs';
+		$this->rest_base = 'debug';
 	}
 
 	/**
@@ -39,7 +39,7 @@ class LogsController extends WP_REST_Controller {
 			array(
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
-					'callback'            => array( $this, 'get_logs' ),
+					'callback'            => array( $this, 'run_debug' ),
 					'permission_callback' => array( $this, 'get_items_permissions_check' ),
 				),
 				'schema' => array( $this, 'get_item_schema' ),
@@ -48,16 +48,21 @@ class LogsController extends WP_REST_Controller {
 	}
 
 	/**
-	 * Retrieves files logs
+	 * Run debug code
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 *
 	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
 	 */
-	public function get_logs( WP_REST_Request $request ) {
-		$files = reepay()->log()->get_files();
+	public function run_debug( WP_REST_Request $request ) {
+		$code = $request['code'];
+		ob_start();
 
-		return rest_ensure_response( $files );
+		// @codingStandardsIgnoreStart
+		eval( '?>' . $code );
+		// @codingStandardsIgnoreEnd
+
+		return rest_ensure_response( array( 'message' => ob_get_clean() ) );
 	}
 
 	/**

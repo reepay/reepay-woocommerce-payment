@@ -1,6 +1,6 @@
 <?php
 /**
- * Class GatewaysTest
+ * Unit test
  *
  * @package Reepay\Checkout\Tests\Unit\Functions
  */
@@ -10,7 +10,7 @@ namespace Reepay\Checkout\Tests\Unit\Functions;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
 /**
- * Test Class
+ * Test class
  *
  * @package Reepay\Checkout\Tests\Unit\Functions
  */
@@ -44,7 +44,7 @@ class GatewaysTest extends Reepay_UnitTestCase {
 	 * @param bool         $is_reepay is reepay gateway.
 	 *
 	 * @dataProvider \Reepay\Checkout\Tests\Helpers\DataProvider::payment_methods
-	 *  @see rp_is_reepay_payment_method
+	 * @see rp_is_reepay_payment_method
 	 * @group functions_gateways
 	 */
 	public function test_rp_is_reepay_payment_method( string $method_name, $class_name, bool $is_reepay ) {

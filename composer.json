@@ -1,6 +1,7 @@
 {
     "name": "reepay/checkout",
     "description": "Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.",
+    "version": "1.0.0",
     "type": "wordpress-plugin",
     "license": "GPL",
     "autoload": {
@@ -25,6 +26,7 @@
         "wp-coding-standards/wpcs": "^3.0"
     },
     "config": {
+        "cache-dir": ".cache/composer",
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
@@ -34,5 +36,11 @@
         "billwerk/php-sdk": "^1.0",
         "guzzlehttp/guzzle": "^7.0",
         "ext-mbstring": "*"
+    },
+    "scripts": {
+        "phpcs": "./bin/phpcs.sh",
+        "phpcs:full": "./bin/phpcs.sh -full",
+        "phpcs:fix": "./bin/phpcs.sh -fix",
+        "zip": "./bin/zip.sh"
     }
 }

@@ -1,19 +1,21 @@
 <?php
 /**
- * Class GatewaysTest
+ * Unit test
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Unit
  */
+
+namespace Reepay\Checkout\Tests\Unit;
 
 use Reepay\Checkout\Gateways\ReepayCheckout;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
 /**
- * Class Gateways
+ * Test class
  *
  * @covers \Reepay\Checkout\Gateways
  */
-class Gateways extends Reepay_UnitTestCase {
+class GatewaysTest extends Reepay_UnitTestCase {
 	/**
 	 * Test get_gateway
 	 *

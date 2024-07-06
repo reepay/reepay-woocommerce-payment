@@ -2,7 +2,7 @@
 /**
  * Class PLUGINS_STATE
  *
- * @package Reepay\Checkout
+ * @package Reepay\Checkout\Tests\Helpers
  */
 
 namespace Reepay\Checkout\Tests\Helpers;
