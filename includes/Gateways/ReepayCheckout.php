@@ -621,7 +621,7 @@ class ReepayCheckout extends ReepayGateway {
 			/**
 			 * Add action notic message live key changed
 			 */
-			add_action( 'woocommerce_update_options_checkout', array( $this, 'notic_message_live_key_changed' ) );
+			add_action( 'woocommerce_update_options_checkout', array( $this, 'notice_message_live_key_changed' ) );
 		}
 
 		$this->init_settings();
