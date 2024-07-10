@@ -167,7 +167,7 @@ class ReepayCheckout extends ReepayGateway {
 			'private_key_test'           => array(
 				'title'       => __( 'Test Private Key', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
-				'description' => __( 'Insert your private key from your Billwerk+ Pay test account', 'reepay-checkout-gateway' ),
+				'description' => __( 'Insert your private key from your test account', 'reepay-checkout-gateway' ),
 				'default'     => '',
 			),
 			'verify_key_test'            => array(
@@ -618,6 +618,10 @@ class ReepayCheckout extends ReepayGateway {
 
 		if ( $current_key !== $woocommerce_reepay_checkout_private_key ) {
 			Statistics::private_key_activated();
+			/**
+			 * Add action notic message live key changed
+			 */
+			add_action( 'woocommerce_update_options_checkout', array( $this, 'notice_message_live_key_changed' ) );
 		}
 
 		$this->init_settings();
@@ -773,5 +777,18 @@ class ReepayCheckout extends ReepayGateway {
 			'cancel_text'  => __( 'Payment was canceled, please try again', 'reepay-checkout-gateway' ),
 			'error_text'   => __( 'Error with payment, please try again', 'reepay-checkout-gateway' ),
 		);
+	}
+
+	/**
+	 * Message notice live key changed
+	 */
+	public function notice_message_live_key_changed() {
+		// translators: notic message live key changed.
+		$notice_message = sprintf( __( 'The Api key identifies the Billwerk account. Only subscription plan handles that exist under the account of the API key can be used to submit subscription orders. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://optimize-docs.billwerk.com/reference/account' );
+		?>
+		<div class="notice notice-info">
+			<p><?php echo $notice_message; ?></p>
+		</div>
+		<?php
 	}
 }
