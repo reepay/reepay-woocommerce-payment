@@ -50,9 +50,21 @@ if ( ! function_exists( 'rp_get_order_by_handle' ) ) {
 	 * @return false|WC_Order
 	 */
 	function rp_get_order_by_handle( string $handle ) {
-		$order_id = wp_cache_get( $handle, 'reepay_order_by_handle' );
 
-		if ( empty( $order_id ) ) {
+		if ( rp_hpos_enabled() ) {
+			$orders = wc_get_orders(
+				array(
+					'limit'      => 1,
+					'meta_query' => array( //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+						array(
+							'key'   => '_reepay_order',
+							'value' => $handle,
+						),
+
+					),
+				)
+			);
+		} else {
 			$orders = wc_get_orders(
 				array(
 					'limit'        => 1,
@@ -61,18 +73,54 @@ if ( ! function_exists( 'rp_get_order_by_handle' ) ) {
 					'meta_compare' => '=',
 				)
 			);
-
-			if ( ! empty( $orders ) ) {
-				$order_id = reset( $orders )->get_id();
-				wp_cache_set( $handle, $order_id, 'reepay_order_by_handle' );
-			} else {
-				return false;
-			}
 		}
 
-		clean_post_cache( $order_id );
+		if ( ! empty( $orders ) ) {
+			$order_id = reset( $orders )->get_id();
+			clean_post_cache( $order_id );
 
-		return wc_get_order( $order_id );
+			return wc_get_order( $order_id );
+		}
+
+		return false;
+	}
+}
+
+if ( ! function_exists( 'rp_get_not_subs_order_by_handle' ) ) {
+	/**
+	 * Get not subscription order by reepay order handle.
+	 *
+	 * @param string $handle reepay order handle.
+	 *
+	 * @return false|WC_Order
+	 */
+	function rp_get_not_subs_order_by_handle( string $handle ) {
+
+		$orders = wc_get_orders(
+			array(
+				'limit'      => 1,
+				'meta_query' => array( //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					array(
+						'key'   => '_reepay_order',
+						'value' => $handle,
+					),
+					array(
+						'key'     => '_reepay_is_subscription',
+						'compare' => 'NOT EXISTS',
+					),
+
+				),
+			)
+		);
+
+		if ( ! empty( $orders ) ) {
+			$order_id = reset( $orders )->get_id();
+			clean_post_cache( $order_id );
+
+			return wc_get_order( $order_id );
+		}
+
+		return false;
 	}
 }
 

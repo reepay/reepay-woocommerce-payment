@@ -5,7 +5,7 @@ set -ex
 
 # Change to the expected directory.
 DIR=$(pwd)
-BUILD_DIR="$DIR/build/reepay-woocommerce-payment"
+BUILD_DIR="$DIR/build/reepay-checkout-gateway"
 
 # Enable nicer messaging for build status.
 BLUE_BOLD='\033[1;34m';
@@ -79,12 +79,12 @@ then
   status "Creating archive... 🎁"
 
   cd ./build
-  zip -r -q reepay-woocommerce-payment.zip reepay-woocommerce-payment
+  zip -r -q reepay-checkout-gateway.zip reepay-checkout-gateway
 
   # remove the source directory
 #  rm -rf ./reepay-woocommerce-payment
 else
-  warning "zip command not found. Create archive by yourself ./build/reepay-woocommerce-payment"
+  warning "zip command not found. Create archive by yourself ./build/reepay-checkout-gateway"
 fi
 
 success "Done. You've built plugin! 🎉 "
