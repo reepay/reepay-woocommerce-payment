@@ -114,9 +114,9 @@ class Webhook {
 					throw new Exception( 'Missing Invoice parameter' );
 				}
 
-				if(isset($data['subscription'])){
+				if ( isset( $data['subscription'] ) ) {
 					$order = rp_get_not_subs_order_by_handle( $data['invoice'] );
-				}else{
+				} else {
 					$order = rp_get_order_by_handle( $data['invoice'] );
 				}
 
@@ -213,9 +213,9 @@ class Webhook {
 					throw new Exception( 'Missing Invoice parameter' );
 				}
 
-				if(isset($data['subscription'])){
+				if ( isset( $data['subscription'] ) ) {
 					$order = rp_get_not_subs_order_by_handle( $data['invoice'] );
-				}else{
+				} else {
 					$order = rp_get_order_by_handle( $data['invoice'] );
 				}
 
