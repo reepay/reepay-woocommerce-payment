@@ -4,7 +4,7 @@ Tags: billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.5.3
 Requires PHP: 7.4
-Stable tag: 1.7.5
+Stable tag: 1.7.6
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,8 +18,12 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.6 -
+* [Fix] - Allow the activation of Santander and enforce a redirect for this payment.
+* [Compatibility] - Billwerk+ Optimize version 1.2.6
+
 v 1.7.5 - 
-* [Improvement] - Product namechange to "Billwerk+ Pay".
+* [Improvement] - Product name change to "Billwerk+ Pay".
 * [Fix] - Including card fee in the order line prevented the order from being auto-captured.
 * [Fix] - WooCommerce subscription renewal orders were not auto-captured and their status remained incomplete.
 

@@ -51,4 +51,4 @@ jobs:
       with:
         artifactErrorsFailBuild: true
         allowUpdates: true
-        artifacts: "./build/reepay-woocommerce-payment.zip"
+        artifacts: "./build/reepay-checkout-gateway.zip"
