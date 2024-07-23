@@ -783,12 +783,14 @@ class ReepayCheckout extends ReepayGateway {
 	 * Message notice live key changed
 	 */
 	public function notice_message_live_key_changed() {
-		// translators: notic message live key changed.
-		$notice_message = sprintf( __( 'The Api key identifies the Billwerk account. Only subscription plan handles that exist under the account of the API key can be used to submit subscription orders. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://optimize-docs.billwerk.com/reference/account' );
-		?>
-		<div class="notice notice-info">
-			<p><?php echo $notice_message; ?></p>
-		</div>
-		<?php
+		if ( is_plugin_active( 'reepay-subscriptions-for-woocommerce/reepay-subscriptions-for-woocommerce.php' ) ) {
+			// translators: notic message live key changed.
+			$notice_message = sprintf( __( 'The Api key identifies the Billwerk account. Only subscription plan handles that exist under the account of the API key can be used to submit subscription orders. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://optimize-docs.billwerk.com/reference/account' );
+			?>
+			<div class="notice notice-info">
+				<p><?php echo $notice_message; ?></p>
+			</div>
+			<?php
+		}
 	}
 }
