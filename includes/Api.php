@@ -795,11 +795,11 @@ class Api {
 			return new WP_Error( 0, 'Settle has been failed.' );
 		}
 
-		if ( array_key_exists( 'error', $result) && !empty($result['error']) ) {
+		if ( array_key_exists( 'error', $result ) && ! empty( $result['error'] ) ) {
 			return new WP_Error( 0, 'Settle has been failed.' );
 		}
 
-		if ( array_key_exists( 'error_state', $result) && !empty($result['error_state']) ) {
+		if ( array_key_exists( 'error_state', $result ) && ! empty( $result['error_state'] ) ) {
 			return new WP_Error( 0, 'Settle has been failed.' );
 		}
 
