@@ -19,7 +19,8 @@ See installation guide right here: https://docu.billwerk.plus/help/en/apps/wooco
 
 == Changelog ==
 v 1.7.6.1 -
-* [Fix] - The Billwerk+ webhook customer_payment_method_added is missing the payment_method_reference data. We need to create a new rule to address this issue.
+* [Fix] - The Billwerk+ webhook customer_payment_method_added is missing the payment_method_reference data and create a new rule to address this issue.
+* [Improvement] - Add notice when change the status of "Test Mode" (and the keys are different) or if change the "Live Private Key" under settings for the module.
 
 v 1.7.6 -
 * [Fix] - Allow the activation of Santander and enforce a redirect for this payment.
