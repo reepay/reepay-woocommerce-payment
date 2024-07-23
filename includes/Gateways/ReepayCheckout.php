@@ -799,8 +799,8 @@ class ReepayCheckout extends ReepayGateway {
 	/**
 	 * Message notice enabled or disabled test mode
 	 */
-	public function notice_message_test_mode_enabled(){
-		if (is_plugin_active('reepay-subscriptions-for-woocommerce/reepay-subscriptions-for-woocommerce.php')) {
+	public function notice_message_test_mode_enabled() {
+		if ( is_plugin_active( 'reepay-subscriptions-for-woocommerce/reepay-subscriptions-for-woocommerce.php' ) ) {
 			if ( 'yes' === $this->test_mode ) {
 				// translators: notice message enabled test mode.
 				$notice_message = sprintf( __( 'You just enabled test mode, meaning your test API key will now be used. Please note that all subscription products previously linked to plans on your live account are no longer linked. If you try to purchase a subscription product now, an error will occur. Disabling test mode will restore all connections. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://optimize-docs.billwerk.com/reference/account' );
