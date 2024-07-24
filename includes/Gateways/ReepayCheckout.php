@@ -616,20 +616,19 @@ class ReepayCheckout extends ReepayGateway {
 		$current_key                             = $this->private_key ?? '';
 		$woocommerce_reepay_checkout_private_key = isset( $_POST['woocommerce_reepay_checkout_private_key'] ) ? wc_clean( $_POST['woocommerce_reepay_checkout_private_key'] ) : '';
 
-		if ( $current_key !== $woocommerce_reepay_checkout_private_key ) {
-			Statistics::private_key_activated();
-			/**
-			 * Add action notic message live key changed
-			 */
-			add_action( 'woocommerce_update_options_checkout', array( $this, 'notice_message_live_key_changed' ) );
-		}
-
 		$this->init_settings();
 		$this->private_key      = $this->settings['private_key'] ?? $this->private_key;
 		$this->private_key_test = $this->settings['private_key_test'] ?? $this->private_key_test;
 		$this->test_mode        = $this->settings['test_mode'] ?? $this->test_mode;
 
-		add_action( 'woocommerce_update_options_checkout', array( $this, 'notice_message_test_mode_enabled' ) );
+		if ( $current_key !== $woocommerce_reepay_checkout_private_key || $current_key !== $this->private_key_test ) {
+			Statistics::private_key_activated();
+			/**
+			 * Add action notic message live key changed
+			 */
+			add_action( 'woocommerce_update_options_checkout', array( $this, 'notice_message_live_key_changed' ) );
+			add_action( 'woocommerce_update_options_checkout', array( $this, 'notice_message_test_mode_enabled' ) );
+		}
 
 		reepay()->reset_settings();
 
