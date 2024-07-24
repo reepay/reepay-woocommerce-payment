@@ -6,6 +6,7 @@
  */
 
 use Reepay\Checkout\Utils\TimeKeeper;
+use WC_Reepay_Renewals;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -129,32 +130,101 @@ if ( ! function_exists( 'rp_get_order_by_session' ) ) {
 	 * Get order by reepay order session.
 	 *
 	 * @param string $session_id reepay order session.
+	 * @param string $handle reepay order handle.
 	 *
 	 * @return false|WC_Order
 	 */
-	function rp_get_order_by_session( string $session_id ) {
-		$order_id = wp_cache_get( $session_id, 'reepay_order_by_session' );
+	function rp_get_order_by_session( string $session_id = null, string $handle = null ) {
+		if ( ! is_null( $session_id ) ) {
+			if ( rp_hpos_enabled() ) {
+				$orders = wc_get_orders(
+					array(
+						'limit'      => 1,
+						'meta_query' => array( //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+							array(
+								'key'   => 'reepay_session_id',
+								'value' => $session_id,
+							),
 
-		if ( empty( $order_id ) ) {
-			$orders = wc_get_orders(
-				array(
-					'limit'        => 1,
-					'meta_key'     => 'reepay_session_id', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-					'meta_value'   => $session_id, //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-					'meta_compare' => '=',
-				)
-			);
+						),
+					)
+				);
+			} else {
+				$orders = wc_get_orders(
+					array(
+						'limit'        => 1,
+						'meta_key'     => 'reepay_session_id', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+						'meta_value'   => $session_id, //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+						'meta_compare' => '=',
+					)
+				);
+			}
 
 			if ( ! empty( $orders ) ) {
 				$order_id = reset( $orders )->get_id();
-				wp_cache_set( $session_id, $order_id, 'reepay_order_by_session' );
-			} else {
-				return false;
+				clean_post_cache( $order_id );
+				return wc_get_order( $order_id );
+			} elseif ( ! is_null( $handle ) ) {
+				$order = rp_get_order_by_customer( $handle );
+				return $order;
+			}
+
+			return false;
+		} elseif ( ! is_null( $handle ) ) {
+			$order = rp_get_order_by_customer( $handle );
+			return $order;
+		} else {
+			return false;
+		}
+	}
+}
+
+if ( ! function_exists( 'rp_get_order_by_customer' ) ) {
+	/**
+	 * Get order by reepay order customer.
+	 *
+	 * @param string $customer_id reepay order customer.
+	 *
+	 * @return false|WC_Order
+	 */
+	function rp_get_order_by_customer( string $customer_id ) {
+		$reepay_list_invoice = reepay()->api( 'list-invoice' )->request( 'GET', "https://api.reepay.com/v1/list/invoice?customer=$customer_id" );
+
+		if ( is_wp_error( $reepay_list_invoice ) || empty( $reepay_list_invoice['content'] ) ) {
+			return '';
+		}
+		$subscription_order = null;
+		foreach ( $reepay_list_invoice['content'] as $content ) {
+			$search_string = strpos( $content['handle'], 'order-' );
+			if ( false !== $search_string ) {
+				$handle = $content['handle'];
+				$orders = wc_get_orders(
+					array(
+						'limit'      => 1,
+						'meta_query' => array( //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+							array(
+								'key'   => '_reepay_order',
+								'value' => $handle,
+							),
+
+						),
+					)
+				);
+
+				if ( ! empty( $orders ) ) {
+					$order_id = reset( $orders )->get_id();
+					$order    = wc_get_order( $order_id );
+					if ( class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) || order_contains_subscription( $order ) ) {
+						$subscription_order = $order;
+					}
+				}
 			}
 		}
-
-		clean_post_cache( $order_id );
-		return $order_id ? wc_get_order( $order_id ) : false;
+		if ( null !== $subscription_order ) {
+			return $subscription_order;
+		} else {
+			return '';
+		}
 	}
 }
 
