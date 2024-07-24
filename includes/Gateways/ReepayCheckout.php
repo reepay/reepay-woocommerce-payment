@@ -167,7 +167,7 @@ class ReepayCheckout extends ReepayGateway {
 			'private_key_test'           => array(
 				'title'       => __( 'Test Private Key', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
-				'description' => __( 'Insert your private key from your Billwerk+ Pay test account', 'reepay-checkout-gateway' ),
+				'description' => __( 'Insert your private key from your test account', 'reepay-checkout-gateway' ),
 				'default'     => '',
 			),
 			'verify_key_test'            => array(
@@ -613,17 +613,35 @@ class ReepayCheckout extends ReepayGateway {
 	public function process_admin_options(): bool {
 		parent::process_admin_options();
 
-		$current_key                             = $this->private_key ?? '';
-		$woocommerce_reepay_checkout_private_key = isset( $_POST['woocommerce_reepay_checkout_private_key'] ) ? wc_clean( $_POST['woocommerce_reepay_checkout_private_key'] ) : '';
-
-		if ( $current_key !== $woocommerce_reepay_checkout_private_key ) {
-			Statistics::private_key_activated();
-		}
+		$current_key                                  = $this->private_key ?? '';
+		$current_test_mode                            = $this->test_mode;
+		$woocommerce_reepay_checkout_private_key      = isset( $_POST['woocommerce_reepay_checkout_private_key'] ) ? wc_clean( $_POST['woocommerce_reepay_checkout_private_key'] ) : '';
+		$woocommerce_reepay_checkout_private_key_test = isset( $_POST['woocommerce_reepay_checkout_private_key_test'] ) ? wc_clean( $_POST['woocommerce_reepay_checkout_private_key_test'] ) : '';
+		$woocommerce_reepay_checkout_test_mode        = isset( $_POST['woocommerce_reepay_checkout_test_mode'] ) ? 'yes' : 'no';
 
 		$this->init_settings();
 		$this->private_key      = $this->settings['private_key'] ?? $this->private_key;
 		$this->private_key_test = $this->settings['private_key_test'] ?? $this->private_key_test;
 		$this->test_mode        = $this->settings['test_mode'] ?? $this->test_mode;
+
+		if ( $current_key !== $woocommerce_reepay_checkout_private_key ) {
+			Statistics::private_key_activated();
+		}
+
+		/**
+		 * Condition check notic message.
+		 */
+		if ( is_plugin_active( 'reepay-subscriptions-for-woocommerce/reepay-subscriptions-for-woocommerce.php' ) ) {
+			if ( $current_test_mode !== $woocommerce_reepay_checkout_test_mode && $woocommerce_reepay_checkout_private_key !== $woocommerce_reepay_checkout_private_key_test ) {
+				if ( 'yes' === $this->test_mode ) {
+					add_action( 'woocommerce_update_options_checkout', array( $this, 'notice_message_test_mode_enabled' ) );
+				} else {
+					add_action( 'woocommerce_update_options_checkout', array( $this, 'notice_message_test_mode_disabled' ) );
+				}
+			} elseif ( $current_key !== $woocommerce_reepay_checkout_private_key ) {
+				add_action( 'woocommerce_update_options_checkout', array( $this, 'notice_message_live_key_changed' ) );
+			}
+		}
 
 		reepay()->reset_settings();
 
@@ -773,5 +791,44 @@ class ReepayCheckout extends ReepayGateway {
 			'cancel_text'  => __( 'Payment was canceled, please try again', 'reepay-checkout-gateway' ),
 			'error_text'   => __( 'Error with payment, please try again', 'reepay-checkout-gateway' ),
 		);
+	}
+
+	/**
+	 * Message notice live key changed
+	 */
+	public function notice_message_live_key_changed() {
+		// translators: notic message live key changed.
+		$notice_message = sprintf( __( 'The Api key identifies the Billwerk account. Only subscription plan handles that exist under the account of the API key can be used to submit subscription orders. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://optimize-docs.billwerk.com/reference/account' );
+		?>
+		<div class="notice notice-info">
+			<p><?php echo $notice_message; ?></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Message notice enabled test mode
+	 */
+	public function notice_message_test_mode_enabled() {
+		// translators: notice message enabled test mode.
+		$notice_message = sprintf( __( 'You just enabled test mode, meaning your test API key will now be used. Please note that all subscription products previously linked to plans on your live account are no longer linked. If you try to purchase a subscription product now, an error will occur. Disabling test mode will restore all connections. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://optimize-docs.billwerk.com/reference/account' );
+		?>
+		<div class="notice notice-info">
+			<p><?php echo $notice_message; ?></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Message notice disabled test mode
+	 */
+	public function notice_message_test_mode_disabled() {
+		// translators: notice message disabled test mode.
+		$notice_message = sprintf( __( 'You just disabled test mode, meaning your live API key will now be used. Please note that all subscription products previously linked to plans on your live account are now restored. If you haven\'t linked your subscription products with your test account, they will remain unlinked. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://optimize-docs.billwerk.com/reference/account' );
+		?>
+		<div class="notice notice-info">
+			<p><?php echo $notice_message; ?></p>
+		</div>
+		<?php
 	}
 }
