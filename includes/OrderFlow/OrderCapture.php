@@ -490,8 +490,8 @@ class OrderCapture {
 		$tax                  = $price['with_tax'] - $price['original'];
 		$price['tax_percent'] = ( $tax > 0 && $price['original'] > 0 ) ? round( 100 / ( $price['original'] / $tax ) ) : 0;
 
-		$price['original'] += $discount;
-		$price['with_tax'] += $discount;
+		$price['original_with_discount'] = $price['original'] + $discount;
+		$price['with_tax_and_discount']  = $price['with_tax'] + $discount;
 
 		return $price;
 	}
