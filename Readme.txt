@@ -4,7 +4,7 @@ Tags: billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.5.3
 Requires PHP: 7.4
-Stable tag: 1.7.6.1
+Stable tag: 1.7.7
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,8 +18,13 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
-v 1.7.6.1 -
-* [Fix] - The Billwerk+ webhook customer_payment_method_added is missing the payment_method_reference data. We need to create a new rule to address this issue.
+v 1.7.7 -
+* [Fix] - Missing payment_method_reference data in the Billwerk+ customer_payment_method_added webhook could cause PHP fatal error.
+* [Fix] - WooCommerce Subscriptions had issues with change of payment method where orders got payment authorized but were not automatically captured and set to complete.
+* [Fix] - Instant capture didn't work for orders with discount.
+* [Fix] - Amounts in order notes were wrong for "Failed to settle" notes and some captures.
+* [Improvement] - A WordPress notice appears when the module starts to use another API key. This is because the subscriptions are defined in the Billwerk+ account, and the notice is only showed if the subscription module "Optimize" is installed.
+* [Compatibility] - Billwerk+ Optimize version 1.2.7
 
 v 1.7.6 -
 * [Fix] - Allow the activation of Santander and enforce a redirect for this payment.
