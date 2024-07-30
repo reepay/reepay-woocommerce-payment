@@ -946,6 +946,8 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 				'original' => $price * $qty,
 				'with_tax' => $price * $qty,
 				'tax_percent' => 0,
+				'original_with_discount' => $price * $qty,
+				'with_tax_and_discount' => $price * $qty,
 			),
 			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
@@ -975,6 +977,8 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 				'original' => $sale_price * $qty,
 				'with_tax' => $sale_price * $qty,
 				'tax_percent' => 0,
+				'original_with_discount' => $sale_price * $qty,
+				'with_tax_and_discount' => $sale_price * $qty,
 			),
 			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
@@ -1009,6 +1013,8 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 				'original' => $sale_price * $qty,
 				'with_tax' => round(( $sale_price * $qty ) * ( 1 + $tax_rate / 100 ), 2),
 				'tax_percent' => round($tax_rate),
+				'original_with_discount' => $sale_price * $qty,
+				'with_tax_and_discount' => round(( $sale_price * $qty ) * ( 1 + $tax_rate / 100 ), 2),
 			),
 			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
@@ -1031,6 +1037,8 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 				'original' => $price,
 				'with_tax' => $price,
 				'tax_percent' => 0,
+				'original_with_discount' => $price,
+				'with_tax_and_discount' => $price,
 			),
 			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
@@ -1053,6 +1061,8 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 				'original' => $price,
 				'with_tax' => $price,
 				'tax_percent' => 0,
+				'original_with_discount' => $price,
+				'with_tax_and_discount' => $price,
 			),
 			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);

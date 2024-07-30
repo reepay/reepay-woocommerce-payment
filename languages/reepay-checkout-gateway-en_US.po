@@ -1,311 +1,933 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Woocommerce Gateway ReePay Checkout\n"
-"POT-Creation-Date: 2019-01-13 14:06+0600\n"
-"PO-Revision-Date: 2019-01-13 14:06+0600\n"
+"POT-Creation-Date: 2024-07-08 09:45+0700\n"
+"PO-Revision-Date: 2024-07-08 09:46+0700\n"
 "Last-Translator: aait <info@aait.se>\n"
 "Language-Team: \n"
 "Language: en_US\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.0.6\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.4.4\n"
 "X-Poedit-KeywordsList: __;_e;_e(sprintf;__(sprintf\n"
 "X-Poedit-Basepath: .\n"
 "X-Poedit-SourceCharset: UTF-8\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-SearchPath-0: ..\n"
 
-#: ../includes/abstracts/abstract-wc-payment-gateway-reepay.php:198
-msgid "Discount"
+#: ../assets/dist/js/woo-blocks.js:29
+#: ../includes/Gateways/ReepayCheckout.php:49
+#: ../includes/Gateways/ReepayCheckout.php:116
+#: ../includes/Gateways/ReepayCheckout.php:122
+#: ../templates/admin/admin-options.php:29
+msgid "Billwerk+ Pay"
 msgstr ""
 
-#: ../includes/class-wc-gateway-reepay-checkout.php:67
-#: ../includes/class-wc-gateway-reepay-checkout.php:178
-#: ../includes/class-wc-gateway-reepay-checkout.php:184
-#: ../templates/admin/admin-options.php:11
-msgid "Reepay Checkout"
+#: ../assets/dist/js/woo-blocks.js:99
+msgid "Use a new payment method"
 msgstr ""
 
-#: ../includes/class-wc-gateway-reepay-checkout.php:169
-msgid "Enable/Disable"
+#: ../assets/dist/js/woo-blocks.js:153
+msgid "Save to account"
 msgstr ""
 
-#: ../includes/class-wc-gateway-reepay-checkout.php:171
-msgid "Enable plugin"
+#: ../assets/dist/vite/meta-fields/assets/meta-fields-DeJ_ZxWH.js:18
+msgid "Error api response"
 msgstr ""
 
-#: ../includes/class-wc-gateway-reepay-checkout.php:175
-msgid "Title"
+#: ../assets/dist/vite/meta-fields/assets/meta-fields-DeJ_ZxWH.js:23
+msgid "Update"
 msgstr ""
 
-#: ../includes/class-wc-gateway-reepay-checkout.php:177
-msgid "This controls the title which the user sees during checkout."
+#: ../assets/dist/vite/meta-fields/assets/meta-fields-DeJ_ZxWH.js:23
+msgid "Delete"
 msgstr ""
 
-#: ../includes/class-wc-gateway-reepay-checkout.php:181
-msgid "Description"
+#: ../assets/dist/vite/meta-fields/assets/meta-fields-DeJ_ZxWH.js:23
+msgid "Add new meta field"
 msgstr ""
 
-#: ../includes/class-wc-gateway-reepay-checkout.php:183
-msgid "This controls the description which the user sees during checkout."
+#: ../assets/dist/vite/meta-fields/assets/meta-fields-DeJ_ZxWH.js:23
+msgid "Key"
 msgstr ""
 
-#: ../includes/class-wc-gateway-reepay-checkout.php:187
-#: ../includes/class-wc-gateway-reepay-checkout.php:189
-msgid "Private key"
+#: ../assets/dist/vite/meta-fields/assets/meta-fields-DeJ_ZxWH.js:23
+msgid "Value"
 msgstr ""
 
-#: ../includes/class-wc-gateway-reepay-checkout.php:193
-#: ../includes/class-wc-gateway-reepay-checkout.php:195
-msgid "Public key"
+#: ../assets/dist/vite/meta-fields/assets/meta-fields-DeJ_ZxWH.js:23
+msgid "Add meta field"
 msgstr ""
 
-#: ../includes/class-wc-gateway-reepay-checkout.php:199
-msgid "Test Mode"
+#: ../assets/dist/vite/meta-fields/assets/meta-fields-DeJ_ZxWH.js:23
+msgid "Loading..."
 msgstr ""
 
-#: ../includes/class-wc-gateway-reepay-checkout.php:201
-msgid "Enable Test Mode"
+#: ../assets/dist/vite/meta-fields/assets/meta-fields-DeJ_ZxWH.js:23
+msgid "Debug: User meta fields"
 msgstr ""
 
-#: ../includes/class-wc-gateway-reepay-checkout.php:205
-#: ../includes/class-wc-gateway-reepay-checkout.php:207
-msgid "Capture automatically"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:211
-msgid "Payment Type"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:212
-msgid "Only Token support WooCommerce Subscriptions"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:222
-msgid "Language"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:225
-msgid "English"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:226
-msgid "Danish"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:227
-msgid "Swedish"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:228
-msgid "Norwegian"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:229
-msgid "German"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:230
-msgid "Spanish"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:231
-msgid "French"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:232
-msgid "Italian"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:233
-msgid "Nederlands"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:238
-msgid "Debug"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:240
-msgid "Enable logging"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:244
-msgid "Payment logos"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:245
-msgid "Payment logos on checkout"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:248
-msgid "Dankort"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:249
-msgid "Visa"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:250
-msgid "MasterCard"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:251
-msgid "Visa Electron"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:252
-msgid "Maestro"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:253
-msgid "MobilePay Online"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:254
-msgid "Viabill"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:255
-msgid "Forbrugsforeningen"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:256
-msgid "AMEX"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:257
-msgid "JCB"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:258
-msgid "Diners Club"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:259
-msgid "Unionpay"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:260
-msgid "Discover"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:287
-msgid ""
-"Reepay is enabled, but a SSL certificate is not detected. Your checkout may "
-"not be secure! Please ensure your server has a valid"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:288
-msgid "SSL certificate"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:331
-#: ../includes/class-wc-gateway-reepay-checkout.php:355
-msgid "Pay"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:483
-msgid "Failed to load token."
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:490
-msgid "Access denied."
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:576
-msgid "There was a problem adding the card."
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:593
-#: ../includes/class-wc-gateway-reepay-checkout.php:693
-#: ../includes/class-wc-gateway-reepay-checkout.php:1173
-msgid "Payment authorized."
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:598
-#: ../includes/class-wc-gateway-reepay-checkout.php:701
-#: ../includes/class-wc-gateway-reepay-checkout.php:1178
-msgid "Transaction settled."
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:603
-msgid "Payment failed"
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:846
-msgid "Transaction captured."
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:882
-#: ../includes/class-wc-gateway-reepay-checkout.php:884
-msgid "Transaction cancelled."
-msgstr ""
-
-#: ../includes/class-wc-gateway-reepay-checkout.php:924
+#: ../includes/Actions/Subscriptions.php:380
 #, php-format
-msgid "Refunded: %s. Credit Note Id #%s. Reason: %s"
+msgid "Error: \"%1$s\". %2$s."
 msgstr ""
 
-#: ../includes/class-wc-gateway-reepay-checkout.php:1186
+#: ../includes/Actions/Subscriptions.php:420
 #, php-format
-msgid "Failed to charge \"%s\". %s."
+msgid "Via %1$s card ending in %2$s/%3$s"
 msgstr ""
 
-#: ../includes/class-wc-gateway-reepay-checkout.php:1210
-#, php-format
-msgid "Via %s card ending in %s/%s"
+#: ../includes/Admin/Ajax.php:73 ../includes/Admin/Ajax.php:96
+#: ../includes/Admin/Ajax.php:132
+msgid "Order id not specified"
 msgstr ""
 
-#: ../includes/class-wc-payment-token-reepay.php:154
-#, php-format
-msgid "%1$s ending in %2$s"
+#: ../includes/Admin/Ajax.php:82
+msgid "Capture success."
 msgstr ""
 
-#: ../templates/admin/admin-options.php:15
-#, php-format
-msgid ""
-"Please setup WebHook in <a href=\"%s\" target=\"_blank\">Reepay Dashboard</"
-"a>."
+#: ../includes/Admin/Ajax.php:104
+msgid "Order already cancelled."
 msgstr ""
 
-#: ../templates/admin/admin-options.php:22
-#, php-format
-msgid "WebHook URL: <a href=\"%s\" target=\"_blank\">%s</a>"
+#: ../includes/Admin/Ajax.php:119
+msgid "Cancel success."
 msgstr ""
 
-#: ../templates/admin/payment-actions.php:16
-msgid "Capture Payment"
+#: ../includes/Admin/Ajax.php:144
+msgid "Payment method not found at the order"
 msgstr ""
 
-#: ../templates/admin/payment-actions.php:24
-msgid "Cancel Payment"
+#: ../includes/Admin/Ajax.php:149
+msgid "Refund success."
 msgstr ""
 
-#: ../templates/checkout/payment-fields.php:21
-#, php-format
-msgid "Pay with %s on Reepay"
+#: ../includes/Admin/Ajax.php:171
+msgid "Capture partly success."
 msgstr ""
 
-#: ../reepay-checkout-gateway.php:68
+#: ../includes/Admin/Ajax.php:206
+msgid "Refund partly success."
+msgstr ""
+
+#: ../includes/Admin/Ajax.php:219
+msgid "Order id or settle order not specified"
+msgstr ""
+
+#: ../includes/Admin/Main.php:75
+msgid "Please wait..."
+msgstr ""
+
+#: ../includes/Admin/MetaBoxes/Order.php:63
+msgid "Debug: Order meta fields"
+msgstr ""
+
+#: ../includes/Admin/MetaBoxes/Order.php:96
+msgid "Customer"
+msgstr ""
+
+#: ../includes/Admin/MetaBoxes/Order.php:110
+msgid "Invoice"
+msgstr ""
+
+#: ../includes/Admin/MetaBoxes/Order.php:125
+msgid "Subscription"
+msgstr ""
+
+#: ../includes/Admin/PluginsPage.php:36
 msgid "Settings"
 msgstr ""
 
-#: ../reepay-checkout-gateway.php:184
-#: ../reepay-checkout-gateway.php:199
+#: ../includes/Api.php:248
+#, php-format
+msgid ""
+"Billwerk+ Pay: API key not specified. Specify it in <a href=\"%s\" "
+"target=\"_blank\">gateway settings</a>"
+msgstr ""
+
+#: ../includes/Api.php:294 ../includes/Api.php:340
+msgid "Unknown error."
+msgstr ""
+
+#: ../includes/Api.php:297
+#, php-format
+msgid "Invalid HTTP Code: %s"
+msgstr ""
+
+#: ../includes/Api.php:307
+msgid "Billwerk+ Pay: Request rate limit exceeded"
+msgstr ""
+
+#: ../includes/Api.php:322
+#, php-format
+msgid "API Error: %1$s - %2$s."
+msgstr ""
+
+#: ../includes/Api.php:329
+#, php-format
+msgid "API Error (request): %1$s. Error Code: %2$s"
+msgstr ""
+
+#: ../includes/Api.php:335
+#, php-format
+msgid "API Error (request): %1$s. HTTP Code: %2$s"
+msgstr ""
+
+#: ../includes/Api.php:680
+#, php-format
+msgid "Failed to charge \"%1$s\". Error: %2$s. Token ID: %3$s"
+msgstr ""
+
+#: ../includes/Api.php:780
+#, php-format
+msgid "Failed to settle %1$s. Error: %2$s."
+msgstr ""
+
+#: ../includes/Api.php:820 ../includes/Api.php:990
+#, php-format
+msgid "Payment has been settled. Amount: %1$s. Transaction: %2$s"
+msgstr ""
+
+#: ../includes/Api.php:851
+#, php-format
+msgid "Failed to cancel the payment. Error: %s."
+msgstr ""
+
+#: ../includes/Api.php:867 ../includes/Api.php:1004 ../includes/Api.php:1009
+msgid "Payment has been cancelled."
+msgstr ""
+
+#: ../includes/Api.php:903
+#, php-format
+msgid "Failed to refund \"%1$s\". Error: %2$s."
+msgstr ""
+
+#: ../includes/Api.php:927
+#, php-format
+msgid "Refunded: %1$s. Credit Note Id #%2$s. Reason: %3$s"
+msgstr ""
+
+#: ../includes/Api.php:959
+#, php-format
+msgid "Transaction is pending. Amount: %1$s. Transaction: %2$s"
+msgstr ""
+
+#: ../includes/Api.php:972 ../includes/OrderFlow/Webhook.php:159
+#, php-format
+msgid "Payment has been authorized. Amount: %1$s. Transaction: %2$s"
+msgstr ""
+
+#: ../includes/Gateways/Anyday.php:42
+msgid "Billwerk+ Pay - Anyday"
+msgstr ""
+
+#: ../includes/Gateways/ApplePay.php:46
+msgid "Billwerk+ Pay - Apple Pay"
+msgstr ""
+
+#: ../includes/Gateways/Googlepay.php:44
+msgid "Billwerk+ Pay - Google Pay"
+msgstr ""
+
+#: ../includes/Gateways/KlarnaDBT.php:42
+msgid "Billwerk+ Pay - Klarna Direct Bank Transfer"
+msgstr ""
+
+#: ../includes/Gateways/KlarnaDD.php:42
+msgid "Billwerk+ Pay - Klarna Direct Debit"
+msgstr ""
+
+#: ../includes/Gateways/KlarnaPayLater.php:42
+msgid "Billwerk+ Pay - Klarna Pay Later"
+msgstr ""
+
+#: ../includes/Gateways/KlarnaPayNow.php:42
+msgid "Billwerk+ Pay - Klarna Pay Now"
+msgstr ""
+
+#: ../includes/Gateways/KlarnaSliceIt.php:42
+msgid "Billwerk+ Pay - Klarna Slice It"
+msgstr ""
+
+#: ../includes/Gateways/Mobilepay.php:42
+msgid "Billwerk+ Pay - Mobilepay"
+msgstr ""
+
+#: ../includes/Gateways/MobilepaySubscriptions.php:44
+msgid "Billwerk+ Pay - Mobilepay Subscriptions"
+msgstr ""
+
+#: ../includes/Gateways/OfflineCash.php:42
+msgid "Billwerk+ Pay - Cash"
+msgstr ""
+
+#: ../includes/Gateways/OfflineTransfer.php:42
+msgid "Billwerk+ Pay - Bank Transfer"
+msgstr ""
+
+#: ../includes/Gateways/Other.php:42
+msgid "Billwerk+ Pay - Other"
+msgstr ""
+
+#: ../includes/Gateways/PESantander.php:44
+msgid "Billwerk+ Pay - Santander"
+msgstr ""
+
+#: ../includes/Gateways/PPBancontact.php:42
+msgid "Billwerk+ Pay - Bancontact"
+msgstr ""
+
+#: ../includes/Gateways/PPBlik.php:42
+msgid "Billwerk+ Pay - BLIK"
+msgstr ""
+
+#: ../includes/Gateways/PPEps.php:42
+msgid "Billwerk+ Pay - EPS"
+msgstr ""
+
+#: ../includes/Gateways/PPEstonianBanks.php:42
+msgid "Billwerk+ Pay - Estonian Banks"
+msgstr ""
+
+#: ../includes/Gateways/PPGiroPay.php:42
+msgid "Billwerk+ Pay - GiroPay"
+msgstr ""
+
+#: ../includes/Gateways/PPIdeal.php:44
+msgid "Billwerk+ Pay - iDEAL"
+msgstr ""
+
+#: ../includes/Gateways/PPLatvianBanks.php:42
+msgid "Billwerk+ Pay - Latvian Banks"
+msgstr ""
+
+#: ../includes/Gateways/PPLithuanianBanks.php:42
+msgid "Billwerk+ Pay - Lithuanian Banks"
+msgstr ""
+
+#: ../includes/Gateways/PPMBWay.php:42
+msgid "Billwerk+ Pay - MB Way"
+msgstr ""
+
+#: ../includes/Gateways/PPMultibanco.php:42
+msgid "Billwerk+ Pay - Multibanco"
+msgstr ""
+
+#: ../includes/Gateways/PPMybank.php:42
+msgid "Billwerk+ Pay - MBank"
+msgstr ""
+
+#: ../includes/Gateways/PPPaySafeCard.php:42
+msgid "Billwerk+ Pay - Paysafecard"
+msgstr ""
+
+#: ../includes/Gateways/PPPaycoinq.php:42
+msgid "Billwerk+ Pay - Paycoinq"
+msgstr ""
+
+#: ../includes/Gateways/PPPaysera.php:42
+msgid "Billwerk+ Pay - Paysera"
+msgstr ""
+
+#: ../includes/Gateways/PPPostFinance.php:42
+msgid "Billwerk+ Pay - PostFinance"
+msgstr ""
+
+#: ../includes/Gateways/PPPr24.php:42
+msgid "Billwerk+ Pay - Przelewy24"
+msgstr ""
+
+#: ../includes/Gateways/PPSatisPay.php:42
+msgid "Billwerk+ Pay - Satisfy"
+msgstr ""
+
+#: ../includes/Gateways/PPSepa.php:44
+msgid "Billwerk+ Pay - SEPA Direct Debit"
+msgstr ""
+
+#: ../includes/Gateways/PPTrustly.php:42
+msgid "Billwerk+ Pay - Trustly"
+msgstr ""
+
+#: ../includes/Gateways/PPVerkkoPankki.php:42
+msgid "Billwerk+ Pay - Finland Banks"
+msgstr ""
+
+#: ../includes/Gateways/PPWeChatPay.php:42
+msgid "Billwerk+ Pay - WeChat Pay"
+msgstr ""
+
+#: ../includes/Gateways/Paypal.php:42
+msgid "Billwerk+ Pay - PayPal"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:104
+msgid "Enable/Disable"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:106
+msgid "Enable plugin"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:113
+msgid "Title"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:115
+msgid "This controls the title which the user sees during checkout"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:119
+msgid "Description"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:121
+msgid "This controls the description which the user sees during checkout"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:128
+msgid "Live Private Key"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:130
+msgid "Insert your private key from your live account"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:140
+#: ../includes/Gateways/ReepayCheckout.php:180
+msgid "Account"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:149
+#: ../includes/Gateways/ReepayCheckout.php:189
+#: ../templates/meta-boxes/invoice.php:39
+msgid "State"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:168
+msgid "Test Private Key"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:170
+msgid "Insert your private key from your test account"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:209
+msgid "Test Mode"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:211
+msgid "Enable Test Mode"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:218
+#: ../includes/Gateways/ReepayCheckout.php:220
+msgid "Email address for notification about failed webhooks"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:225
+msgid "Email address is invalid."
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:233
+msgid "Payment Window Display"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:234
+msgid ""
+"Choose between a redirect window or a overlay window. Note that some payment "
+"methods like Apple Pay do not work for overlay window."
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:243
+#: ../includes/Gateways/ReepayCheckout.php:244
+msgid "Payment Methods"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:277
+msgid "Instant Settle"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:278
+msgid "Instant Settle will charge your customers right away"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:282
+msgid "Instant Settle online / virtualproducts"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:283
+msgid "Instant Settle physical  products"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:284
+msgid "Instant Settle recurring (subscription) products"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:285
+msgid "Instant Settle fees"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:291
+msgid "Language In Payment Window"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:294
+msgid "Detect Automatically"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:295
+msgid "English"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:296
+msgid "Danish"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:297
+msgid "Swedish"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:298
+msgid "Norwegian"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:299
+msgid "German"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:300
+msgid "Spanish"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:301
+msgid "French"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:302
+msgid "Italian"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:303
+msgid "Netherlands"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:308
+msgid "Auto-settle"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:309
+msgid "Disable settle orders on status changing to completed"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:311
+msgid "Disable auto-settle"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:315
+msgid "Allow Credit Card saving"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:317
+msgid "Enable Save CC feature"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:324
+msgid "Debug"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:326
+msgid "Enable logging"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:330
+msgid "Show meta fields in orders"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:332
+#: ../includes/Gateways/ReepayCheckout.php:338
+msgid "Enable display"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:336
+msgid "Show meta fields in users"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:345
+msgid "Payment Logos"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:347
+msgid ""
+"Choose the logos you would like to show in WooCommerce checkout. Make sure "
+"that they are enabled in Billwerk+ Pay Dashboard"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:353
+msgid "Dankort"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:354
+msgid "Visa"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:355
+msgid "MasterCard"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:356
+msgid "Visa Electron"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:357
+msgid "Maestro"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:358
+msgid "Paypal"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:359
+msgid "MobilePay Online"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:360
+msgid "ApplePay"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:361
+msgid "Klarna"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:362
+msgid "Viabill"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:363
+msgid "Resurs Bank"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:364
+msgid "Forbrugsforeningen"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:365
+msgid "AMEX"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:366
+msgid "JCB"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:367
+msgid "Diners Club"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:368
+msgid "Unionpay"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:369
+msgid "Discover"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:370
+msgid "Google pay"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:371
+msgid "Vipps"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:377
+msgid "Logo Height"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:379
+msgid "Set the Logo height in pixels"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:386
+#: ../includes/Gateways/ReepayCheckout.php:388
+msgid "Order handle failover"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:389
+msgid ""
+"In case if invoice with current handle was settled before, plugin will "
+"generate unique handle"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:393
+msgid "Skip order lines"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:394
+msgid "Select if order lines should not be send to Billwerk+ Pay"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:403
+#: ../includes/Gateways/ReepayCheckout.php:404
+msgid "The automatic order auto-cancel"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:413
+msgid "Payment button text"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:415
+msgid ""
+"Text on button which will be displayed on payment page if subscription "
+"products is being purchased"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:518
+msgid "Save and verify"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:560
+msgid "Webhook"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:702
+#, php-format
+msgid "Payment method changed to \"%s\""
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:731
+#, php-format
+msgid "Payment has been authorized. Amount: %s."
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:745
+#, php-format
+msgid "Payment has been settled. Amount: %s."
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:776
+msgid "Payment was canceled, please try again"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:777
+msgid "Error with payment, please try again"
+msgstr ""
+
+#: ../includes/Gateways/ReepayCheckout.php:785
+#, php-format
+msgid ""
+"The Api key identifies the Billwerk account. Only subscription plan handles "
+"that exist under the account of the API key can be used to submit "
+"subscription orders. <a href=\"%s\" target=\"_blank\">Read more about this "
+"here.</a>"
+msgstr ""
+
+#: ../includes/Gateways/ReepayGateway.php:241
+#: ../includes/Gateways/ReepayGateway.php:264
+#: ../includes/Gateways/ReepayGateway.php:281
+msgid "Add card"
+msgstr ""
+
+#: ../includes/Gateways/ReepayGateway.php:333
+msgid "There was a problem adding the card."
+msgstr ""
+
+#: ../includes/Gateways/ReepayGateway.php:340
+msgid "Payment method successfully added."
+msgstr ""
+
+#: ../includes/Gateways/ReepayGateway.php:514
+msgid "Billwerk+ Pay: WebHook has been successfully created/updated"
+msgstr ""
+
+#: ../includes/Gateways/ReepayGateway.php:523
+msgid "Unable to retrieve the webhook settings. Wrong api credentials?"
+msgstr ""
+
+#: ../includes/Gateways/Resurs.php:42
+msgid "Billwerk+ Pay - Resurs Bank"
+msgstr ""
+
+#: ../includes/Gateways/Swish.php:42
+msgid "Billwerk+ Pay - Swish"
+msgstr ""
+
+#: ../includes/Gateways/Viabill.php:42
+msgid "Billwerk+ Pay - ViaBill"
+msgstr ""
+
+#: ../includes/Gateways/Vipps.php:44
+msgid "Billwerk+ Pay - Vipps"
+msgstr ""
+
+#: ../includes/Gateways/VippsRecurring.php:46
+msgid "Billwerk+ Pay - Vipps Recurring"
+msgstr ""
+
+#: ../includes/Integrations/PWGiftCardsIntegration.php:63
+#, php-format
+msgid "PW gift card (%s)"
+msgstr ""
+
+#: ../includes/OrderFlow/OrderCapture.php:110
+#: ../includes/OrderFlow/OrderCapture.php:133
+msgid "Capture"
+msgstr ""
+
+#: ../includes/OrderFlow/OrderCapture.php:304
+#: ../includes/OrderFlow/OrderCapture.php:374
+msgid "Failed to settle item"
+msgstr ""
+
+#: ../includes/OrderFlow/OrderStatuses.php:109
+msgid "Sync statuses"
+msgstr ""
+
+#: ../includes/OrderFlow/OrderStatuses.php:111
+msgid "Enable sync"
+msgstr ""
+
+#: ../includes/OrderFlow/OrderStatuses.php:112
+msgid ""
+"2-way synchronization of order statuses in Woocommerce with invoice statuses "
+"in Billwerk+ Pay"
+msgstr ""
+
+#: ../includes/OrderFlow/OrderStatuses.php:127
+msgid "Status: Billwerk+ Pay Created"
+msgstr ""
+
+#: ../includes/OrderFlow/OrderStatuses.php:142
+msgid "Status: Billwerk+ Pay Authorized"
+msgstr ""
+
+#: ../includes/OrderFlow/OrderStatuses.php:157
+msgid "Status: Billwerk+ Pay Settled"
+msgstr ""
+
+#: ../includes/OrderFlow/OrderStatuses.php:412
+#: ../includes/OrderFlow/OrderStatuses.php:447
 #, php-format
 msgid "Order status rollback. %s"
 msgstr ""
 
-#: ../reepay-checkout-gateway.php:219
-msgid "Reepay Payments Actions"
+#: ../includes/OrderFlow/OrderStatuses.php:437
+#, php-format
+msgid ""
+"Error with order <a href=\"%1$s\">#%2$u</a>. View order notes for more info"
 msgstr ""
 
-#: ../reepay-checkout-gateway.php:271
-msgid "Please wait..."
+#: ../includes/OrderFlow/ThankyouPage.php:111
+msgid "Please wait. We're checking the payment status."
 msgstr ""
 
-#: ../reepay-checkout-gateway.php:299
-#: ../reepay-checkout-gateway.php:325
-msgid "Capture success."
+#: ../includes/OrderFlow/Webhook.php:310
+msgid "Cancelled by WebHook."
+msgstr ""
+
+#: ../includes/OrderFlow/Webhook.php:361
+#, php-format
+msgid "Credit Note Id #%s."
+msgstr ""
+
+#: ../includes/OrderFlow/Webhook.php:381
+#, php-format
+msgid "Refunded: %1$s. Reason: %2$s"
+msgstr ""
+
+#: ../includes/Plugin/WoocommerceExists.php:56
+msgid ""
+"WooCommerce plugin is inactive or missing. Please install and active it."
+msgstr ""
+
+#: ../includes/Plugin/WoocommerceExists.php:60
+msgid "WooCommerce Billwerk+ Pay Gateway isn't active now."
+msgstr ""
+
+#: ../includes/Tokens/ReepayTokens.php:102
+#: ../includes/Tokens/ReepayTokens.php:163
+msgid "Card not found"
+msgstr ""
+
+#: ../includes/Tokens/TokenReepay.php:220
+msgid "Token not found"
+msgstr ""
+
+#: ../includes/Tokens/TokenReepay.php:232
+#, php-format
+msgid "%1$s ending in %2$s"
+msgstr ""
+
+#: ../includes/Tokens/TokenReepayMS.php:44
+#, php-format
+msgid "Billwerk+ Pay - Mobilepay Subscriptions [%s]"
+msgstr ""
+
+#: ../templates/admin/admin-options.php:19
+#, php-format
+msgid ""
+"You just enabled test mode, meaning your test API key will now be used. "
+"Please note that all subscription products previously linked to plans on "
+"your live account are no longer linked. If you try to purchase a "
+"subscription product now, an error will occur. Disabling test mode will "
+"restore all connections. <a href=\"%s\" target=\"_blank\">Read more about "
+"this here.</a>"
+msgstr ""
+
+#: ../templates/admin/admin-options.php:21
+#, php-format
+msgid ""
+"You just disabled test mode, meaning your live API key will now be used. "
+"Please note that all subscription products previously linked to plans on "
+"your live account are now restored. If you haven't linked your subscription "
+"products with your test account, they will remain unlinked. <a href=\"%s\" "
+"target=\"_blank\">Read more about this here.</a>"
+msgstr ""
+
+#: ../templates/admin/admin-options.php:35
+#, php-format
+msgid ""
+"Please setup WebHook in <a href=\"%s\" target=\"_blank\">Billwerk+ Pay "
+"Dashboard</a>."
+msgstr ""
+
+#: ../templates/admin/admin-options.php:43
+#, php-format
+msgid "WebHook URL: <a href=\"%1$s\" target=\"_blank\">%2$s</a>"
+msgstr ""
+
+#: ../templates/admin/payment-actions.php:22
+msgid "Capture Payment"
+msgstr ""
+
+#: ../templates/admin/payment-actions.php:30
+msgid "Cancel Payment"
+msgstr ""
+
+#: ../templates/meta-boxes/customer.php:14 ../templates/meta-boxes/plan.php:14
+msgid "Handle"
+msgstr ""
+
+#: ../templates/meta-boxes/customer.php:20
+msgid "Email"
+msgstr ""
+
+#: ../templates/meta-boxes/customer.php:27
+msgid "See customer"
+msgstr ""
+
+#: ../templates/meta-boxes/invoice.php:32
+msgid "Invoice handle"
+msgstr ""
+
+#: ../templates/meta-boxes/invoice.php:118
+msgid "See invoice"
+msgstr ""
+
+#: ../templates/meta-boxes/plan.php:20
+msgid "Plan"
+msgstr ""
+
+#: ../templates/meta-boxes/plan.php:27
+msgid "See subscription"
 msgstr ""
