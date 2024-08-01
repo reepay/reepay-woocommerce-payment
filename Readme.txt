@@ -18,6 +18,9 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.7.1 -
+* [Fix] - WP warning message The use statement with non-compound name WC_Reepay_Renewals has no effect.
+
 v 1.7.7 -
 * [Fix] - Missing payment_method_reference data in the Billwerk+ customer_payment_method_added webhook could cause PHP fatal error.
 * [Fix] - WooCommerce Subscriptions had issues with change of payment method where orders got payment authorized but were not automatically captured and set to complete.
