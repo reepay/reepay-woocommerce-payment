@@ -6,7 +6,7 @@
  */
 
 use Reepay\Checkout\Utils\TimeKeeper;
-use WC_Reepay_Renewals;
+use WC_Reepay_Renewals as WCRR;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -214,7 +214,7 @@ if ( ! function_exists( 'rp_get_order_by_customer' ) ) {
 				if ( ! empty( $orders ) ) {
 					$order_id = reset( $orders )->get_id();
 					$order    = wc_get_order( $order_id );
-					if ( class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) || order_contains_subscription( $order ) ) {
+					if ( class_exists( WCRR::class ) && WCRR::is_order_contain_subscription( $order ) || order_contains_subscription( $order ) ) {
 						$subscription_order = $order;
 					}
 				}
