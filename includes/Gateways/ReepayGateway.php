@@ -1058,7 +1058,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		// If here's Subscription or zero payment.
 		if ( ( $have_sub ) && ( abs( $order->get_total() ) < 0.01 || empty( $only_items_lines ) ) ) {
-
 			$result = reepay()->api( $this )->recurring( $this->payment_methods, $order, $data, false, $params['button_text'] );
 
 			if ( is_wp_error( $result ) ) {
@@ -1429,7 +1428,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$price = OrderCapture::get_item_price( $order_item, $order );
 
 			$tax_percent = $price['tax_percent'];
-			$unit_price  = round( ( $prices_incl_tax ? $price['with_tax_and_discount'] : $price['original_with_discount'] ) / $order_item->get_quantity(), 2 );
+			$unit_price  = round( ( $prices_incl_tax ? $price['with_tax_and_discount'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
 
 			if ( $only_not_settled && ! empty( $order_item->get_meta( 'settled' ) ) ) {
 				continue;
@@ -1500,10 +1499,12 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$tax               = $discount_with_tax - $discount;
 			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
 
+			$discount_amount = round( - 1 * rp_prepare_amount( $prices_incl_tax ? $discount_with_tax : $discount, $order->get_currency() ) ) + ( $sub_amount_discount * 100 );
+
 			$items[] = array(
 				'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
 				'quantity'        => 1,
-				'amount'          => round( - 1 * rp_prepare_amount( $prices_incl_tax ? $discount_with_tax : $discount, $order->get_currency() ) ) + ( $sub_amount_discount * 100 ),
+				'amount'          => round( $discount_amount, 2 ),
 				'vat'             => round( $tax_percent / 100, 2 ),
 				'amount_incl_vat' => $prices_incl_tax,
 			);
