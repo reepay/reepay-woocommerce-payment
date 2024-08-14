@@ -475,7 +475,6 @@ class OrderCapture {
 			$discount = 0;
 		}
 
-		$price['subtotal'] = floatval( $order->get_line_subtotal( $order_item, false, false ) );
 		$price['original'] = floatval( $order->get_line_total( $order_item, false, false ) );
 		$price['with_tax'] = floatval( $order->get_line_total( $order_item, true, false ) );
 		if ( WPCProductBundlesWooCommerceIntegration::is_active_plugin() ) {

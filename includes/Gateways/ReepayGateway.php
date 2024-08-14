@@ -1428,7 +1428,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$price = OrderCapture::get_item_price( $order_item, $order );
 
 			$tax_percent = $price['tax_percent'];
-			$unit_price  = round( ( $prices_incl_tax ? $price['with_tax_and_discount'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
+			$unit_price  = round( ( $prices_incl_tax ? $price['with_tax_and_discount'] : $price['original_with_discount'] ) / $order_item->get_quantity(), 2 );
 
 			if ( $only_not_settled && ! empty( $order_item->get_meta( 'settled' ) ) ) {
 				continue;
