@@ -696,6 +696,7 @@ class Api {
 	 * @param false|array    $items_data   order items info. @see OrderCapture::get_item_data.
 	 * @param WC_Order_Item  $line_item    order line item.
 	 * @param bool           $instant_note add order note instantly.
+	 * @param bool           $check_rp_prepare_amount add flags to calculate function rp_prepare_amount again.
 	 *
 	 * @return array|WP_Error
 	 *
@@ -722,9 +723,9 @@ class Api {
 		}
 
 		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
-			if($check_rp_prepare_amount === false){
+			if ( false === $check_rp_prepare_amount ) {
 				$request_data['amount'] = rp_prepare_amount( $amount, $order->get_currency() );
-			}else{
+			} else {
 				$request_data['amount'] = $amount;
 			}
 		} else {
