@@ -701,7 +701,7 @@ class Api {
 	 *
 	 * @ToDO refactor function. $amount is useless.
 	 */
-	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false, bool $instant_note = true ) {
+	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false, bool $instant_note = true, $check_rp_prepare_amount = false ) {
 		$this->log( sprintf( 'Settle: %s, %s', $order->get_id(), $amount ) );
 
 		$handle = rp_get_order_handle( $order );
@@ -722,7 +722,11 @@ class Api {
 		}
 
 		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
-			$request_data['amount'] = rp_prepare_amount( $amount, $order->get_currency() );
+			if($check_rp_prepare_amount === false){
+				$request_data['amount'] = rp_prepare_amount( $amount, $order->get_currency() );
+			}else{
+				$request_data['amount'] = $amount;
+			}
 		} else {
 			$request_data['order_lines'] = $items_data;
 		}

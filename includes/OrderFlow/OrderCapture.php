@@ -10,6 +10,7 @@ namespace Reepay\Checkout\OrderFlow;
 use Exception;
 use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
 use Reepay\Checkout\Integrations\WPCProductBundlesWooCommerceIntegration;
+use Reepay\Checkout\Utils\LoggingTrait;
 use WC_Order;
 use WC_Order_Factory;
 use WC_Order_Item;
@@ -27,6 +28,10 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\OrderFlow
  */
 class OrderCapture {
+	use LoggingTrait;
+
+	private string $logging_source = 'billwerk_plus_debug_auto_settle_order_capture';
+
 	/**
 	 * Constructor
 	 */
@@ -147,14 +152,47 @@ class OrderCapture {
 	 * @see WC_Order::status_transition
 	 */
 	public function capture_full_order( int $order_id, string $this_status_transition_from, string $this_status_transition_to, WC_Order $order ) {
+
+		$this->log([
+			__METHOD__,
+			__LINE__,
+			'order' => $order_id,
+			'Data' => [
+				'$this_status_transition_from' => $this_status_transition_from,
+				'$this_status_transition_to' => $this_status_transition_to,
+			]
+		]);
+
 		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
 			return;
 		}
 
 		$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
 
+		$this->log([
+			__METHOD__,
+			__LINE__,
+			'order' => $order_id,
+			'Data' => [
+				'transient_value' => $value,
+			]
+		]);
+
 		if ( 'completed' === $this_status_transition_to && 'no' === reepay()->get_setting( 'disable_auto_settle' ) && ( '1' === $value || false === $value ) ) {
+			$this->log([
+				__METHOD__,
+				__LINE__,
+				'order' => $order_id,
+				'msg' => 'settle order.'
+			]);
 			$this->multi_settle( $order );
+		}else{
+			$this->log([
+				__METHOD__,
+				__LINE__,
+				'order' => $order_id,
+				'msg' => 'can\'t settle order.'
+			]);
 		}
 	}
 
@@ -212,7 +250,23 @@ class OrderCapture {
 		$line_items = array();
 		$total_all  = 0;
 
+		$this->log([
+			__METHOD__,
+			__LINE__,
+			'order' => $order->get_id(),
+		]);
+
 		$invoice_data = reepay()->api( $order )->get_invoice_by_handle( 'order-' . $order->get_id() );
+
+		$this->log([
+			__METHOD__,
+			__LINE__,
+			'order' => $order->get_id(),
+			'data' => [
+				'$invoice_data' => $invoice_data,
+			],
+		]);
+
 		if ( is_array( $invoice_data ) && array_key_exists( 'order_lines', $invoice_data ) ) {
 			foreach ( $invoice_data['order_lines'] as $invoice_line ) {
 				$is_exist = false;
@@ -240,21 +294,87 @@ class OrderCapture {
 			}
 		}
 
+		$this->log([
+			__METHOD__,
+			__LINE__,
+			'order' => $order->get_id(),
+			'data' => [
+				'$items_data' => $items_data,
+				'$line_items' => $line_items,
+				'$total_all' => $total_all,
+			],
+		]);
+
 		foreach ( $order->get_items() as $item ) {
+			$this->log([
+				__METHOD__,
+				__LINE__,
+				'order' => $order->get_id(),
+				'item' => $item->get_id(),
+				'data' => [
+					'meta_settled' => $item->get_meta( 'settled' ),
+				],
+			]);
+
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
 				$price     = self::get_item_price( $item, $order );
 				$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
+				$this->log([
+					__METHOD__,
+					__LINE__,
+					'order' => $order->get_id(),
+					'item' => $item->get_id(),
+					'data' => [
+						'$item_data' => $item_data,
+						'$price' => $price,
+						'$total' => $total,
+					],
+				]);
+
 				if ( $total <= 0 && method_exists( $item, 'get_product' ) && $item->get_product() && wcs_is_subscription_product( $item->get_product() ) ) {
+					$this->log([
+						__METHOD__,
+						__LINE__,
+						'order' => $order->get_id(),
+						'item' => $item->get_id(),
+						'msg' => 'Condition 1',
+					]);
 					WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 				} elseif ( $total > 0 && $this->check_capture_allowed( $order ) ) {
+					$this->log([
+						__METHOD__,
+						__LINE__,
+						'order' => $order->get_id(),
+						'item' => $item->get_id(),
+						'msg' => 'Condition 2',
+					]);
 					$items_data[] = $item_data;
 					$line_items[] = $item;
 					$total_all   += $total;
+				}else{
+					$this->log([
+						__METHOD__,
+						__LINE__,
+						'order' => $order->get_id(),
+						'item' => $item->get_id(),
+						'msg' => 'else Condition',
+					]);
 				}
 			}
 		}
+
+		$this->log([
+			__METHOD__,
+			__LINE__,
+			'order' => $order->get_id(),
+			'data' => [
+				'$items_data' => $items_data,
+				'$line_items' => $line_items,
+				'$total_all' => $total_all,
+			],
+		]);
 
 		foreach ( $order->get_items( array( 'shipping', 'fee', PWGiftCardsIntegration::KEY_PW_GIFT_ITEMS ) ) as $item ) {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
@@ -270,8 +390,26 @@ class OrderCapture {
 			}
 		}
 
+		$this->log([
+			__METHOD__,
+			__LINE__,
+			'order' => $order->get_id(),
+			'data' => [
+				'$items_data' => $items_data,
+				'$line_items' => $line_items,
+				'$total_all' => $total_all,
+			],
+		]);
+
 		if ( ! empty( $items_data ) ) {
-			return $this->settle_items( $order, $items_data, $total_all, $line_items );
+			return $this->settle_items( $order, $items_data, $total_all, $line_items, true, true );
+		}else{
+			$this->log([
+				__METHOD__,
+				__LINE__,
+				'order' => $order->get_id(),
+				'msg' => 'empty item data',
+			]);
 		}
 
 		return false;
@@ -288,10 +426,31 @@ class OrderCapture {
 	 *
 	 * @return bool
 	 */
-	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = true ): bool {
+	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = true, bool $check_rp_prepare_amount = false ): bool {
 		unset( $_POST['post_status'] ); // // Prevent order status changing by WooCommerce
 
-		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note );
+		$this->log([
+			__METHOD__,
+			__LINE__,
+			'order' => $order->get_id(),
+			'data' => [
+				'$items_data' => $items_data,
+				'$line_items' => $line_items,
+				'$total_all' => $total_all,
+				'$instant_note' => $instant_note,
+			],
+		]);
+
+		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note, $check_rp_prepare_amount );
+
+		$this->log([
+			__METHOD__,
+			__LINE__,
+			'order' => $order->get_id(),
+			'data' => [
+				'$result' => $result,
+			],
+		]);
 
 		if ( is_wp_error( $result ) ) {
 			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
