@@ -435,7 +435,7 @@ class OrderCapture {
 		);
 
 		if ( ! empty( $items_data ) ) {
-			return $this->settle_items( $order, $items_data, $total_all, $line_items, true, true );
+			return $this->settle_items( $order, $items_data, $total_all, $line_items, true );
 		} else {
 			$this->log(
 				array(
@@ -458,11 +458,10 @@ class OrderCapture {
 	 * @param float           $total_all    order total amount ot settle.
 	 * @param WC_Order_Item[] $line_items   order line items.
 	 * @param bool            $instant_note add order note instantly.
-	 * @param bool            $check_rp_prepare_amount add flags to calculate function rp_prepare_amount again.
 	 *
 	 * @return bool
 	 */
-	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = true, bool $check_rp_prepare_amount = false ): bool {
+	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = true ): bool {
 		unset( $_POST['post_status'] ); // // Prevent order status changing by WooCommerce
 
 		$this->log(
@@ -479,7 +478,7 @@ class OrderCapture {
 			)
 		);
 
-		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note, $check_rp_prepare_amount );
+		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note );
 
 		$this->log(
 			array(

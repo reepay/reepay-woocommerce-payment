@@ -696,13 +696,12 @@ class Api {
 	 * @param false|array    $items_data   order items info. @see OrderCapture::get_item_data.
 	 * @param WC_Order_Item  $line_item    order line item.
 	 * @param bool           $instant_note add order note instantly.
-	 * @param bool           $check_rp_prepare_amount add flags to calculate function rp_prepare_amount again.
 	 *
 	 * @return array|WP_Error
 	 *
 	 * @ToDO refactor function. $amount is useless.
 	 */
-	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false, bool $instant_note = true, $check_rp_prepare_amount = false ) {
+	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false, bool $instant_note = true ) {
 		$this->log( sprintf( 'Settle: %s, %s', $order->get_id(), $amount ) );
 
 		$handle = rp_get_order_handle( $order );
@@ -723,11 +722,10 @@ class Api {
 		}
 
 		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
-			if ( false === $check_rp_prepare_amount ) {
-				$request_data['amount'] = rp_prepare_amount( $amount, $order->get_currency() );
-			} else {
-				$request_data['amount'] = $amount;
-			}
+			/*
+			$request_data['amount'] = rp_prepare_amount( $amount, $order->get_currency() );
+			*/
+			$request_data['amount'] = $amount;
 		} else {
 			$request_data['order_lines'] = $items_data;
 		}
