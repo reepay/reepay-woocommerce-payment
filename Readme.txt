@@ -4,7 +4,7 @@ Tags: billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.5.3
 Requires PHP: 7.4
-Stable tag: 1.7.7.1
+Stable tag: 1.7.7.3
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,6 +18,12 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.7.3 -
+* [Fix] - Instant Settle with Setting skip order lines make calculate amount double.
+
+v 1.7.7.2 -
+* [Fix] - Setting skip order lines make calculate amount double.
+
 v 1.7.7.1 -
 * [Fix] - WP warning message The use statement with non-compound name WC_Reepay_Renewals has no effect.
 
