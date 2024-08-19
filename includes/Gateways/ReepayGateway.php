@@ -828,7 +828,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			),
 			'order'      => array(
 				'handle'          => $order_handle,
-				'amount'          => 'yes' === $this->skip_order_lines ? rp_prepare_amount( $order->get_total(), $order->get_currency() ) : null,
+				// 'amount'          => 'yes' === $this->skip_order_lines ? rp_prepare_amount( $order->get_total(), $order->get_currency() ) : null,
+				'amount'          => 'yes' === $this->skip_order_lines ? $this->get_skip_order_lines_amount( $order ) : null,
 				'order_lines'     => 'no' === $this->skip_order_lines ? $this->get_order_items( $order ) : null,
 				'currency'        => $order->get_currency(),
 				'customer'        => array(
@@ -1006,7 +1007,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					return $this->process_session_charge( $params, $order );
 				} else {
 					$order_lines = 'no' === $this->skip_order_lines ? $this->get_order_items( $order ) : null;
-					$amount      = 'yes' === $this->skip_order_lines ? $order->get_total() : null;
+					// $amount      = 'yes' === $this->skip_order_lines ? $order->get_total() : null;
+					$amount      = 'yes' === $this->skip_order_lines ? $this->get_skip_order_lines_amount( $order ) : null;
 
 					// Charge payment.
 					$result = reepay()->api( $this )->charge( $order, $token->get_token(), $amount, $order_lines );
@@ -1500,8 +1502,32 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$tax               = $discount_with_tax - $discount;
 			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
 
-			$discount_amount = round( - 1 * rp_prepare_amount( $prices_incl_tax ? $discount_with_tax : $discount, $order->get_currency() ) ) + ( $sub_amount_discount * 100 );
+			// $discount_amount = round( - 1 * rp_prepare_amount( $prices_incl_tax ? $discount_with_tax : $discount, $order->get_currency() ) ) + ( $sub_amount_discount * 100 );
+
+			if($sub_amount_discount !== 0 && $discount !== 0){
+				/**
+				 * Discount for subscription
+				 */ 
+				if($prices_incl_tax || $tax_percent > 0){
+					$simple_discount_amount = $discount_with_tax - $sub_amount_discount;
+				}else{
+					$simple_discount_amount = $discount - $sub_amount_discount;
+				}
+			}else{
+				/**
+				 * Discount for simple product
+				 */ 
+				$simple_discount_amount = $discount;
+			}
+
+			if($prices_incl_tax || $tax_percent > 0){
+				$percentage_increase = round( 1 + ( $tax_percent / 100), 2);
+				$simple_discount_amount = $simple_discount_amount / $percentage_increase;
+			}
+
+			$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
 			
+			if($discount_amount < 0){
 			$items[] = array(
 				'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
 				'quantity'        => 1,
@@ -1509,6 +1535,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'vat'             => round( $tax_percent / 100, 2 ),
 				'amount_incl_vat' => $prices_incl_tax,
 			);
+		}
 		}
 
 		// Add "PW Gift Cards" support.
@@ -1536,6 +1563,20 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		return $items;
+	}
+
+	public function get_skip_order_lines_amount( WC_Order $order ){
+		$total_amount = 0;
+
+		$items = $this->get_order_items($order);
+
+		if($items){
+			foreach($items as $item){
+				$total_amount += $item['amount'];
+			}
+		}
+
+		return $total_amount;
 	}
 
 	/**
