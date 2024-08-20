@@ -642,7 +642,7 @@ class ReepayCheckout extends ReepayGateway {
 				add_action( 'woocommerce_update_options_checkout', array( $this, 'notice_message_live_key_changed' ) );
 			}
 		}
-		
+
 		reepay()->reset_settings();
 
 		parent::is_webhook_configured();

@@ -673,10 +673,10 @@ class OrderCapture {
 			$discount = 0;
 		}
 
-		$price['subtotal'] = floatval( $order->get_line_subtotal( $order_item, false, false ) );
+		$price['subtotal']          = floatval( $order->get_line_subtotal( $order_item, false, false ) );
 		$price['subtotal_with_tax'] = floatval( $order->get_line_subtotal( $order_item, true, false ) );
-		$price['original'] = floatval( $order->get_line_total( $order_item, false, false ) );
-		$price['with_tax'] = floatval( $order->get_line_total( $order_item, true, false ) );
+		$price['original']          = floatval( $order->get_line_total( $order_item, false, false ) );
+		$price['with_tax']          = floatval( $order->get_line_total( $order_item, true, false ) );
 		if ( WPCProductBundlesWooCommerceIntegration::is_active_plugin() ) {
 			$price_bundle = floatval( $order_item->get_meta( '_woosb_price' ) );
 			if ( ! empty( $price_bundle ) ) {
@@ -685,9 +685,9 @@ class OrderCapture {
 				$price['with_tax'] += $price_bundle;
 			}
 		}
-		$tax                  = $price['with_tax'] - $price['original'];
-		$price_tax_percent = ( $tax > 0 && $price['original'] > 0 ) ? round( 100 / ( $price['original'] / $tax ) ) : 0;
-		$price['tax_percent'] = round($price_tax_percent, 2);
+		$tax                             = $price['with_tax'] - $price['original'];
+		$price_tax_percent               = ( $tax > 0 && $price['original'] > 0 ) ? round( 100 / ( $price['original'] / $tax ) ) : 0;
+		$price['tax_percent']            = round( $price_tax_percent, 2 );
 		$price['original_with_discount'] = $price['original'] + $discount;
 		$price['with_tax_and_discount']  = $price['with_tax'] + $discount;
 
