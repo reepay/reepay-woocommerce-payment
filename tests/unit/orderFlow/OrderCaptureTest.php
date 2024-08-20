@@ -948,6 +948,8 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 				'tax_percent' => 0,
 				'original_with_discount' => $price * $qty,
 				'with_tax_and_discount' => $price * $qty,
+				'subtotal' => $price * $qty,
+				'subtotal_with_tax' => $price * $qty
 			),
 			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
@@ -979,6 +981,8 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 				'tax_percent' => 0,
 				'original_with_discount' => $sale_price * $qty,
 				'with_tax_and_discount' => $sale_price * $qty,
+				'subtotal' => $sale_price * $qty,
+				'subtotal_with_tax' => $sale_price * $qty
 			),
 			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
@@ -1015,6 +1019,8 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 				'tax_percent' => round($tax_rate),
 				'original_with_discount' => $sale_price * $qty,
 				'with_tax_and_discount' => round(( $sale_price * $qty ) * ( 1 + $tax_rate / 100 ), 2),
+				'subtotal' => $sale_price * $qty,
+				'subtotal_with_tax' => round(( $sale_price * $qty ) * ( 1 + $tax_rate / 100 ), 2)
 			),
 			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
@@ -1039,6 +1045,8 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 				'tax_percent' => 0,
 				'original_with_discount' => $price,
 				'with_tax_and_discount' => $price,
+				'subtotal' => 0,
+				'subtotal_with_tax' => 0
 			),
 			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
@@ -1063,6 +1071,8 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 				'tax_percent' => 0,
 				'original_with_discount' => $price,
 				'with_tax_and_discount' => $price,
+				'subtotal' => 0,
+				'subtotal_with_tax' => 0
 			),
 			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
