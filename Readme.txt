@@ -18,7 +18,7 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
-v 1.7.7.8 -
+v 1.7.8 -
 * [Fix] - Bug WP warning message "The use statement with non-compound name WC_Reepay_Renewals has no effect." (hotfix 1.7.7.1).
 * [Fix] - Bug double amount calculated when using setting "skip order lines" (hotfix 1.7.7.2).
 * [Fix] - Bug fix WC discount codes on mixed orders.
