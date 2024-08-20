@@ -1517,10 +1517,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 
 			if ( $prices_incl_tax || $tax_percent > 0 ) {
-				// $percentage_increase    = round( 1 + ( $tax_percent / 100 ), 2 );
-				// $simple_discount_amount = $simple_discount_amount / $percentage_increase;
 				$discount_amount = round( - 1 * rp_prepare_amount( $prices_incl_tax ? $discount_with_tax : $discount, $order->get_currency() ) );
-			}else{
+			} else {
 				$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
 			}
 
