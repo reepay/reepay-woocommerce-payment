@@ -4,11 +4,11 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: Billwerk+
  * Author URI: http://billwerk.plus
- * Version: 1.7.7.2
+ * Version: 1.7.8
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
- * WC tested up to: 7.5.0
+ * WC tested up to: 9.1.4
  *
  * @package Reepay\Checkout
  */
