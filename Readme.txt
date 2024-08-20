@@ -19,10 +19,10 @@ See installation guide right here: https://docu.billwerk.plus/help/en/apps/wooco
 
 == Changelog ==
 v 1.7.7.8 -
-- [Fix] - Bug WP warning message "The use statement with non-compound name WC_Reepay_Renewals has no effect." (hotfix 1.7.7.1).
-- [Fix] - Bug double amount calculated when using setting "skip order lines" (hotfix 1.7.7.2).
-- [Fix] - Bug fix WC discount codes on mixed orders.
-- [Improvement] - Extra checkbox in WC standard checkout for subscription conditions.
+* [Fix] - Bug WP warning message "The use statement with non-compound name WC_Reepay_Renewals has no effect." (hotfix 1.7.7.1).
+* [Fix] - Bug double amount calculated when using setting "skip order lines" (hotfix 1.7.7.2).
+* [Fix] - Bug fix WC discount codes on mixed orders.
+* [Improvement] - Extra checkbox in WC standard checkout for subscription conditions.
 
 v 1.7.7.2 -
 * [Fix] - Setting skip order lines make calculate amount double.
