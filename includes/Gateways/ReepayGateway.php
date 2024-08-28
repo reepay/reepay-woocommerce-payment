@@ -1397,10 +1397,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @param WC_Order $order            order to get items.
 	 * @param bool     $only_not_settled get only not settled items.
+	 * @param bool     $skip_order_line get item price without calculate quantity.
 	 *
 	 * @return array
 	 */
-	public function get_order_items( WC_Order $order, bool $only_not_settled = false ): array {
+	public function get_order_items( WC_Order $order, bool $only_not_settled = false, $skip_order_line = false ): array {
 		$prices_incl_tax = wc_prices_include_tax();
 
 		$items               = array();
@@ -1429,7 +1430,15 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$price       = OrderCapture::get_item_price( $order_item, $order );
 			$tax_percent = $price['tax_percent'];
 
-			$unit_price = round( ( $prices_incl_tax ? $price['subtotal_with_tax'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
+			if ( $tax_percent > 0 ) {
+				$prices_incl_tax = true;
+			}
+
+			if ( $skip_order_line ) {
+				$unit_price = round( ( $prices_incl_tax ? $price['subtotal_with_tax'] : $price['subtotal'] ), 2 );
+			} else {
+				$unit_price = round( ( $prices_incl_tax ? $price['subtotal_with_tax'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
+			}
 
 			if ( $only_not_settled && ! empty( $order_item->get_meta( 'settled' ) ) ) {
 				continue;
@@ -1568,7 +1577,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public function get_skip_order_lines_amount( WC_Order $order ) {
 		$total_amount = 0;
 
-		$items = $this->get_order_items( $order );
+		$items = $this->get_order_items( $order, false, true );
 
 		if ( $items ) {
 			foreach ( $items as $item ) {
