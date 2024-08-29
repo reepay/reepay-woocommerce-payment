@@ -1430,11 +1430,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$price       = OrderCapture::get_item_price( $order_item, $order );
 			$tax_percent = $price['tax_percent'];
 
-			if( $tax_percent > 0 ){
-				$prices_incl_tax = true;
-			}
-
 			if($skip_order_line){
+				/**
+				 * Make dynamic tax by country to true for skip order line.
+				 */
+				if( $tax_percent > 0 ){
+					$prices_incl_tax = true;
+				}
 				$unit_price = round( ( $prices_incl_tax ? $price['subtotal_with_tax'] : $price['subtotal'] ), 2 );
 			}else{
 				$unit_price = round( ( $prices_incl_tax ? $price['subtotal_with_tax'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
@@ -1457,6 +1459,15 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		if ( (float) $order->get_shipping_total() > 0 ) {
 			foreach ( $order->get_items( 'shipping' ) as $item_shipping ) {
 				$prices_incl_tax = wc_prices_include_tax();
+
+				/**
+				 * Make dynamic tax by country to true for skip order line.
+				 */
+				if($skip_order_line){
+					if( $tax_percent > 0 ){
+						$prices_incl_tax = true;
+					}
+				}
 
 				$price = OrderCapture::get_item_price( $item_shipping, $order );
 
@@ -1525,11 +1536,15 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				$simple_discount_amount = $discount;
 			}
 
+			$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
+
+			/*
 			if ( $prices_incl_tax || $tax_percent > 0 ) {
 				$discount_amount = round( - 1 * rp_prepare_amount( $prices_incl_tax ? $discount_with_tax : $discount, $order->get_currency() ) );
 			} else {
 				$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
 			}
+			*/
 
 			if ( $discount_amount < 0 ) {
 				$items[] = array(
@@ -1577,12 +1592,15 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	public function get_skip_order_lines_amount( WC_Order $order ) {
 		$total_amount = 0;
 
-		$items = $this->get_order_items( $order, false, true );
-
-		if ( $items ) {
-			foreach ( $items as $item ) {
-				$total_amount += $item['amount'];
+		if ( wcs_cart_have_subscription() ) {
+			$items = $this->get_order_items( $order, false, true );
+			if ( $items ) {
+				foreach ( $items as $item ) {
+					$total_amount += $item['amount'];
+				}
 			}
+		} else {
+			$total_amount = rp_prepare_amount( $order->get_total(), $order->get_currency() );
 		}
 
 		return $total_amount;
