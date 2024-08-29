@@ -1430,15 +1430,15 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$price       = OrderCapture::get_item_price( $order_item, $order );
 			$tax_percent = $price['tax_percent'];
 
-			if($skip_order_line){
+			if ( $skip_order_line ) {
 				/**
 				 * Make dynamic tax by country to true for skip order line.
 				 */
-				if( $tax_percent > 0 ){
+				if ( $tax_percent > 0 ) {
 					$prices_incl_tax = true;
 				}
 				$unit_price = round( ( $prices_incl_tax ? $price['subtotal_with_tax'] : $price['subtotal'] ), 2 );
-			}else{
+			} else {
 				$unit_price = round( ( $prices_incl_tax ? $price['subtotal_with_tax'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
 			}
 
@@ -1463,8 +1463,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				/**
 				 * Make dynamic tax by country to true for skip order line.
 				 */
-				if($skip_order_line){
-					if( $tax_percent > 0 ){
+				if ( $skip_order_line ) {
+					if ( $tax_percent > 0 ) {
 						$prices_incl_tax = true;
 					}
 				}
@@ -1529,22 +1529,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				} else {
 					$simple_discount_amount = $discount - $sub_amount_discount;
 				}
-			} else {
+			} elseif ( $prices_incl_tax ) {
 				/**
-				 * Discount for simple product
+				 * Discount for simple product included tax
 				 */
+				$simple_discount_amount = $discount_with_tax;
+			} else {
 				$simple_discount_amount = $discount;
 			}
 
 			$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
-
-			/*
-			if ( $prices_incl_tax || $tax_percent > 0 ) {
-				$discount_amount = round( - 1 * rp_prepare_amount( $prices_incl_tax ? $discount_with_tax : $discount, $order->get_currency() ) );
-			} else {
-				$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
-			}
-			*/
 
 			if ( $discount_amount < 0 ) {
 				$items[] = array(
