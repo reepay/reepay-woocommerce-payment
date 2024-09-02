@@ -50,12 +50,12 @@ class Admin {
 	/**
 	 * Add notifications in admin when active Mobilepay Subscriptions.
 	 */
-	public function admin_notice_mobilepay_subscriptions_active(){
-		$gateways = WC()->payment_gateways()->payment_gateways();
+	public function admin_notice_mobilepay_subscriptions_active() {
+		$gateways                      = WC()->payment_gateways()->payment_gateways();
 		$mobilepay_subscription_active = false;
 		if ( $gateways ) {
-			foreach( $gateways as $gateway_key => $gateway ) {
-				if( $gateway->enabled == 'yes' && $gateway_key == 'reepay_mobilepay_subscriptions' ) {
+			foreach ( $gateways as $gateway_key => $gateway ) {
+				if ( 'yes' === $gateway->enabled && 'reepay_mobilepay_subscriptions' === $gateway_key ) {
 					$mobilepay_subscription_active = true;
 				}
 			}
@@ -64,7 +64,7 @@ class Admin {
 			?>
 			<div class="woo-connect-notice notice notice-error">
 				<p>
-					<?php _e('MobilePay Subscription has been discontinued following the merger of MobilePay and Vipps. Please switch to using Vipps MobilePay Recurring instead.', 'reepay-checkout-gateway'); ?>
+					<?php _e( 'MobilePay Subscription has been discontinued following the merger of MobilePay and Vipps. Please switch to using Vipps MobilePay Recurring instead.', 'reepay-checkout-gateway' ); ?>
 				</p>
 			</div>
 			<?php
