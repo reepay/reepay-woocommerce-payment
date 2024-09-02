@@ -43,7 +43,8 @@ class VippsRecurring extends ReepayGateway {
 	public function __construct() {
 		$this->id           = self::ID;
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ Pay - Vipps Recurring', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Billwerk+ Pay - Vipps MobilePay Recurring', 'reepay-checkout-gateway' );
+		$this->method_description = __('<span style="color:red">MobilePay Subscription has been discontinued following the merger of MobilePay and Vipps. Please switch to using Vipps MobilePay Recurring instead.</span>', 'reepay-checkout-gateway');
 		$this->supports     = array(
 			'products',
 			'refunds',

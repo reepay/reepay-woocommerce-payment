@@ -42,6 +42,7 @@ class MobilepaySubscriptions extends ReepayGateway {
 		$this->id           = 'reepay_mobilepay_subscriptions';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Billwerk+ Pay - Mobilepay Subscriptions', 'reepay-checkout-gateway' );
+		$this->method_description = __('<span style="color:red">MobilePay Subscription has been discontinued following the merger of MobilePay and Vipps. Please switch to using Vipps MobilePay Recurring instead.</span>', 'reepay-checkout-gateway');
 
 		$this->supports = array(
 			'products',
