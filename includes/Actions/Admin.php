@@ -51,6 +51,10 @@ class Admin {
 	 * Add notifications in admin when active Mobilepay Subscriptions.
 	 */
 	public function admin_notice_mobilepay_subscriptions_active() {
+		if ( 'woocommerce_page_wc-settings' !== get_current_screen()->id ) {
+			return;
+		}
+
 		$gateways                      = WC()->payment_gateways()->payment_gateways();
 		$mobilepay_subscription_active = false;
 		if ( $gateways ) {
