@@ -364,6 +364,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 		}
 
+		if( $current_name === 'vipps_epayment' || $current_name === 'mobilepay' ){
+			return true;
+		}
+
 		return false;
 	}
 
