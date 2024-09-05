@@ -56,13 +56,26 @@ class Admin {
 		}
 
 		$gateways                      = WC()->payment_gateways()->payment_gateways();
+		$mobilepay_active = false;
 		$mobilepay_subscription_active = false;
 		if ( $gateways ) {
 			foreach ( $gateways as $gateway_key => $gateway ) {
+				if ( 'yes' === $gateway->enabled && 'reepay_mobilepay' === $gateway_key ) {
+					$mobilepay_active = true;
+				}
 				if ( 'yes' === $gateway->enabled && 'reepay_mobilepay_subscriptions' === $gateway_key ) {
 					$mobilepay_subscription_active = true;
 				}
 			}
+		}
+		if ( $mobilepay_active ) {
+			?>
+			<div class="woo-connect-notice notice notice-error">
+				<p>
+					<?php _e( 'The new Vipps MobilePay payment method, which utilizes bank transfers instead of card payments, will replace the old MobilePay Online payment method. Please refer to Vipps MobilePay for more efficient transactions and a better conversion rate.', 'reepay-checkout-gateway' ); ?>
+				</p>
+			</div>
+			<?php
 		}
 		if ( $mobilepay_subscription_active ) {
 			?>
