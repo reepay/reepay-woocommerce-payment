@@ -18,7 +18,6 @@ class Admin {
 	 */
 	public function __construct() {
 		add_action( 'admin_notices', array( $this, 'admin_notice_api_action' ) );
-		add_action( 'admin_notices', array( $this, 'admin_notice_mobilepay_subscriptions_active' ) );
 	}
 
 	/**
@@ -45,46 +44,5 @@ class Admin {
 			<?php
 			set_transient( 'reepay_api_action_success', null, 1 );
 		endif;
-	}
-
-	/**
-	 * Add notifications in admin when active Mobilepay Subscriptions.
-	 */
-	public function admin_notice_mobilepay_subscriptions_active() {
-		if ( 'woocommerce_page_wc-settings' !== get_current_screen()->id ) {
-			return;
-		}
-
-		$gateways                      = WC()->payment_gateways()->payment_gateways();
-		$mobilepay_active              = false;
-		$mobilepay_subscription_active = false;
-		if ( $gateways ) {
-			foreach ( $gateways as $gateway_key => $gateway ) {
-				if ( 'yes' === $gateway->enabled && 'reepay_mobilepay' === $gateway_key ) {
-					$mobilepay_active = true;
-				}
-				if ( 'yes' === $gateway->enabled && 'reepay_mobilepay_subscriptions' === $gateway_key ) {
-					$mobilepay_subscription_active = true;
-				}
-			}
-		}
-		if ( $mobilepay_active ) {
-			?>
-			<div class="woo-connect-notice notice notice-error">
-				<p>
-					<?php _e( 'The new Vipps MobilePay payment method, which utilizes bank transfers instead of card payments, will replace the old MobilePay Online payment method. Please refer to Vipps MobilePay for more efficient transactions and a better conversion rate.', 'reepay-checkout-gateway' ); ?>
-				</p>
-			</div>
-			<?php
-		}
-		if ( $mobilepay_subscription_active ) {
-			?>
-			<div class="woo-connect-notice notice notice-error">
-				<p>
-					<?php _e( 'MobilePay Subscription has been discontinued following the merger of MobilePay and Vipps. Please switch to using Vipps MobilePay Recurring instead.', 'reepay-checkout-gateway' ); ?>
-				</p>
-			</div>
-			<?php
-		}
 	}
 }
