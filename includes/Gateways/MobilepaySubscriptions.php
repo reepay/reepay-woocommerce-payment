@@ -39,9 +39,10 @@ class MobilepaySubscriptions extends ReepayGateway {
 	 * MobilepaySubscriptions constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'reepay_mobilepay_subscriptions';
-		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ Pay - Mobilepay Subscriptions', 'reepay-checkout-gateway' );
+		$this->id                 = 'reepay_mobilepay_subscriptions';
+		$this->has_fields         = true;
+		$this->method_title       = __( 'Billwerk+ Pay - Mobilepay Subscriptions', 'reepay-checkout-gateway' );
+		$this->method_description = '<span style="color:red">' . $this->warning_message() . '</span>';
 
 		$this->supports = array(
 			'products',
@@ -68,6 +69,9 @@ class MobilepaySubscriptions extends ReepayGateway {
 
 		add_action( 'wp_ajax_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
 		add_action( 'wp_ajax_nopriv_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
+
+		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
+		add_action( 'admin_notices', array( $this, 'display_admin_notice' ) );
 	}
 
 	/**
@@ -91,5 +95,51 @@ class MobilepaySubscriptions extends ReepayGateway {
 
 		$this->tokenization_script();
 		$this->save_payment_method_checkbox();
+	}
+
+	/**
+	 * Process admin options and add a custom notice on successful save.
+	 */
+	public function process_admin_options() {
+		$saved = parent::process_admin_options();
+
+		if ( $saved && $this->get_option( 'enabled' ) === 'yes' ) {
+			set_transient( 'reepay_mobilepay_subscriptions_gateway_settings_saved_notice', true, 30 );
+		}
+	}
+
+	/**
+	 * Display an admin notice when settings are saved and payment method enabled.
+	 */
+	public function display_admin_notice() {
+		if ( 'woocommerce_page_wc-settings' !== get_current_screen()->id ) {
+			return;
+		}
+
+		if ( get_transient( 'reepay_mobilepay_subscriptions_gateway_settings_saved_notice' ) || $this->get_option( 'enabled' ) === 'yes' ) {
+			$this->admin_notice_message();
+			delete_transient( 'reepay_mobilepay_subscriptions_gateway_settings_saved_notice' );
+		}
+	}
+
+	/**
+	 * Admin notice message.
+	 */
+	public function admin_notice_message() {
+		?>
+		<div class="woo-connect-notice notice notice-error">
+			<p>
+				<?php echo $this->warning_message(); ?>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Warning message.
+	 */
+	public function warning_message() {
+		$message = __( 'MobilePay Subscription has been discontinued following the merger of MobilePay and Vipps. Please switch to using Vipps MobilePay Recurring instead.', 'reepay-checkout-gateway' );
+		return $message;
 	}
 }
