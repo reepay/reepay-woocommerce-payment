@@ -99,22 +99,6 @@ class MobilepaySubscriptions extends ReepayGateway {
 	}
 
 	/**
-	 * Check if payment method activated in reepay
-	 *
-	 * @return bool
-	 */
-	public function check_is_active(): bool {
-
-		$current_name = str_replace( 'reepay_', '', $this->id );
-
-		if ( 'mobilepay_subscriptions' === $current_name ) {
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
 	 * Process admin options and add a custom notice on successful save.
 	 */
 	public function process_admin_options() {
