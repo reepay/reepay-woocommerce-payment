@@ -56,7 +56,7 @@ class Admin {
 		}
 
 		$gateways                      = WC()->payment_gateways()->payment_gateways();
-		$mobilepay_active = false;
+		$mobilepay_active              = false;
 		$mobilepay_subscription_active = false;
 		if ( $gateways ) {
 			foreach ( $gateways as $gateway_key => $gateway ) {

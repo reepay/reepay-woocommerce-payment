@@ -204,8 +204,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$this->description = $this->settings['description'] ?? 'no';
 
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
-		add_filter( 'woocommerce_gateway_title', array( $this, 'change_gateway_title_based_on_currency' ), 10, 2 );
-		add_filter('woocommerce_gateway_description', array( $this, 'change_gateway_description_based_on_currency' ), 10, 2);
 	}
 
 	/**
@@ -364,10 +362,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					return true;
 				}
 			}
-		}
-
-		if( $current_name === 'vipps_epayment' || $current_name === 'mobilepay' ){
-			return true;
 		}
 
 		return false;
@@ -1709,7 +1703,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Initialise default settings form fields
 	 */
 	public function init_form_fields() {
-		$form_fields = array(
+		$this->form_fields = array(
 			'is_reepay_configured' => array(
 				'title'   => __( 'Status in Billwerk+ Pay', 'reepay-checkout-gateway' ),
 				'type'    => 'gateway_status',
@@ -1736,50 +1730,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'default'     => $this->method_title,
 			),
 		);
-
-		if ( $this->id === VippsMobilepay::ID ){
-			$form_fields = array(
-				'is_reepay_configured' => array(
-					'title'   => __( 'Status in Billwerk+ Pay', 'reepay-checkout-gateway' ),
-					'type'    => 'gateway_status',
-					'label'   => __( 'Status in Billwerk+ Pay', 'reepay-checkout-gateway' ),
-					'default' => $this->test_mode,
-				),
-				'enabled'              => array(
-					'title'    => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
-					'type'     => 'checkbox',
-					'label'    => __( 'Enable plugin', 'reepay-checkout-gateway' ),
-					'default'  => 'no',
-					'disabled' => $this->is_gateway_settings_page() && ! $this->check_is_active(), // Check calls api, so use it only on gateway page.
-				),
-				'title'                => array(
-					'title'       => __( 'DKK, EUR Title', 'reepay-checkout-gateway' ),
-					'type'        => 'text',
-					'description' => __( 'This controls the title that the user sees during checkout when using currency DKK or EUR.', 'reepay-checkout-gateway' ),
-					'default'     => __( 'MobilePay', 'reepay-checkout-gateway' ),
-				),
-				'description'          => array(
-					'title'       => __( 'DKK, EUR Description', 'reepay-checkout-gateway' ),
-					'type'        => 'text',
-					'description' => __( 'This controls the title that the user sees during checkout when using currency DKK or EUR.', 'reepay-checkout-gateway' ),
-					'default'     => __( 'MobilePay', 'reepay-checkout-gateway' ),
-				),
-				'title_nok'                => array(
-					'title'       => __( 'NOK Title', 'reepay-checkout-gateway' ),
-					'type'        => 'text',
-					'description' => __( 'This controls the title that the user sees during checkout when using currency NOK.', 'reepay-checkout-gateway' ),
-					'default'     => __( 'Vipps', 'reepay-checkout-gateway' ),
-				),
-				'description_nok'          => array(
-					'title'       => __( 'NOK Description', 'reepay-checkout-gateway' ),
-					'type'        => 'text',
-					'description' => __( 'This controls the title that the user sees during checkout when using currency NOK.', 'reepay-checkout-gateway' ),
-					'default'     => __( 'Vipps', 'reepay-checkout-gateway' ),
-				),
-			);
-		}
-
-		$this->form_fields = $form_fields;
 	}
 
 	/**
@@ -1817,27 +1767,5 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		return $available_gateways;
-	}
-
-	public function change_gateway_title_based_on_currency( $title, $gateway_id ){
-		if ($gateway_id === VippsMobilepay::ID){
-			$currency = get_woocommerce_currency();
-			$gateway_settings = get_option( 'woocommerce_' . $gateway_id . '_settings' );
-			if ( 'NOK' === $currency) {
-				$title = $gateway_settings['title_nok'];
-			}
-		}
-		return $title;
-	}
-
-	public function change_gateway_description_based_on_currency( $description, $gateway_id ){
-		if ($gateway_id === VippsMobilepay::ID){
-			$currency = get_woocommerce_currency();
-			$gateway_settings = get_option( 'woocommerce_' . $gateway_id . '_settings' );
-			if ( 'NOK' === $currency) {
-				$description = $gateway_settings['description_nok'];
-			}
-		}
-		return $description;
 	}
 }
