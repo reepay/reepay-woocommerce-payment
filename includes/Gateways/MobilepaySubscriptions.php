@@ -62,6 +62,7 @@ class MobilepaySubscriptions extends ReepayGateway {
 		);
 
 		$this->logos = array( 'mobilepay' );
+		$this->check_is_active();
 
 		parent::__construct();
 
@@ -69,6 +70,9 @@ class MobilepaySubscriptions extends ReepayGateway {
 
 		add_action( 'wp_ajax_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
 		add_action( 'wp_ajax_nopriv_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
+
+		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
+		add_action( 'admin_notices', array( $this, 'display_admin_notice' ) );
 	}
 
 	/**
@@ -92,5 +96,59 @@ class MobilepaySubscriptions extends ReepayGateway {
 
 		$this->tokenization_script();
 		$this->save_payment_method_checkbox();
+	}
+
+	/**
+	 * Check if payment method activated in reepay
+	 *
+	 * @return bool
+	 */
+	public function check_is_active(): bool {
+
+		$current_name = str_replace( 'reepay_', '', $this->id );
+
+		if ( 'mobilepay_subscriptions' === $current_name ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Process admin options and add a custom notice on successful save.
+	 */
+	public function process_admin_options() {
+		$saved = parent::process_admin_options();
+
+		if ( $saved && $this->get_option( 'enabled' ) === 'yes' ) {
+			set_transient( 'reepay_mobilepay_subscriptions_gateway_settings_saved_notice', true, 30 );
+		}
+	}
+
+	/**
+	 * Display an admin notice when settings are saved and payment method enabled.
+	 */
+	public function display_admin_notice() {
+		if ( 'woocommerce_page_wc-settings' !== get_current_screen()->id ) {
+			return;
+		}
+
+		if ( get_transient( 'reepay_mobilepay_subscriptions_gateway_settings_saved_notice' ) || $this->get_option( 'enabled' ) === 'yes' ) {
+			$this->warning_message();
+			delete_transient( 'reepay_mobilepay_subscriptions_gateway_settings_saved_notice' );
+		}
+	}
+
+	/**
+	 * Warning message.
+	 */
+	public function warning_message() {
+		?>
+		<div class="woo-connect-notice notice notice-error">
+			<p>
+				<?php _e( 'MobilePay Subscription has been discontinued following the merger of MobilePay and Vipps. Please switch to using Vipps MobilePay Recurring instead.', 'reepay-checkout-gateway' ); ?>
+			</p>
+		</div>
+		<?php
 	}
 }
