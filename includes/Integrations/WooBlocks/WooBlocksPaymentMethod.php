@@ -142,6 +142,14 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 			'cssPath'     => reepay()->get_setting( 'css_url' ) . 'woo_blocks' . $suffix . '.css?ver=' . reepay()->get_setting( 'plugin_version' ),
 		);
 
+		if ( 'reepay_vipps_epayment' === $this->name ) {
+			$currency = get_woocommerce_currency();
+			if ( 'NOK' === $currency ) {
+				$data['title']       = $this->get_setting( 'title_nok' );
+				$data['description'] = $this->get_setting( 'description_nok' );
+			}
+		}
+
 		if ( in_array( 'cards', $data['supports'], true ) ) {
 			$tokens = $this->gateway->get_tokens();
 

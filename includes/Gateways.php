@@ -39,7 +39,7 @@ class Gateways {
 		'reepay_swish',
 		'reepay_viabill',
 		'reepay_vipps',
-		'reepay_vipps_mobilepay',
+		'reepay_vipps_epayment',
 		'reepay_vipps_recurring',
 		'reepay_pp_ideal',
 		'reepay_pp_sepa',
