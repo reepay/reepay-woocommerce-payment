@@ -22,7 +22,7 @@ v 1.7.9
 - New payment method added: "Vipps MobilePay" 
 - Warning messages added for "Mobilepay" to encourage switch to "Vipps Mobilepay"
 - Name change payment method "Vipps Recurring" to "Vipps MobilePay Recurring"
-- Warning message added for "MobilePay Subscription" to encourage switch to using "Vipps MobilePay Recurring" instead.
+- Warning message added for "MobilePay Subscription" to encourage switch to "Vipps MobilePay Recurring" instead.
 
 v 1.7.8.1 - 
 * [Fix] - Fixed total calculation missing multiplication with number of items when using setting "Skip order lines" 
