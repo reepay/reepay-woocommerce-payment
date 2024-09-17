@@ -38,6 +38,7 @@ class Main {
 		static $tokens = array(
 			'WC_Payment_Token_Reepay'    => TokenReepay::class,
 			'WC_Payment_Token_Reepay_MS' => TokenReepayMS::class,
+			'WC_Payment_Token_Reepay_VR' => TokenReepayVR::class,
 		);
 
 		return $tokens[ $token_class_name ] ?? $token_class_name;

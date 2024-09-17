@@ -269,7 +269,7 @@ class Webhook {
 				if ( empty( $order->get_meta( '_reepay_subscription_handle' ) ) ) {
 					OrderStatuses::set_settled_status(
 						$order,
-						false,
+						'',
 						$data['transaction']
 					);
 				}
@@ -462,7 +462,23 @@ class Webhook {
 								$this->log( sprintf( 'WebHook: Token save error: %s', $e->getMessage() ) );
 								return;
 							}
+						}else{
+							wc_get_logger()->debug(
+								__METHOD__,
+								array(
+									'source'  => 'billwerk-token',
+									'_legacy' => true,
+								)
+							);
 						}
+					}else{
+						wc_get_logger()->debug(
+							__METHOD__,
+							array(
+								'source'  => 'billwerk-token',
+								'_legacy' => true,
+							)
+						);
 					}
 				}
 
