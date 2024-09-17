@@ -229,7 +229,7 @@ class ThankyouPage {
 
 		$another_orders = $order->get_meta( '_reepay_another_orders' );
 
-		if ( class_exists( WCRR::class ) && WCRR::is_order_contain_subscription( $order ) && ! empty( $another_orders ) && is_array( $another_orders ) ) {
+		if ( ! empty( $another_orders ) && is_array( $another_orders ) ) {
 			ob_start();
 
 			reepay()->get_template(

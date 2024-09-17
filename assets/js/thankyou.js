@@ -19,6 +19,8 @@ jQuery(function ($) {
             return;
         }
 
+        console.log(attempts);
+
         $.ajax({
             type: 'POST',
             url: WC_Reepay_Thankyou.ajax_url,
@@ -58,7 +60,7 @@ jQuery(function ($) {
                 switch (data.state) {
                     case 'paid':
                         console.log('case paid');
-                        if(WC_Reepay_Thankyou.order_contain_rp_subscription == true && WC_Reepay_Thankyou.order_contain_rp_subscription == false){
+                        if(WC_Reepay_Thankyou.order_contain_rp_subscription == true && WC_Reepay_Thankyou.order_is_rp_subscription == false){
                             console.log('checkOrderStatus');
                             checkOrderStatus();
                         }else{
