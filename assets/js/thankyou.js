@@ -5,11 +5,6 @@ jQuery(function ($) {
     const maxAttempts = 10;
     const delayBetweenRequests = 2000;
 
-    console.log('order_rp_subscription');
-    console.log(WC_Reepay_Thankyou.order_contain_rp_subscription);
-    console.log('order_is_rp_subscription');
-    console.log(WC_Reepay_Thankyou.order_is_rp_subscription);
-
     var status_elm = $('#order-status-checking'),
         success_elm = $('#order-success'),
         failed_elm = $('#order-failed')
@@ -18,8 +13,6 @@ jQuery(function ($) {
         if (attempts >= maxAttempts) {
             return;
         }
-
-        console.log(attempts);
 
         $.ajax({
             type: 'POST',
@@ -55,13 +48,9 @@ jQuery(function ($) {
          */
         init: function () {
             this.checkPayment(function (err, data) {
-                console.log('data.state');
-                console.log(data.state);
                 switch (data.state) {
                     case 'paid':
-                        console.log('case paid');
                         if(WC_Reepay_Thankyou.order_contain_rp_subscription == true && WC_Reepay_Thankyou.order_is_rp_subscription == false){
-                            console.log('checkOrderStatus');
                             checkOrderStatus();
                         }else{
                             status_elm.hide()
