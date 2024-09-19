@@ -107,10 +107,10 @@ class ThankyouPage {
 		if ( class_exists( WCRR::class ) && WCRR::is_order_contain_subscription( $order ) ) {
 			$order_rp_subscription = true;
 		}
-		
+
 		$order_is_rp_subscription = false;
-		$reepay_is_subscription = $order->get_meta( '_reepay_is_subscription' );
-		if(!empty($reepay_is_subscription)){
+		$reepay_is_subscription   = $order->get_meta( '_reepay_is_subscription' );
+		if ( ! empty( $reepay_is_subscription ) ) {
 			$order_is_rp_subscription = true;
 		}
 
@@ -118,13 +118,13 @@ class ThankyouPage {
 			'wc-gateway-reepay-thankyou',
 			'WC_Reepay_Thankyou',
 			array(
-				'order_id'      => $order->get_id(),
-				'order_key'     => $order_key,
+				'order_id'                      => $order->get_id(),
+				'order_key'                     => $order_key,
 				'order_contain_rp_subscription' => $order_rp_subscription,
-				'order_is_rp_subscription' => $order_is_rp_subscription,
-				'nonce'         => wp_create_nonce( 'reepay' ),
-				'ajax_url'      => admin_url( 'admin-ajax.php' ),
-				'check_message' => __(
+				'order_is_rp_subscription'      => $order_is_rp_subscription,
+				'nonce'                         => wp_create_nonce( 'reepay' ),
+				'ajax_url'                      => admin_url( 'admin-ajax.php' ),
+				'check_message'                 => __(
 					'Please wait. We\'re checking the payment status.',
 					'reepay-checkout-gateway'
 				),
@@ -213,7 +213,10 @@ class ThankyouPage {
 		wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', $ret ?? array(), $order->get_id() ) );
 	}
 
-	public function ajax_order_descriptions(){
+	/**
+	 * Ajax: get order description on mix order.
+	 */
+	public function ajax_order_descriptions() {
 
 		$order_id  = isset( $_POST['order_id'] ) ? wc_clean( $_POST['order_id'] ) : '';
 		$order_key = isset( $_POST['order_key'] ) ? wc_clean( $_POST['order_key'] ) : '';
@@ -252,7 +255,7 @@ class ThankyouPage {
 				);
 			}
 			$order_details = ob_get_clean();
-			wp_send_json_success($order_details);
+			wp_send_json_success( $order_details );
 			wp_die();
 		} else {
 			wp_send_json_error( 'Order data not ready yet' );
