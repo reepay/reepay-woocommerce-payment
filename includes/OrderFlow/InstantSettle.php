@@ -68,7 +68,7 @@ class InstantSettle {
 			$invoice = reepay()->api( $order )->get_invoice_data( $order );
 
 			if ( ! is_wp_error( $invoice ) ) {
-				if ( is_array( $invoice ) && array_key_exists( 'authorized_amount', $invoice ) && array_key_exists( 'settled_amount', $invoice ) &&  $invoice['authorized_amount'] - $invoice['settled_amount'] <= 0 ) {
+				if ( is_array( $invoice ) && array_key_exists( 'authorized_amount', $invoice ) && array_key_exists( 'settled_amount', $invoice ) && $invoice['authorized_amount'] - $invoice['settled_amount'] <= 0 ) {
 					return;
 				}
 				$this->process_instant_settle( $order );

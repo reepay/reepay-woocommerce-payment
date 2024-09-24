@@ -26,7 +26,7 @@ abstract class ReepayTokens {
 	/**
 	 * Assign payment token to order.
 	 *
-	 * @param WC_Order                             $order order to assign.
+	 * @param WC_Order                                           $order order to assign.
 	 * @param TokenReepay|TokenReepayMS|TokenReepayVR|int|string $token token class, token id or token string.
 	 *
 	 * @return void
@@ -160,9 +160,9 @@ abstract class ReepayTokens {
 		}
 
 		wc_get_logger()->debug(
-			print_r( $card_info, true ),
 			array(
 				'source'  => 'billwerk-token',
+				'data'    => $card_info,
 				'_legacy' => true,
 			)
 		);
