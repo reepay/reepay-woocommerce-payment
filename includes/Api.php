@@ -1099,7 +1099,6 @@ class Api {
 		wc_get_logger()->debug(
 			array(
 				'source'  => 'billwerk-token',
-				'data'    => $result,
 				'_legacy' => true,
 			)
 		);
