@@ -21,6 +21,7 @@ class Main {
 	public function __construct() {
 		TokenReepay::register_view_actions();
 		TokenReepayMS::register_view_actions();
+		TokenReepayVR::register_view_actions();
 
 		add_filter( 'woocommerce_payment_token_class', array( $this, 'set_token_class_name' ), 10, 1 );
 		add_filter( 'woocommerce_get_customer_payment_tokens', array( $this, 'add_reepay_cards_to_list' ), 1000, 3 );

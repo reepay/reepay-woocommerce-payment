@@ -57,7 +57,7 @@ class TokenReepayVR extends WC_Payment_Token {
 	 */
 	public static function register_view_actions() {
 		add_filter( 'woocommerce_payment_methods_list_item', array( __CLASS__, 'wc_get_account_saved_payment_methods_list_item' ), 10, 2 );
-//		add_action( 'woocommerce_account_payment_methods_column_method', __CLASS__ . '::wc_account_payment_methods_column_method', 10, 1 );
+		add_action( 'woocommerce_account_payment_methods_column_method', __CLASS__ . '::wc_account_payment_methods_column_method', 10, 1 );
 	}
 
 	/**
