@@ -4,7 +4,7 @@ Tags: billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.6.1
 Requires PHP: 7.4
-Stable tag: 1.7.9
+Stable tag: 1.7.9.1
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
