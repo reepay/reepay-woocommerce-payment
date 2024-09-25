@@ -18,14 +18,17 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.9.1
+- [Fix] – The payment method 'Vipps MobilePay Recurring' did not save the token.
+
 v 1.7.9
-- New payment method added: "Vipps MobilePay" 
-- Warning messages added for "Mobilepay" to encourage switch to "Vipps Mobilepay"
-- Name change payment method "Vipps Recurring" to "Vipps MobilePay Recurring"
-- Warning message added for "MobilePay Subscription" to encourage switch to "Vipps MobilePay Recurring" instead.
+- [Improvement] – New payment method added: "Vipps MobilePay".
+- [Improvement] – Warning messages added for "Mobilepay" to encourage switch to "Vipps Mobilepay".
+- [Improvement] – Name change payment method "Vipps Recurring" to "Vipps MobilePay Recurring".
+- [Improvement] – Warning message added for "MobilePay Subscription" to encourage switch to using "Vipps MobilePay - Recurring" instead.
 
 v 1.7.8.1 - 
-* [Fix] - Fixed total calculation missing multiplication with number of items when using setting "Skip order lines" 
+* [Fix] - Fixed total calculation missing multiplication with number of items when using setting "Skip order lines".
 
 v 1.7.8 -
 * [Fix] - Bug WP warning message "The use statement with non-compound name WC_Reepay_Renewals has no effect." (hotfix 1.7.7.1).

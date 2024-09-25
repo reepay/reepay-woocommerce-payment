@@ -31,6 +31,7 @@ class Subscriptions {
 	const PAYMENT_METHODS = array(
 		'reepay_checkout',
 		'reepay_mobilepay_subscriptions',
+		'reepay_vipps_recurring',
 	);
 
 	/**
