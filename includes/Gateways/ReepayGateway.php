@@ -431,12 +431,12 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		$structure = get_option( 'permalink_structure' );
-		if( empty( $structure ) ){
+		if ( empty( $structure ) ) {
 			$default_wc_api_url = $default_wc_api_url . '=WC_Gateway_Reepay/';
-		}else{
+		} else {
 			$default_wc_api_url = $default_wc_api_url . 'WC_Gateway_Reepay/';
 		}
-		
+
 		return $default_wc_api_url;
 	}
 
