@@ -272,6 +272,9 @@ class OrderCapture {
 		);
 
 		$invoice_data = reepay()->api( $order )->get_invoice_by_handle( 'order-' . $order->get_id() );
+		if ( is_array( $invoice_data ) && array_key_exists( 'authorized_amount', $invoice_data ) && array_key_exists( 'settled_amount', $invoice_data ) && $invoice_data['authorized_amount'] - $invoice_data['settled_amount'] <= 0 ) {
+			return false;
+		}
 
 		$this->log(
 			array(
@@ -477,6 +480,11 @@ class OrderCapture {
 				),
 			)
 		);
+
+		$invoice_data = reepay()->api( $order )->get_invoice_by_handle( 'order-' . $order->get_id() );
+		if ( is_array( $invoice_data ) && array_key_exists( 'authorized_amount', $invoice_data ) && array_key_exists( 'settled_amount', $invoice_data ) && $invoice_data['authorized_amount'] - $invoice_data['settled_amount'] <= 0 ) {
+			return false;
+		}
 
 		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note );
 

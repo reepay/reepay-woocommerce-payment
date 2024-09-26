@@ -157,16 +157,31 @@ class Webhook {
 
 				$this->log( sprintf( 'WebHook: Invoice data: %s', wp_json_encode( $invoice_data, JSON_PRETTY_PRINT ) ) );
 
-				OrderStatuses::set_authorized_status(
-					$order,
-					sprintf(
-					// translators: %1$s - order amount, %2$s - transaction id.
-						__( 'Payment has been authorized. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
-						wc_price( rp_make_initial_amount( $invoice_data['amount'], $order->get_currency() ) ),
+				// skip set authorized status for settled charge of the Vipps MobilePay Recurring.
+				if ( array_key_exists( 'recurring_payment_method', $invoice_data ) && 'vr_' === substr( $invoice_data['recurring_payment_method'], 0, 3 ) && 'settled' === $invoice_data['state'] ) {
+					$order->add_order_note(
+						sprintf(
+						// translators: %1$s - order amount, %2$s - transaction id.
+							__( 'Payment has been authorized. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
+							wc_price( rp_make_initial_amount( $invoice_data['amount'], $order->get_currency() ) ),
+							$data['transaction']
+						)
+					);
+					$order->update_meta_data( '_reepay_state_authorized', 1 );
+					$order->save_meta_data();
+					$order->save();
+				} else {
+					OrderStatuses::set_authorized_status(
+						$order,
+						sprintf(
+						// translators: %1$s - order amount, %2$s - transaction id.
+							__( 'Payment has been authorized. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
+							wc_price( rp_make_initial_amount( $invoice_data['amount'], $order->get_currency() ) ),
+							$data['transaction']
+						),
 						$data['transaction']
-					),
-					$data['transaction']
-				);
+					);
+				}
 
 				self::unlock_order( $order->get_id() );
 
@@ -269,7 +284,7 @@ class Webhook {
 				if ( empty( $order->get_meta( '_reepay_subscription_handle' ) ) ) {
 					OrderStatuses::set_settled_status(
 						$order,
-						false,
+						'',
 						$data['transaction']
 					);
 				}
@@ -462,7 +477,23 @@ class Webhook {
 								$this->log( sprintf( 'WebHook: Token save error: %s', $e->getMessage() ) );
 								return;
 							}
+						} else {
+							wc_get_logger()->debug(
+								__METHOD__,
+								array(
+									'source'  => 'billwerk-token',
+									'_legacy' => true,
+								)
+							);
 						}
+					} else {
+						wc_get_logger()->debug(
+							__METHOD__,
+							array(
+								'source'  => 'billwerk-token',
+								'_legacy' => true,
+							)
+						);
 					}
 				}
 

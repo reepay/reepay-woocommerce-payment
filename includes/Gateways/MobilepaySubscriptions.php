@@ -42,7 +42,7 @@ class MobilepaySubscriptions extends ReepayGateway {
 		$this->id                 = 'reepay_mobilepay_subscriptions';
 		$this->has_fields         = true;
 		$this->method_title       = __( 'Billwerk+ Pay - Mobilepay Subscriptions', 'reepay-checkout-gateway' );
-		$this->method_description = '<span style="color:red">' . __( 'MobilePay Subscription has been discontinued following the merger of MobilePay and Vipps. Please switch to using Vipps MobilePay Recurring instead.', 'reepay-checkout-gateway' ) . '</span>';
+		$this->method_description = '<span style="color:red">' . $this->warning_message() . '</span>';
 
 		$this->supports = array(
 			'products',
@@ -62,7 +62,6 @@ class MobilepaySubscriptions extends ReepayGateway {
 		);
 
 		$this->logos = array( 'mobilepay' );
-		$this->check_is_active();
 
 		parent::__construct();
 
@@ -118,21 +117,29 @@ class MobilepaySubscriptions extends ReepayGateway {
 		}
 
 		if ( get_transient( 'reepay_mobilepay_subscriptions_gateway_settings_saved_notice' ) || $this->get_option( 'enabled' ) === 'yes' ) {
-			$this->warning_message();
+			$this->admin_notice_message();
 			delete_transient( 'reepay_mobilepay_subscriptions_gateway_settings_saved_notice' );
 		}
+	}
+
+	/**
+	 * Admin notice message.
+	 */
+	public function admin_notice_message() {
+		?>
+		<div class="woo-connect-notice notice notice-error">
+			<p>
+				<?php echo $this->warning_message(); ?>
+			</p>
+		</div>
+		<?php
 	}
 
 	/**
 	 * Warning message.
 	 */
 	public function warning_message() {
-		?>
-		<div class="woo-connect-notice notice notice-error">
-			<p>
-				<?php _e( 'MobilePay Subscription has been discontinued following the merger of MobilePay and Vipps. Please switch to using Vipps MobilePay Recurring instead.', 'reepay-checkout-gateway' ); ?>
-			</p>
-		</div>
-		<?php
+		$message = __( 'MobilePay Subscription has been discontinued following the merger of MobilePay and Vipps. Please switch to using Vipps MobilePay Recurring instead.', 'reepay-checkout-gateway' );
+		return $message;
 	}
 }

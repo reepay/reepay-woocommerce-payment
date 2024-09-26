@@ -4,7 +4,7 @@ Tags: billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.6.1
 Requires PHP: 7.4
-Stable tag: 1.7.8.3
+Stable tag: 1.7.9.1
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,16 +18,17 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
-v 1.7.8.3 - 
-* [Improvement] - Add new payment method: "Vipps MobilePay".
+v 1.7.9.1
+- [Fix] – The payment method 'Vipps MobilePay Recurring' did not save the token.
 
-v 1.7.8.2 -
-* [Improvement] - Change payment method: "Vipps Recurring" to "Vipps MobilePay Recurring".
-* [Improvement] - Add payment method description to Vipps MobilePay Recurring and Mobilepay Subscriptions
-* [Improvement] - Display a warning message when MobilePay Subscription is active.
+v 1.7.9
+- [Improvement] – New payment method added: "Vipps MobilePay".
+- [Improvement] – Warning messages added for "Mobilepay" to encourage switch to "Vipps Mobilepay".
+- [Improvement] – Name change payment method "Vipps Recurring" to "Vipps MobilePay Recurring".
+- [Improvement] – Warning message added for "MobilePay Subscription" to encourage switch to using "Vipps MobilePay - Recurring" instead.
 
 v 1.7.8.1 - 
-* [Fix] - Fixed total calculation missing multiplication with number of items when using setting "Skip order lines" 
+* [Fix] - Fixed total calculation missing multiplication with number of items when using setting "Skip order lines".
 
 v 1.7.8 -
 * [Fix] - Bug WP warning message "The use statement with non-compound name WC_Reepay_Renewals has no effect." (hotfix 1.7.7.1).
