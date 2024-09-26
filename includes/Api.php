@@ -1096,13 +1096,6 @@ class Api {
 
 		$result = $tmp;
 
-		wc_get_logger()->debug(
-			array(
-				'source'  => 'billwerk-token',
-				'_legacy' => true,
-			)
-		);
-
 		if ( ! $reepay_token ) {
 			return $result['cards'];
 		}
