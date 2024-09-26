@@ -4,7 +4,7 @@ Tags: billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.6.1
 Requires PHP: 7.4
-Stable tag: 1.7.9.1
+Stable tag: 1.7.9.2
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,6 +18,11 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.9.2
+- [Fix] - WebHook URL for plain permalink structure
+- [Fix] - Remove debug log is make notice message on cart page.
+- [Fix] - Since v1.7.9.1, setting "skip order lines" caused the authorized amount to be multiplied by 100 one more time. Only when using saved card to pay.
+
 v 1.7.9.1
 - [Fix] – The payment method 'Vipps MobilePay Recurring' did not save the token.
 
