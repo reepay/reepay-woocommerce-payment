@@ -24,16 +24,16 @@ v 1.7.9.3
 v 1.7.9.2
 - [Fix] - Webhook URL for plain permalink structure.
 - [Fix] - Removed debug log notice message on cart page.
-- [Fix] - Since v1.7.9.1, setting “skip order lines” caused the authorized amount to be multiplied by 100 one more time. Only when using a saved card to pay for a non-subscription product.
+- [Fix] - Since v1.7.9.1, setting "skip order lines" caused the authorized amount to be multiplied by 100 one more time. Only when using a saved card to pay for a non-subscription product.
 
 v 1.7.9.1
-- [Fix] – The payment method 'Vipps MobilePay Recurring' did not save the token.
+- [Fix] - The payment method 'Vipps MobilePay Recurring' did not save the token.
 
 v 1.7.9
-- [Improvement] – New payment method added: "Vipps MobilePay".
-- [Improvement] – Warning messages added for "Mobilepay" to encourage switch to "Vipps Mobilepay".
-- [Improvement] – Name change payment method "Vipps Recurring" to "Vipps MobilePay Recurring".
-- [Improvement] – Warning message added for "MobilePay Subscription" to encourage switch to using "Vipps MobilePay - Recurring" instead.
+- [Improvement] - New payment method added: "Vipps MobilePay".
+- [Improvement] - Warning messages added for "Mobilepay" to encourage switch to "Vipps Mobilepay".
+- [Improvement] - Name change payment method "Vipps Recurring" to "Vipps MobilePay Recurring".
+- [Improvement] - Warning message added for "MobilePay Subscription" to encourage switch to using "Vipps MobilePay - Recurring" instead.
 
 v 1.7.8.1 - 
 * [Fix] - Fixed total calculation missing multiplication with number of items when using setting "Skip order lines".
