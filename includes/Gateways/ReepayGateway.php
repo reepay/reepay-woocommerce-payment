@@ -1009,7 +1009,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 							wc_get_order( $order_id )->add_order_note( $e->getMessage() );
 						}
 					}
-				} elseif ( wcs_cart_have_subscription() ) {
+				} elseif ( wcs_cart_have_subscription() && $order->get_payment_method() !== 'reepay_vipps_recurring' ) {
 					return $this->process_session_charge( $params, $order );
 				} else {
 					$order_lines = 'no' === $this->skip_order_lines ? $this->get_order_items( $order ) : null;
