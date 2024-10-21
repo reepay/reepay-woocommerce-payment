@@ -18,6 +18,9 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.9.4
+- [Improvement] - Remove "Resurs Bank" payment method.
+
 v 1.7.9.3
 - [Fix] - Vipps Recurring could not save card.
 
