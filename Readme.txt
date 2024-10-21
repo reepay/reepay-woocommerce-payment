@@ -20,6 +20,7 @@ See installation guide right here: https://docu.billwerk.plus/help/en/apps/wooco
 == Changelog ==
 v 1.7.9.4
 - [Improvement] - Remove "Resurs Bank" payment method.
+- [Fix] - Order Success page for some mixed orders and total amount on regular order.
 
 v 1.7.9.3
 - [Fix] - Vipps Recurring could not save card.
