@@ -10,6 +10,7 @@ use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase_Trait_Tokens;
 use Reepay\Checkout\Tokens\Main;
 use Reepay\Checkout\Tokens\TokenReepay;
 use Reepay\Checkout\Tokens\TokenReepayMS;
+use Reepay\Checkout\Tokens\TokenReepayVR;
 
 /**
  * MainTest.
@@ -47,6 +48,16 @@ class MainTest extends Reepay_UnitTestCase {
 		$this->assertSame(
 			TokenReepayMS::class,
 			$this->tokens_main->set_token_class_name( 'WC_Payment_Token_Reepay_MS' )
+		);
+	}
+
+	/**
+	 * Test @see Main::set_token_class_name
+	 */
+	public function test_set_token_class_name_vr() {
+		$this->assertSame(
+			TokenReepayVR::class,
+			$this->tokens_main->set_token_class_name( 'WC_Payment_Token_Reepay_VR' )
 		);
 	}
 

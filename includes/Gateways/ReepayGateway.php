@@ -430,7 +430,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 		}
 
-		return $default_wc_api_url . 'WC_Gateway_Reepay/';
+		$structure = get_option( 'permalink_structure' );
+		if ( empty( $structure ) ) {
+			$default_wc_api_url = $default_wc_api_url . '=WC_Gateway_Reepay/';
+		} else {
+			$default_wc_api_url = $default_wc_api_url . 'WC_Gateway_Reepay/';
+		}
+
+		return $default_wc_api_url;
 	}
 
 	/**
@@ -1002,11 +1009,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 							wc_get_order( $order_id )->add_order_note( $e->getMessage() );
 						}
 					}
-				} elseif ( wcs_cart_have_subscription() ) {
+				} elseif ( wcs_cart_have_subscription() && $order->get_payment_method() !== 'reepay_vipps_recurring' ) {
 					return $this->process_session_charge( $params, $order );
 				} else {
 					$order_lines = 'no' === $this->skip_order_lines ? $this->get_order_items( $order ) : null;
-					$amount      = 'yes' === $this->skip_order_lines ? $this->get_skip_order_lines_amount( $order ) : null;
+					$amount      = 'yes' === $this->skip_order_lines ? $this->get_skip_order_lines_amount( $order, true ) : null;
 
 					// Charge payment.
 					$result = reepay()->api( $this )->charge( $order, $token->get_token(), $amount, $order_lines );
@@ -1582,8 +1589,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Get order amount from order item amount
 	 *
 	 * @param WC_Order $order            order to get items.
+	 * @param bool     $skip_fn_rp_amount        skip call funcion rp_prepare_amount.
 	 */
-	public function get_skip_order_lines_amount( WC_Order $order ) {
+	public function get_skip_order_lines_amount( WC_Order $order, $skip_fn_rp_amount = false ) {
 		$total_amount = 0;
 
 		if ( wcs_cart_have_subscription() ) {
@@ -1593,6 +1601,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					$total_amount += $item['amount'];
 				}
 			}
+		} elseif ( true === $skip_fn_rp_amount ) {
+				$total_amount = $order->get_total();
 		} else {
 			$total_amount = rp_prepare_amount( $order->get_total(), $order->get_currency() );
 		}

@@ -26,8 +26,8 @@ abstract class ReepayTokens {
 	/**
 	 * Assign payment token to order.
 	 *
-	 * @param WC_Order                             $order order to assign.
-	 * @param TokenReepay|TokenReepayMS|int|string $token token class, token id or token string.
+	 * @param WC_Order                                           $order order to assign.
+	 * @param TokenReepay|TokenReepayMS|TokenReepayVR|int|string $token token class, token id or token string.
 	 *
 	 * @return void
 	 *
@@ -40,7 +40,7 @@ abstract class ReepayTokens {
 			$token = self::get_payment_token( $token );
 		}
 
-		if ( ! $token instanceof TokenReepay && ! $token instanceof TokenReepayMS ) {
+		if ( ! $token instanceof TokenReepay && ! $token instanceof TokenReepayMS && ! $token instanceof TokenReepayVR ) {
 			throw new Exception( 'Invalid token parameter' );
 		}
 
@@ -166,6 +166,11 @@ abstract class ReepayTokens {
 		if ( 'ms_' === substr( $card_info['id'], 0, 3 ) ) {
 			$token = new TokenReepayMS();
 			$token->set_gateway_id( reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id );
+			$token->set_token( $card_info['id'] );
+			$token->set_user_id( $customer_id );
+		} elseif ( 'vr_' === substr( $card_info['id'], 0, 3 ) ) {
+			$token = new TokenReepayVR();
+			$token->set_gateway_id( reepay()->gateways()->get_gateway( 'reepay_vipps_recurring' )->id );
 			$token->set_token( $card_info['id'] );
 			$token->set_user_id( $customer_id );
 		} else {
@@ -312,6 +317,7 @@ abstract class ReepayTokens {
 			$token->get_gateway_id(),
 			array(
 				reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id,
+				reepay()->gateways()->get_gateway( 'reepay_vipps_recurring' )->id,
 				reepay()->gateways()->checkout()->id,
 			),
 			true

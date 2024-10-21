@@ -606,6 +606,7 @@ class Api {
 		}
 
 		if ( VippsRecurring::ID === $order->get_payment_method() ) {
+			$params['currency']                               = $order->get_currency();
 			$params['session_data']['vipps_recurring_amount'] = rp_prepare_amount( $order->get_total(), $order->get_currency() );
 		}
 
@@ -1049,17 +1050,51 @@ class Api {
 	 * @return array|WP_Error
 	 */
 	public function get_reepay_cards( string $customer_handle, $reepay_token = null ) {
+		$params = array(
+			'size'     => '100',
+			'from'     => '1970-01-01',
+			'state'    => 'active',
+			'customer' => $customer_handle,
+		);
 		$result = $this->request(
 			'GET',
-			'https://api.reepay.com/v1/customer/' . $customer_handle . '/payment_method'
+			'https://api.reepay.com/v1/list/payment_method?' . http_build_query( $params ),
 		);
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
 
-		if ( ! isset( $result['cards'] ) && ! isset( $result['mps_subscriptions'] ) ) {
+		if ( ! isset( $result['count'] ) ) {
 			return new WP_Error( 0, 'Unable to retrieve customer payment methods' );
 		}
+
+		$tmp = array(
+			'cards'             => array(),
+			'mps_subscriptions' => array(),
+			'vipps_recurring'   => array(),
+		);
+		if ( $result['count'] > 0 ) {
+			foreach ( $result['content'] as $payment_method ) {
+				if ( 'card' === $payment_method['payment_type'] ) {
+					$card = $payment_method;
+					$card = array_merge( $card, $payment_method['card'] );
+					unset( $card['card'], $card['gateway'], $card['card_agreement'], $card['payment_type'] );
+					$tmp['cards'][] = $card;
+				} elseif ( 'mobilepay_subscriptions' === $payment_method['payment_type'] ) {
+					$mps_subscription = $payment_method;
+					$mps_subscription = array_merge( $mps_subscription, $payment_method['mps_subscription'] );
+					unset( $mps_subscription['mps_subscription'], $mps_subscription['payment_type'] );
+					$tmp['mps_subscriptions'][] = $mps_subscription;
+				} elseif ( 'vipps_recurring' === $payment_method['payment_type'] ) {
+					$vipps_recurring = $payment_method;
+					$vipps_recurring = array_merge( $vipps_recurring, $payment_method['vipps_recurring_mandate'] );
+					unset( $vipps_recurring['vipps_recurring_mandate'], $vipps_recurring['payment_type'] );
+					$tmp['vipps_recurring_mandate'][] = $vipps_recurring;
+				}
+			}
+		}
+
+		$result = $tmp;
 
 		if ( ! $reepay_token ) {
 			return $result['cards'];
@@ -1076,6 +1111,15 @@ class Api {
 
 		if ( ! empty( $result['mps_subscriptions'] ) ) {
 			$mps_subscriptions = $result['mps_subscriptions'];
+			foreach ( $mps_subscriptions as $subscription ) {
+				if ( ( $subscription['id'] === $reepay_token || $subscription['reference'] === $reepay_token ) && 'active' === $subscription['state'] ) {
+					return $subscription;
+				}
+			}
+		}
+
+		if ( ! empty( $result['vipps_recurring_mandate'] ) ) {
+			$mps_subscriptions = $result['vipps_recurring_mandate'];
 			foreach ( $mps_subscriptions as $subscription ) {
 				if ( ( $subscription['id'] === $reepay_token || $subscription['reference'] === $reepay_token ) && 'active' === $subscription['state'] ) {
 					return $subscription;

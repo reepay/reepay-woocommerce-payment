@@ -4,7 +4,7 @@ Tags: billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.6.1
 Requires PHP: 7.4
-Stable tag: 1.7.9
+Stable tag: 1.7.9.3
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,14 +18,25 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.9.3
+- [Fix] - Vipps Recurring could not save card.
+
+v 1.7.9.2
+- [Fix] - Webhook URL for plain permalink structure.
+- [Fix] - Removed debug log notice message on cart page.
+- [Fix] - Since v1.7.9.1, setting "skip order lines" caused the authorized amount to be multiplied by 100 one more time. Only when using a saved card to pay for a non-subscription product.
+
+v 1.7.9.1
+- [Fix] - The payment method 'Vipps MobilePay Recurring' did not save the token.
+
 v 1.7.9
-- New payment method added: "Vipps MobilePay" 
-- Warning messages added for "Mobilepay" to encourage switch to "Vipps Mobilepay"
-- Name change payment method "Vipps Recurring" to "Vipps MobilePay Recurring"
-- Warning message added for "MobilePay Subscription" to encourage switch to "Vipps MobilePay Recurring" instead.
+- [Improvement] - New payment method added: "Vipps MobilePay".
+- [Improvement] - Warning messages added for "Mobilepay" to encourage switch to "Vipps Mobilepay".
+- [Improvement] - Name change payment method "Vipps Recurring" to "Vipps MobilePay Recurring".
+- [Improvement] - Warning message added for "MobilePay Subscription" to encourage switch to using "Vipps MobilePay - Recurring" instead.
 
 v 1.7.8.1 - 
-* [Fix] - Fixed total calculation missing multiplication with number of items when using setting "Skip order lines" 
+* [Fix] - Fixed total calculation missing multiplication with number of items when using setting "Skip order lines".
 
 v 1.7.8 -
 * [Fix] - Bug WP warning message "The use statement with non-compound name WC_Reepay_Renewals has no effect." (hotfix 1.7.7.1).
