@@ -113,7 +113,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		'klarna-pay-later',
 		'klarna-pay-now',
 		'klarna',
-		'resursbank',
 	);
 
 	/**
@@ -1670,7 +1669,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			'viabill'                     => 'viabill',
 			'klarna_pay_later'            => 'klarna',
 			'klarna_pay_now'              => 'klarna',
-			'resurs'                      => 'resurs',
 			'china_union_pay'             => 'cup',
 			'paypal'                      => 'paypal',
 			'applepay'                    => 'applepay',

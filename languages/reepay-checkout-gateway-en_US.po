@@ -604,10 +604,6 @@ msgstr ""
 msgid "Viabill"
 msgstr ""
 
-#: ../includes/Gateways/ReepayCheckout.php:363
-msgid "Resurs Bank"
-msgstr ""
-
 #: ../includes/Gateways/ReepayCheckout.php:364
 msgid "Forbrugsforeningen"
 msgstr ""
@@ -742,10 +738,6 @@ msgstr ""
 
 #: ../includes/Gateways/ReepayGateway.php:523
 msgid "Unable to retrieve the webhook settings. Wrong api credentials?"
-msgstr ""
-
-#: ../includes/Gateways/Resurs.php:42
-msgid "Billwerk+ Pay - Resurs Bank"
 msgstr ""
 
 #: ../includes/Gateways/Swish.php:42
