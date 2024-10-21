@@ -47,28 +47,30 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 			<?php
 			echo apply_filters( 'woocommerce_thankyou_order_received_text', esc_html__( 'Thank you. Your order has been received.', 'woocommerce' ), $order ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
-				</p>
-			<?php
-			reepay()->get_template(
-				'checkout/order-details.php',
-				array(
-					'order' => $order,
-				)
-			);
-
-			foreach ( $another_orders as $order_id ) {
-				if ( $order->get_id() === $order_id ) {
-					continue; // Backward compatibility.
-				}
-
+			</p>
+			<div id="reepay-order-details">
+				<?php
 				reepay()->get_template(
 					'checkout/order-details.php',
 					array(
-						'order' => wc_get_order( $order_id ),
+						'order' => $order,
 					)
 				);
-			}
-			?>
+
+				foreach ( $another_orders as $order_id ) {
+					if ( $order->get_id() === $order_id ) {
+						continue; // Backward compatibility.
+					}
+
+					reepay()->get_template(
+						'checkout/order-details.php',
+						array(
+							'order' => wc_get_order( $order_id ),
+						)
+					);
+				}
+				?>
+			</div>
 		</div>
 
 		<div id="order-failed" style="display: none;">

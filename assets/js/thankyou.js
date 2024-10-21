@@ -1,6 +1,44 @@
 jQuery(function ($) {
     'use strict'
 
+    let attempts = 0;
+    const maxAttempts = 10;
+    const delayBetweenRequests = 2000;
+
+    var status_elm = $('#order-status-checking'),
+        success_elm = $('#order-success'),
+        failed_elm = $('#order-failed')
+
+    function checkOrderStatus() {
+        if (attempts >= maxAttempts) {
+            return;
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: WC_Reepay_Thankyou.ajax_url,
+            data: {
+                action: 'reepay_order_descriptions',
+                order_id: WC_Reepay_Thankyou.order_id,
+                order_key: WC_Reepay_Thankyou.order_key,
+            },
+            success: function(response) {
+                if (response.success) {
+                    status_elm.hide()
+                    success_elm.show()
+                    success_elm.find('#reepay-order-details').html(response.data);
+                } else {
+                    attempts++;
+                    setTimeout(checkOrderStatus, delayBetweenRequests);
+                }
+            },
+            error: function() {
+                attempts++;
+                setTimeout(checkOrderStatus, delayBetweenRequests);
+            }
+        });
+    }
+
     window.wc_reepay_thankyou = {
         xhr: false,
         attempts: 0,
@@ -10,14 +48,14 @@ jQuery(function ($) {
          */
         init: function () {
             this.checkPayment(function (err, data) {
-                var status_elm = $('#order-status-checking'),
-                    success_elm = $('#order-success'),
-                    failed_elm = $('#order-failed')
-
                 switch (data.state) {
                     case 'paid':
-                        status_elm.hide()
-                        success_elm.show()
+                        if(WC_Reepay_Thankyou.order_contain_rp_subscription == true && WC_Reepay_Thankyou.order_is_rp_subscription == false){
+                            checkOrderStatus();
+                        }else{
+                            status_elm.hide()
+                            success_elm.show()
+                        }
                         break
                     case 'reload':
                         $('.woocommerce-order').block({
