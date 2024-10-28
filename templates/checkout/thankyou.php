@@ -91,17 +91,11 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 		<?php do_action( 'woocommerce_thankyou_' . $order->get_payment_method(), $order->get_id() ); ?>
 		<?php
 		$order_rp_subscription = false;
-		if ( class_exists( WCRR::class ) && WCRR::is_order_contain_subscription( $order ) ) {
+		if ( class_exists( WCRR::class ) && ( WCRR::is_order_contain_subscription( $order ) || $another_orders ) ) {
 			$order_rp_subscription = true;
 		}
 
-		$order_is_rp_subscription = false;
-		$reepay_is_subscription   = $order->get_meta( '_reepay_is_subscription' );
-		if ( ! empty( $reepay_is_subscription ) ) {
-			$order_is_rp_subscription = true;
-		}
-
-		if ( true === $order_rp_subscription && false === $order_is_rp_subscription ) {
+		if ( true === $order_rp_subscription ) {
 			if ( $show_customer_details ) {
 				wc_get_template( 'order/order-details-customer.php', array( 'order' => $order ) );
 			}
