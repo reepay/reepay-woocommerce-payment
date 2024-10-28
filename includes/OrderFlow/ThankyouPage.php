@@ -10,6 +10,7 @@ namespace Reepay\Checkout\OrderFlow;
 use Exception;
 use Reepay\Checkout\Utils\LoggingTrait;
 use WC_Order_Item_Product;
+use WC_Reepay_Renewals as WCRR;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -38,6 +39,9 @@ class ThankyouPage {
 
 		add_action( 'wp_ajax_reepay_check_payment', array( $this, 'ajax_check_payment' ) );
 		add_action( 'wp_ajax_nopriv_reepay_check_payment', array( $this, 'ajax_check_payment' ) );
+
+		add_action( 'wp_ajax_reepay_order_descriptions', array( $this, 'ajax_order_descriptions' ) );
+		add_action( 'wp_ajax_nopriv_reepay_order_descriptions', array( $this, 'ajax_order_descriptions' ) );
 	}
 
 	/**
@@ -99,15 +103,28 @@ class ThankyouPage {
 			true
 		);
 
+		$order_rp_subscription = false;
+		if ( class_exists( WCRR::class ) && WCRR::is_order_contain_subscription( $order ) ) {
+			$order_rp_subscription = true;
+		}
+
+		$order_is_rp_subscription = false;
+		$reepay_is_subscription   = $order->get_meta( '_reepay_is_subscription' );
+		if ( ! empty( $reepay_is_subscription ) ) {
+			$order_is_rp_subscription = true;
+		}
+
 		wp_localize_script(
 			'wc-gateway-reepay-thankyou',
 			'WC_Reepay_Thankyou',
 			array(
-				'order_id'      => $order->get_id(),
-				'order_key'     => $order_key,
-				'nonce'         => wp_create_nonce( 'reepay' ),
-				'ajax_url'      => admin_url( 'admin-ajax.php' ),
-				'check_message' => __(
+				'order_id'                      => $order->get_id(),
+				'order_key'                     => $order_key,
+				'order_contain_rp_subscription' => $order_rp_subscription,
+				'order_is_rp_subscription'      => $order_is_rp_subscription,
+				'nonce'                         => wp_create_nonce( 'reepay' ),
+				'ajax_url'                      => admin_url( 'admin-ajax.php' ),
+				'check_message'                 => __(
 					'Please wait. We\'re checking the payment status.',
 					'reepay-checkout-gateway'
 				),
@@ -194,5 +211,54 @@ class ThankyouPage {
 		}
 
 		wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', $ret ?? array(), $order->get_id() ) );
+	}
+
+	/**
+	 * Ajax: get order description on mix order.
+	 */
+	public function ajax_order_descriptions() {
+
+		$order_id  = isset( $_POST['order_id'] ) ? wc_clean( $_POST['order_id'] ) : '';
+		$order_key = isset( $_POST['order_key'] ) ? wc_clean( $_POST['order_key'] ) : '';
+
+		if ( empty( $order_id ) || empty( $order_key ) ) {
+			wp_send_json_error( 'Invalid order' );
+		}
+
+		$order = wc_get_order( $order_id );
+		if ( empty( $order ) || ! $order->key_is_valid( $order_key ) ) {
+			wp_send_json_error( 'Invalid order' );
+		}
+
+		$another_orders = $order->get_meta( '_reepay_another_orders' );
+
+		if ( ! empty( $another_orders ) && is_array( $another_orders ) ) {
+			ob_start();
+
+			reepay()->get_template(
+				'checkout/order-details.php',
+				array(
+					'order' => $order,
+				)
+			);
+
+			foreach ( $another_orders as $order_id ) {
+				if ( $order->get_id() === $order_id ) {
+					continue;
+				}
+
+				reepay()->get_template(
+					'checkout/order-details.php',
+					array(
+						'order' => wc_get_order( $order_id ),
+					)
+				);
+			}
+			$order_details = ob_get_clean();
+			wp_send_json_success( $order_details );
+			wp_die();
+		} else {
+			wp_send_json_error( 'Order data not ready yet' );
+		}
 	}
 }

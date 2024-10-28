@@ -16,6 +16,8 @@
  * @global WC_Order $order
  */
 
+use WC_Reepay_Renewals as WCRR;
+
 defined( 'ABSPATH' ) || exit;
 
 $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_current_user_id();
@@ -47,28 +49,30 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 			<?php
 			echo apply_filters( 'woocommerce_thankyou_order_received_text', esc_html__( 'Thank you. Your order has been received.', 'woocommerce' ), $order ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
-				</p>
-			<?php
-			reepay()->get_template(
-				'checkout/order-details.php',
-				array(
-					'order' => $order,
-				)
-			);
-
-			foreach ( $another_orders as $order_id ) {
-				if ( $order->get_id() === $order_id ) {
-					continue; // Backward compatibility.
-				}
-
+			</p>
+			<div id="reepay-order-details">
+				<?php
 				reepay()->get_template(
 					'checkout/order-details.php',
 					array(
-						'order' => wc_get_order( $order_id ),
+						'order' => $order,
 					)
 				);
-			}
-			?>
+
+				foreach ( $another_orders as $order_id ) {
+					if ( $order->get_id() === $order_id ) {
+						continue; // Backward compatibility.
+					}
+
+					reepay()->get_template(
+						'checkout/order-details.php',
+						array(
+							'order' => wc_get_order( $order_id ),
+						)
+					);
+				}
+				?>
+			</div>
 		</div>
 
 		<div id="order-failed" style="display: none;">
@@ -86,14 +90,18 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 
 		<?php do_action( 'woocommerce_thankyou_' . $order->get_payment_method(), $order->get_id() ); ?>
 		<?php
-		if ( ! empty( $another_orders ) ) {
+		$order_rp_subscription = false;
+		if ( class_exists( WCRR::class ) && ( WCRR::is_order_contain_subscription( $order ) || $another_orders ) ) {
+			$order_rp_subscription = true;
+		}
+
+		if ( true === $order_rp_subscription ) {
 			if ( $show_customer_details ) {
 				wc_get_template( 'order/order-details-customer.php', array( 'order' => $order ) );
 			}
 		} else {
 			do_action( 'woocommerce_thankyou', $order->get_id() );
 		}
-
 		?>
 
 	<?php else : ?>
