@@ -40,7 +40,12 @@ defined( 'ABSPATH' ) || exit();
 		<?php esc_html_e( 'Total:', 'woocommerce' ); ?>
 		<strong>
 		<?php
-		echo $order->get_formatted_order_total(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		if ( (float) $order->get_total() > 0.00 ) {
+			echo wc_price( $order->get_total() );
+		} else {
+			$real_total = $order->get_meta( '_real_total' );
+			echo wc_price( $real_total );
+		}
 		?>
 			</strong>
 	</li>

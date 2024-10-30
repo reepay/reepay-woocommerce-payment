@@ -4,7 +4,7 @@ Tags: billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.6.1
 Requires PHP: 7.4
-Stable tag: 1.7.9.3
+Stable tag: 1.7.10
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,6 +18,11 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.10
+- [Fix] - Discount coupons for regular products couldn't be used if a Billwerk subscription product was also in the cart.
+- [Fix] - The order confirmation page now shows a list of split orders (for regular and subscription products) with correct total amounts.
+- [Improvement] - Remove Resurs Bank payment method.
+
 v 1.7.9.3
 - [Fix] - Vipps Recurring could not save card.
 
