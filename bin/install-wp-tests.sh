@@ -199,7 +199,7 @@ install_dependencies() {
     php wp-cli.phar plugin install https://github.com/reepay/reepay-woocommerce-subscriptions/archive/refs/heads/main.zip --activate --force
     mv ./wp-content/plugins/reepay-woocommerce-subscriptions ./wp-content/plugins/reepay-subscriptions-for-woocommerce
 
-    php wp-cli.phar plugin install http://assets.billwerkwoodev.phhw-190202.cust.powerhosting.dk/woocommerce-subscriptions-for-phpunit-main.zip --activate --force
+    php wp-cli.phar plugin install http://billwerkwoodev.phhw-190202.cust.powerhosting.dk/subdomains/assets/woocommerce-subscriptions-for-phpunit-main.zip --activate --force
     mv ./wp-content/plugins/woocommerce-subscriptions-for-phpunit-main ./wp-content/plugins/woocommerce-subscriptions
 
     php wp-cli.phar plugin list
