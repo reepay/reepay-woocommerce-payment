@@ -18,6 +18,9 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.10.1
+- [Fix] - Web hook invoice_authorized function make order calculate shipping including vat.
+
 v 1.7.10
 - [Fix] - Discount coupons for regular products couldn't be used if a Billwerk subscription product was also in the cart.
 - [Fix] - The order confirmation page now shows a list of split orders (for regular and subscription products) with correct total amounts.
