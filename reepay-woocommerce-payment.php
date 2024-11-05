@@ -74,9 +74,16 @@ class WC_ReepayCheckout {
 
 		add_action( 'plugins_loaded', array( $this, 'include_classes' ), 0 );
 
-		load_plugin_textdomain( 'reepay-checkout-gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		add_action( 'init', array( $this, 'init' ) );
 
 		add_action( 'rest_api_init', array( $this, 'init_rest_api' ) );
+	}
+
+	/**
+	 * Init
+	 */
+	public function init(){
+		load_plugin_textdomain( 'reepay-checkout-gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
 
 	/**
@@ -133,7 +140,7 @@ class WC_ReepayCheckout {
 			}
 
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-			$plugin_data = get_plugin_data( __FILE__ );
+			$plugin_data = get_file_data( __FILE__, array( 'Version' => 'Version' ) );
 
 			$this->settings = array(
 				'plugin_version'             => $plugin_data['Version'],
