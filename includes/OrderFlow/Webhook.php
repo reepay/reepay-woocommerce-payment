@@ -211,13 +211,14 @@ class Webhook {
 								$fees_item->set_tax_class( 'zero-rate' );
 								$fees_item->add_meta_data( '_is_card_fee', true );
 								$order->add_item( $fees_item );
-								$order->calculate_totals();
 							}
 						}
 					}
-				}
 
-				$order->save();
+					$order->calculate_totals( false );
+					$order->save();
+
+				}
 
 				do_action( 'reepay_instant_settle', $order );
 
