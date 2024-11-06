@@ -86,7 +86,7 @@ class Mobilepay extends ReepayGateway {
 		?>
 		<div class="woo-connect-notice notice notice-error">
 			<p>
-				<?php _e( 'The new Vipps MobilePay payment method, which utilizes bank transfers instead of card payments, will replace the old MobilePay Online payment method. Please refer to Vipps MobilePay for more efficient transactions and a better conversion rate.', 'reepay-checkout-gateway' ); ?>
+				<?php esc_html_e( 'The new Vipps MobilePay payment method, which utilizes bank transfers instead of card payments, will replace the old MobilePay Online payment method. Please refer to Vipps MobilePay for more efficient transactions and a better conversion rate.', 'reepay-checkout-gateway' ); ?>
 			</p>
 		</div>
 		<?php

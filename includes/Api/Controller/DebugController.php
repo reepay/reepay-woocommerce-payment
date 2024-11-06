@@ -74,7 +74,7 @@ class DebugController extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return new WP_Error( 'rest_forbidden', esc_html__( 'You cannot view the post resource.' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'rest_forbidden', esc_html__( 'You cannot view the post resource.', 'reepay-checkout-gateway' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		return true;

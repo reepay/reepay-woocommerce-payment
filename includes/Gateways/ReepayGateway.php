@@ -980,7 +980,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 						return false;
 					} elseif ( ! empty( $method ) ) {
 						if ( 'active' !== $method['state'] ) {
-							wc_add_notice( __( 'You payment method has failed, please choose another or add new', 'error' ), 'error' );
+							wc_add_notice( __( 'You payment method has failed, please choose another or add new', 'reepay-checkout-gateway' ), 'error' );
 
 							return false;
 						}
@@ -1342,7 +1342,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				$message = $result['transactions'][0]['card_transaction']['acquirer_message'];
 
 				$order->add_order_note( 'Payment failed. Error from acquire: ' . $message );
-				wc_add_notice( __( 'Payment error: ', 'error' ) . $message, 'error' );
+				wc_add_notice( __( 'Payment error: ', 'reepay-checkout-gateway' ) . $message, 'error' );
 			}
 
 			wp_redirect( wc_get_cart_url() );
