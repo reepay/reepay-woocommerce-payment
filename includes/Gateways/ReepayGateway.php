@@ -647,13 +647,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$order = wc_get_order( $order );
 
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
-			throw new Exception( __( 'Order is canceled', 'reepay-checkout-gateway' ) );
+			throw new Exception( esc_html__( 'Order is canceled', 'reepay-checkout-gateway' ) );
 		}
 
 		$result = reepay()->api( $this )->capture_payment( $order, $amount );
 
 		if ( is_wp_error( $result ) ) {
-			throw new Exception( $result->get_error_message() );
+			throw new Exception( esc_html( $result->get_error_message() ) );
 		}
 	}
 
@@ -668,13 +668,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$order = wc_get_order( $order );
 
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
-			throw new Exception( 'Order is already canceled' );
+			throw new Exception( esc_html__('Order is already canceled', 'reepay-checkout-gateway' ) );
 		}
 
 		$result = reepay()->api( $this )->cancel_payment( $order );
 
 		if ( is_wp_error( $result ) ) {
-			throw new Exception( $result->get_error_message() );
+			throw new Exception( esc_html( $result->get_error_message() ) );
 		}
 	}
 
@@ -692,21 +692,21 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$order = wc_get_order( $order );
 
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
-			throw new Exception( 'Order is already canceled' );
+			throw new Exception( esc_html__( 'Order is already canceled', 'reepay-checkout-gateway' ) );
 		}
 
 		if ( ! $this->can_refund( $order ) ) {
-			throw new Exception( 'Payment can\'t be refunded.' );
+			throw new Exception( esc_html__( 'Payment can\'t be refunded.', 'reepay-checkout-gateway' ) );
 		}
 
 		if ( ! is_null( $amount ) && $amount <= 0 ) {
-			throw new Exception( 'Refund amount must be greater than 0.' );
+			throw new Exception( esc_html__( 'Refund amount must be greater than 0.', 'reepay-checkout-gateway' ) );
 		}
 
 		$result = reepay()->api( $this )->refund( $order, $amount, $reason );
 
 		if ( is_wp_error( $result ) ) {
-			throw new Exception( $result->get_error_message() );
+			throw new Exception( esc_html( $result->get_error_message() ) );
 		}
 	}
 
@@ -749,7 +749,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$description = $this->get_description();
 
 		if ( $description ) {
-			echo wpautop( wptexturize( $description ) );
+			echo esc_html( wpautop( wptexturize( $description ) ) );
 		}
 	}
 
@@ -934,7 +934,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					$result = reepay()->api( $this )->recurring( $this->payment_methods, $order, $data, $token->get_token(), $params['button_text'] );
 
 					if ( is_wp_error( $result ) ) {
-						throw new Exception( $result->get_error_message(), $result->get_error_code() );
+						throw new Exception( esc_html( $result->get_error_message() ), esc_html( $result->get_error_code() ) );
 					}
 
 					if ( ! empty( $result['id'] ) ) {
@@ -943,7 +943,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					}
 
 					if ( is_wp_error( $result ) ) {
-						throw new Exception( $result->get_error_message(), $result->get_error_code() );
+						throw new Exception( esc_html( $result->get_error_message() ), esc_html( $result->get_error_code() ) );
 					}
 
 					try {
@@ -1068,7 +1068,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$result = reepay()->api( $this )->recurring( $this->payment_methods, $order, $data, false, $params['button_text'] );
 
 			if ( is_wp_error( $result ) ) {
-				throw new Exception( $result->get_error_message(), $result->get_error_code() );
+				throw new Exception( esc_html( $result->get_error_message() ), esc_html( $result->get_error_code() ) );
 			}
 
 			if ( ! empty( $result['id'] ) ) {
@@ -1301,7 +1301,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		if ( is_wp_error( $result ) ) {
-			throw new Exception( $result->get_error_message(), $result->get_error_code() );
+			throw new Exception( esc_html( $result->get_error_message() ), esc_html( $result->get_error_code() ) );
 		} else {
 			return array(
 				'result'             => 'success',
