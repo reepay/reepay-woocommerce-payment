@@ -104,7 +104,7 @@ class WC_ReepayCheckout {
 				) . '</pre>';
 			}
 
-			wp_die( esc_html( $message ) );
+			wp_die( wp_kses_post( $message ) );
 		}
 
 		$instance_requested = true;

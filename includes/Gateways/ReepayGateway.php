@@ -749,7 +749,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$description = $this->get_description();
 
 		if ( $description ) {
-			echo esc_html( wpautop( wptexturize( $description ) ) );
+			echo wp_kses_post( wpautop( wptexturize( $description ) ) );
 		}
 	}
 
