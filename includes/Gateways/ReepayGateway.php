@@ -668,7 +668,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$order = wc_get_order( $order );
 
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
-			throw new Exception( esc_html__('Order is already canceled', 'reepay-checkout-gateway' ) );
+			throw new Exception( esc_html__( 'Order is already canceled', 'reepay-checkout-gateway' ) );
 		}
 
 		$result = reepay()->api( $this )->cancel_payment( $order );
@@ -749,7 +749,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$description = $this->get_description();
 
 		if ( $description ) {
-			echo esc_html( wpautop( wptexturize( $description ) ) );
+			echo wp_kses_post( wpautop( wptexturize( $description ) ) );
 		}
 	}
 
