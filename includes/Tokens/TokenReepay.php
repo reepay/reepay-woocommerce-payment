@@ -192,7 +192,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 		$card_type               = $payment_token->get_card_type();
 		$item['method']['id']    = $payment_token->get_id();
 		$item['method']['last4'] = $payment_token->get_last4();
-		$item['method']['brand'] = ( ! empty( $card_type ) ? ucfirst( $card_type ) : esc_html__( 'Credit card', 'woocommerce' ) );
+		$item['method']['brand'] = ( ! empty( $card_type ) ? ucfirst( $card_type ) : esc_html__( 'Credit card', 'reepay-checkout-gateway' ) );
 
 		$item['expires'] = $payment_token->get_expiry_month() . '/' . substr( $payment_token->get_expiry_year(), - 2 );
 
@@ -229,7 +229,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 		 */
 		if ( ! empty( $method['method']['last4'] ) ) {
 			/* translators: 1: credit card type 2: last 4 digits */
-			printf( __( '%1$s ending in %2$s', 'woocommerce' ), esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) ), esc_html( $method['method']['last4'] ) );
+			printf( __( '%1$s ending in %2$s', 'reepay-checkout-gateway' ), esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) ), esc_html( $method['method']['last4'] ) );
 		} elseif ( isset( $method['method']['brand'] ) ) {
 				echo esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) );
 		} else {

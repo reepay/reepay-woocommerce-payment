@@ -59,7 +59,7 @@ class UpdateDB {
 	 */
 	public function add_admin_menu() {
 		add_submenu_page(
-			null,
+			' ',
 			'Reepay update db',
 			'Reepay update db',
 			self::USER_CAPABILITY,

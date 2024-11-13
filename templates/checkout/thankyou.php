@@ -40,14 +40,14 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 
 		<div id="order-status-checking">
 			<p>
-				<?php esc_html_e( 'Please wait. We\'re checking the payment status.', 'acqra' ); ?>
+				<?php esc_html_e( 'Please wait. We\'re checking the payment status.', 'reepay-checkout-gateway' ); ?>
 			</p>
 		</div>
 
 		<div id="order-success" style="display: none;">
 			<p class="woocommerce-notice woocommerce-notice--success woocommerce-thankyou-order-received">
 			<?php
-			echo apply_filters( 'woocommerce_thankyou_order_received_text', esc_html__( 'Thank you. Your order has been received.', 'woocommerce' ), $order ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo apply_filters( 'woocommerce_thankyou_order_received_text', esc_html__( 'Thank you. Your order has been received.', 'reepay-checkout-gateway' ), $order ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 			</p>
 			<div id="reepay-order-details">
@@ -79,11 +79,11 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 			<p class="woocommerce-notice woocommerce-notice--error woocommerce-thankyou-order-failed-actions">
 				<?php if ( ! wcr_cart_only_reepay_subscriptions() ) : ?>
 					<a href="<?php echo esc_url( $order->get_checkout_payment_url() ); ?>"
-						class="button pay"><?php esc_html_e( 'Pay', 'woocommerce' ); ?></a>
+						class="button pay"><?php esc_html_e( 'Pay', 'reepay-checkout-gateway' ); ?></a>
 				<?php endif; ?>
 				<?php if ( is_user_logged_in() ) : ?>
 					<a href="<?php echo esc_url( wc_get_page_permalink( 'myaccount' ) ); ?>"
-						class="button pay"><?php esc_html_e( 'My account', 'woocommerce' ); ?></a>
+						class="button pay"><?php esc_html_e( 'My account', 'reepay-checkout-gateway' ); ?></a>
 				<?php endif; ?>
 			</p>
 		</div>
@@ -106,7 +106,7 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 
 	<?php else : ?>
 
-		<p class="woocommerce-notice woocommerce-notice--success woocommerce-thankyou-order-received"><?php echo apply_filters( 'woocommerce_thankyou_order_received_text', esc_html__( 'Thank you. Your order has been received.', 'woocommerce' ), null ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></p>
+		<p class="woocommerce-notice woocommerce-notice--success woocommerce-thankyou-order-received"><?php echo apply_filters( 'woocommerce_thankyou_order_received_text', esc_html__( 'Thank you. Your order has been received.', 'reepay-checkout-gateway' ), null ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></p>
 
 	<?php endif; ?>
 

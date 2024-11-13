@@ -395,7 +395,7 @@ class MetaFieldsController extends WP_REST_Controller {
 		$order     = wc_get_order( $id );
 
 		if ( ! $order ) {
-			return new WP_Error( 'not_found', esc_html__( 'Not found order.' ) );
+			return new WP_Error( 'not_found', esc_html__( 'Not found order.', 'reepay-checkout-gateway' ) );
 		}
 
 		$meta_data = $order->get_meta_data();
@@ -427,7 +427,7 @@ class MetaFieldsController extends WP_REST_Controller {
 		$user      = get_user_by( 'id', $id );
 
 		if ( ! $user ) {
-			return new WP_Error( 'not_found', esc_html__( 'Not found user.' ) );
+			return new WP_Error( 'not_found', esc_html__( 'Not found user.', 'reepay-checkout-gateway' ) );
 		}
 
 		$meta_data = get_user_meta( $id );
@@ -472,7 +472,7 @@ class MetaFieldsController extends WP_REST_Controller {
 		$user = get_user_by( 'id', $id );
 
 		if ( ! $user ) {
-			return new WP_Error( 'not_found', esc_html__( 'Not found user.' ) );
+			return new WP_Error( 'not_found', esc_html__( 'Not found user.', 'reepay-checkout-gateway' ) );
 		}
 
 		$decoded_value = json_decode( $value, true );
@@ -560,7 +560,7 @@ class MetaFieldsController extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'delete_posts' ) ) {
-			return new WP_Error( 'rest_forbidden', esc_html__( 'You cannot view the post resource.' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'rest_forbidden', esc_html__( 'You cannot view the post resource.', 'reepay-checkout-gateway' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		return true;

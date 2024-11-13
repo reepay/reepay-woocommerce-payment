@@ -99,7 +99,7 @@ abstract class ReepayTokens {
 			$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $card_info );
 
 			if ( is_wp_error( $card_info ) ) {
-				throw new Exception( __( 'Card not found', 'reepay-checkout-gateway' ) );
+				throw new Exception( esc_html__( 'Card not found', 'reepay-checkout-gateway' ) );
 			}
 		}
 
@@ -160,7 +160,7 @@ abstract class ReepayTokens {
 		}
 
 		if ( is_wp_error( $card_info ) || empty( $card_info ) ) {
-			throw new Exception( __( 'Card not found', 'reepay-checkout-gateway' ) );
+			throw new Exception( esc_html__( 'Card not found', 'reepay-checkout-gateway' ) );
 		}
 
 		if ( 'ms_' === substr( $card_info['id'], 0, 3 ) ) {
