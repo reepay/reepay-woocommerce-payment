@@ -4,6 +4,7 @@
   "description": "",
   "main": "gulpfile.js",
   "dependencies": {
+    "braces": "^3.0.3",
     "gulp-clean-css": "^4.3.0",
     "gulp-sass": "^5.0.0",
     "yargs": "^17.7.1"
