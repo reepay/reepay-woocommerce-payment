@@ -4,11 +4,11 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: Billwerk+
  * Author URI: http://billwerk.plus
- * Version: 1.7.10
+ * Version: 1.7.10.2
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
- * WC tested up to: 9.1.4
+ * WC tested up to: 9.3.3
  *
  * @package Reepay\Checkout
  */
@@ -74,9 +74,16 @@ class WC_ReepayCheckout {
 
 		add_action( 'plugins_loaded', array( $this, 'include_classes' ), 0 );
 
-		load_plugin_textdomain( 'reepay-checkout-gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		add_action( 'init', array( $this, 'init' ) );
 
 		add_action( 'rest_api_init', array( $this, 'init_rest_api' ) );
+	}
+
+	/**
+	 * Init
+	 */
+	public function init(){
+		load_plugin_textdomain( 'reepay-checkout-gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
 
 	/**
@@ -97,7 +104,7 @@ class WC_ReepayCheckout {
 				) . '</pre>';
 			}
 
-			wp_die( $message );
+			wp_die( wp_kses_post( $message ) );
 		}
 
 		$instance_requested = true;
@@ -133,7 +140,7 @@ class WC_ReepayCheckout {
 			}
 
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-			$plugin_data = get_plugin_data( __FILE__ );
+			$plugin_data = get_file_data( __FILE__, array( 'Version' => 'Version' ) );
 
 			$this->settings = array(
 				'plugin_version'             => $plugin_data['Version'],
