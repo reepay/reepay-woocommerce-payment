@@ -375,7 +375,7 @@ class ReepayCheckout extends ReepayGateway {
 				'title'       => __( 'Logo Height', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'Set the Logo height in pixels', 'reepay-checkout-gateway' ),
-				'default'     => '',
+				'default'     => 20,
 			),
 			'hr7'                        => array(
 				'type' => 'separator',

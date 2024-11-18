@@ -183,7 +183,7 @@ class WC_ReepayCheckout {
 				'status_created'             => ! empty( $gateway_settings['status_created'] ) ? $gateway_settings['status_created'] : '',
 				'status_authorized'          => ! empty( $gateway_settings['status_authorized'] ) ? $gateway_settings['status_authorized'] : '',
 				'status_settled'             => ! empty( $gateway_settings['status_settled'] ) ? $gateway_settings['status_settled'] : '',
-				'logo_height'                => ! empty( $gateway_settings['logo_height'] ) ? $gateway_settings['logo_height'] : '',
+				'logo_height'                => ! empty( $gateway_settings['logo_height'] ) ? $gateway_settings['logo_height'] : '20',
 			);
 		}
 
