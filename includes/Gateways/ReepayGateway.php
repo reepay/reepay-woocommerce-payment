@@ -100,20 +100,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 *
 	 * @var array
 	 */
-	public array $logos = array(
-		'dankort',
-		'visa',
-		'mastercard',
-		'visa-electron',
-		'maestro',
-		'mobilepay',
-		'viabill',
-		'applepay',
-		'paypal_logo',
-		'klarna-pay-later',
-		'klarna-pay-now',
-		'klarna',
-	);
+	public array $logos = array();
 
 	/**
 	 * Current payment type
