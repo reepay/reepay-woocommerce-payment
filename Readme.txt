@@ -4,7 +4,7 @@ Tags: billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.7.10.1
+Stable tag: 1.7.11
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,7 +18,10 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
-v 1.7.10.1
+v 1.7.11
+- [Fix] - VAT added as compound rate got computed twice.
+- [Fix] - Shows no Payment logos when none are selected in settings.
+- [Improvement] - Payment method logo height defaults to 20px.
 - [Improvement] - Support WordPress version 6.7
 
 v 1.7.10
