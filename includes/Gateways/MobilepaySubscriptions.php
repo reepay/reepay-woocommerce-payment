@@ -129,7 +129,7 @@ class MobilepaySubscriptions extends ReepayGateway {
 		?>
 		<div class="woo-connect-notice notice notice-error">
 			<p>
-				<?php echo $this->warning_message(); ?>
+				<?php echo esc_html( $this->warning_message() ); ?>
 			</p>
 		</div>
 		<?php

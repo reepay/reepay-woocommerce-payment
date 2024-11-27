@@ -207,7 +207,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 
 	public function test_refund_payment_with_impossible_to_cancel_order() {
 		$this->expectException(Exception::class);
-		$this->expectExceptionMessage('Payment can\'t be refunded.');
+		$this->expectExceptionMessage(esc_html('Payment can\'t be refunded.'));
 
 		self::$gateway->refund_payment( $this->order_generator->order() );
 	}

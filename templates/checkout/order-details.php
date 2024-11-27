@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit();
 <ul class="woocommerce-order-overview woocommerce-thankyou-order-details order_details">
 
 	<li class="woocommerce-order-overview__order order">
-		<?php esc_html_e( 'Order number:', 'woocommerce' ); ?>
+		<?php esc_html_e( 'Order number:', 'reepay-checkout-gateway' ); ?>
 		<strong>
 		<?php
 		echo $order->get_order_number(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -21,7 +21,7 @@ defined( 'ABSPATH' ) || exit();
 	</li>
 
 	<li class="woocommerce-order-overview__date date">
-		<?php esc_html_e( 'Date:', 'woocommerce' ); ?>
+		<?php esc_html_e( 'Date:', 'reepay-checkout-gateway' ); ?>
 		<strong>
 		<?php
 		echo wc_format_datetime( $order->get_date_created() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -31,13 +31,13 @@ defined( 'ABSPATH' ) || exit();
 
 	<?php if ( is_user_logged_in() && $order->get_user_id() === get_current_user_id() && $order->get_billing_email() ) : ?>
 		<li class="woocommerce-order-overview__email email">
-			<?php esc_html_e( 'Email:', 'woocommerce' ); ?>
+			<?php esc_html_e( 'Email:', 'reepay-checkout-gateway' ); ?>
 			<strong><?php echo $order->get_billing_email(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></strong>
 		</li>
 	<?php endif; ?>
 
 	<li class="woocommerce-order-overview__total total">
-		<?php esc_html_e( 'Total:', 'woocommerce' ); ?>
+		<?php esc_html_e( 'Total:', 'reepay-checkout-gateway' ); ?>
 		<strong>
 		<?php
 		if ( (float) $order->get_total() > 0.00 ) {
@@ -52,7 +52,7 @@ defined( 'ABSPATH' ) || exit();
 
 	<?php if ( $order->get_payment_method_title() ) : ?>
 		<li class="woocommerce-order-overview__payment-method method">
-			<?php esc_html_e( 'Payment method:', 'woocommerce' ); ?>
+			<?php esc_html_e( 'Payment method:', 'reepay-checkout-gateway' ); ?>
 			<strong><?php echo wp_kses_post( $order->get_payment_method_title() ); ?></strong>
 		</li>
 	<?php endif; ?>

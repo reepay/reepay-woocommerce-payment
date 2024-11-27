@@ -222,7 +222,7 @@ class ReepayCheckout extends ReepayGateway {
 				'sanitize_callback' => function ( $value ) {
 					if ( ! empty( $value ) ) {
 						if ( ! is_email( $value ) ) {
-							throw new Exception( __( 'Email address is invalid.', 'reepay-checkout-gateway' ) );
+							throw new Exception( esc_html__( 'Email address is invalid.', 'reepay-checkout-gateway' ) );
 						}
 					}
 
@@ -375,7 +375,7 @@ class ReepayCheckout extends ReepayGateway {
 				'title'       => __( 'Logo Height', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'Set the Logo height in pixels', 'reepay-checkout-gateway' ),
-				'default'     => '',
+				'default'     => 20,
 			),
 			'hr7'                        => array(
 				'type' => 'separator',
@@ -472,7 +472,7 @@ class ReepayCheckout extends ReepayGateway {
 				<fieldset>
 					<?php if ( ! is_wp_error( $info ) && ! empty( $info[ $data['info_type'] ] ) ) : ?>
 						<span>
-							<?php echo $info[ $data['info_type'] ]; ?>
+							<?php echo esc_attr( $info[ $data['info_type'] ] ); ?>
 						</span>
 					<?php endif; ?>
 				</fieldset>
@@ -513,7 +513,7 @@ class ReepayCheckout extends ReepayGateway {
 			<td class="forminp">
 				<fieldset>
 					<button name="save" class="button-primary woocommerce-save-button" type="submit" value="Save changes">
-						<?php _e( 'Save and verify', 'reepay-checkout-gateway' ); ?>
+						<?php esc_html_e( 'Save and verify', 'reepay-checkout-gateway' ); ?>
 					</button>
 				</fieldset>
 			</td>
@@ -555,7 +555,7 @@ class ReepayCheckout extends ReepayGateway {
 		?>
 		<tr valign="top">
 			<th scope="row" class="titledesc">
-				<label><?php _e( 'Webhook', 'reepay-checkout-gateway' ); ?></label>
+				<label><?php esc_html_e( 'Webhook', 'reepay-checkout-gateway' ); ?></label>
 			</th>
 			<td class="forminp">
 				<fieldset>
@@ -799,7 +799,7 @@ class ReepayCheckout extends ReepayGateway {
 		$notice_message = sprintf( __( 'The Api key identifies the Billwerk account. Only subscription plan handles that exist under the account of the API key can be used to submit subscription orders. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://optimize-docs.billwerk.com/reference/account' );
 		?>
 		<div class="notice notice-info">
-			<p><?php echo $notice_message; ?></p>
+			<p><?php echo wp_kses_post( $notice_message ); ?></p>
 		</div>
 		<?php
 	}
@@ -812,7 +812,7 @@ class ReepayCheckout extends ReepayGateway {
 		$notice_message = sprintf( __( 'You just enabled test mode, meaning your test API key will now be used. Please note that all subscription products previously linked to plans on your live account are no longer linked. If you try to purchase a subscription product now, an error will occur. Disabling test mode will restore all connections. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://optimize-docs.billwerk.com/reference/account' );
 		?>
 		<div class="notice notice-info">
-			<p><?php echo $notice_message; ?></p>
+			<p><?php echo wp_kses_post( $notice_message ); ?></p>
 		</div>
 		<?php
 	}
@@ -825,7 +825,7 @@ class ReepayCheckout extends ReepayGateway {
 		$notice_message = sprintf( __( 'You just disabled test mode, meaning your live API key will now be used. Please note that all subscription products previously linked to plans on your live account are now restored. If you haven\'t linked your subscription products with your test account, they will remain unlinked. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://optimize-docs.billwerk.com/reference/account' );
 		?>
 		<div class="notice notice-info">
-			<p><?php echo $notice_message; ?></p>
+			<p><?php echo wp_kses_post( $notice_message ); ?></p>
 		</div>
 		<?php
 	}

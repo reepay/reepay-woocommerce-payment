@@ -70,7 +70,7 @@ class Ajax {
 		$this->verify_nonce();
 
 		if ( empty( $_REQUEST['order_id'] ) ) {
-			wp_send_json_error( __( 'Order id not specified' ) );
+			wp_send_json_error( __( 'Order id not specified', 'reepay-checkout-gateway' ) );
 		}
 
 		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
@@ -93,7 +93,7 @@ class Ajax {
 		$this->verify_nonce();
 
 		if ( empty( $_REQUEST['order_id'] ) ) {
-			wp_send_json_error( __( 'Order id not specified' ) );
+			wp_send_json_error( __( 'Order id not specified', 'reepay-checkout-gateway' ) );
 		}
 
 		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
@@ -129,7 +129,7 @@ class Ajax {
 		$this->verify_nonce();
 
 		if ( empty( $_REQUEST['order_id'] ) ) {
-			wp_send_json_error( __( 'Order id not specified' ) );
+			wp_send_json_error( __( 'Order id not specified', 'reepay-checkout-gateway' ) );
 		}
 
 		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
@@ -216,7 +216,7 @@ class Ajax {
 		$this->verify_nonce( 'reepay' );
 
 		if ( empty( $_POST['order_id'] ) || empty( $_POST['settle_order'] ) ) {
-			wp_send_json_error( __( 'Order id or settle order not specified' ) );
+			wp_send_json_error( __( 'Order id or settle order not specified', 'reepay-checkout-gateway' ) );
 		}
 
 		$order_id     = wc_clean( $_POST['order_id'] );
