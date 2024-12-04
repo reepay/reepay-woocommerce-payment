@@ -27,6 +27,7 @@ class Main {
 		new Ajax();
 		new MetaBoxes\Order();
 		new MetaBoxes\User();
+		new OrderTable();
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 	}
