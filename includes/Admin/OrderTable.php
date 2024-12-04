@@ -24,7 +24,7 @@ class OrderTable {
 	public function __construct() {
 		add_filter( 'reepay_checkout_form_fields', array( $this, 'form_fields' ), 11, 2 );
 		$gateway_settings = get_option( 'woocommerce_reepay_checkout_settings' );
-		if ( 'yes' === $gateway_settings['order_table_billwerk_status'] ) {
+		if ( isset( $gateway_settings['order_table_billwerk_status'] ) && 'yes' === $gateway_settings['order_table_billwerk_status'] ) {
 			if ( OrderUtil::custom_orders_table_usage_is_enabled() ) {
 				add_action(
 					'manage_woocommerce_page_wc-orders_custom_column',
