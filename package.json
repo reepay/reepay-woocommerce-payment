@@ -5,7 +5,9 @@
   "main": "gulpfile.js",
   "dependencies": {
     "gulp-clean-css": "^4.3.0",
+    "gulp-postcss": "^10.0.0",
     "gulp-sass": "^5.0.0",
+    "postcss": "^8.4.49",
     "yargs": "^17.7.1"
   },
   "devDependencies": {
@@ -14,7 +16,6 @@
     "gulp-clean-css": "^4.3.0",
     "gulp-if": "^3.0.0",
     "gulp-rename": "^2.0.0",
-    "gulp-sourcemaps": "^3.0.0",
     "gulp-uglify-es": "^3.0.0",
     "sass": "^1.62.1"
   },
