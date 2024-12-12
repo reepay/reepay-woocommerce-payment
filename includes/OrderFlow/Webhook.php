@@ -223,14 +223,36 @@ class Webhook {
 
 				break;
 			case 'invoice_settled':
+				$this->log( 'WebHook: invoice_settled : start process' );
+
 				if ( ! isset( $data['invoice'] ) ) {
+					$this->log( 'WebHook: invoice_settled : Missing Invoice parameter $data[\'invoice\']' );
 					throw new Exception( 'Missing Invoice parameter' );
 				}
 
 				if ( isset( $data['subscription'] ) ) {
 					$order = rp_get_not_subs_order_by_handle( $data['invoice'] );
+					$this->log(
+						array(
+							'LogMSG' => 'WebHook: invoice_settled : rp_get_not_subs_order_by_handle',
+							'Data'   => array(
+								'$order-get_id'           => $order->get_id(),
+								'$data[\'subscription\']' => $data['subscription'],
+								'$data[\'invoice\']'      => $data['invoice'],
+							),
+						)
+					);
 				} else {
 					$order = rp_get_order_by_handle( $data['invoice'] );
+					$this->log(
+						array(
+							'LogMSG' => 'WebHook: invoice_settled : rp_get_order_by_handle',
+							'Data'   => array(
+								'$order-get_id'      => $order->get_id(),
+								'$data[\'invoice\']' => $data['invoice'],
+							),
+						)
+					);
 				}
 
 				if ( ! $order ) {
@@ -242,6 +264,15 @@ class Webhook {
 				$needs_reload = self::wait_for_unlock( $order->get_id() );
 				if ( $needs_reload ) {
 					$order = wc_get_order( $order->get_id() );
+					$this->log(
+						array(
+							'LogMSG' => 'WebHook: invoice_settled : needs_reload',
+							'Data'   => array(
+								'$order-get_id' => $order->get_id(),
+								'$needs_reload' => $needs_reload,
+							),
+						)
+					);
 				}
 
 				if ( $order->has_status( OrderStatuses::$status_settled ) ) {
@@ -253,34 +284,124 @@ class Webhook {
 						)
 					);
 
+					$this->log(
+						array(
+							'LogMSG' => 'WebHook: invoice_settled : $order->has_status',
+							'Data'   => array(
+								'$order-get_id'      => $order->get_id(),
+								'$order->get_status' => $order->get_status,
+								'OrderStatuses::$status_settled' => OrderStatuses::$status_settled,
+								'$order->has_status( OrderStatuses::$status_settled )' => $order->has_status( OrderStatuses::$status_settled ),
+							),
+						)
+					);
+
 					http_response_code( 200 );
 
 					return;
 				}
 
 				self::lock_order( $order->get_id() );
+				$this->log(
+					array(
+						'LogMSG' => 'WebHook: invoice_settled : self::lock_order',
+						'Data'   => array(
+							'$order-get_id'  => $order->get_id(),
+							'_reepay_locked' => $order->get_meta( '_reepay_locked' ),
+						),
+					)
+				);
 
 				$invoice_data = reepay()->api( $order )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
 					$invoice_data = array();
+					$this->log(
+						array(
+							'LogMSG' => 'WebHook: invoice_settled : get_invoice_by_handle is_wp_error $data[\'invoice\']',
+							'Data'   => array(
+								'$order-get_id'      => $order->get_id(),
+								'$data[\'invoice\']' => $data['invoice'],
+								'$invoice_data'      => var_export( $invoice_data, true ), //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
+							),
+						)
+					);
 				}
+
+				$this->log(
+					array(
+						'LogMSG' => 'WebHook: invoice_settled : get_invoice_by_handle $data[\'invoice\']',
+						'Data'   => array(
+							'$order-get_id'      => $order->get_id(),
+							'$data[\'invoice\']' => $data['invoice'],
+							'$invoice_data'      => var_export( $invoice_data, true ), //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
+						),
+					)
+				);
 
 				$this->log( sprintf( 'WebHook: Invoice data: %s', var_export( $invoice_data, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 
 				if ( ! empty( $invoice_data['id'] ) && ! empty( $data['transaction'] ) ) {
 					$transaction = reepay()->api( $order )->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice_data['id'] . '/transaction/' . $data['transaction'] );
 					$this->log( sprintf( 'WebHook: Transaction data: %s', var_export( $transaction, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
+					$this->log(
+						array(
+							'LogMSG' => 'WebHook: invoice_settled : if ! empty( $invoice_data[\'id\'] ) && ! empty( $data[\'transaction\'] )',
+							'Data'   => array(
+								'$order-get_id'          => $order->get_id(),
+								'$invoice_data[\'id\']'  => $invoice_data['id'],
+								'$data[\'transaction\']' => $data['transaction'],
+							),
+						)
+					);
+
+					$this->log(
+						array(
+							'LogMSG' => 'WebHook: invoice_settled : get $transaction',
+							'Data'   => array(
+								'$order-get_id' => $order->get_id(),
+								'$transaction'  => var_export( $transaction, true ), //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
+							),
+						)
+					);
 
 					if ( ! empty( $transaction['card_transaction']['card'] ) ) {
+						$this->log(
+							array(
+								'LogMSG' => 'WebHook: invoice_settled : if ( ! empty( $transaction[\'card_transaction\'][\'card\'] ) )',
+								'Data'   => array(
+									'$order-get_id' => $order->get_id(),
+									'$transaction[\'card_transaction\'][\'card\']' => $transaction['card_transaction']['card'],
+								),
+							)
+						);
 						if ( ! empty( $transaction['card_transaction']['error'] ) && ! empty( $transaction['card_transaction']['acquirer_message'] ) ) {
 							$order->add_order_note( 'Item settle error: ' . $transaction['card_transaction']['acquirer_message'] );
-
+							$this->log(
+								array(
+									'LogMSG' => 'WebHook: invoice_settled : if ( ! empty( $transaction[\'card_transaction\'][\'error\'] ) && ! empty( $transaction[\'card_transaction\'][\'acquirer_message\'] ) ) add order noted',
+									'Data'   => array(
+										'$order-get_id' => $order->get_id(),
+										'$transaction[\'card_transaction\'][\'error\']' => $transaction['card_transaction']['error'],
+										'$transaction[\'card_transaction\'][\'acquirer_message\']' => $transaction['card_transaction']['acquirer_message'],
+									),
+								)
+							);
 							return;
 						}
 					}
 				}
 
 				if ( empty( $order->get_meta( '_reepay_subscription_handle' ) ) ) {
+					$this->log(
+						array(
+							'LogMSG' => 'WebHook: invoice_settled : if ( empty( $order->get_meta( \'_reepay_subscription_handle\' ) ) ) then go func OrderStatuses::set_settled_status and check with log reepay-order-statuses',
+							'Data'   => array(
+								'$order-get_id'          => $order->get_id(),
+								'_reepay_subscription_handle' => $order->get_meta( '_reepay_subscription_handle' ),
+								'$data[\'transaction\']' => $data['transaction'],
+							),
+						)
+					);
 					OrderStatuses::set_settled_status(
 						$order,
 						'',
@@ -291,14 +412,52 @@ class Webhook {
 				$order->update_meta_data( '_reepay_capture_transaction', $data['transaction'] );
 				$order->save_meta_data();
 
+				$this->log(
+					array(
+						'LogMSG' => 'WebHook: invoice_settled : update_meta_data _reepay_capture_transaction',
+						'Data'   => array(
+							'$order-get_id'               => $order->get_id(),
+							'_reepay_capture_transaction' => $order->get_meta( '_reepay_capture_transaction' ),
+							'$data[\'transaction\']'      => $data['transaction'],
+						),
+					)
+				);
+
 				self::unlock_order( $order->get_id() );
+				$this->log(
+					array(
+						'LogMSG' => 'WebHook: invoice_settled : self::unlock_order',
+						'Data'   => array(
+							'$order-get_id' => $order->get_id(),
+						),
+					)
+				);
 
 				$data['order_id'] = $order->get_id();
+				$this->log(
+					array(
+						'LogMSG' => 'WebHook: invoice_settled : do_action reepay_webhook_invoice_settled',
+						'Data'   => array(
+							'$order-get_id'       => $order->get_id(),
+							'$data[\'order_id\']' => $data['order_id'],
+						),
+					)
+				);
 				do_action( 'reepay_webhook_invoice_settled', $data );
 
 				// Need for analytics.
 				$order->set_date_paid( time() );
+				$this->log(
+					array(
+						'LogMSG' => 'WebHook: invoice_settled : order set_date_paid',
+						'Data'   => array(
+							'$order-get_id' => $order->get_id(),
+							'time()'        => time(),
+						),
+					)
+				);
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
+				$this->log( 'WebHook: invoice_settled : End process' );
 				break;
 			case 'invoice_cancelled':
 				if ( ! isset( $data['invoice'] ) ) {
