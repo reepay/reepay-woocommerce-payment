@@ -13,6 +13,7 @@ use Reepay\Checkout\Gateways\ReepayGateway;
 use WC_Admin_Meta_Boxes;
 use WC_Data_Exception;
 use WC_Order;
+use Reepay\Checkout\Utils\LoggingTrait;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -22,6 +23,15 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\OrderFlow
  */
 class OrderStatuses {
+	use LoggingTrait;
+
+	/**
+	 * Logging source
+	 *
+	 * @var string
+	 */
+	private string $logging_source = 'reepay-order-statuses';
+
 	/**
 	 * Is sync enabled
 	 *
@@ -277,20 +287,69 @@ class OrderStatuses {
 	 * @return bool
 	 */
 	public static function set_settled_status( WC_Order $order, string $note = '', string $transaction_id = '' ): bool {
+		( new OrderStatuses() )->log(
+			array(
+				'LogMSG' => 'OrderStatuses : Start process set_settled_status',
+				'Data'   => array(
+					'$order-get_id'   => $order->get_id(),
+					'$transaction_id' => $transaction_id,
+				),
+			)
+		);
 		if ( ! rp_is_reepay_payment_method( $order->get_payment_method() ) || ! empty( $order->get_meta( '_reepay_state_settled' ) ) ) {
+			( new OrderStatuses() )->log(
+				array(
+					'LogMSG' => 'OrderStatuses : Check ! rp_is_reepay_payment_method and ! empty _reepay_state_settled',
+					'Data'   => array(
+						'$order-get_id'                => $order->get_id(),
+						'$order->get_payment_method()' => $order->get_payment_method(),
+						'rp_is_reepay_payment_method'  => rp_is_reepay_payment_method( $order->get_payment_method() ),
+						'_reepay_state_settled'        => $order->get_meta( '_reepay_state_settled' ),
+					),
+				)
+			);
 			return false;
 		}
 
 		$invoice = reepay()->api( $order )->get_invoice_data( $order );
 
 		if ( is_wp_error( $invoice ) ) {
+			( new OrderStatuses() )->log(
+				array(
+					'LogMSG' => 'OrderStatuses : get_invoice_data is error',
+					'Data'   => array(
+						'$order-get_id'         => $order->get_id(),
+						'_reepay_state_settled' => var_export( $invoice, true ), //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
+					),
+				)
+			);
 			return false;
 		}
 
 		if ( $invoice['settled_amount'] < $invoice['authorized_amount'] ) {
 			// Use the authorized status if order has been settled partially.
+			( new OrderStatuses() )->log(
+				array(
+					'LogMSG' => 'OrderStatuses : $invoice[\'settled_amount\'] < $invoice[\'authorized_amount\'] call func set_authorized_status',
+					'Data'   => array(
+						'$order-get_id'                   => $order->get_id(),
+						'$invoice[\'settled_amount\']'    => $invoice['settled_amount'],
+						'$invoice[\'authorized_amount\']' => $invoice['authorized_amount'],
+						'transaction_id'                  => $transaction_id,
+					),
+				)
+			);
 			self::set_authorized_status( $order, $note, $transaction_id );
 		} else {
+			( new OrderStatuses() )->log(
+				array(
+					'LogMSG' => 'OrderStatuses : $order->payment_complete call to class-wc-order',
+					'Data'   => array(
+						'$order-get_id'  => $order->get_id(),
+						'transaction_id' => $transaction_id,
+					),
+				)
+			);
 			$order->payment_complete( $transaction_id );
 
 			if ( $note ) {
@@ -299,7 +358,27 @@ class OrderStatuses {
 
 			$order->update_meta_data( '_reepay_state_settled', 1 );
 			$order->save_meta_data();
+
+			( new OrderStatuses() )->log(
+				array(
+					'LogMSG' => 'OrderStatuses : update_meta_data _reepay_state_settled',
+					'Data'   => array(
+						'$order-get_id'         => $order->get_id(),
+						'_reepay_state_settled' => $order->get_meta( '_reepay_state_settled' ),
+					),
+				)
+			);
 		}
+
+		( new OrderStatuses() )->log(
+			array(
+				'LogMSG' => 'OrderStatuses : End process set_settled_status',
+				'Data'   => array(
+					'$order-get_id'   => $order->get_id(),
+					'$transaction_id' => $transaction_id,
+				),
+			)
+		);
 
 		return true;
 	}
