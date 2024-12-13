@@ -101,10 +101,6 @@ class OrderTable {
 				return;
 			}
 
-			if ( empty( $order->get_transaction_id() ) ) {
-				return;
-			}
-
 			$order_data = reepay()->api( $gateway )->get_invoice_data( $order );
 
 			if ( is_wp_error( $order_data ) ) {
