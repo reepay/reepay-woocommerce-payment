@@ -471,9 +471,6 @@ class Webhook {
 					return;
 				}
 
-				$order->set_transaction_id( $data['transaction'] );
-				$order->save();
-
 				if ( $order->has_status( 'cancelled' ) ) {
 					$this->log(
 						sprintf(
