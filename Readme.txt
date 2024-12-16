@@ -19,7 +19,7 @@ See installation guide right here: https://docu.billwerk.plus/help/en/apps/wooco
 
 == Changelog ==
 v 1.7.12
-- [Fix] - Remove the call to the wc_reduce_stock_levels function from the set_authorized_status function.
+- [Fix] - Redundant call to reduce stock removed.
 - [Improvement] - Add Billwerk order status in order grid.
 
 v 1.7.11
