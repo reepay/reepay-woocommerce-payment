@@ -4,11 +4,11 @@ const gulp = require('gulp'),
         rename = require('gulp-rename'),
         gulpif = require('gulp-if'),
         sass = require('gulp-sass')(require('sass')),
-        sourcemaps = require('gulp-sourcemaps'),
         cssmin = require('gulp-clean-css'),
         uglify = require('gulp-uglify-es').default,
         argv = require('yargs').argv,
-        fs = require('fs-extra')
+        fs = require('fs-extra'),
+        postcss = require('gulp-postcss');
 
 const config = {
     sourceMaps: !argv.production // --production
@@ -18,7 +18,7 @@ gulp.task(
         'css:build',
         async function () {
             return gulp.src('./assets/css/*.scss')
-                    .pipe(gulpif(config.sourceMaps, sourcemaps.init()))
+                    .pipe(gulpif(config.sourceMaps, postcss([], { map: { inline: false } })))
                     .pipe(sass().on('error', sass.logError))
                     .pipe(gulp.dest('./assets/dist/css'))
                     .pipe(cssmin())
@@ -29,7 +29,6 @@ gulp.task(
                                     }
                             )
                     )
-                    .pipe(gulpif(config.sourceMaps, sourcemaps.write('.')))
                     .pipe(gulp.dest('./assets/dist/css'))
 
         }
@@ -47,7 +46,6 @@ gulp.task(
         async function () {
             return gulp.src(['./assets/js/*.js'])
                     .pipe(gulp.dest('./assets/dist/js'))
-                    .pipe(gulpif(config.sourceMaps, sourcemaps.init()))
                     .pipe(uglify())
                     .pipe(
                             rename(
@@ -56,7 +54,6 @@ gulp.task(
                                     }
                             )
                     )
-                    .pipe(gulpif(config.sourceMaps, sourcemaps.write('.')))
                     .pipe(gulp.dest('./assets/dist/js'))
         }
 )

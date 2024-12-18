@@ -250,10 +250,6 @@ class OrderStatuses {
 			return false;
 		}
 
-		if ( empty( $order->get_meta( '_order_stock_reduced' ) ) ) {
-			wc_reduce_stock_levels( $order->get_id() );
-		}
-
 		self::update_order_status(
 			$order,
 			$authorized_status,
