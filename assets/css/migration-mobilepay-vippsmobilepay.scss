@@ -1,0 +1,17 @@
+.migration-mobilepay-to-vippsmobile-wrap{
+    padding-top: 20px;
+    .form{
+        margin-bottom: 20px;
+    }
+    .spinners_warp{
+        display: none;
+    }
+    .spinners{
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        .lable{
+            margin-left: 10px;
+        }  
+    }
+}
