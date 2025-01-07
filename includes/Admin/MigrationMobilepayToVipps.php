@@ -179,7 +179,7 @@ class MigrationMobilepayToVipps {
 				$wpdb->prepare(
 					"SELECT token_id FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE user_id = %d AND gateway_id = %s AND token = %s",
 					$user_id,
-					'reepay_checkout',
+					'reepay_mobilepay_subscriptions',
 					$old_mps_payment_method
 				)
 			);
@@ -192,12 +192,16 @@ class MigrationMobilepayToVipps {
 			foreach ( $token_query as $token ) {
 				$wpdb->update( //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 					"{$wpdb->prefix}woocommerce_payment_tokens",
-					array( 'token' => $new_vipps_recurring_payment_method ),
+					array(
+						'token'      => $new_vipps_recurring_payment_method,
+						'gateway_id' => 'reepay_vipps_recurring',
+						'type'       => 'Reepay_VR',
+					),
 					array(
 						'user_id'  => $user_id,
 						'token_id' => $token->token_id,
 					),
-					array( '%s' ),
+					array( '%s', '%s', '%s' ),
 					array( '%d', '%d' )
 				);
 
