@@ -18,6 +18,9 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.12.1
+- [Improvement] - Feature to migrate existing MobilePay Subscription payment methods to Vipps Recurring.
+
 v 1.7.12
 - [Fix] - Redundant call to reduce stock removed.
 - [Improvement] - Add Billwerk order status in order grid.
