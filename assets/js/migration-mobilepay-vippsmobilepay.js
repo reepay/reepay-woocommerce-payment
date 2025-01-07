@@ -5,6 +5,7 @@ jQuery(function ($) {
     result.html('');
 
     elwrap.on('change', '#migration_file', function (e) {
+        result.html('');
         const fileInput = $(this);
         const file = fileInput[0].files[0];
 
