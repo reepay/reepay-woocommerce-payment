@@ -9,6 +9,7 @@ namespace Reepay\Checkout\OrderFlow;
 
 use Reepay\Checkout\Gateways\ReepayGateway;
 use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
+use Reepay\Checkout\Integrations\WCGiftCardsIntegration;
 use stdClass;
 use WC_Order;
 use WC_Order_Item;
@@ -107,6 +108,14 @@ class InstantSettle {
 				}
 			}
 
+			foreach ( $order->get_items( WCGiftCardsIntegration::KEY_WC_GIFT_ITEMS ) as $item ) {
+				$item_data    = self::$order_capture->get_item_data( $item, $order );
+				$price        = $item->get_amount() * - 1;
+				$total        = rp_prepare_amount( $price, $order->get_currency() );
+				$items_data[] = $item_data;
+				$total_all   += $total;
+			}
+
 			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items );
 
 			$order->add_meta_data( '_is_instant_settled', '1' );
@@ -178,6 +187,10 @@ class InstantSettle {
 
 		if ( ! empty( $items_data ) ) {
 			foreach ( $order->get_items( PWGiftCardsIntegration::KEY_PW_GIFT_ITEMS ) as $line ) {
+				$items_data[] = $line;
+			}
+
+			foreach ( $order->get_items( WCGiftCardsIntegration::KEY_WC_GIFT_ITEMS ) as $line ) {
 				$items_data[] = $line;
 			}
 		}
