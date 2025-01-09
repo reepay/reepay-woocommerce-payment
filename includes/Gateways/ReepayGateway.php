@@ -10,6 +10,7 @@ namespace Reepay\Checkout\Gateways;
 use Exception;
 use Reepay\Checkout\Api;
 use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
+use Reepay\Checkout\Integrations\WCGiftCardsIntegration;
 use Reepay\Checkout\Integrations\WPCProductBundlesWooCommerceIntegration;
 use SitePress;
 use Reepay\Checkout\Utils\LoggingTrait;
@@ -1546,6 +1547,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		// Add "PW Gift Cards" support.
 		$items = array_merge( $items, PWGiftCardsIntegration::get_order_lines_for_reepay( $order, $prices_incl_tax ) );
+
+		// Add "WC Gift Cards" support.
+		$items = array_merge( $items, WCGiftCardsIntegration::get_order_lines_for_reepay( $order, $prices_incl_tax ) );
 
 		// Add "Gift Up!" discount.
 		if ( defined( 'GIFTUP_ORDER_META_CODE_KEY' ) &&
