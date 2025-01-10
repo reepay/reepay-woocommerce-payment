@@ -19,6 +19,7 @@ See installation guide right here: https://docu.billwerk.plus/help/en/apps/wooco
 
 == Changelog ==
 v 1.7.12.1
+- [Improvement] - Support for WooCommerce Gift Cards
 - [Improvement] - Feature to migrate existing MobilePay Subscription payment methods to Vipps Recurring.
 
 v 1.7.12
