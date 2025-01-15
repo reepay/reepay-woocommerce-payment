@@ -102,6 +102,7 @@ class MigrationMobilepayToVipps {
 		<div class="wrap">
 			<h1><?php _e( 'Migration from MobilePay to Vipps MobilePay Recurring', 'reepay-checkout-gateway' ); ?></h1>
 			<p><?php _e( 'Please ensure to back up your database before proceeding.', 'reepay-checkout-gateway' ); ?></p>
+			<p><a href="<?php echo reepay()->get_setting( 'assets_url' ); ?>/download/Update-payment-method-token-sample.csv"><?php _e( 'Sample file' ); ?></a></p>
 			<div class="migration-mobilepay-to-vippsmobile-wrap">
 				<div class="form">
 					<input type="file" name="migration_file" id="migration_file">
@@ -177,9 +178,8 @@ class MigrationMobilepayToVipps {
 			// Query wp_woocommerce_payment_tokens table.
 			$token_query = $wpdb->get_results( //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->prepare(
-					"SELECT token_id FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE user_id = %d AND gateway_id = %s AND token = %s",
+					"SELECT token_id FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE user_id = %d AND token = %s",
 					$user_id,
-					'reepay_mobilepay_subscriptions',
 					$old_mps_payment_method
 				)
 			);
