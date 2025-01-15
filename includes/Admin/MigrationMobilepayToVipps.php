@@ -100,7 +100,7 @@ class MigrationMobilepayToVipps {
 		);
 		?>
 		<div class="wrap">
-			<h1><?php _e( 'Migration from MobilePay to Vipps MobilePay Recurring', 'reepay-checkout-gateway' ); ?></h1>
+			<h1><?php _e( 'Update payment method tokens', 'reepay-checkout-gateway' ); ?></h1>
 			<p><?php _e( 'Please ensure to back up your database before proceeding.', 'reepay-checkout-gateway' ); ?></p>
 			<p><a href="<?php echo reepay()->get_setting( 'assets_url' ); ?>/download/Update-payment-method-token-sample.csv"><?php _e( 'Sample file' ); ?></a></p>
 			<div class="migration-mobilepay-to-vippsmobile-wrap">
