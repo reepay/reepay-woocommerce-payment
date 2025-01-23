@@ -128,11 +128,37 @@ class MigrationMobilepayToVipps {
 	 */
 	public function upload_csv() {
 		if ( ! empty( $_FILES['migration_file']['tmp_name'] ) ) {
+
+			global $wp_filesystem;
+			if ( empty( $wp_filesystem ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+				WP_Filesystem();
+			}
+
 			$csv_file = $_FILES['migration_file']['tmp_name'];
-			$csv_data = array_map( 'str_getcsv', file( $csv_file ) );
-			update_option( 'reepay_csv_data_migration_mobilepay_to_vipps', $csv_data );
-			$total_records = count( $csv_data );
-			wp_send_json_success( array( 'total_records' => $total_records ) );
+
+			if ( $wp_filesystem->exists( $csv_file ) ) {
+				$file_content = $wp_filesystem->get_contents( $csv_file );
+				$lines        = explode( "\n", $file_content );
+				$first_line   = $lines[0]; // Get the first line.
+				if ( strpos( $first_line, ';' ) !== false ) {
+					$delimiter = ';'; // set delimiter to semicolon.
+				} else {
+					$delimiter = ','; // set delimiter to comma.
+				}
+
+				$csv_data = array_map(
+					function ( $row ) use ( $delimiter ) {
+						return str_getcsv( $row, $delimiter );
+					},
+					$lines
+				);
+				update_option( 'reepay_csv_data_migration_mobilepay_to_vipps', $csv_data );
+				$total_records = count( $csv_data );
+				wp_send_json_success( array( 'total_records' => $total_records ) );
+			} else {
+				wp_send_json_error();
+			}
 		} else {
 			wp_send_json_error();
 		}
@@ -155,7 +181,11 @@ class MigrationMobilepayToVipps {
 		$batch         = array_slice( $csv_data, $offset, 10 );
 		foreach ( $batch as $item ) {
 
-			$customer_handle                    = $item[0];
+			$customer_handle = $item[0];
+			if ( empty( $customer_handle ) || 'customer_handle' === $customer_handle ) {
+				continue; // Skip if customer handle is empty or header name customer_handle.
+			}
+
 			$old_mps_payment_method             = $item[1];
 			$new_vipps_recurring_payment_method = $item[3];
 
