@@ -18,6 +18,9 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.12.2
+- [Improvement] - Support for Polylang multilingual plugin selection in the payment window.
+
 v 1.7.12.1
 - [Improvement] - Support for WooCommerce Gift Cards
 - [Improvement] - Feature to migrate existing MobilePay Subscription payment methods to Vipps Recurring.
