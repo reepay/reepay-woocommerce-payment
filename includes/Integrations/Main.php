@@ -22,5 +22,6 @@ class Main {
 	 */
 	public function __construct() {
 		new WooBlocksIntegration();
+		new PolylangIntegration();
 	}
 }
