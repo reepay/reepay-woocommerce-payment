@@ -72,6 +72,7 @@ done
 mkdir -p "$BUILD_DIR/assets/dist"
 cp -R assets/dist "$BUILD_DIR/assets"
 cp -R assets/images "$BUILD_DIR/assets"
+cp -R assets/download "$BUILD_DIR/assets"
 
 # go one up, to the build dir
 if command -v zip

@@ -28,6 +28,7 @@ class Main {
 		new MetaBoxes\Order();
 		new MetaBoxes\User();
 		new OrderTable();
+		new MigrationMobilepayToVipps();
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 	}
