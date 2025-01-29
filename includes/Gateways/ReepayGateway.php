@@ -12,6 +12,7 @@ use Reepay\Checkout\Api;
 use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
 use Reepay\Checkout\Integrations\WCGiftCardsIntegration;
 use Reepay\Checkout\Integrations\WPCProductBundlesWooCommerceIntegration;
+use Reepay\Checkout\Integrations\PolylangIntegration;
 use SitePress;
 use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Tokens\TokenReepay;
@@ -1618,6 +1619,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$locale_wpml = apply_filters( 'wpml_current_language', get_locale() );
 			if ( ! empty( $languages[ $locale_wpml ] ) ) {
 				$locale = $languages[ $locale_wpml ]['default_locale'];
+			}
+		}
+
+		// Polylang support.
+		if ( function_exists( 'pll_current_language' ) ) {
+			if ( isset( $_SESSION['pll_current_language_session'] ) ) {
+				$locale = $_SESSION['pll_current_language_session'];
 			}
 		}
 
