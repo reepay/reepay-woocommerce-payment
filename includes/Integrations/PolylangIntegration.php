@@ -17,17 +17,7 @@ class PolylangIntegration {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'init', array( $this, 'start_session' ), 1 );
 		add_action( 'plugins_loaded', array( $this, 'initialize' ) );
-	}
-
-	/**
-	 * Start the session if it hasn't been started already.
-	 */
-	public function start_session() {
-		if ( ! session_id() ) {
-			session_start();
-		}
 	}
 
 	/**
@@ -64,8 +54,8 @@ class PolylangIntegration {
 				return $params;
 			}
 			if ( isset( $params['wc_ajax_url'] ) ) {
-				$locale                                   = $this->get_locale_from_language_code( $lang );
-				$_SESSION['pll_current_language_session'] = $locale;
+				$locale = $this->get_locale_from_language_code( $lang );
+				set_transient( 'billwerk_pll_current_language_transient', $locale, HOUR_IN_SECONDS );
 			}
 
 			return $params;
