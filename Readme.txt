@@ -18,6 +18,9 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.13.1
+- [Fix] - PHP session usage by Polylang.
+
 v 1.7.13
 - [Fix] - Corrects payment method names Payconiq and Satispay.
 - [Improvement] - Payment window supports Polylang multi language plugin.
