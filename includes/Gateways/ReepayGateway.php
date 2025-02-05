@@ -1616,7 +1616,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		// Wpml support.
 		if ( is_plugin_active( 'sitepress-multilingual-cms/sitepress.php' ) ) {
 			$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
-			error_log( 'WPML languages: ' . print_r( $languages, true ) );
 			if ( ! empty( $languages ) && count( $languages ) > 1 ) {
 				$locale_wpml = apply_filters( 'wpml_current_language', get_locale() );
 				if ( ! empty( $languages[ $locale_wpml ] ) ) {
