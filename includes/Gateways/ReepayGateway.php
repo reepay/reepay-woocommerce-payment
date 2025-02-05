@@ -1627,7 +1627,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		// Polylang support.
 		if ( function_exists( 'pll_current_language' ) ) {
 			$transient_locale = get_transient( 'billwerk_pll_current_language_transient' );
-			if ( $transient_locale !== false ) {
+			if ( false !== $transient_locale ) {
 				$locale = $transient_locale;
 			}
 		}
