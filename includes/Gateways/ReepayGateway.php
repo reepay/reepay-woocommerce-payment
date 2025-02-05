@@ -1616,7 +1616,6 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		// Wpml support.
 		if ( is_plugin_active( 'sitepress-multilingual-cms/sitepress.php' ) ) {
 			$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
-			error_log( 'WPML languages: ' . print_r( $languages, true ) );
 			if ( ! empty( $languages ) && count( $languages ) > 1 ) {
 				$locale_wpml = apply_filters( 'wpml_current_language', get_locale() );
 				if ( ! empty( $languages[ $locale_wpml ] ) ) {
@@ -1628,7 +1627,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		// Polylang support.
 		if ( function_exists( 'pll_current_language' ) ) {
 			$transient_locale = get_transient( 'billwerk_pll_current_language_transient' );
-			if ( $transient_locale !== false ) {
+			if ( false !== $transient_locale ) {
 				$locale = $transient_locale;
 			}
 		}
