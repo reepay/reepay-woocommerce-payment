@@ -1626,7 +1626,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		// Polylang support.
 		if ( function_exists( 'pll_current_language' ) ) {
-			if( isset($_COOKIE['billwerk_pll_current_language']) ){
+			if ( isset( $_COOKIE['billwerk_pll_current_language'] ) ) {
 				$locale = $_COOKIE['billwerk_pll_current_language'];
 			} else {
 				$locale = pll_current_language();

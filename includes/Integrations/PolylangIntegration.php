@@ -55,7 +55,7 @@ class PolylangIntegration {
 			}
 			if ( isset( $params['wc_ajax_url'] ) ) {
 				$locale = $this->get_locale_from_language_code( $lang );
-				setcookie('billwerk_pll_current_language', $locale, time() + 3600, COOKIEPATH, COOKIE_DOMAIN);
+				setcookie( 'billwerk_pll_current_language', $locale, time() + 3600, COOKIEPATH, COOKIE_DOMAIN );
 			}
 
 			return $params;
