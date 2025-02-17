@@ -22,5 +22,7 @@ class Main {
 	 */
 	public function __construct() {
 		new WooBlocksIntegration();
+		new WCGiftCardsIntegration();
+		new PolylangIntegration();
 	}
 }

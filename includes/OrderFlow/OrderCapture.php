@@ -9,6 +9,7 @@ namespace Reepay\Checkout\OrderFlow;
 
 use Exception;
 use Reepay\Checkout\Integrations\PWGiftCardsIntegration;
+use Reepay\Checkout\Integrations\WCGiftCardsIntegration;
 use Reepay\Checkout\Integrations\WPCProductBundlesWooCommerceIntegration;
 use Reepay\Checkout\Utils\LoggingTrait;
 use WC_Order;
@@ -108,7 +109,8 @@ class OrderCapture {
 		if ( rp_is_order_paid_via_reepay( $order ) &&
 			empty( $item->get_meta( 'settled' ) ) &&
 			floatval( $item->get_data()['total'] ) > 0 &&
-			$this->check_capture_allowed( $order )
+			$this->check_capture_allowed( $order ) &&
+			! WCGiftCardsIntegration::check_order_have_wc_giftcard( $order )
 		) {
 			$price = self::get_item_price( $item, $order );
 
@@ -423,6 +425,15 @@ class OrderCapture {
 			}
 		}
 
+		foreach ( $order->get_items( WCGiftCardsIntegration::KEY_WC_GIFT_ITEMS ) as $item ) {
+			$item_data    = $this->get_item_data( $item, $order );
+			$price        = $item->get_amount() * - 1;
+			$total        = rp_prepare_amount( $price, $order->get_currency() );
+			$items_data[] = $item_data;
+			$line_items[] = $item;
+			$total_all   += $total;
+		}
+
 		$this->log(
 			array(
 				__METHOD__,
@@ -625,6 +636,8 @@ class OrderCapture {
 
 		$amount -= PWGiftCardsIntegration::get_amount_gift_cards_from_order( $order );
 
+		$amount -= WCGiftCardsIntegration::get_amount_gift_cards_from_order( $order );
+
 		return $amount;
 	}
 
@@ -644,12 +657,17 @@ class OrderCapture {
 
 		if ( $order_item->is_type( PWGiftCardsIntegration::KEY_PW_GIFT_ITEMS ) ) {
 			$unit_price = PWGiftCardsIntegration::get_negative_amount_from_order_item( $order, $order_item );
+			$ordertext  = rp_clear_ordertext( $order_item->get_name() );
+		} elseif ( $order_item->is_type( WCGiftCardsIntegration::KEY_WC_GIFT_ITEMS ) ) {
+			$unit_price = WCGiftCardsIntegration::get_negative_amount_from_order_item( $order, $order_item );
+			$ordertext  = WCGiftCardsIntegration::get_name_from_order_item( $order, $order_item );
 		} else {
 			$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
+			$ordertext  = rp_clear_ordertext( $order_item->get_name() );
 		}
 
 		return array(
-			'ordertext'       => rp_clear_ordertext( $order_item->get_name() ),
+			'ordertext'       => $ordertext,
 			'quantity'        => $order_item->get_quantity(),
 			'amount'          => rp_prepare_amount( $unit_price, $order->get_currency() ),
 			'vat'             => round( $tax_percent / 100, 2 ),
