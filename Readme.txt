@@ -18,6 +18,9 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.13.2
+- [Improvement] - Admin notices warning for HPOS disabled.
+
 v 1.7.13.1
 - [Fix] - PHP session usage by Polylang.
 
