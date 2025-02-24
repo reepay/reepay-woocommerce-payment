@@ -33,7 +33,9 @@
     "phpcs:tests:fix": "bash ./bin/phpcs.tests.sh -fix",
     "phpunit": "set PHPUNIT_PLUGINS=woo,woo_subs,rp_subs & set HPOS_ENABLED=no & php ./vendor/bin/phpunit",
     "phpunit:full": "bash ./bin/phpunit-test-with-plugins.sh",
-    "phpunit:init": "bash bin/install-wp-tests.sh wp_phpunit root ''"
+    "phpunit:init": "bash bin/install-wp-tests.sh wp_phpunit root ''",
+    "phpunit:unit": "vendor/bin/phpunit tests/Unit/",
+    "phpunit:integration": "vendor/bin/phpunit tests/Integration/"
   },
   "repository": {
     "type": "git",
