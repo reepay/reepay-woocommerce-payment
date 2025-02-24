@@ -52,7 +52,7 @@ class Admin {
 	 */
 	public function billwerk_pay_hpos_check() {
 		// Only run in the admin dashboard.
-		if ( ! is_admin() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
@@ -69,8 +69,9 @@ class Admin {
 			return;
 		}
 
-		// Check if HPOS is enabled. (Assumes an option exists; adjust as needed.).
-		if ( ! rp_hpos_enabled() ) {
+		// Check if HPOS is enabled.
+		$hpos_enabled = 'yes' === get_option( 'woocommerce_custom_orders_table_enabled', 'no' );
+		if ( ! $hpos_enabled ) {
 			echo '<div class="notice notice-error"><p>' .
 				__( 'Critical Error: Billwerk+ require High Performance Order Storage. You must activate it in the WooCommerce settings under the "Advanced" tab, "Features" sub-tab.', 'reepay-checkout-gateway' ) .
 				'</p></div>';
