@@ -1614,18 +1614,22 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$locale = get_locale();
 
 		// Wpml support.
-		$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
-		if ( ! empty( $languages ) && count( $languages ) > 1 ) {
-			$locale_wpml = apply_filters( 'wpml_current_language', get_locale() );
-			if ( ! empty( $languages[ $locale_wpml ] ) ) {
-				$locale = $languages[ $locale_wpml ]['default_locale'];
+		if ( is_plugin_active( 'sitepress-multilingual-cms/sitepress.php' ) ) {
+			$languages = apply_filters( 'wpml_active_languages', null, 'orderby=id&order=desc' );
+			if ( ! empty( $languages ) && count( $languages ) > 1 ) {
+				$locale_wpml = apply_filters( 'wpml_current_language', get_locale() );
+				if ( ! empty( $languages[ $locale_wpml ] ) ) {
+					$locale = $languages[ $locale_wpml ]['default_locale'];
+				}
 			}
 		}
 
 		// Polylang support.
 		if ( function_exists( 'pll_current_language' ) ) {
-			if ( isset( $_SESSION['pll_current_language_session'] ) ) {
-				$locale = $_SESSION['pll_current_language_session'];
+			if ( isset( $_COOKIE['billwerk_pll_current_language'] ) ) {
+				$locale = $_COOKIE['billwerk_pll_current_language'];
+			} else {
+				$locale = pll_current_language();
 			}
 		}
 
