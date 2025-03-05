@@ -19,6 +19,9 @@ See installation guide right here: https://docu.billwerk.plus/help/en/apps/wooco
 
 == Changelog ==
 v 1.7.14
+- [Fix] - Support payment type emv_token.
+
+v 1.7.14
 - [Fix] - Polylang support PHP session usage changed to cookie.
 - [Improvement] - Warning message if High Performance Order Storage is disabled or unavailable.
 
