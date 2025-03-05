@@ -4,7 +4,7 @@ Tags: billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.7.13
+Stable tag: 1.7.14
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,11 +18,9 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
-v 1.7.13.2
-- [Improvement] - Admin notices warning for HPOS disabled.
-
-v 1.7.13.1
-- [Fix] - PHP session usage by Polylang.
+v 1.7.14
+- [Fix] - Polylang support PHP session usage changed to cookie.
+- [Improvement] - Warning message if High Performance Order Storage is disabled or unavailable.
 
 v 1.7.13
 - [Fix] - Corrects payment method names Payconiq and Satispay.
