@@ -779,7 +779,7 @@ class Api {
 			$error = sprintf(
 				// translators: %1$s amount, %2$s error message.
 				__( 'Failed to settle %1$s. Error: %2$s.', 'reepay-checkout-gateway' ),
-				$items_data ? floatval( $items_data[0]['amount'] ) / 100 : $amount,
+				$items_data ? floatval( $items_data[0]['amount'] ) / 100 : floatval( $amount ) / 100,
 				$result->get_error_message()
 			);
 

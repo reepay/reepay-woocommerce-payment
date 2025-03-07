@@ -43,19 +43,30 @@
                         color: red;
                     }
                 }
-            }
-
-            &-header {
-                width: 100%;
-                font-weight: bold;
-
-                &-small {
+                &-header {
                     width: 100%;
                     font-weight: bold;
-                    font-size: small;
-                    margin-bottom: 0;
+    
+                    &-small {
+                        width: 100%;
+                        font-weight: bold;
+                        font-size: small;
+                        margin-bottom: 0;
+                    }
+                }
+
+                .capture-amount-button{
+                    width: 100%;
                 }
             }
+
+            .capture-amount-input{
+                width: 80%;
+                font-size: 11px;
+                height: 20px;
+                min-height: unset;
+            }
+    
         }
     }
 
@@ -102,6 +113,16 @@
         display: -ms-flexbox;
         display: -webkit-flex;
         display: flex;
+    }
+    
+    &__capture-amount{
+        display: inline-flex;
+        align-items: center;
+    }
+
+    &__capture-amount-input{
+        display: inline-flex;
+        align-items: center;
     }
 }
 

@@ -112,6 +112,27 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 			<?php echo rp_make_initial_amount( $order_data['refunded_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ); ?>
 		</span>
 	</li>
+	<?php
+	$capture_amount = $order_data['authorized_amount'] ? rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency'] ) : $order_data['authorized_amount'];
+	if ( $capture_amount > 0 ) {
+		$capture_amount_format = $capture_amount;
+		?>
+		<li class="reepay-admin-section-li">
+			<span class="reepay-balance__label reepay-balance__capture-amount">
+				<?php echo esc_html__( 'Capture amount', 'reepay-checkout-gateway' ); ?>:
+			</span>
+			<span class="reepay-balance__amount reepay-balance__capture-amount-input">
+				<input type="text" id="reepay-capture-amount-input" name="reepay_capture_amount_input" class="capture-amount-input" value="<?php echo $capture_amount_format; ?>" />&nbsp;&nbsp;<?php echo get_woocommerce_currency_symbol( $order->get_currency() ); ?>
+			</span>
+		</li>
+		<li class="reepay-admin-section-li-small">
+			<button type="submit" class="button capture-amount-button" id="reepay-capture-amount-button" name="reepay_capture_amount_button" value="process_capture_amount">
+				<?php echo esc_html__( 'Capture Specified Amount', 'reepay-checkout-gateway' ); ?>
+			</button>
+		</li>
+		<?php
+	}
+	?>
 
 	<li class="reepay-admin-section-li-small" style="margin-top: 15px;">
 		<a class="button" href="<?php echo $link; ?>" target="_blank">
