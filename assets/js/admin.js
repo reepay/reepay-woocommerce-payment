@@ -231,7 +231,7 @@ jQuery(document).ready(function ($) {
         const $inputSettled = $('#reepay_order_total_settled')
         const initialSettled = $inputSettled.data('initial-amount')
         const currency = $('#reepay_currency').val()
-        const formatted_amount = parseFloat(amount) - parseFloat(initialSettled)
+        const formatted_amount = Number((parseFloat(amount) - parseFloat(initialSettled)).toFixed(2))
 
         if (capture_amount > formatted_amount) {
             alert(`'The capture amount must be less than or equal to ${formatted_amount} ${currency}'`)
