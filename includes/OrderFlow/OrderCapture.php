@@ -250,7 +250,7 @@ class OrderCapture {
 	/**
 	 * Hooked to admin_init. Capture specified amount from request
 	 */
-	public function process_capture_amount(){
+	public function process_capture_amount() {
 		if ( rp_hpos_enabled() ) {
 			if ( ! rp_hpos_is_order_page() ) {
 				return;
@@ -261,8 +261,8 @@ class OrderCapture {
 
 				return;
 		}
-		
-		if ( ! isset( $_POST['reepay_capture_amount_button'] ) && ! isset( $_POST['reepay_capture_amount_input'] ) ){
+
+		if ( ! isset( $_POST['reepay_capture_amount_button'] ) && ! isset( $_POST['reepay_capture_amount_input'] ) ) {
 			return;
 		}
 
@@ -279,7 +279,7 @@ class OrderCapture {
 		}
 
 		if ( isset( $_POST['reepay_capture_amount_input'] ) ) {
-			$this->settle_amount( $order , $reepay_capture_amount_input );
+			$this->settle_amount( $order, $reepay_capture_amount_input );
 		}
 	}
 
@@ -639,9 +639,9 @@ class OrderCapture {
 
 	/**
 	 * Settle specified amount
-	 * 
+	 *
 	 * @param WC_Order $order order to settle.
-	 * @param float $amount amount to settle.
+	 * @param float    $amount amount to settle.
 	 *
 	 * @return bool
 	 */
@@ -659,7 +659,7 @@ class OrderCapture {
 		$amount = rp_prepare_amount( $amount, $order->get_currency() );
 
 		$result = reepay()->api( $order )->settle( $order, $amount, false, false );
-		
+
 		if ( is_wp_error( $result ) ) {
 			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
 			set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
@@ -674,15 +674,12 @@ class OrderCapture {
 		}
 
 		$remaining_balance = $result['authorized_amount'] - $result['amount'];
-		if ( $remaining_balance <= 0 ) {
-			// $order->set_date_paid( time() );
-		}
+
 		$order->update_meta_data( '_reepay_remaining_balance', $remaining_balance );
 		$order->save_meta_data();
 		$order->save();
 
 		return true;
-
 	}
 
 	/**

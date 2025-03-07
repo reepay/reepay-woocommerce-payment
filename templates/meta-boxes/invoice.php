@@ -112,10 +112,9 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 			<?php echo rp_make_initial_amount( $order_data['refunded_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ); ?>
 		</span>
 	</li>
-	<?php 
-	$capture_amount = $order_data['authorized_amount'] ? rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency'] ) : $order_data['authorized_amount']; 
+	<?php
+	$capture_amount = $order_data['authorized_amount'] ? rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency'] ) : $order_data['authorized_amount'];
 	if ( $capture_amount > 0 ) {
-		// $capture_amount_format = number_format( $capture_amount, wc_get_price_decimals(), wc_get_price_decimal_separator(), wc_get_price_thousand_separator() );
 		$capture_amount_format = $capture_amount;
 		?>
 		<li class="reepay-admin-section-li">
@@ -131,8 +130,8 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 				<?php echo esc_html__( 'Capture Specified Amount', 'reepay-checkout-gateway' ); ?>
 			</button>
 		</li>
-		<?php 
-	} 
+		<?php
+	}
 	?>
 
 	<li class="reepay-admin-section-li-small" style="margin-top: 15px;">
