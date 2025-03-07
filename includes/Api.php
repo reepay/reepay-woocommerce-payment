@@ -724,6 +724,8 @@ class Api {
 
 		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
 			$request_data['amount'] = $amount;
+		} elseif ( ! empty( $amount ) && false === $line_item ) {
+			$request_data['amount'] = $amount;
 		} else {
 			$request_data['order_lines'] = $items_data;
 		}
