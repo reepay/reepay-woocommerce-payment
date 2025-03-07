@@ -47,7 +47,7 @@ class MetaField {
 		'_reepay_membership_id',
 		'_payment_method_id',
 		'_real_total',
-
+		'_reepay_remaining_balance',
 		// user fields.
 		'reepay_customer_id',
 	);

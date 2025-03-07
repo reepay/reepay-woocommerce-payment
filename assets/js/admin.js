@@ -218,4 +218,46 @@ jQuery(document).ready(function ($) {
         alias: "currency",
         groupSeparator: ''
     })
+    
+    $(document).on('click', '#reepay-capture-amount-button', function (e) {
+        e.preventDefault();
+
+        let $form = $('#post')
+        if ($form.length === 0) {
+            $form = $('#order')
+        }
+        const capture_amount = $('#reepay-capture-amount-input').val()
+        const amount = $('#reepay_order_total').data('order-total')
+        const $inputSettled = $('#reepay_order_total_settled')
+        const initialSettled = $inputSettled.data('initial-amount')
+        const currency = $('#reepay_currency').val()
+        const formatted_amount = parseFloat(amount) - parseFloat(initialSettled)
+
+        if (capture_amount > formatted_amount) {
+            alert(`'The capture amount must be less than or equal to ${formatted_amount} ${currency}'`)
+            return
+        }
+
+        const settle = window.confirm(`'Do you want to capture the amount ${capture_amount} ${currency}? Click OK to continue with settle. Click Cancel to continue without settle.'`)
+
+        if (settle) {
+            const $button = $(this);
+
+            $form.one('submit', function() {
+                const buttonName = $button.attr('name')
+                const buttonValue = $button.val()
+                
+                if (buttonName && buttonValue) {
+                    $('<input>').attr({
+                        type: 'hidden',
+                        name: buttonName,
+                        value: buttonValue
+                    }).appendTo(this);
+                }
+            });
+            
+            $form.submit()
+        }
+    });
+    
 })
