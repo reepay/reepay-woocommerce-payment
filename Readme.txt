@@ -18,7 +18,7 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
-v 1.7.14
+v 1.7.14.1
 - [Fix] - Support payment type emv_token.
 - [Improvement] - Capture specified amount.
 
