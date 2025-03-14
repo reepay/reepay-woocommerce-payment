@@ -64,7 +64,7 @@ class Admin {
 		// Check WooCommerce version.
 		if ( version_compare( WC()->version, '7.1', '<' ) ) {
 			echo '<div class="notice notice-error"><p>' .
-				__( 'Critical Error: Billwerk+ require High Performance Order Storage. You must update WooCommerce to at least version 7.1 to have this feature.', 'reepay-checkout-gateway' ) .
+				__( 'Billwerk+ works best with High Performance Order Storage. You must update WooCommerce to at least version 7.1 to have this feature.', 'reepay-checkout-gateway' ) .
 				'</p></div>';
 			return;
 		}
@@ -73,7 +73,7 @@ class Admin {
 		$hpos_enabled = 'yes' === get_option( 'woocommerce_custom_orders_table_enabled', 'no' );
 		if ( ! $hpos_enabled ) {
 			echo '<div class="notice notice-error"><p>' .
-				__( 'Critical Error: Billwerk+ require High Performance Order Storage. You must activate it in the WooCommerce settings under the "Advanced" tab, "Features" sub-tab.', 'reepay-checkout-gateway' ) .
+				__( 'Billwerk+ works best with High Performance Order Storage. You can activate it in the WooCommerce settings under the "Advanced" tab, "Features" sub-tab.', 'reepay-checkout-gateway' ) .
 				'</p></div>';
 		}
 	}
