@@ -3,6 +3,7 @@
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\OrderFlow\Webhook;
 use Reepay\Checkout\Api;
+use Reepay\Checkout\OrderFlow\OrderStatuses;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 use Reepay\Checkout\Tests\Helpers\HPOS_STATE;
 
@@ -14,6 +15,7 @@ class WebhookProcessTest extends Reepay_UnitTestCase {
 	 */
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
+        HPOS_STATE::init('yes');
 	}
 
     protected function setUp(): void {
@@ -28,59 +30,174 @@ class WebhookProcessTest extends Reepay_UnitTestCase {
     }
 
     public function testProcessInvoiceAuthorized() {
-        if ( HPOS_STATE::is_active() ) {
-			print_r('HPOS is active');
-		} else {
-			print_r('HPOS is not active');
-		}
-
         PLUGINS_STATE::maybe_skip_test_by_product_type( 'rp_sub' );
 
         // Setup test data
+        $customer = 'customer-123';
         $handle = 'order-123';
-        $transaction = '6cfcbe5c8fe5e65b278b46bdfe72eddc';
+        $transaction = 'transaction_id_123';
 
         /**
-         * Example webhook data
+         * Example WebHook invoice_authorized data
          */
         /*
         array (
-            'id' => '8a6cd0aac1fb661b1d244d38bd7258b8',
-            'timestamp' => '2025-03-03T04:06:28.025Z',
-            'signature' => '4e32abf6b9952644e81230099e7ec6d54f6b13be6f46c8f80c2fd4936a16fd1c',
-            'invoice' => 'order-4346',
+            'id' => '81ea2fad46ab00072f8a5cb30bd29383',
+            'timestamp' => '2025-03-10T02:40:54.562Z',
+            'signature' => '130a8b794c8b9d7aaf4200db1c7fcbbe5d0dfbc16a86016ce3b211a098bd8aef',
+            'invoice' => 'order-4390',
             'customer' => 'customer-2',
-            'transaction' => '6cfcbe5c8fe5e65b278b46bdfe72eddc',
+            'transaction' => 'ba1b4ff79f334280decbf648af357be1',
             'event_type' => 'invoice_authorized',
-            'event_id' => '584cffd83db38dd85ba66d7f01854811',
+            'event_id' => '1ab2f7be7689fb1cc8d447f546a08bed',
         )
         */
-
-        //Set specific order properties including the order ID that matches the invoice
-        // $this->order_generator->set_props([
-        //     'status' => 'processing',
-        //     'payment_method' => reepay()->gateways()->checkout(),
-        // ]);
-
-        // $handle_return = rp_get_order_handle( $this->order_generator->order() );
-        // error_log('Return : '. $handle_return);
-
         $data = [
             'event_type' => 'invoice_authorized',
             'invoice' => $handle,
+            'customer' => $customer,
             'transaction' => $transaction
         ];
 
-        // $this->order_generator->set_meta( '_reepay_order', $handle );
-        // $order->update_meta_data( '_reepay_order', $handle );
-        // $order->save_meta_data();
+        //Set specific order properties including the order ID that matches the invoice
+        $this->order_generator->set_props([
+            'status' => OrderStatuses::$status_created,
+            'payment_method' => reepay()->gateways()->checkout(),
+        ]);
 
-        // Create order manually
-        $order = new WC_Order();
-        $order->set_status('processing');
-        $order->set_payment_method(reepay()->gateways()->checkout()->id);
-        $order->update_meta_data('_reepay_order', $handle);
-        $order->save();
+        $this->order_generator->set_meta( '_reepay_order', $handle );
+        
+        // Setup API mock with complete invoice data
+        $api_mock = $this->getMockBuilder(Api::class)->getMock();
+        
+        // Mock get_invoice_data with complete response
+        $api_mock->method('get_invoice_by_handle')
+        ->with($handle)
+        ->willReturn([
+            'id' => 'invoice_id_123',
+            'handle' => $handle,
+            'customer' => $customer,
+            'state' => 'authorized',
+            'type' => 'ch',
+            'amount' => 10000,
+            'currency' => 'DKK',
+            'org_amount' => 10000,
+            'settled_amount' => 0,
+            'refunded_amount' => 0,
+            'authorized_amount' => 10000,
+        ]);
+
+        reepay()->di()->set(Api::class, $api_mock);
+
+        // Process webhook
+        $this->webhook->process($data);
+
+        $order = wc_get_order($this->order_generator->order()->get_id());
+
+        // Verify transaction ID was set
+        $this->assertEquals($transaction, $order->get_transaction_id());
+    }
+
+    public function testProcessInvoiceSettled() {
+        PLUGINS_STATE::maybe_skip_test_by_product_type( 'rp_sub' );
+
+        // Setup test data
+        $customer = 'customer-456';
+        $handle = 'order-456';
+        $transaction = 'transaction_id_456';
+
+        $data = [
+            'event_type' => 'invoice_settled',
+            'invoice' => $handle,
+            'customer' => $customer,
+            'transaction' => $transaction
+        ];
+
+        // Create order
+        $this->order_generator->set_props([
+            'status' => OrderStatuses::$status_authorized,
+            'payment_method' => reepay()->gateways()->checkout()->id
+        ]);
+
+        $this->order_generator->set_meta( '_reepay_order', $handle );
+        
+        // Setup API mock with complete invoice data
+        $api_mock = $this->getMockBuilder(Api::class)->getMock();
+        
+        // Mock get_invoice_data with complete response
+        $api_mock->method('get_invoice_by_handle')
+        ->with($handle)
+        ->willReturn([
+            'id' => 'invoice_id_456',
+            'handle' => $handle,
+            'customer' => $customer,
+            'state' => 'settled',
+            'type' => 'ch',
+            'amount' => 10000,
+            'currency' => 'DKK',
+            'org_amount' => 10000,
+            'settled_amount' => 10000,
+            'refunded_amount' => 0,
+            'authorized_amount' => 10000,
+        ]);
+
+        // Mock get_invoice_data
+        $api_mock->method('get_invoice_data')
+        ->with( $this->isInstanceOf( WC_Order::class ))
+        ->willReturn([
+            'id' => 'invoice_id_456',
+            'handle' => $handle,
+            'customer' => $customer,
+            'state' => 'settled',
+            'type' => 'ch',
+            'amount' => 10000,
+            'currency' => 'DKK',
+            'org_amount' => 10000,
+            'settled_amount' => 10000,
+            'refunded_amount' => 0,
+            'authorized_amount' => 10000,
+        ]);
+
+        $api_mock->method('request')
+        ->willReturn([
+            'card_transaction' => [
+                'card' => 'test'
+            ]
+        ]);
+
+        reepay()->di()->set(Api::class, $api_mock);
+
+        // Process webhook
+        $this->webhook->process($data);
+
+        $order = wc_get_order($this->order_generator->order()->get_id());
+
+        // Verify transaction ID was set
+        $this->assertEquals($transaction, $order->get_meta('_reepay_capture_transaction'));
+    }
+
+    public function testProcessInvoiceCancelled() {
+        PLUGINS_STATE::maybe_skip_test_by_product_type( 'rp_sub' );
+
+        // Setup test data
+        $customer = 'customer-789';
+        $handle = 'order-789';
+        $transaction = 'transaction_id_789';
+
+        $data = [
+            'event_type' => 'invoice_cancelled',
+            'invoice' => $handle,
+            'customer' => $customer,
+            'transaction' => $transaction
+        ];
+
+        // Create order
+        $this->order_generator->set_props([
+            'status' => OrderStatuses::$status_authorized,
+            'payment_method' => reepay()->gateways()->checkout()->id
+        ]);
+
+        $this->order_generator->set_meta( '_reepay_order', $handle );
 
         // Setup API mock with complete invoice data
         $api_mock = $this->getMockBuilder(Api::class)->getMock();
@@ -89,93 +206,27 @@ class WebhookProcessTest extends Reepay_UnitTestCase {
         $api_mock->method('get_invoice_by_handle')
         ->with($handle)
         ->willReturn([
-            'id' => $handle,
-            'state' => 'authorized',
-            'amount' => 10000, // Amount in cents
-            'authorized_amount' => 10000,
-            'settled_amount' => 0,
-            'refunded_amount' => 0,
+            'id' => 'invoice_id_789',
+            'handle' => $handle,
+            'customer' => $customer,
+            'state' => 'settled',
+            'type' => 'ch',
+            'amount' => 10000,
             'currency' => 'DKK',
-            'order' => [
-                'handle' => $handle
-            ],
-            // Add these fields to prevent null checks
-            'recurring_payment_method' => 'card',
-            'customer' => 'cust_123'
+            'org_amount' => 10000,
+            'settled_amount' => 10000,
+            'refunded_amount' => 0,
+            'authorized_amount' => 10000,
         ]);
-
-        reepay()->di()->set(Api::class, $api_mock);
 
         // Process webhook
         $this->webhook->process($data);
 
-        $order = wc_get_order($order->get_id());
+        $order = wc_get_order($this->order_generator->order()->get_id());
 
-        print_r('Order ID : '. $order->get_id());
-
-        // Reload order from database to get fresh data
-        // $order = wc_get_order($this->order_generator->order()->get_id());
-
-        // print_r('Order ID : '. $this->order_generator->order()->get_id());
-        // print_r('Transaction ID : '. $order->get_transaction_id());
-
-        // // Verify transaction ID was set
-        // $this->assertEquals($transaction, $order->get_transaction_id());
+        // Verify transaction ID was set
+        $this->assertEquals($transaction, $order->get_meta('_reepay_cancel_transaction'));
     }
-
-    // public function testProcessInvoiceSettled() {
-    //     $data = [
-    //         'event_type' => 'invoice_settled',
-    //         'invoice' => 'inv_54321',
-    //         'transaction' => 'txn_settled'
-    //     ];
-
-    //     // Create order
-    //     $this->order_generator->set_props([
-    //         'status' => 'processing',
-    //         'payment_method' => reepay()->gateways()->checkout()->id
-    //     ]);
-
-    //     self::$options->set_options([
-    //         'enable_sync' => 'yes',
-    //         'status_settled' => 'completed'
-    //     ]);
-
-    //     // Setup API mock
-    //     $api_mock = $this->getMockBuilder(Api::class)->getMock();
-    //     $api_mock->method('get_invoice_data')->willReturn([
-    //         'authorized_amount' => 100,
-    //         'settled_amount' => 100
-    //     ]);
-    //     reepay()->di()->set(Api::class, $api_mock);
-
-    //     // Process webhook
-    //     $this->webhook->process($data);
-
-    //     // Assert order changes
-    //     $order = $this->order_generator->order();
-    //     $this->assertEquals($data['transaction'], $order->get_meta('_reepay_capture_transaction'));
-    // }
-
-    // public function testProcessInvoiceCancelled() {
-    //     $data = [
-    //         'event_type' => 'invoice_cancelled',
-    //         'invoice' => 'inv_cancel'
-    //     ];
-
-    //     // Create order
-    //     $this->order_generator->set_props([
-    //         'status' => 'pending',
-    //         'payment_method' => reepay()->gateways()->checkout()->id
-    //     ]);
-
-    //     // Process webhook
-    //     $this->webhook->process($data);
-
-    //     // Assert order status change
-    //     $order = $this->order_generator->order();
-    //     $this->assertEquals('cancelled', $order->get_status());
-    // }
 
     protected function tearDown(): void {
         parent::tearDown();
