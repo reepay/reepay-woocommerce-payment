@@ -97,22 +97,39 @@ if ( ! function_exists( 'rp_get_not_subs_order_by_handle' ) ) {
 	 */
 	function rp_get_not_subs_order_by_handle( string $handle ) {
 
-		$orders = wc_get_orders(
-			array(
-				'limit'      => 1,
-				'meta_query' => array( //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-					array(
-						'key'   => '_reepay_order',
-						'value' => $handle,
-					),
-					array(
-						'key'     => '_reepay_is_subscription',
-						'compare' => 'NOT EXISTS',
-					),
+		if ( rp_hpos_enabled() ) {
+			$orders = wc_get_orders(
+				array(
+					'limit'      => 1,
+					'meta_query' => array( //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+						array(
+							'key'   => '_reepay_order',
+							'value' => $handle,
+						),
+						array(
+							'key'     => '_reepay_is_subscription',
+							'compare' => 'NOT EXISTS',
+						),
 
-				),
-			)
-		);
+					),
+				)
+			);
+		} else {
+			$orders = wc_get_orders(
+				array(
+					'limit'        => 1,
+					'meta_key'     => '_reepay_order', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+					'meta_value'   => $handle, //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+					'meta_compare' => '=',
+					'meta_query'   => array( //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+						array(
+							'key'     => '_reepay_is_subscription',
+							'compare' => 'NOT EXISTS',
+						),
+					),
+				)
+			);
+		}
 
 		if ( ! empty( $orders ) ) {
 			$order_id = reset( $orders )->get_id();
@@ -198,18 +215,29 @@ if ( ! function_exists( 'rp_get_order_by_customer' ) ) {
 			$search_string = strpos( $content['handle'], 'order-' );
 			if ( false !== $search_string ) {
 				$handle = $content['handle'];
-				$orders = wc_get_orders(
-					array(
-						'limit'      => 1,
-						'meta_query' => array( //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-							array(
-								'key'   => '_reepay_order',
-								'value' => $handle,
-							),
+				if ( rp_hpos_enabled() ) {
+					$orders = wc_get_orders(
+						array(
+							'limit'      => 1,
+							'meta_query' => array( //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+								array(
+									'key'   => '_reepay_order',
+									'value' => $handle,
+								),
 
-						),
-					)
-				);
+							),
+						)
+					);
+				} else {
+					$orders = wc_get_orders(
+						array(
+							'limit'        => 1,
+							'meta_key'     => '_reepay_order', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+							'meta_value'   => $handle, //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value	
+							'meta_compare' => '=',
+						)
+					);
+				}
 
 				if ( ! empty( $orders ) ) {
 					$order_id = reset( $orders )->get_id();
