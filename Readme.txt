@@ -20,6 +20,7 @@ See installation guide right here: https://docu.billwerk.plus/help/en/apps/wooco
 == Changelog ==
 v 1.7.14.1
 - [Fix] - Support payment type emv_token.
+- [Fix] - Support WordPress posts storage (legacy).
 - [Improvement] - Capture specified amount.
 
 v 1.7.14
