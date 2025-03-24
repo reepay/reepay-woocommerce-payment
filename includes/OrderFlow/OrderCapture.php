@@ -608,7 +608,36 @@ class OrderCapture {
 			return false;
 		}
 
-		$result = reepay()->api( $order )->settle( $order, $total, array( $item_data ), $item );
+		if ( $price['subtotal'] > $price['original'] ) {
+			/*
+			$unit_price = round( $price['original'] / $item->get_quantity(), 2 );
+			$item_data['amount'] = rp_prepare_amount( $unit_price, $order->get_currency() );
+			*/
+			
+			$discount = $price['subtotal'] - $price['original'];
+			$discount_amount = round( - 1 * rp_prepare_amount( $discount, $order->get_currency() ) );
+
+			if ( $discount_amount < 0 ) {
+				$prices_incl_tax = wc_prices_include_tax();
+				$discount          = $order->get_total_discount();
+				$discount_with_tax = $order->get_total_discount( false );
+				$tax               = $discount_with_tax - $discount;
+				$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
+				$item_data = array(
+					$item_data,
+					array(
+						'ordertext' => __('Discount', 'reepay-checkout-gateway'),
+						'quantity' => 1,
+						'amount' => round($discount_amount, 2),
+						'vat' => round($tax_percent / 100, 2),
+						'amount_incl_vat' => $prices_incl_tax
+					)
+				);
+			}
+			
+		}
+
+		$result = reepay()->api( $order )->settle( $order, $total,  $item_data, $item );
 
 		if ( is_wp_error( $result ) ) {
 			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );

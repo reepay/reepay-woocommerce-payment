@@ -20,6 +20,5 @@ class Main {
 	 */
 	public function __construct() {
 		new Assets();
-		new RoundHalfDownDiscount();
 	}
 }

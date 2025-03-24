@@ -731,6 +731,26 @@ class Api {
 		if ( ! empty( $items_data ) && floatval( current( $items_data )['amount'] ) <= 0 ) {
 			return new WP_Error( 100, 'Amount must be lager than zero' );
 		}
+		
+		error_log(print_r($items_data, true));
+
+		if (!empty($items_data)) {
+			$has_invalid_amount = false;
+			foreach ($items_data as $item) {
+				if ($item['ordertext'] === 'Discount') {
+					continue;
+				}
+
+				if (floatval($item['amount']) <= 0) {
+					$has_invalid_amount = true;
+					break;
+				}
+			}
+		
+			if ($has_invalid_amount) {
+				return new WP_Error(100, 'Amount must be larger than zero');
+			}
+		}
 
 		$result = $this->request(
 			'POST',
@@ -776,10 +796,20 @@ class Api {
 				}
 			}
 
+			
+			// $error = sprintf(
+			// 	// translators: %1$s amount, %2$s error message.
+			// 	__( 'Failed to settle %1$s. Error: %2$s.', 'reepay-checkout-gateway' ),
+			// 	$items_data ? floatval( $items_data[0]['amount'] ) / 100 : $amount,
+			// 	$result->get_error_message()
+			// );
+			
 			$error = sprintf(
 				// translators: %1$s amount, %2$s error message.
-				__( 'Failed to settle %1$s. Error: %2$s.', 'reepay-checkout-gateway' ),
-				$items_data ? floatval( $items_data[0]['amount'] ) / 100 : $amount,
+				__( 'Failed to settle items. Error: %2$s. Items: %3$s', 'reepay-checkout-gateway' ),
+				implode(', ', array_map(function($item) {
+					return wc_price(floatval($item['amount']) / 100);
+				}, $items_data)),
 				$result->get_error_message()
 			);
 
