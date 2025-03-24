@@ -61,6 +61,10 @@ class Admin {
 			return;
 		}
 
+		if ( 'woocommerce_page_wc-settings' !== get_current_screen()->id ) {
+			return;
+		}
+
 		// Check WooCommerce version.
 		if ( version_compare( WC()->version, '7.1', '<' ) ) {
 			echo '<div class="notice notice-error"><p>' .
