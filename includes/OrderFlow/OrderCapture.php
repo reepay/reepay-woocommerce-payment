@@ -411,6 +411,37 @@ class OrderCapture {
 			)
 		);
 
+		// Add discount line.
+		if ( $order->get_total_discount( false ) > 0 ) {
+			$prices_incl_tax = wc_prices_include_tax();
+			$discount          = $order->get_total_discount();
+			$discount_with_tax = $order->get_total_discount( false );
+			$tax               = $discount_with_tax - $discount;
+			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
+
+			if ( $prices_incl_tax ) {
+				/**
+				 * Discount for simple product included tax
+				 */
+				$simple_discount_amount = $discount_with_tax;
+			} else {
+				$simple_discount_amount = $discount;
+			}
+
+			$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
+
+			if ( $discount_amount < 0 ) {
+				$items_discount = array(
+					'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
+					'quantity'        => 1,
+					'amount'          => round( $discount_amount, 2 ),
+					'vat'             => round( $tax_percent / 100, 2 ),
+					'amount_incl_vat' => $prices_incl_tax,
+				);
+				$items_data[] = $items_discount;
+			}
+		}
+
 		foreach ( $order->get_items( array( 'shipping', 'fee', PWGiftCardsIntegration::KEY_PW_GIFT_ITEMS ) ) as $item ) {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
@@ -662,7 +693,11 @@ class OrderCapture {
 			$unit_price = WCGiftCardsIntegration::get_negative_amount_from_order_item( $order, $order_item );
 			$ordertext  = WCGiftCardsIntegration::get_name_from_order_item( $order, $order_item );
 		} else {
-			$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
+			if ( $order->get_total_discount( false ) > 0 ) {
+				$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
+			} else {
+				$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
+			}
 			$ordertext  = rp_clear_ordertext( $order_item->get_name() );
 		}
 
