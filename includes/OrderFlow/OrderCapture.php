@@ -413,7 +413,7 @@ class OrderCapture {
 
 		// Add discount line.
 		if ( $order->get_total_discount( false ) > 0 ) {
-			$prices_incl_tax = wc_prices_include_tax();
+			$prices_incl_tax   = wc_prices_include_tax();
 			$discount          = $order->get_total_discount();
 			$discount_with_tax = $order->get_total_discount( false );
 			$tax               = $discount_with_tax - $discount;
@@ -438,8 +438,8 @@ class OrderCapture {
 					'vat'             => round( $tax_percent / 100, 2 ),
 					'amount_incl_vat' => $prices_incl_tax,
 				);
-				$items_data[] = $items_discount;
-				$total_all   += $discount_amount;
+				$items_data[]   = $items_discount;
+				$total_all     += $discount_amount;
 			}
 		}
 
@@ -610,11 +610,11 @@ class OrderCapture {
 		}
 
 		if ( $price['subtotal'] > $price['original'] ) {
-			$unit_price = round( $price['original'] / $item->get_quantity(), 2 );
+			$unit_price          = round( $price['original'] / $item->get_quantity(), 2 );
 			$item_data['amount'] = rp_prepare_amount( $unit_price, $order->get_currency() );
 		}
 
-		$result = reepay()->api( $order )->settle( $order, $total,  array( $item_data ), $item );
+		$result = reepay()->api( $order )->settle( $order, $total, array( $item_data ), $item );
 
 		if ( is_wp_error( $result ) ) {
 			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
@@ -704,7 +704,7 @@ class OrderCapture {
 			} else {
 				$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
 			}
-			$ordertext  = rp_clear_ordertext( $order_item->get_name() );
+			$ordertext = rp_clear_ordertext( $order_item->get_name() );
 		}
 
 		return array(

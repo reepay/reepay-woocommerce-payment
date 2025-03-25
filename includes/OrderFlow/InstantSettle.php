@@ -110,7 +110,7 @@ class InstantSettle {
 
 			// Add discount line.
 			if ( $order->get_total_discount( false ) > 0 ) {
-				$prices_incl_tax = wc_prices_include_tax();
+				$prices_incl_tax   = wc_prices_include_tax();
 				$discount          = $order->get_total_discount();
 				$discount_with_tax = $order->get_total_discount( false );
 				$tax               = $discount_with_tax - $discount;
@@ -135,8 +135,8 @@ class InstantSettle {
 						'vat'             => round( $tax_percent / 100, 2 ),
 						'amount_incl_vat' => $prices_incl_tax,
 					);
-					$items_data[] = $items_discount;
-					$total_all   += $discount_amount;
+					$items_data[]   = $items_discount;
+					$total_all     += $discount_amount;
 				}
 			}
 
