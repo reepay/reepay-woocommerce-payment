@@ -18,6 +18,13 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.15
+- [Fix] - Support for WordPress posts storage (legacy) as WooCommerce Order data storage setting.
+- [Fix] - Warning message if High Performance Order Storage is disabled or unavailable is changed to a notice.
+- [Fix] - Sends same order lines for authorize and capture to fix rounding differences in totals with discounts and price input exclusive tax.
+- [Improvement] - Adds feature to specify other amount to capture.
+- [Improvement] - Support for card type emv_token.
+
 v 1.7.14
 - [Fix] - Polylang support PHP session usage changed to cookie.
 - [Improvement] - Warning message if High Performance Order Storage is disabled or unavailable.
