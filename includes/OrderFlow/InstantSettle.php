@@ -136,7 +136,7 @@ class InstantSettle {
 						'amount_incl_vat' => $prices_incl_tax,
 					);
 					$items_data[] = $items_discount;
-					// $total_all   += $discount_amount;
+					$total_all   += $discount_amount;
 				}
 			}
 
