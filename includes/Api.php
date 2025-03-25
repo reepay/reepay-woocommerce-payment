@@ -724,6 +724,8 @@ class Api {
 
 		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
 			$request_data['amount'] = $amount;
+		} elseif ( ! empty( $amount ) && false === $line_item ) {
+			$request_data['amount'] = $amount;
 		} else {
 			$request_data['order_lines'] = $items_data;
 		}
@@ -779,7 +781,7 @@ class Api {
 			$error = sprintf(
 				// translators: %1$s amount, %2$s error message.
 				__( 'Failed to settle %1$s. Error: %2$s.', 'reepay-checkout-gateway' ),
-				$items_data ? floatval( $items_data[0]['amount'] ) / 100 : $amount,
+				$items_data ? floatval( $items_data[0]['amount'] ) / 100 : floatval( $amount ) / 100,
 				$result->get_error_message()
 			);
 
