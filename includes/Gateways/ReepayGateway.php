@@ -1515,7 +1515,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$tax               = $discount_with_tax - $discount;
 			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
 
-			if ( abs(floatval($sub_amount_discount)) > 0.001 && abs(floatval($discount)) > 0.001 ) {
+			if ( abs( floatval( $sub_amount_discount ) ) > 0.001 && abs( floatval( $discount ) ) > 0.001 ) {
 				/**
 				 * Discount for subscription
 				 */
