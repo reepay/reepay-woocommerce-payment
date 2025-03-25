@@ -1077,7 +1077,7 @@ class Api {
 		);
 		if ( $result['count'] > 0 ) {
 			foreach ( $result['content'] as $payment_method ) {
-				if ( 'card' === $payment_method['payment_type'] ) {
+				if ( in_array( $payment_method['payment_type'], array( 'card', 'emv_token' ), true ) ) {
 					$card = $payment_method;
 					$card = array_merge( $card, $payment_method['card'] );
 					unset( $card['card'], $card['gateway'], $card['card_agreement'], $card['payment_type'] );
