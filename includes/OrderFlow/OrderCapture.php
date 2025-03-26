@@ -466,6 +466,10 @@ class OrderCapture {
 			$total_all   += $total;
 		}
 
+		if ( reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
+			$total_all = rp_prepare_amount( $order->get_total(), $order->get_currency() );
+		}
+
 		$this->log(
 			array(
 				__METHOD__,
