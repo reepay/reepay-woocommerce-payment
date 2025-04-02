@@ -4,7 +4,7 @@ Tags: billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.7.14
+Stable tag: 1.7.15
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,10 +18,12 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
-v 1.7.14.1
-- [Fix] - Support payment type emv_token.
-- [Fix] - Support WordPress posts storage (legacy).
-- [Improvement] - Capture specified amount.
+v 1.7.15
+- [Fix] - Support for WordPress posts storage (legacy) as WooCommerce Order data storage setting.
+- [Fix] - Warning message if High Performance Order Storage is disabled or unavailable is changed to a notice.
+- [Fix] - Sends same order lines for authorize and capture to fix rounding differences in totals with discounts and price input exclusive tax.
+- [Improvement] - Adds feature to specify other amount to capture.
+- [Improvement] - Support for card type emv_token.
 
 v 1.7.14
 - [Fix] - Polylang support PHP session usage changed to cookie.
