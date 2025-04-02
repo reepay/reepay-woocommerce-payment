@@ -789,7 +789,7 @@ class OrderCapture {
 			$ordertext  = WCGiftCardsIntegration::get_name_from_order_item( $order, $order_item );
 		} else {
 			if ( $order->get_total_discount( false ) > 0 ) {
-				$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
+				$unit_price = round( ( $prices_incl_tax ? $price['subtotal_with_tax'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
 			} else {
 				$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
 			}
