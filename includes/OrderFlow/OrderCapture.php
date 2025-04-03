@@ -842,6 +842,12 @@ class OrderCapture {
 		$price['subtotal_with_tax'] = floatval( $order->get_line_subtotal( $order_item, true, false ) );
 		$price['original']          = floatval( $order->get_line_total( $order_item, false, false ) );
 		$price['with_tax']          = floatval( $order->get_line_total( $order_item, true, false ) );
+		if (abs(floatval($price['original'])) < 0.001) {
+			$price['original'] = round( $price['subtotal'] / $order_item->get_quantity(), 2 );
+		}
+		if (abs(floatval($price['with_tax'])) < 0.001) {
+			$price['with_tax'] = round( $price['subtotal_with_tax'] / $order_item->get_quantity(), 2 );
+		}
 		if ( WPCProductBundlesWooCommerceIntegration::is_active_plugin() ) {
 			$price_bundle = floatval( $order_item->get_meta( '_woosb_price' ) );
 			if ( ! empty( $price_bundle ) ) {
