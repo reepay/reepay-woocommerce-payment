@@ -262,7 +262,11 @@ class OrderCapture {
 				return;
 		}
 
-		if ( ! isset( $_POST['reepay_capture_amount_button'] ) && ! isset( $_POST['reepay_capture_amount_input'] ) ) {
+		if ( ! isset( $_POST['reepay_capture_amount_button'] ) ) {
+			return;
+		}
+
+		if ( ! isset( $_POST['reepay_capture_amount_input'] ) ) {
 			return;
 		}
 
@@ -787,6 +791,12 @@ class OrderCapture {
 		} elseif ( $order_item->is_type( WCGiftCardsIntegration::KEY_WC_GIFT_ITEMS ) ) {
 			$unit_price = WCGiftCardsIntegration::get_negative_amount_from_order_item( $order, $order_item );
 			$ordertext  = WCGiftCardsIntegration::get_name_from_order_item( $order, $order_item );
+		} elseif ( $order_item->is_type( 'shipping' ) ) {
+			$unit_price = ( $prices_incl_tax ? $price['with_tax'] : $price['original'] );
+			$ordertext = rp_clear_ordertext( $order_item->get_name() );
+		} elseif ( $order_item->is_type( 'fee' ) ) {
+			$unit_price = ( $prices_incl_tax ? $price['with_tax'] : $price['original'] );
+			$ordertext = rp_clear_ordertext( $order_item->get_name() );
 		} else {
 			if ( $order->get_total_discount( false ) > 0 ) {
 				$unit_price = round( ( $prices_incl_tax ? $price['subtotal_with_tax'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
