@@ -875,7 +875,11 @@ class OrderCapture {
 				$subtotal          = round( $price['subtotal'] / $order_item->get_quantity(), 2 );
 				$subtotal_with_tax = round( $price['subtotal_with_tax'] / $order_item->get_quantity(), 2 );
 				$tax               = $subtotal_with_tax - $subtotal;
-				$price_tax_percent = round( 100 / ( $subtotal / $tax ) );
+				if ( abs( floatval( $tax ) ) > 0.001 ) {
+					$price_tax_percent = round( 100 / ( $subtotal / $tax ) );
+				} else {
+					$price_tax_percent = 0;
+				}
 			} else {
 				$price_tax_percent = ( $tax > 0 && $price['original'] > 0 ) ? round( 100 / ( $price['original'] / $tax ) ) : 0;
 			}
