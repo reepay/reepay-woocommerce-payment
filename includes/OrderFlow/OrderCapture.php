@@ -262,7 +262,11 @@ class OrderCapture {
 				return;
 		}
 
-		if ( ! isset( $_POST['reepay_capture_amount_button'] ) && ! isset( $_POST['reepay_capture_amount_input'] ) ) {
+		if ( ! isset( $_POST['reepay_capture_amount_button'] ) ) {
+			return;
+		}
+
+		if ( ! isset( $_POST['reepay_capture_amount_input'] ) ) {
 			return;
 		}
 
@@ -425,6 +429,12 @@ class OrderCapture {
 					$line_items[] = $item;
 					$total_all   += $total;
 				} else {
+					$item_data    = $this->get_item_data( $item, $order );
+					$price        = self::get_item_price( $item, $order );
+					$total        = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
+					$items_data[] = $item_data;
+					$line_items[] = $item;
+					$total_all   += $total;
 					$this->log(
 						array(
 							__METHOD__,
@@ -787,9 +797,15 @@ class OrderCapture {
 		} elseif ( $order_item->is_type( WCGiftCardsIntegration::KEY_WC_GIFT_ITEMS ) ) {
 			$unit_price = WCGiftCardsIntegration::get_negative_amount_from_order_item( $order, $order_item );
 			$ordertext  = WCGiftCardsIntegration::get_name_from_order_item( $order, $order_item );
+		} elseif ( $order_item->is_type( 'shipping' ) ) {
+			$unit_price = ( $prices_incl_tax ? $price['with_tax'] : $price['original'] );
+			$ordertext  = rp_clear_ordertext( $order_item->get_name() );
+		} elseif ( $order_item->is_type( 'fee' ) ) {
+			$unit_price = ( $prices_incl_tax ? $price['with_tax'] : $price['original'] );
+			$ordertext  = rp_clear_ordertext( $order_item->get_name() );
 		} else {
 			if ( $order->get_total_discount( false ) > 0 ) {
-				$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
+				$unit_price = round( ( $prices_incl_tax ? $price['subtotal_with_tax'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
 			} else {
 				$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
 			}
@@ -832,6 +848,7 @@ class OrderCapture {
 		$price['subtotal_with_tax'] = floatval( $order->get_line_subtotal( $order_item, true, false ) );
 		$price['original']          = floatval( $order->get_line_total( $order_item, false, false ) );
 		$price['with_tax']          = floatval( $order->get_line_total( $order_item, true, false ) );
+
 		if ( WPCProductBundlesWooCommerceIntegration::is_active_plugin() ) {
 			$price_bundle = floatval( $order_item->get_meta( '_woosb_price' ) );
 			if ( ! empty( $price_bundle ) ) {
@@ -840,9 +857,35 @@ class OrderCapture {
 				$price['with_tax'] += $price_bundle;
 			}
 		}
-		$tax                             = $price['with_tax'] - $price['original'];
-		$price_tax_percent               = ( $tax > 0 && $price['original'] > 0 ) ? round( 100 / ( $price['original'] / $tax ) ) : 0;
-		$price['tax_percent']            = round( $price_tax_percent, 2 );
+
+		// Get tax status from product.
+		$tax_status = 'taxable';
+		if ( $order_item instanceof WC_Order_Item_Product ) {
+			$product = $order_item->get_product();
+			if ( $product ) {
+				$tax_status = $product->get_tax_status();
+			}
+		}
+
+		if ( 'none' === $tax_status ) {
+			$price['tax_percent'] = 0;
+		} else {
+			$tax = $price['with_tax'] - $price['original'];
+			if ( abs( floatval( $tax ) ) < 0.001 ) {
+				$subtotal          = round( $price['subtotal'] / $order_item->get_quantity(), 2 );
+				$subtotal_with_tax = round( $price['subtotal_with_tax'] / $order_item->get_quantity(), 2 );
+				$tax               = $subtotal_with_tax - $subtotal;
+				if ( abs( floatval( $tax ) ) > 0.001 ) {
+					$price_tax_percent = round( 100 / ( $subtotal / $tax ) );
+				} else {
+					$price_tax_percent = 0;
+				}
+			} else {
+				$price_tax_percent = ( $tax > 0 && $price['original'] > 0 ) ? round( 100 / ( $price['original'] / $tax ) ) : 0;
+			}
+			$price['tax_percent'] = round( $price_tax_percent, 2 );
+		}
+
 		$price['original_with_discount'] = $price['original'] + $discount;
 		$price['with_tax_and_discount']  = $price['with_tax'] + $discount;
 
