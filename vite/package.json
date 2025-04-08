@@ -12,6 +12,7 @@
     },
     "dependencies": {
         "-": "^0.0.1",
+        "@babel/runtime": "^7.27.0",
         "@codemirror/lang-php": "^6.0.1",
         "@hookform/resolvers": "^3.3.4",
         "@monaco-editor/loader": "^1.4.0",
@@ -23,7 +24,6 @@
         "@types/uuid": "^9.0.8",
         "@uiw/codemirror-theme-github": "^4.22.0",
         "@uiw/react-codemirror": "^4.22.0",
-        "axios": "^1.7.7",
         "braces": "^3.0.3",
         "clsx": "^2.1.1",
         "immer": "^9.0.21",
@@ -50,6 +50,7 @@
         "@vitejs/plugin-react-swc": "^3.5.0",
         "@wordpress/i18n": "^4.57.0",
         "autoprefixer": "^10.4.19",
+        "axios": "^1.8.4",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-jsx-a11y": "^6.8.0",
@@ -61,7 +62,7 @@
         "prettier-plugin-tailwindcss": "^0.5.14",
         "tailwindcss": "^3.4.3",
         "typescript": "^5.2.2",
-        "vite": "^6.0.11",
+        "vite": "^6.2.5",
         "vite-plugin-monaco-editor": "^1.1.0"
     },
     "optionalDependencies": {
