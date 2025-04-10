@@ -410,12 +410,12 @@ class OrderStatuses {
 				}
 				break;
 			case self::$status_sync_enabled ? self::$status_settled : 'processing':
-				// skip the processing when instant settle physical products and status settle is processing
+				// skip the processing when instant settle physical products and status settle is processing.
 				$settle_types = reepay()->get_setting( 'settle' ) ?: array();
 				if ( in_array( 'physical', $settle_types, true ) ) {
 					break;
 				}
-				
+
 				// Capture payment.
 				$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
 				if ( ( '1' === $value || false === $value ) && $gateway->can_capture( $order ) ) {
