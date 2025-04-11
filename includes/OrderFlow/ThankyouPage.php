@@ -230,9 +230,10 @@ class ThankyouPage {
 			wp_send_json_error( 'Invalid order' );
 		}
 
-		$another_orders = $order->get_meta( '_reepay_another_orders' );
+		$another_orders = $order->get_meta( '_reepay_another_orders' ) ?: array();
 
-		if ( ! empty( $another_orders ) && is_array( $another_orders ) ) {
+		// if ( ! empty( $another_orders ) && is_array( $another_orders ) ) {
+		if ( is_array( $another_orders ) ) {
 			ob_start();
 
 			reepay()->get_template(
@@ -242,17 +243,19 @@ class ThankyouPage {
 				)
 			);
 
-			foreach ( $another_orders as $order_id ) {
-				if ( $order->get_id() === $order_id ) {
-					continue;
-				}
+			if ( ! empty( $another_orders ) ) {
+				foreach ( $another_orders as $order_id ) {
+					if ( $order->get_id() === $order_id ) {
+						continue;
+					}
 
-				reepay()->get_template(
-					'checkout/order-details.php',
-					array(
-						'order' => wc_get_order( $order_id ),
-					)
-				);
+					reepay()->get_template(
+						'checkout/order-details.php',
+						array(
+							'order' => wc_get_order( $order_id ),
+						)
+					);
+				}
 			}
 			$order_details = ob_get_clean();
 			wp_send_json_success( $order_details );
@@ -260,5 +263,72 @@ class ThankyouPage {
 		} else {
 			wp_send_json_error( 'Order data not ready yet' );
 		}
+	}
+
+	/*
+	 * Get pro-rated reepay subscription data.
+	 *
+	 * @param WC_Order $order Order object.
+	 *
+	 * @return array|null Pro-rated data or null if not applicable.
+	 */
+	public static function get_pro_rated_reepay_subscription( $order ) {
+		if (!$order || !rp_is_order_paid_via_reepay($order)) {
+			return null;
+		}
+
+		$another_orders = $order->get_meta( '_reepay_another_orders' ) ?: array();
+
+		if (!class_exists(WCRR::class)) {
+			return null;
+		}
+
+		if (!WCRR::is_order_contain_subscription($order) && empty($another_orders)) {
+			return null;
+		}
+
+		// Add retry logic
+		$max_attempts = 10; // Maximum number of attempts to get invoice data.
+		$attempts = 0;
+		$invoice_data = null;
+		
+		while ($attempts < $max_attempts) {
+			$invoice_data = reepay()->api($order)->get_invoice_data($order);
+
+			if (!is_wp_error($invoice_data) ){
+				break;
+			}
+			
+			$attempts++;
+			if ($attempts < $max_attempts) {
+				sleep(2); // Wait 2 seconds before next attempt.
+			}
+		}
+
+		if (!isset($invoice_data['plan']) || !isset($invoice_data['subscription'])) {
+			return null;
+		}
+
+		$subscription_plan = $invoice_data['plan'];
+		$handle = $invoice_data['subscription'];
+
+		if (empty($subscription_plan) || empty($handle)) {
+			return null;
+		}
+
+		$plan_data = reepay_s()->api()->request( "plan/$subscription_plan/current" );
+
+		if ( $plan_data['partial_proration_days'] !== false ){
+			return null;
+		}
+
+		$pro_rated_data = array();
+
+		$next_invoice_preview = reepay_s()->api()->request( "subscription/$handle/next_invoice_preview" );
+
+		$pro_rated_data['invoice_amount'] =$invoice_data['amount'];
+		$pro_rated_data['next_invoice_preview_amount'] = $next_invoice_preview['amount'];
+
+		return $pro_rated_data;
 	}
 }
