@@ -2,9 +2,9 @@
 Contributors: reepaydenmark,aaitse
 Tags: billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.7.15.1
+Stable tag: 1.7.15.3
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
