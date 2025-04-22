@@ -323,8 +323,8 @@ class OrderCapture {
 		}
 
 		// Disable settle for renewal order.
-		$post  = get_post( ! empty( $order ) ? $order->get_id() : null );
-		if ( ! empty( $order->get_meta( '_reepay_order' ) ) && ( $post->post_parent != 0 || ! empty( $order->get_meta( '_reepay_is_renewal' ) ) ) ) {
+		$post = get_post( ! empty( $order ) ? $order->get_id() : null );
+		if ( ! empty( $order->get_meta( '_reepay_order' ) ) && ( 0 !== $post->post_parent || ! empty( $order->get_meta( '_reepay_is_renewal' ) ) ) ) {
 			return false;
 		}
 
