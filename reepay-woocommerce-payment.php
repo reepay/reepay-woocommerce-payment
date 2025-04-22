@@ -8,7 +8,7 @@
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
- * WC tested up to: 9.3.3
+ * WC tested up to: 9.8.1
  *
  * @package Reepay\Checkout
  */
