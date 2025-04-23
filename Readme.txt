@@ -20,6 +20,7 @@ See installation guide right here: https://docu.billwerk.plus/help/en/apps/wooco
 == Changelog ==
 v 1.7.15.3
 - [Fix] - Settle renewal order in Billwerk+ Optimize.
+- [Fix] - Order confirmation of pro-rated subscriptions.
 
 v 1.7.15.2
 - [Fix] - Fix process capture when settings instant settle physical products and status settled processing.
