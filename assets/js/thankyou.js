@@ -11,9 +11,10 @@ jQuery(function ($) {
 
     function checkOrderStatus() {
         if (attempts >= maxAttempts) {
+            $('.woocommerce-order').unblock();
             return;
         }
-
+        
         $.ajax({
             type: 'POST',
             url: WC_Reepay_Thankyou.ajax_url,
@@ -24,6 +25,7 @@ jQuery(function ($) {
             },
             success: function(response) {
                 if (response.success) {
+                    $('.woocommerce-order').unblock();
                     status_elm.hide()
                     success_elm.show()
                     success_elm.find('#reepay-order-details').html(response.data);
@@ -50,21 +52,19 @@ jQuery(function ($) {
             this.checkPayment(function (err, data) {
                 switch (data.state) {
                     case 'paid':
+                        /*
                         if(WC_Reepay_Thankyou.order_contain_rp_subscription == true && WC_Reepay_Thankyou.order_is_rp_subscription == false){
                             checkOrderStatus();
                         }else{
                             status_elm.hide()
                             success_elm.show()
                         }
+                        */
+                        setTimeout(function() {
+                            checkOrderStatus();
+                        }, 4000);
                         break
                     case 'reload':
-                        $('.woocommerce-order').block({
-                            message: WC_Reepay_Thankyou.check_message,
-                            overlayCSS: {
-                                background: '#fff',
-                                opacity: 0.6
-                            }
-                        })
                         setTimeout(function () {
                             location.reload()
                         }, 2000)
@@ -114,7 +114,7 @@ jQuery(function ($) {
                 },
                 dataType: 'json'
             }).always(function () {
-                $('.woocommerce-order').unblock()
+                
             }).done(function (response) {
                 callback(null, response.data)
             })
