@@ -46,11 +46,11 @@ defined( 'ABSPATH' ) || exit();
 		<li class="woocommerce-order-overview__total reepay-pro-rated total">
 			<div class="reepay-pro-rated-subscription">
 				<?php esc_html_e( 'Paid for partial period:', 'reepay-checkout-gateway' ); ?>
-				<strong><?php echo wc_price( $pro_rated_subscription['invoice_amount'] ); ?></strong>
+				<strong><?php echo wc_price( rp_make_initial_amount( $pro_rated_subscription['invoice_amount'], $order->get_currency() ) ); ?></strong>
 			</div>
 			<div class="reepay-pro-rated-subscription">
 				<?php esc_html_e( 'Successively per period:', 'reepay-checkout-gateway' ); ?>
-				<strong><?php echo wc_price( $pro_rated_subscription['next_invoice_preview_amount'] ); ?></strong>
+				<strong><?php echo wc_price( rp_make_initial_amount( $pro_rated_subscription['next_invoice_preview_amount'], $order->get_currency() ) ); ?></strong>
 			</div>
 		</li>
 		<?php
