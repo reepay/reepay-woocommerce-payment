@@ -18,6 +18,9 @@ The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on yo
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.15.2
+- [Fix] - Fix process capture when settings instant settle physical products and status settled processing.
+
 v 1.7.15.1
 - [Fix] - Capture amount on orders with discounts, fees and shipping.
 

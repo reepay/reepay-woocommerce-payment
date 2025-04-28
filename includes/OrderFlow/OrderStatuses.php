@@ -410,6 +410,12 @@ class OrderStatuses {
 				}
 				break;
 			case self::$status_sync_enabled ? self::$status_settled : 'processing':
+				// skip the processing when instant settle physical products and status settle is processing.
+				$settle_types = reepay()->get_setting( 'settle' ) ?: array();
+				if ( in_array( 'physical', $settle_types, true ) ) {
+					break;
+				}
+
 				// Capture payment.
 				$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
 				if ( ( '1' === $value || false === $value ) && $gateway->can_capture( $order ) ) {
@@ -421,8 +427,8 @@ class OrderStatuses {
 
 						$amount_to_capture = rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order->get_currency() );
 						$items_to_capture  = InstantSettle::calculate_instant_settle( $order )['items'];
-
 						if ( ! empty( $items_to_capture ) && $amount_to_capture > 0 ) {
+							$amount_to_capture = rp_prepare_amount( $amount_to_capture, $order->get_currency() );
 							$gateway->capture_payment( $order, $amount_to_capture );
 						}
 					} catch ( Exception $e ) {
