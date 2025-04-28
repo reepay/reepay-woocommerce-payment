@@ -49,10 +49,10 @@ class OrderTable {
 	 */
 	public function form_fields( array $form_fields ): array {
 		$form_fields['order_table_billwerk_status'] = array(
-			'title'       => __( 'Order Column: Billwerk Status', 'reepay-checkout-gateway' ),
+			'title'       => __( 'Order Column: Frisbii Status', 'reepay-checkout-gateway' ),
 			'type'        => 'checkbox',
 			'label'       => __( 'Enable Column', 'reepay-checkout-gateway' ),
-			'description' => __( 'The "Billwerk Status" column displays the status of Billwerk in the orders table.', 'reepay-checkout-gateway' ),
+			'description' => __( 'The "Frisbii Status" column displays the status of Frisbii in the orders table.', 'reepay-checkout-gateway' ),
 			'default'     => 'no',
 		);
 
@@ -69,7 +69,7 @@ class OrderTable {
 	public function admin_order_edit_columns( $existing_columns ) {
 		$columns = array_slice( $existing_columns, 0, count( $existing_columns ) - 1, true ) +
 					array(
-						'billwerk_status' => __( 'Billwerk status', 'reepay-checkout-gateway' ),
+						'billwerk_status' => __( 'Frisbii status', 'reepay-checkout-gateway' ),
 					)
 					+ array_slice( $existing_columns, count( $existing_columns ) - 1, count( $existing_columns ), true );
 

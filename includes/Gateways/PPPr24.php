@@ -39,7 +39,7 @@ class PPPr24 extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_pp_p24';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ Pay - Przelewy24', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Frisbii Pay - Przelewy24', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

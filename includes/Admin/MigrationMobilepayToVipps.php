@@ -70,8 +70,8 @@ class MigrationMobilepayToVipps {
 	public function create_submenu() {
 		add_submenu_page(
 			'tools.php',
-			__( 'Billwerk+ Migration', 'reepay-checkout-gateway' ),
-			__( 'Billwerk+ Migration', 'reepay-checkout-gateway' ),
+			__( 'Frisbii Migration', 'reepay-checkout-gateway' ),
+			__( 'Frisbii Migration', 'reepay-checkout-gateway' ),
 			'manage_options',
 			'billwerk-migration',
 			array( $this, 'migration_page' ),

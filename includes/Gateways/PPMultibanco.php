@@ -39,7 +39,7 @@ class PPMultibanco extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_pp_multibanco';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ Pay - Multibanco', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Frisbii Pay - Multibanco', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

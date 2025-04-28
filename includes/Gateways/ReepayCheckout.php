@@ -46,7 +46,7 @@ class ReepayCheckout extends ReepayGateway {
 		$this->id             = 'reepay_checkout';
 		$this->logging_source = $this->id;
 		$this->has_fields     = true;
-		$this->method_title   = __( 'Billwerk+ Pay', 'reepay-checkout-gateway' );
+		$this->method_title   = __( 'Frisbii Pay', 'reepay-checkout-gateway' );
 		$this->supports       = array(
 			'products',
 			'refunds',
@@ -113,13 +113,13 @@ class ReepayCheckout extends ReepayGateway {
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Billwerk+ Pay', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Frisbii Pay', 'reepay-checkout-gateway' ),
 			),
 			'description'                => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
-				'default'     => __( 'Billwerk+ Pay', 'reepay-checkout-gateway' ),
+				'default'     => __( 'Frisbii Pay', 'reepay-checkout-gateway' ),
 			),
 			'hr2'                        => array(
 				'type' => 'separator',
@@ -343,7 +343,7 @@ class ReepayCheckout extends ReepayGateway {
 			'logos'                      => array(
 				'title'          => __( 'Payment Logos', 'reepay-checkout-gateway' ),
 				'description'    => __(
-					'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Billwerk+ Pay Dashboard',
+					'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Frisbii Pay Dashboard',
 					'reepay-checkout-gateway'
 				),
 				'type'           => 'multiselect',
@@ -389,7 +389,7 @@ class ReepayCheckout extends ReepayGateway {
 			),
 			'skip_order_lines'           => array(
 				'title'       => __( 'Skip order lines', 'reepay-checkout-gateway' ),
-				'description' => __( 'Select if order lines should not be send to Billwerk+ Pay', 'reepay-checkout-gateway' ),
+				'description' => __( 'Select if order lines should not be send to Frisbii Pay', 'reepay-checkout-gateway' ),
 				'type'        => 'select',
 				'options'     => array(
 					'no'  => 'Include order lines',
@@ -796,7 +796,7 @@ class ReepayCheckout extends ReepayGateway {
 	 */
 	public function notice_message_live_key_changed() {
 		// translators: notic message live key changed.
-		$notice_message = sprintf( __( 'The Api key identifies the Billwerk account. Only subscription plan handles that exist under the account of the API key can be used to submit subscription orders. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://optimize-docs.billwerk.com/reference/account' );
+		$notice_message = sprintf( __( 'The Api key identifies the Frisbii account. Only subscription plan handles that exist under the account of the API key can be used to submit subscription orders. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://docs.frisbii.com/reference/account' );
 		?>
 		<div class="notice notice-info">
 			<p><?php echo wp_kses_post( $notice_message ); ?></p>
@@ -809,7 +809,7 @@ class ReepayCheckout extends ReepayGateway {
 	 */
 	public function notice_message_test_mode_enabled() {
 		// translators: notice message enabled test mode.
-		$notice_message = sprintf( __( 'You just enabled test mode, meaning your test API key will now be used. Please note that all subscription products previously linked to plans on your live account are no longer linked. If you try to purchase a subscription product now, an error will occur. Disabling test mode will restore all connections. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://optimize-docs.billwerk.com/reference/account' );
+		$notice_message = sprintf( __( 'You just enabled test mode, meaning your test API key will now be used. Please note that all subscription products previously linked to plans on your live account are no longer linked. If you try to purchase a subscription product now, an error will occur. Disabling test mode will restore all connections. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://docs.frisbii.com/reference/account' );
 		?>
 		<div class="notice notice-info">
 			<p><?php echo wp_kses_post( $notice_message ); ?></p>
@@ -822,7 +822,7 @@ class ReepayCheckout extends ReepayGateway {
 	 */
 	public function notice_message_test_mode_disabled() {
 		// translators: notice message disabled test mode.
-		$notice_message = sprintf( __( 'You just disabled test mode, meaning your live API key will now be used. Please note that all subscription products previously linked to plans on your live account are now restored. If you haven\'t linked your subscription products with your test account, they will remain unlinked. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://optimize-docs.billwerk.com/reference/account' );
+		$notice_message = sprintf( __( 'You just disabled test mode, meaning your live API key will now be used. Please note that all subscription products previously linked to plans on your live account are now restored. If you haven\'t linked your subscription products with your test account, they will remain unlinked. <a href="%s" target="_blank">Read more about this here.</a>', 'reepay-checkout-gateway' ), 'https://docs.frisbii.com/reference/account' );
 		?>
 		<div class="notice notice-info">
 			<p><?php echo wp_kses_post( $notice_message ); ?></p>

@@ -39,7 +39,7 @@ class KlarnaSliceIt extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_klarna_slice_it';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ Pay - Klarna Slice It', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Frisbii Pay - Klarna Slice It', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

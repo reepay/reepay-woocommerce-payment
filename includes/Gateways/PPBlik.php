@@ -39,7 +39,7 @@ class PPBlik extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_pp_blik_oc';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ Pay - BLIK', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Frisbii Pay - BLIK', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

@@ -39,7 +39,7 @@ class PPPaySafeCard extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_pp_paysafecard';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ Pay - Paysafecard', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Frisbii Pay - Paysafecard', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

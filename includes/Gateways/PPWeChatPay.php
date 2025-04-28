@@ -39,7 +39,7 @@ class PPWeChatPay extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_pp_wechatpay';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ Pay - WeChat Pay', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Frisbii Pay - WeChat Pay', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

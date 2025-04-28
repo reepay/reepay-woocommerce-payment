@@ -41,7 +41,7 @@ class VippsMobilepay extends ReepayGateway {
 	public function __construct() {
 		$this->id                   = self::ID;
 		$this->has_fields           = true;
-		$this->method_title         = __( 'Billwerk+ Pay - Vipps MobilePay', 'reepay-checkout-gateway' );
+		$this->method_title         = __( 'Frisbii Pay - Vipps MobilePay', 'reepay-checkout-gateway' );
 		$this->method_description   = '<span style="color:red">' . __( 'The new Vipps MobilePay payment method, which utilizes bank transfers instead of card payments, will replace the old MobilePay Online payment method. Please refer to Vipps MobilePay for more efficient transactions and a better conversion rate.', 'reepay-checkout-gateway' ) . '</span>';
 		$this->supports             = array(
 			'products',
@@ -85,9 +85,9 @@ class VippsMobilepay extends ReepayGateway {
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'is_reepay_configured' => array(
-				'title'   => __( 'Status in Billwerk+ Pay', 'reepay-checkout-gateway' ),
+				'title'   => __( 'Status in Frisbii Pay', 'reepay-checkout-gateway' ),
 				'type'    => 'gateway_status',
-				'label'   => __( 'Status in Billwerk+ Pay', 'reepay-checkout-gateway' ),
+				'label'   => __( 'Status in Frisbii Pay', 'reepay-checkout-gateway' ),
 				'default' => $this->test_mode,
 			),
 			'enabled'              => array(
@@ -181,7 +181,7 @@ class VippsMobilepay extends ReepayGateway {
 						return array(
 							'src' => $logo_url,
 							// translators: %s gateway title.
-							'alt' => esc_attr( sprintf( __( 'Pay with %s on Billwerk+ Pay', 'reepay-checkout-gateway' ), $gateway_settings['title_nok'] ) ),
+							'alt' => esc_attr( sprintf( __( 'Pay with %s on Frisbii Pay', 'reepay-checkout-gateway' ), $gateway_settings['title_nok'] ) ),
 						);
 					},
 					array_filter( (array) $this->logos, 'strlen' )
