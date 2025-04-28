@@ -7,6 +7,8 @@
  * @var WC_Order $order current order.
  */
 
+use Reepay\Checkout\OrderFlow\ThankyouPage;
+
 defined( 'ABSPATH' ) || exit();
 ?>
 <ul class="woocommerce-order-overview woocommerce-thankyou-order-details order_details">
@@ -36,7 +38,25 @@ defined( 'ABSPATH' ) || exit();
 		</li>
 	<?php endif; ?>
 
-	<li class="woocommerce-order-overview__total total">
+	
+	<?php
+	$pro_rated_subscription = ThankyouPage::get_pro_rated_reepay_subscription( $order );
+	if ( $pro_rated_subscription !== null ) {
+		?>
+		<li class="woocommerce-order-overview__total reepay-pro-rated total">
+			<div class="reepay-pro-rated-subscription">
+				<?php esc_html_e( 'Paid for partial period:', 'reepay-checkout-gateway' ); ?>
+				<strong><?php echo wc_price( rp_make_initial_amount( $pro_rated_subscription['invoice_amount'], $order->get_currency() ) ); ?></strong>
+			</div>
+			<div class="reepay-pro-rated-subscription">
+				<?php esc_html_e( 'Successively per period:', 'reepay-checkout-gateway' ); ?>
+				<strong><?php echo wc_price( rp_make_initial_amount( $pro_rated_subscription['next_invoice_preview_amount'], $order->get_currency() ) ); ?></strong>
+			</div>
+		</li>
+		<?php
+	} else {
+		?>
+		<li class="woocommerce-order-overview__total total">
 		<?php esc_html_e( 'Total:', 'reepay-checkout-gateway' ); ?>
 		<strong>
 		<?php
@@ -47,8 +67,11 @@ defined( 'ABSPATH' ) || exit();
 			echo wc_price( $real_total );
 		}
 		?>
-			</strong>
-	</li>
+		</strong>
+		</li>
+		<?php
+	}
+	?>
 
 	<?php if ( $order->get_payment_method_title() ) : ?>
 		<li class="woocommerce-order-overview__payment-method method">
