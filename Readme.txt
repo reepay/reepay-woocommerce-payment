@@ -19,9 +19,9 @@ See installation guide right here: https://docu.billwerk.plus/help/en/apps/wooco
 
 == Changelog ==
 v 1.7.16
-- [Fix] - Order confirmation of pro-rated subscriptions.
+- [Fix] - Particular settings including "Instant Settle physical products" caused 1/100 amount instant settle.
 - [Improvement] - Product name change to "Frisbii Pay".
-- [Improvement] - WordPress support version 6.8 and WooCommerce version 9.8.1.
+- [Improvement] - Tested up to WordPress version 6.8 and WooCommerce version 9.8.1.
 
 v 1.7.15.2
 - [Fix] - Fix process capture when settings instant settle physical products and status settled processing.
