@@ -232,7 +232,6 @@ class ThankyouPage {
 
 		$another_orders = $order->get_meta( '_reepay_another_orders' ) ?: array();
 
-		// if ( ! empty( $another_orders ) && is_array( $another_orders ) ) {
 		if ( is_array( $another_orders ) ) {
 			ob_start();
 
@@ -265,7 +264,7 @@ class ThankyouPage {
 		}
 	}
 
-	/*
+	/**
 	 * Get pro-rated reepay subscription data.
 	 *
 	 * @param WC_Order $order Order object.
@@ -273,52 +272,52 @@ class ThankyouPage {
 	 * @return array|null Pro-rated data or null if not applicable.
 	 */
 	public static function get_pro_rated_reepay_subscription( $order ) {
-		if (!$order || !rp_is_order_paid_via_reepay($order)) {
+		if ( ! $order || ! rp_is_order_paid_via_reepay( $order ) ) {
 			return null;
 		}
 
 		$another_orders = $order->get_meta( '_reepay_another_orders' ) ?: array();
 
-		if (!class_exists(WCRR::class)) {
+		if ( ! class_exists( WCRR::class ) ) {
 			return null;
 		}
 
-		if (!WCRR::is_order_contain_subscription($order) && empty($another_orders)) {
+		if ( ! WCRR::is_order_contain_subscription( $order ) && empty( $another_orders ) ) {
 			return null;
 		}
 
-		// Add retry logic
+		// Add retry logic.
 		$max_attempts = 10; // Maximum number of attempts to get invoice data.
-		$attempts = 0;
+		$attempts     = 0;
 		$invoice_data = null;
-		
-		while ($attempts < $max_attempts) {
-			$invoice_data = reepay()->api($order)->get_invoice_data($order);
 
-			if (!is_wp_error($invoice_data) ){
+		while ( $attempts < $max_attempts ) {
+			$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+
+			if ( ! is_wp_error( $invoice_data ) ) {
 				break;
 			}
-			
-			$attempts++;
-			if ($attempts < $max_attempts) {
-				sleep(2); // Wait 2 seconds before next attempt.
+
+			++$attempts;
+			if ( $attempts < $max_attempts ) {
+				sleep( 2 ); // Wait 2 seconds before next attempt.
 			}
 		}
 
-		if (!isset($invoice_data['plan']) || !isset($invoice_data['subscription'])) {
+		if ( ! isset( $invoice_data['plan'] ) || ! isset( $invoice_data['subscription'] ) ) {
 			return null;
 		}
 
 		$subscription_plan = $invoice_data['plan'];
-		$handle = $invoice_data['subscription'];
+		$handle            = $invoice_data['subscription'];
 
-		if (empty($subscription_plan) || empty($handle)) {
+		if ( empty( $subscription_plan ) || empty( $handle ) ) {
 			return null;
 		}
 
 		$plan_data = reepay_s()->api()->request( "plan/$subscription_plan/current" );
 
-		if ( $plan_data['partial_proration_days'] !== false ){
+		if ( false !== $plan_data['partial_proration_days'] ) {
 			return null;
 		}
 
@@ -326,7 +325,7 @@ class ThankyouPage {
 
 		$next_invoice_preview = reepay_s()->api()->request( "subscription/$handle/next_invoice_preview" );
 
-		$pro_rated_data['invoice_amount'] =$invoice_data['amount'];
+		$pro_rated_data['invoice_amount']              = $invoice_data['amount'];
 		$pro_rated_data['next_invoice_preview_amount'] = $next_invoice_preview['amount'];
 
 		return $pro_rated_data;

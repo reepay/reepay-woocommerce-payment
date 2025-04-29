@@ -30,18 +30,18 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 	}
 	.woocommerce-order-overview__total.reepay-pro-rated {
 		display: flex;
-    	flex-wrap: wrap;
-    	gap: 20px;
+		flex-wrap: wrap;
+		gap: 20px;
 	}
 	.woocommerce-order-overview__total.reepay-pro-rated .reepay-pro-rated-subscription {
 		flex: 0 0 calc(50% - 10px);
-    	box-sizing: border-box;
-    	margin: 0;
+		box-sizing: border-box;
+		margin: 0;
 	}
 	@media screen and (max-width: 768px) {
-    	.woocommerce-order-overview__total.reepay-pro-rated .reepay-pro-rated-subscription {
-        	flex: 0 0 100%;
-    	}
+		.woocommerce-order-overview__total.reepay-pro-rated .reepay-pro-rated-subscription {
+			flex: 0 0 100%;
+		}
 	}
 </style>
 <div class="woocommerce-order woocommerce-order--thankyou">
@@ -67,19 +67,19 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 			</p>
 			<div id="reepay-order-details">
 				<?php
-				if (!rp_is_order_paid_via_reepay($order)) {
+				if ( ! rp_is_order_paid_via_reepay( $order ) ) {
 					reepay()->get_template(
 						'checkout/order-details.php',
 						array(
 							'order' => $order,
 						)
 					);
-	
+
 					foreach ( $another_orders as $order_id ) {
 						if ( $order->get_id() === $order_id ) {
 							continue; // Backward compatibility.
 						}
-	
+
 						reepay()->get_template(
 							'checkout/order-details.php',
 							array(
