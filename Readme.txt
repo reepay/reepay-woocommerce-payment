@@ -23,9 +23,6 @@ v 1.7.16
 - [Improvement] - Product name change to "Frisbii Pay".
 - [Improvement] - Tested up to WordPress version 6.8 and WooCommerce version 9.8.1.
 
-v 1.7.15.2
-- [Fix] - Fix process capture when settings instant settle physical products and status settled processing.
-
 v 1.7.15.1
 - [Fix] - Capture amount on orders with discounts, fees and shipping.
 
