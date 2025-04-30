@@ -41,7 +41,7 @@ class TokenReepayVR extends WC_Payment_Token {
 		<?php else : ?>
 			<?php
 			// translators: %s token.
-			printf( esc_html__( 'Billwerk+ Pay - Vipps MobilePay Recurring [%s]', 'reepay-checkout-gateway' ), esc_html( $this->get_token() ) );
+			printf( esc_html__( 'Frisbii Pay - Vipps MobilePay Recurring [%s]', 'reepay-checkout-gateway' ), esc_html( $this->get_token() ) );
 			?>
 		<?php endif; ?>
 

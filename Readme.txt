@@ -1,23 +1,31 @@
-=== Billwerk+ Pay ===
+=== Frisbii Pay ===
 Contributors: reepaydenmark,aaitse
-Tags: billwerk+, visa, mastercard, dankort, mobilepay
+Tags: Frisbii, billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.7.15.1
+Stable tag: 1.7.16
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
-Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and more directly on your store with the Billwerk+ Pay Gateway.
+Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and more directly on your store with the Frisbii Pay Gateway.
 
 == Description ==
-Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and more directly on your store with the Billwerk+ Pay Gateway for WooCommerce.
-The Billwerk+ Pay plugin extends WooCommerce allowing you to take payments on your store via Billwerk+ Pay\'s API.
+Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and more directly on your store with the Frisbii Pay Gateway for WooCommerce.
+The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your store via Frisbii Pay\'s API.
 
 == Installation ==
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.7.16
+- [Fix] - Particular settings including "Instant Settle physical products" caused 1/100 amount instant settle.
+- [Improvement] - Product name change to "Frisbii Pay".
+- [Improvement] - Tested up to WordPress version 6.8 and WooCommerce version 9.8.1.
+
+v 1.7.15.2
+- [Fix] - Fix process capture when settings instant settle physical products and status settled processing.
+
 v 1.7.15.1
 - [Fix] - Capture amount on orders with discounts, fees and shipping.
 

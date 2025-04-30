@@ -77,7 +77,7 @@ class ViteAssetsLoader {
 	 */
 	public static function get_manifest_config( string $build_path ) {
 		$file_path   = $build_path . '/' . self::MANIFEST_FILE_PATH;
-		$error_title = '<b>Error Billwerk+ Pay:</b> ';
+		$error_title = '<b>Error Frisbii Pay:</b> ';
 		if ( ! file_exists( $file_path ) ) {
 			wp_die( $error_title . __( 'Vite scripts manifest file not found', 'reepay-checkout-gateway' ), $error_title );
 		}

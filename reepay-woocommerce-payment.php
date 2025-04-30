@@ -1,14 +1,14 @@
 <?php
 /**
- * Plugin Name: Billwerk+ Pay
+ * Plugin Name: Frisbii Pay
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
- * Author: Billwerk+
- * Author URI: http://billwerk.plus
- * Version: 1.7.15.1
+ * Author: Frisbii
+ * Author URI: https://frisbii.com
+ * Version: 1.7.16
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
- * WC tested up to: 9.3.3
+ * WC tested up to: 9.8.1
  *
  * @package Reepay\Checkout
  */
@@ -95,7 +95,7 @@ class WC_ReepayCheckout {
 		static $instance_requested = false;
 
 		if ( true === $instance_requested && is_null( self::$instance ) ) {
-			$message = 'Function Billwerk+ Pay called in time of initialization main plugin class. Recursion prevented';
+			$message = 'Function Frisbii Pay called in time of initialization main plugin class. Recursion prevented';
 
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				$message .= '<br>Stack trace for debugging:<br><pre>' . print_r( //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r

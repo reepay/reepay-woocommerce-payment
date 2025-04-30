@@ -39,7 +39,7 @@ class PPPaysera extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_pp_paysera';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ Pay - Paysera', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Frisbii Pay - Paysera', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

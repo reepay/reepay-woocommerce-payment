@@ -41,7 +41,7 @@ class TokenReepayMS extends WC_Payment_Token {
 		<?php else : ?>
 			<?php
 			// translators: %s token.
-			printf( esc_html__( 'Billwerk+ Pay - Mobilepay Subscriptions [%s]', 'reepay-checkout-gateway' ), esc_html( $this->get_token() ) );
+			printf( esc_html__( 'Frisbii Pay - Mobilepay Subscriptions [%s]', 'reepay-checkout-gateway' ), esc_html( $this->get_token() ) );
 			?>
 		<?php endif; ?>
 

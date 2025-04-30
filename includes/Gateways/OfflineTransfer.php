@@ -39,7 +39,7 @@ class OfflineTransfer extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_offline_bank_transfer';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ Pay - Bank Transfer', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Frisbii Pay - Bank Transfer', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

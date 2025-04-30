@@ -109,7 +109,7 @@ class OrderStatuses {
 			'title'       => __( 'Sync statuses', 'reepay-checkout-gateway' ),
 			'type'        => 'checkbox',
 			'label'       => __( 'Enable sync', 'reepay-checkout-gateway' ),
-			'description' => __( '2-way synchronization of order statuses in Woocommerce with invoice statuses in Billwerk+ Pay', 'reepay-checkout-gateway' ),
+			'description' => __( '2-way synchronization of order statuses in Woocommerce with invoice statuses in Frisbii Pay', 'reepay-checkout-gateway' ),
 			'default'     => 'yes',
 		);
 
@@ -124,7 +124,7 @@ class OrderStatuses {
 		);
 
 		$form_fields['status_created'] = array(
-			'title'   => __( 'Status: Billwerk+ Pay Created', 'reepay-checkout-gateway' ),
+			'title'   => __( 'Status: Frisbii Pay Created', 'reepay-checkout-gateway' ),
 			'type'    => 'select',
 			'options' => $pending_statuses,
 			'default' => 'wc-pending',
@@ -139,7 +139,7 @@ class OrderStatuses {
 		);
 
 		$form_fields['status_authorized'] = array(
-			'title'   => __( 'Status: Billwerk+ Pay Authorized', 'reepay-checkout-gateway' ),
+			'title'   => __( 'Status: Frisbii Pay Authorized', 'reepay-checkout-gateway' ),
 			'type'    => 'select',
 			'options' => $authorized_statuses,
 			'default' => 'wc-on-hold',
@@ -154,7 +154,7 @@ class OrderStatuses {
 		);
 
 		$form_fields['status_settled'] = array(
-			'title'   => __( 'Status: Billwerk+ Pay Settled', 'reepay-checkout-gateway' ),
+			'title'   => __( 'Status: Frisbii Pay Settled', 'reepay-checkout-gateway' ),
 			'type'    => 'select',
 			'options' => $settled_statuses,
 			'default' => 'wc-processing',
@@ -410,6 +410,12 @@ class OrderStatuses {
 				}
 				break;
 			case self::$status_sync_enabled ? self::$status_settled : 'processing':
+				// skip the processing when instant settle physical products and status settle is processing.
+				$settle_types = reepay()->get_setting( 'settle' ) ?: array();
+				if ( in_array( 'physical', $settle_types, true ) ) {
+					break;
+				}
+
 				// Capture payment.
 				$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
 				if ( ( '1' === $value || false === $value ) && $gateway->can_capture( $order ) ) {
@@ -421,8 +427,8 @@ class OrderStatuses {
 
 						$amount_to_capture = rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order->get_currency() );
 						$items_to_capture  = InstantSettle::calculate_instant_settle( $order )['items'];
-
 						if ( ! empty( $items_to_capture ) && $amount_to_capture > 0 ) {
+							$amount_to_capture = rp_prepare_amount( $amount_to_capture, $order->get_currency() );
 							$gateway->capture_payment( $order, $amount_to_capture );
 						}
 					} catch ( Exception $e ) {
