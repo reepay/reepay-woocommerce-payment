@@ -1,6 +1,6 @@
-# Billwerk+ Pay
+# Frisbii Pay
 
-The Billwerk+ Pay Woocommerce plugin has been made for you to use on your wordpress site. Click below to download and install.
+The Frisbii Pay Woocommerce plugin has been made for you to use on your wordpress site. Click below to download and install.
 
 Use the reepay plugin for:
 * Regular Payments
@@ -9,7 +9,7 @@ Use the reepay plugin for:
 
 # Supported versions
 * WordPress Version: 4.0 or higher
-* Tested up to: 5.3.2
+* Tested up to: 6.8
 
 # Download and installation
 * Official download page https://wordpress.org/plugins/reepay-checkout-gateway/

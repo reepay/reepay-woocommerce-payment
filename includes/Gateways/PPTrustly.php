@@ -39,7 +39,7 @@ class PPTrustly extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_pp_trustly';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ Pay - Trustly', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Frisbii Pay - Trustly', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

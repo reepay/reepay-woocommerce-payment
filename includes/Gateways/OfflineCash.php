@@ -39,7 +39,7 @@ class OfflineCash extends ReepayGateway {
 	public function __construct() {
 		$this->id           = 'reepay_offline_cash';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Billwerk+ Pay - Cash', 'reepay-checkout-gateway' );
+		$this->method_title = __( 'Frisbii Pay - Cash', 'reepay-checkout-gateway' );
 		$this->supports     = array(
 			'products',
 			'refunds',

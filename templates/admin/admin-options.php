@@ -15,13 +15,13 @@ defined( 'ABSPATH' ) || exit();
 
 <h2><?php esc_html( $gateway->get_method_title() ); ?></h2>
 <?php wp_kses_post( wpautop( $gateway->get_method_description() ) ); ?>
-<p><?php _e( 'Billwerk+ Pay', 'reepay-checkout-gateway' ); ?></p>
+<p><?php _e( 'Frisbii Pay', 'reepay-checkout-gateway' ); ?></p>
 <?php if ( ! $webhook_installed ) : ?>
 	<p>
 		<?php
 		printf(
 				// translators: %s link to reepay dashboard.
-			__( 'Please setup WebHook in <a href="%s" target="_blank">Billwerk+ Pay Dashboard</a>.', 'reepay-checkout-gateway' ),
+			__( 'Please setup WebHook in <a href="%s" target="_blank">Frisbii Pay Dashboard</a>.', 'reepay-checkout-gateway' ),
 			'https://admin.billwerk.plus/'
 		);
 		?>

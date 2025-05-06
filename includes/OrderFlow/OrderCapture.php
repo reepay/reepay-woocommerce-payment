@@ -20,6 +20,7 @@ use WC_Product;
 use WC_Reepay_Renewals;
 use WC_Subscriptions_Manager;
 use WC_Order_Item_Fee;
+use WP_Error;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -51,6 +52,8 @@ class OrderCapture {
 		add_action( 'woocommerce_order_status_changed', array( $this, 'capture_full_order' ), 10, 4 );
 
 		add_action( 'admin_init', array( $this, 'process_item_capture' ) );
+
+		add_action( 'admin_init', array( $this, 'process_capture_amount' ) );
 
 		add_action( 'woocommerce_order_item_add_action_buttons', array( $this, 'capture_full_order_button' ), 10, 1 );
 
@@ -110,7 +113,8 @@ class OrderCapture {
 			empty( $item->get_meta( 'settled' ) ) &&
 			floatval( $item->get_data()['total'] ) > 0 &&
 			$this->check_capture_allowed( $order ) &&
-			! WCGiftCardsIntegration::check_order_have_wc_giftcard( $order )
+			! WCGiftCardsIntegration::check_order_have_wc_giftcard( $order ) &&
+			empty( $order->get_meta( '_reepay_remaining_balance' ) )
 		) {
 			$price = self::get_item_price( $item, $order );
 
@@ -133,7 +137,7 @@ class OrderCapture {
 	public function capture_full_order_button( WC_Order $order ) {
 		$amount = $this->get_not_settled_amount( $order );
 
-		if ( $amount <= 0 || ! $this->check_capture_allowed( $order ) ) {
+		if ( $amount <= 0 || ! $this->check_capture_allowed( $order ) || ! empty( $order->get_meta( '_reepay_remaining_balance' ) ) ) {
 			return;
 		}
 
@@ -244,6 +248,46 @@ class OrderCapture {
 	}
 
 	/**
+	 * Hooked to admin_init. Capture specified amount from request
+	 */
+	public function process_capture_amount() {
+		if ( rp_hpos_enabled() ) {
+			if ( ! rp_hpos_is_order_page() ) {
+				return;
+			}
+		} elseif ( ! isset( $_POST['post_type'] ) ||
+				'shop_order' !== $_POST['post_type'] ||
+				! isset( $_POST['post_ID'] ) ) {
+
+				return;
+		}
+
+		if ( ! isset( $_POST['reepay_capture_amount_button'] ) ) {
+			return;
+		}
+
+		if ( ! isset( $_POST['reepay_capture_amount_input'] ) ) {
+			return;
+		}
+
+		if ( 'process_capture_amount' !== $_POST['reepay_capture_amount_button'] ) {
+			return;
+		}
+
+		$reepay_capture_amount_input = wc_format_decimal( $_POST['reepay_capture_amount_input'] );
+
+		$order = wc_get_order( $_POST['post_ID'] );
+
+		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
+			return;
+		}
+
+		if ( isset( $_POST['reepay_capture_amount_input'] ) ) {
+			$this->settle_amount( $order, $reepay_capture_amount_input );
+		}
+	}
+
+	/**
 	 * Activate woocommerce subscription after settle order item
 	 *
 	 * @param WC_Order_Item $item  woocommerce order item.
@@ -275,6 +319,12 @@ class OrderCapture {
 
 		$invoice_data = reepay()->api( $order )->get_invoice_by_handle( 'order-' . $order->get_id() );
 		if ( is_array( $invoice_data ) && array_key_exists( 'authorized_amount', $invoice_data ) && array_key_exists( 'settled_amount', $invoice_data ) && $invoice_data['authorized_amount'] - $invoice_data['settled_amount'] <= 0 ) {
+			return false;
+		}
+
+		// Disable settle for renewal order.
+		$post = get_post( ! empty( $order ) ? $order->get_id() : null );
+		if ( ! empty( $order->get_meta( '_reepay_order' ) ) && ( 0 !== $post->post_parent || ! empty( $order->get_meta( '_reepay_is_renewal' ) ) ) ) {
 			return false;
 		}
 
@@ -385,6 +435,12 @@ class OrderCapture {
 					$line_items[] = $item;
 					$total_all   += $total;
 				} else {
+					$item_data    = $this->get_item_data( $item, $order );
+					$price        = self::get_item_price( $item, $order );
+					$total        = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
+					$items_data[] = $item_data;
+					$line_items[] = $item;
+					$total_all   += $total;
 					$this->log(
 						array(
 							__METHOD__,
@@ -411,6 +467,38 @@ class OrderCapture {
 			)
 		);
 
+		// Add discount line.
+		if ( $order->get_total_discount( false ) > 0 ) {
+			$prices_incl_tax   = wc_prices_include_tax();
+			$discount          = $order->get_total_discount();
+			$discount_with_tax = $order->get_total_discount( false );
+			$tax               = $discount_with_tax - $discount;
+			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
+
+			if ( $prices_incl_tax ) {
+				/**
+				 * Discount for simple product included tax
+				 */
+				$simple_discount_amount = $discount_with_tax;
+			} else {
+				$simple_discount_amount = $discount;
+			}
+
+			$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
+
+			if ( $discount_amount < 0 ) {
+				$items_discount = array(
+					'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
+					'quantity'        => 1,
+					'amount'          => round( $discount_amount, 2 ),
+					'vat'             => round( $tax_percent / 100, 2 ),
+					'amount_incl_vat' => $prices_incl_tax,
+				);
+				$items_data[]   = $items_discount;
+				$total_all     += $discount_amount;
+			}
+		}
+
 		foreach ( $order->get_items( array( 'shipping', 'fee', PWGiftCardsIntegration::KEY_PW_GIFT_ITEMS ) ) as $item ) {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
@@ -432,6 +520,10 @@ class OrderCapture {
 			$items_data[] = $item_data;
 			$line_items[] = $item;
 			$total_all   += $total;
+		}
+
+		if ( reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
+			$total_all = rp_prepare_amount( $order->get_total(), $order->get_currency() );
 		}
 
 		$this->log(
@@ -577,6 +669,11 @@ class OrderCapture {
 			return false;
 		}
 
+		if ( $price['subtotal'] > $price['original'] ) {
+			$unit_price          = round( $price['original'] / $item->get_quantity(), 2 );
+			$item_data['amount'] = rp_prepare_amount( $unit_price, $order->get_currency() );
+		}
+
 		$result = reepay()->api( $order )->settle( $order, $total, array( $item_data ), $item );
 
 		if ( is_wp_error( $result ) ) {
@@ -593,6 +690,51 @@ class OrderCapture {
 		}
 
 		$this->complete_settle( $item, $order, $total );
+
+		return true;
+	}
+
+	/**
+	 * Settle specified amount
+	 *
+	 * @param WC_Order $order order to settle.
+	 * @param float    $amount amount to settle.
+	 *
+	 * @return bool
+	 */
+	public function settle_amount( WC_Order $order, float $amount ): bool {
+		unset( $_POST['post_status'] ); // Prevent order status changing by WooCommerce.
+
+		if ( $amount <= 0 ) {
+			return false;
+		}
+
+		if ( ! $this->check_capture_allowed( $order ) ) {
+			return false;
+		}
+
+		$amount = rp_prepare_amount( $amount, $order->get_currency() );
+
+		$result = reepay()->api( $order )->settle( $order, $amount, false, false );
+
+		if ( is_wp_error( $result ) ) {
+			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
+			set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
+
+			return false;
+		}
+
+		if ( 'failed' === $result['state'] ) {
+			set_transient( 'reepay_api_action_error', __( 'Failed to settle amount', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
+
+			return false;
+		}
+
+		$remaining_balance = $result['authorized_amount'] - $result['amount'];
+
+		$order->update_meta_data( '_reepay_remaining_balance', $remaining_balance );
+		$order->save_meta_data();
+		$order->save();
 
 		return true;
 	}
@@ -661,9 +803,19 @@ class OrderCapture {
 		} elseif ( $order_item->is_type( WCGiftCardsIntegration::KEY_WC_GIFT_ITEMS ) ) {
 			$unit_price = WCGiftCardsIntegration::get_negative_amount_from_order_item( $order, $order_item );
 			$ordertext  = WCGiftCardsIntegration::get_name_from_order_item( $order, $order_item );
-		} else {
-			$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
+		} elseif ( $order_item->is_type( 'shipping' ) ) {
+			$unit_price = ( $prices_incl_tax ? $price['with_tax'] : $price['original'] );
 			$ordertext  = rp_clear_ordertext( $order_item->get_name() );
+		} elseif ( $order_item->is_type( 'fee' ) ) {
+			$unit_price = ( $prices_incl_tax ? $price['with_tax'] : $price['original'] );
+			$ordertext  = rp_clear_ordertext( $order_item->get_name() );
+		} else {
+			if ( $order->get_total_discount( false ) > 0 ) {
+				$unit_price = round( ( $prices_incl_tax ? $price['subtotal_with_tax'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
+			} else {
+				$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
+			}
+			$ordertext = rp_clear_ordertext( $order_item->get_name() );
 		}
 
 		return array(
@@ -702,6 +854,7 @@ class OrderCapture {
 		$price['subtotal_with_tax'] = floatval( $order->get_line_subtotal( $order_item, true, false ) );
 		$price['original']          = floatval( $order->get_line_total( $order_item, false, false ) );
 		$price['with_tax']          = floatval( $order->get_line_total( $order_item, true, false ) );
+
 		if ( WPCProductBundlesWooCommerceIntegration::is_active_plugin() ) {
 			$price_bundle = floatval( $order_item->get_meta( '_woosb_price' ) );
 			if ( ! empty( $price_bundle ) ) {
@@ -710,9 +863,35 @@ class OrderCapture {
 				$price['with_tax'] += $price_bundle;
 			}
 		}
-		$tax                             = $price['with_tax'] - $price['original'];
-		$price_tax_percent               = ( $tax > 0 && $price['original'] > 0 ) ? round( 100 / ( $price['original'] / $tax ) ) : 0;
-		$price['tax_percent']            = round( $price_tax_percent, 2 );
+
+		// Get tax status from product.
+		$tax_status = 'taxable';
+		if ( $order_item instanceof WC_Order_Item_Product ) {
+			$product = $order_item->get_product();
+			if ( $product ) {
+				$tax_status = $product->get_tax_status();
+			}
+		}
+
+		if ( 'none' === $tax_status ) {
+			$price['tax_percent'] = 0;
+		} else {
+			$tax = $price['with_tax'] - $price['original'];
+			if ( abs( floatval( $tax ) ) < 0.001 ) {
+				$subtotal          = round( $price['subtotal'] / $order_item->get_quantity(), 2 );
+				$subtotal_with_tax = round( $price['subtotal_with_tax'] / $order_item->get_quantity(), 2 );
+				$tax               = $subtotal_with_tax - $subtotal;
+				if ( abs( floatval( $tax ) ) > 0.001 ) {
+					$price_tax_percent = round( 100 / ( $subtotal / $tax ) );
+				} else {
+					$price_tax_percent = 0;
+				}
+			} else {
+				$price_tax_percent = ( $tax > 0 && $price['original'] > 0 ) ? round( 100 / ( $price['original'] / $tax ) ) : 0;
+			}
+			$price['tax_percent'] = round( $price_tax_percent, 2 );
+		}
+
 		$price['original_with_discount'] = $price['original'] + $discount;
 		$price['with_tax_and_discount']  = $price['with_tax'] + $discount;
 

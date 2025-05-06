@@ -245,7 +245,7 @@ class Api {
 				401,
 				sprintf(
 					// translators: %s - url to gateway settings.
-					__( 'Billwerk+ Pay: API key not specified. Specify it in <a href="%s" target="_blank">gateway settings</a>', 'reepay-checkout-gateway' ),
+					__( 'Frisbii Pay: API key not specified. Specify it in <a href="%s" target="_blank">gateway settings</a>', 'reepay-checkout-gateway' ),
 					admin_url( 'admin.php?page=wc-settings&tab=checkout&section=reepay_checkout' )
 				)
 			);
@@ -304,7 +304,7 @@ class Api {
 					if ( $this->request_retry ) {
 						$this->request_retry = false;
 
-						return new WP_Error( 0, __( 'Billwerk+ Pay: Request rate limit exceeded', 'reepay-checkout-gateway' ) );
+						return new WP_Error( 0, __( 'Frisbii Pay: Request rate limit exceeded', 'reepay-checkout-gateway' ) );
 					}
 
 					// Wait and try it again.
@@ -373,7 +373,7 @@ class Api {
 		$handle = rp_get_order_handle( $order );
 
 		if ( empty( $handle ) ) {
-			return new WP_Error( 400, 'Empty Billwerk+ Pay invoice handle', 'empty_handle' );
+			return new WP_Error( 400, 'Empty Frisbii Pay invoice handle', 'empty_handle' );
 		}
 
 		$order_data = $this->get_invoice_by_handle( $handle );
@@ -724,6 +724,8 @@ class Api {
 
 		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
 			$request_data['amount'] = $amount;
+		} elseif ( ! empty( $amount ) && false === $line_item ) {
+			$request_data['amount'] = $amount;
 		} else {
 			$request_data['order_lines'] = $items_data;
 		}
@@ -779,7 +781,7 @@ class Api {
 			$error = sprintf(
 				// translators: %1$s amount, %2$s error message.
 				__( 'Failed to settle %1$s. Error: %2$s.', 'reepay-checkout-gateway' ),
-				$items_data ? floatval( $items_data[0]['amount'] ) / 100 : $amount,
+				$items_data ? floatval( $items_data[0]['amount'] ) / 100 : floatval( $amount ) / 100,
 				$result->get_error_message()
 			);
 
@@ -1075,7 +1077,7 @@ class Api {
 		);
 		if ( $result['count'] > 0 ) {
 			foreach ( $result['content'] as $payment_method ) {
-				if ( 'card' === $payment_method['payment_type'] ) {
+				if ( in_array( $payment_method['payment_type'], array( 'card', 'emv_token' ), true ) ) {
 					$card = $payment_method;
 					$card = array_merge( $card, $payment_method['card'] );
 					unset( $card['card'], $card['gateway'], $card['card_agreement'], $card['payment_type'] );

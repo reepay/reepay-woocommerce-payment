@@ -21,7 +21,7 @@ msgstr ""
 #: ../includes/Gateways/ReepayCheckout.php:116
 #: ../includes/Gateways/ReepayCheckout.php:122
 #: ../templates/admin/admin-options.php:29
-msgid "Billwerk+ Pay"
+msgid "Frisbii Pay"
 msgstr ""
 
 #: ../assets/dist/js/woo-blocks.js:99
@@ -142,7 +142,7 @@ msgstr ""
 #: ../includes/Api.php:248
 #, php-format
 msgid ""
-"Billwerk+ Pay: API key not specified. Specify it in <a href=\"%s\" "
+"Frisbii Pay: API key not specified. Specify it in <a href=\"%s\" "
 "target=\"_blank\">gateway settings</a>"
 msgstr ""
 
@@ -156,7 +156,7 @@ msgid "Invalid HTTP Code: %s"
 msgstr ""
 
 #: ../includes/Api.php:307
-msgid "Billwerk+ Pay: Request rate limit exceeded"
+msgid "Frisbii Pay: Request rate limit exceeded"
 msgstr ""
 
 #: ../includes/Api.php:322
@@ -219,147 +219,147 @@ msgid "Payment has been authorized. Amount: %1$s. Transaction: %2$s"
 msgstr ""
 
 #: ../includes/Gateways/Anyday.php:42
-msgid "Billwerk+ Pay - Anyday"
+msgid "Frisbii Pay - Anyday"
 msgstr ""
 
 #: ../includes/Gateways/ApplePay.php:46
-msgid "Billwerk+ Pay - Apple Pay"
+msgid "Frisbii Pay - Apple Pay"
 msgstr ""
 
 #: ../includes/Gateways/Googlepay.php:44
-msgid "Billwerk+ Pay - Google Pay"
+msgid "Frisbii Pay - Google Pay"
 msgstr ""
 
 #: ../includes/Gateways/KlarnaDBT.php:42
-msgid "Billwerk+ Pay - Klarna Direct Bank Transfer"
+msgid "Frisbii Pay - Klarna Direct Bank Transfer"
 msgstr ""
 
 #: ../includes/Gateways/KlarnaDD.php:42
-msgid "Billwerk+ Pay - Klarna Direct Debit"
+msgid "Frisbii Pay - Klarna Direct Debit"
 msgstr ""
 
 #: ../includes/Gateways/KlarnaPayLater.php:42
-msgid "Billwerk+ Pay - Klarna Pay Later"
+msgid "Frisbii Pay - Klarna Pay Later"
 msgstr ""
 
 #: ../includes/Gateways/KlarnaPayNow.php:42
-msgid "Billwerk+ Pay - Klarna Pay Now"
+msgid "Frisbii Pay - Klarna Pay Now"
 msgstr ""
 
 #: ../includes/Gateways/KlarnaSliceIt.php:42
-msgid "Billwerk+ Pay - Klarna Slice It"
+msgid "Frisbii Pay - Klarna Slice It"
 msgstr ""
 
 #: ../includes/Gateways/Mobilepay.php:42
-msgid "Billwerk+ Pay - Mobilepay"
+msgid "Frisbii Pay - Mobilepay"
 msgstr ""
 
 #: ../includes/Gateways/MobilepaySubscriptions.php:44
-msgid "Billwerk+ Pay - Mobilepay Subscriptions"
+msgid "Frisbii Pay - Mobilepay Subscriptions"
 msgstr ""
 
 #: ../includes/Gateways/OfflineCash.php:42
-msgid "Billwerk+ Pay - Cash"
+msgid "Frisbii Pay - Cash"
 msgstr ""
 
 #: ../includes/Gateways/OfflineTransfer.php:42
-msgid "Billwerk+ Pay - Bank Transfer"
+msgid "Frisbii Pay - Bank Transfer"
 msgstr ""
 
 #: ../includes/Gateways/Other.php:42
-msgid "Billwerk+ Pay - Other"
+msgid "Frisbii Pay - Other"
 msgstr ""
 
 #: ../includes/Gateways/PESantander.php:44
-msgid "Billwerk+ Pay - Santander"
+msgid "Frisbii Pay - Santander"
 msgstr ""
 
 #: ../includes/Gateways/PPBancontact.php:42
-msgid "Billwerk+ Pay - Bancontact"
+msgid "Frisbii Pay - Bancontact"
 msgstr ""
 
 #: ../includes/Gateways/PPBlik.php:42
-msgid "Billwerk+ Pay - BLIK"
+msgid "Frisbii Pay - BLIK"
 msgstr ""
 
 #: ../includes/Gateways/PPEps.php:42
-msgid "Billwerk+ Pay - EPS"
+msgid "Frisbii Pay - EPS"
 msgstr ""
 
 #: ../includes/Gateways/PPEstonianBanks.php:42
-msgid "Billwerk+ Pay - Estonian Banks"
+msgid "Frisbii Pay - Estonian Banks"
 msgstr ""
 
 #: ../includes/Gateways/PPGiroPay.php:42
-msgid "Billwerk+ Pay - GiroPay"
+msgid "Frisbii Pay - GiroPay"
 msgstr ""
 
 #: ../includes/Gateways/PPIdeal.php:44
-msgid "Billwerk+ Pay - iDEAL"
+msgid "Frisbii Pay - iDEAL"
 msgstr ""
 
 #: ../includes/Gateways/PPLatvianBanks.php:42
-msgid "Billwerk+ Pay - Latvian Banks"
+msgid "Frisbii Pay - Latvian Banks"
 msgstr ""
 
 #: ../includes/Gateways/PPLithuanianBanks.php:42
-msgid "Billwerk+ Pay - Lithuanian Banks"
+msgid "Frisbii Pay - Lithuanian Banks"
 msgstr ""
 
 #: ../includes/Gateways/PPMBWay.php:42
-msgid "Billwerk+ Pay - MB Way"
+msgid "Frisbii Pay - MB Way"
 msgstr ""
 
 #: ../includes/Gateways/PPMultibanco.php:42
-msgid "Billwerk+ Pay - Multibanco"
+msgid "Frisbii Pay - Multibanco"
 msgstr ""
 
 #: ../includes/Gateways/PPMybank.php:42
-msgid "Billwerk+ Pay - MBank"
+msgid "Frisbii Pay - MBank"
 msgstr ""
 
 #: ../includes/Gateways/PPPaySafeCard.php:42
-msgid "Billwerk+ Pay - Paysafecard"
+msgid "Frisbii Pay - Paysafecard"
 msgstr ""
 
 #: ../includes/Gateways/PPPaycoinq.php:42
-msgid "Billwerk+ Pay - Paycoinq"
+msgid "Frisbii Pay - Paycoinq"
 msgstr ""
 
 #: ../includes/Gateways/PPPaysera.php:42
-msgid "Billwerk+ Pay - Paysera"
+msgid "Frisbii Pay - Paysera"
 msgstr ""
 
 #: ../includes/Gateways/PPPostFinance.php:42
-msgid "Billwerk+ Pay - PostFinance"
+msgid "Frisbii Pay - PostFinance"
 msgstr ""
 
 #: ../includes/Gateways/PPPr24.php:42
-msgid "Billwerk+ Pay - Przelewy24"
+msgid "Frisbii Pay - Przelewy24"
 msgstr ""
 
 #: ../includes/Gateways/PPSatisPay.php:42
-msgid "Billwerk+ Pay - Satisfy"
+msgid "Frisbii Pay - Satisfy"
 msgstr ""
 
 #: ../includes/Gateways/PPSepa.php:44
-msgid "Billwerk+ Pay - SEPA Direct Debit"
+msgid "Frisbii Pay - SEPA Direct Debit"
 msgstr ""
 
 #: ../includes/Gateways/PPTrustly.php:42
-msgid "Billwerk+ Pay - Trustly"
+msgid "Frisbii Pay - Trustly"
 msgstr ""
 
 #: ../includes/Gateways/PPVerkkoPankki.php:42
-msgid "Billwerk+ Pay - Finland Banks"
+msgid "Frisbii Pay - Finland Banks"
 msgstr ""
 
 #: ../includes/Gateways/PPWeChatPay.php:42
-msgid "Billwerk+ Pay - WeChat Pay"
+msgid "Frisbii Pay - WeChat Pay"
 msgstr ""
 
 #: ../includes/Gateways/Paypal.php:42
-msgid "Billwerk+ Pay - PayPal"
+msgid "Frisbii Pay - PayPal"
 msgstr ""
 
 #: ../includes/Gateways/ReepayCheckout.php:104
@@ -561,7 +561,7 @@ msgstr ""
 #: ../includes/Gateways/ReepayCheckout.php:347
 msgid ""
 "Choose the logos you would like to show in WooCommerce checkout. Make sure "
-"that they are enabled in Billwerk+ Pay Dashboard"
+"that they are enabled in Frisbii Pay Dashboard"
 msgstr ""
 
 #: ../includes/Gateways/ReepayCheckout.php:353
@@ -660,7 +660,7 @@ msgid "Skip order lines"
 msgstr ""
 
 #: ../includes/Gateways/ReepayCheckout.php:394
-msgid "Select if order lines should not be send to Billwerk+ Pay"
+msgid "Select if order lines should not be send to Frisbii Pay"
 msgstr ""
 
 #: ../includes/Gateways/ReepayCheckout.php:403
@@ -712,7 +712,7 @@ msgstr ""
 #: ../includes/Gateways/ReepayCheckout.php:785
 #, php-format
 msgid ""
-"The Api key identifies the Billwerk account. Only subscription plan handles "
+"The Api key identifies the Frisbii account. Only subscription plan handles "
 "that exist under the account of the API key can be used to submit "
 "subscription orders. <a href=\"%s\" target=\"_blank\">Read more about this "
 "here.</a>"
@@ -733,7 +733,7 @@ msgid "Payment method successfully added."
 msgstr ""
 
 #: ../includes/Gateways/ReepayGateway.php:514
-msgid "Billwerk+ Pay: WebHook has been successfully created/updated"
+msgid "Frisbii Pay: WebHook has been successfully created/updated"
 msgstr ""
 
 #: ../includes/Gateways/ReepayGateway.php:523
@@ -741,19 +741,19 @@ msgid "Unable to retrieve the webhook settings. Wrong api credentials?"
 msgstr ""
 
 #: ../includes/Gateways/Swish.php:42
-msgid "Billwerk+ Pay - Swish"
+msgid "Frisbii Pay - Swish"
 msgstr ""
 
 #: ../includes/Gateways/Viabill.php:42
-msgid "Billwerk+ Pay - ViaBill"
+msgid "Frisbii Pay - ViaBill"
 msgstr ""
 
 #: ../includes/Gateways/Vipps.php:44
-msgid "Billwerk+ Pay - Vipps"
+msgid "Frisbii Pay - Vipps"
 msgstr ""
 
 #: ../includes/Gateways/VippsRecurring.php:46
-msgid "Billwerk+ Pay - Vipps Recurring"
+msgid "Frisbii Pay - Vipps Recurring"
 msgstr ""
 
 #: ../includes/Integrations/PWGiftCardsIntegration.php:63
@@ -782,19 +782,19 @@ msgstr ""
 #: ../includes/OrderFlow/OrderStatuses.php:112
 msgid ""
 "2-way synchronization of order statuses in Woocommerce with invoice statuses "
-"in Billwerk+ Pay"
+"in Frisbii Pay"
 msgstr ""
 
 #: ../includes/OrderFlow/OrderStatuses.php:127
-msgid "Status: Billwerk+ Pay Created"
+msgid "Status: Frisbii Pay Created"
 msgstr ""
 
 #: ../includes/OrderFlow/OrderStatuses.php:142
-msgid "Status: Billwerk+ Pay Authorized"
+msgid "Status: Frisbii Pay Authorized"
 msgstr ""
 
 #: ../includes/OrderFlow/OrderStatuses.php:157
-msgid "Status: Billwerk+ Pay Settled"
+msgid "Status: Frisbii Pay Settled"
 msgstr ""
 
 #: ../includes/OrderFlow/OrderStatuses.php:412
@@ -833,7 +833,7 @@ msgid ""
 msgstr ""
 
 #: ../includes/Plugin/WoocommerceExists.php:60
-msgid "WooCommerce Billwerk+ Pay Gateway isn't active now."
+msgid "WooCommerce Frisbii Pay Gateway isn't active now."
 msgstr ""
 
 #: ../includes/Tokens/ReepayTokens.php:102
@@ -852,7 +852,7 @@ msgstr ""
 
 #: ../includes/Tokens/TokenReepayMS.php:44
 #, php-format
-msgid "Billwerk+ Pay - Mobilepay Subscriptions [%s]"
+msgid "Frisbii Pay - Mobilepay Subscriptions [%s]"
 msgstr ""
 
 #: ../templates/admin/admin-options.php:19
@@ -879,7 +879,7 @@ msgstr ""
 #: ../templates/admin/admin-options.php:35
 #, php-format
 msgid ""
-"Please setup WebHook in <a href=\"%s\" target=\"_blank\">Billwerk+ Pay "
+"Please setup WebHook in <a href=\"%s\" target=\"_blank\">Frisbii Pay "
 "Dashboard</a>."
 msgstr ""
 

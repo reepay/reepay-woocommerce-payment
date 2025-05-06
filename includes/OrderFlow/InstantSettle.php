@@ -108,12 +108,48 @@ class InstantSettle {
 				}
 			}
 
+			// Add discount line.
+			if ( $order->get_total_discount( false ) > 0 ) {
+				$prices_incl_tax   = wc_prices_include_tax();
+				$discount          = $order->get_total_discount();
+				$discount_with_tax = $order->get_total_discount( false );
+				$tax               = $discount_with_tax - $discount;
+				$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
+
+				if ( $prices_incl_tax ) {
+					/**
+					 * Discount for simple product included tax
+					 */
+					$simple_discount_amount = $discount_with_tax;
+				} else {
+					$simple_discount_amount = $discount;
+				}
+
+				$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
+
+				if ( $discount_amount < 0 ) {
+					$items_discount = array(
+						'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
+						'quantity'        => 1,
+						'amount'          => round( $discount_amount, 2 ),
+						'vat'             => round( $tax_percent / 100, 2 ),
+						'amount_incl_vat' => $prices_incl_tax,
+					);
+					$items_data[]   = $items_discount;
+					$total_all     += $discount_amount;
+				}
+			}
+
 			foreach ( $order->get_items( WCGiftCardsIntegration::KEY_WC_GIFT_ITEMS ) as $item ) {
 				$item_data    = self::$order_capture->get_item_data( $item, $order );
 				$price        = $item->get_amount() * - 1;
 				$total        = rp_prepare_amount( $price, $order->get_currency() );
 				$items_data[] = $item_data;
 				$total_all   += $total;
+			}
+
+			if ( reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
+				$total_all = rp_prepare_amount( $order->get_total(), $order->get_currency() );
 			}
 
 			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items );
