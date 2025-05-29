@@ -188,7 +188,7 @@ class MigrationMobilepayToVipps {
 			$customer_handle = $item[0];
 			if ( 'customer_handle' === $customer_handle ) {
 				continue; // Skip if customer handle is empty or header name customer_handle.
-			} elseif (empty( $item[1] ) ) {
+			} elseif ( empty( $item[1] ) ) {
 				continue;
 			}
 
@@ -208,12 +208,12 @@ class MigrationMobilepayToVipps {
 					'msg'  => 'Token not found for user',
 					'item' => $item,
 				);
-				$batch_results[] = array(
-					'item'   => $item,
-					'status' => 'fail',
+				$batch_results[]      = array(
+					'item'    => $item,
+					'status'  => 'fail',
 					'message' => 'Token not found for user',
 				);
-				$fail++;
+				++$fail;
 				continue;
 			}
 
@@ -234,7 +234,7 @@ class MigrationMobilepayToVipps {
 				);
 
 				if ( false !== $updated ) {
-					$success = true;
+					$success              = true;
 					$this->logging_data[] = array(
 						'msg'       => 'Update wp_woocommerce_payment_tokens table',
 						'token_id'  => $token->token_id,
@@ -365,18 +365,18 @@ class MigrationMobilepayToVipps {
 
 			if ( $success ) {
 				$batch_results[] = array(
-					'item'   => $item,
-					'status' => 'success',
+					'item'    => $item,
+					'status'  => 'success',
 					'message' => 'Updated successfully',
 				);
-				$pass++;
+				++$pass;
 			} else {
 				$batch_results[] = array(
-					'item'   => $item,
-					'status' => 'fail',
+					'item'    => $item,
+					'status'  => 'fail',
 					'message' => 'Failed to update token',
 				);
-				$fail++;
+				++$fail;
 			}
 		}
 
