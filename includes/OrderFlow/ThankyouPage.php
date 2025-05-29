@@ -272,6 +272,7 @@ class ThankyouPage {
 	 * @return array|null Pro-rated data or null if not applicable.
 	 */
 	public static function get_pro_rated_reepay_subscription( $order ) {
+
 		if ( ! $order || ! rp_is_order_paid_via_reepay( $order ) ) {
 			return null;
 		}
@@ -284,6 +285,30 @@ class ThankyouPage {
 
 		if ( ! WCRR::is_order_contain_subscription( $order ) && empty( $another_orders ) ) {
 			return null;
+		}
+
+		// Retrieve the subscription handle from the order metadata.
+		$_reepay_subscription_handle = $order->get_meta( '_reepay_subscription_handle', true );
+
+		// Check if the subscription handle exists.
+		if ( ! empty( $_reepay_subscription_handle ) ) {
+			// Fetch subscription details from the Reepay API using the subscription handle.
+			$subscription_handle = reepay_s()->api()->request( "subscription/$_reepay_subscription_handle" );
+
+			// Check if the subscription details contain a plan.
+			if ( isset( $subscription_handle['plan'] ) ) {
+				$subscription_plan = $subscription_handle['plan'];
+
+				// Fetch the plan details from the Reepay API using the plan identifier.
+				$plan_data = reepay_s()->api()->request( "plan/$subscription_plan/current" );
+
+				// Check if the plan includes a trial period.
+				if ( isset( $plan_data['trial_interval_length'] ) ) {
+					return null;
+				} elseif ( isset( $plan_data['schedule_type'] ) && 'manual' === $plan_data['schedule_type'] ) { // Check if the plan's schedule type is set to 'manual' (manual on-demand).
+					return null; // Exit if the schedule type is manual.
+				}
+			}
 		}
 
 		// Add retry logic.
@@ -304,8 +329,10 @@ class ThankyouPage {
 			}
 		}
 
-		if ( ! isset( $invoice_data['plan'] ) || ! isset( $invoice_data['subscription'] ) ) {
-			return null;
+		if ( is_wp_error( $invoice_data ) ||
+		! isset( $invoice_data['plan'] ) ||
+		! isset( $invoice_data['subscription'] ) ) {
+			return null; // Exit if invoice data is invalid or missing.
 		}
 
 		$subscription_plan = $invoice_data['plan'];

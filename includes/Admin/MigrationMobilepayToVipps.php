@@ -179,48 +179,47 @@ class MigrationMobilepayToVipps {
 
 		$total_records = count( $csv_data );
 		$batch         = array_slice( $csv_data, $offset, 10 );
-		foreach ( $batch as $item ) {
+		$batch_results = array();
 
+		$pass = 0;
+		$fail = 0;
+
+		foreach ( $batch as $item ) {
 			$customer_handle = $item[0];
-			if ( empty( $customer_handle ) || 'customer_handle' === $customer_handle ) {
+			if ( 'customer_handle' === $customer_handle ) {
 				continue; // Skip if customer handle is empty or header name customer_handle.
+			} elseif ( empty( $item[1] ) ) {
+				continue;
 			}
 
 			$old_mps_payment_method             = $item[1];
 			$new_vipps_recurring_payment_method = $item[3];
 
-			// Query wp_users table.
-			$user_query = new \WP_User_Query(
-				array(
-					'meta_key'   => 'reepay_customer_id', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-					'meta_value' => $customer_handle, //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-					'number'     => 1, // Limit to 1 result.
-				)
-			);
-
-			if ( empty( $user_query->get_results() ) ) {
-				continue; // Skip if user not found.
-			}
-
-			$user    = $user_query->get_results()[0];
-			$user_id = $user->ID;
-
 			// Query wp_woocommerce_payment_tokens table.
 			$token_query = $wpdb->get_results( //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->prepare(
-					"SELECT token_id FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE user_id = %d AND token = %s",
-					$user_id,
+					"SELECT token_id FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE token = %s",
 					$old_mps_payment_method
 				)
 			);
 
 			if ( empty( $token_query ) ) {
-				continue; // Skip if token not found.
+				$this->logging_data[] = array(
+					'msg'  => 'Token not found for user',
+					'item' => $item,
+				);
+				$batch_results[]      = array(
+					'item'    => $item,
+					'status'  => 'fail',
+					'message' => 'Token not found for user',
+				);
+				++$fail;
+				continue;
 			}
 
 			// Update the token with the new value.
 			foreach ( $token_query as $token ) {
-				$wpdb->update( //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$updated = $wpdb->update( //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 					"{$wpdb->prefix}woocommerce_payment_tokens",
 					array(
 						'token'      => $new_vipps_recurring_payment_method,
@@ -228,21 +227,28 @@ class MigrationMobilepayToVipps {
 						'type'       => 'Reepay_VR',
 					),
 					array(
-						'user_id'  => $user_id,
 						'token_id' => $token->token_id,
 					),
 					array( '%s', '%s', '%s' ),
-					array( '%d', '%d' )
+					array( '%d' )
 				);
 
-				// Add log update token.
-				$this->logging_data[] = array(
-					'msg'       => 'Update wp_woocommerce_payment_tokens table',
-					'user_id'   => $user_id,
-					'token_id'  => $token->token_id,
-					'old_token' => $old_mps_payment_method,
-					'new_token' => $new_vipps_recurring_payment_method,
-				);
+				if ( false !== $updated ) {
+					$success              = true;
+					$this->logging_data[] = array(
+						'msg'       => 'Update wp_woocommerce_payment_tokens table',
+						'token_id'  => $token->token_id,
+						'old_token' => $old_mps_payment_method,
+						'new_token' => $new_vipps_recurring_payment_method,
+					);
+				} else {
+					$this->logging_data[] = array(
+						'msg'       => 'Failed to update wp_woocommerce_payment_tokens table',
+						'token_id'  => $token->token_id,
+						'old_token' => $old_mps_payment_method,
+						'new_token' => $new_vipps_recurring_payment_method,
+					);
+				}
 			}
 
 			// Update wp_postmeta table for reepay_token.
@@ -356,6 +362,22 @@ class MigrationMobilepayToVipps {
 					'new_reepay_token' => $new_vipps_recurring_payment_method,
 				);
 			}
+
+			if ( $success ) {
+				$batch_results[] = array(
+					'item'    => $item,
+					'status'  => 'success',
+					'message' => 'Updated successfully',
+				);
+				++$pass;
+			} else {
+				$batch_results[] = array(
+					'item'    => $item,
+					'status'  => 'fail',
+					'message' => 'Failed to update token',
+				);
+				++$fail;
+			}
 		}
 
 		$this->log( var_export( $this->logging_data, true ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
@@ -364,8 +386,11 @@ class MigrationMobilepayToVipps {
 		wp_send_json_success(
 			array(
 				'processed'     => $offset + count( $batch ),
+				'success'       => $pass,
+				'fail'          => $fail,
 				'has_more'      => $has_more,
 				'total_records' => $total_records,
+				'batch_results' => $batch_results,
 			)
 		);
 	}

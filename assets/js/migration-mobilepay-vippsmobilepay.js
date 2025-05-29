@@ -69,10 +69,32 @@ jQuery(function ($) {
                     var processed = response.data.processed;
                     var percentage = (processed / totalRecords) * 100;
                     $('.processing-percentage').html(percentage.toFixed(0) + '%');
+
+                    // Check if there are any failed items
+                    var hasFail = response.data.batch_results.some(function(batchResult) {
+                        return batchResult.status === 'fail';
+                    });
+
+                    if (!hasFail) {
+                        result.append('<p>' + migrationData.processed_success + '</p>');
+                    }
+
+                    // Loop through batch_results and display failed items
+                    response.data.batch_results.forEach(function(batchResult) {
+                        if (batchResult.status === 'fail') {
+                            const formattedItem = batchResult.item
+                                .filter(item => item) // Remove empty values
+                                .map(item => item) // Keep non-empty values
+                                .join('<br>'); // Join with <br> for new lines
+                            result.append(`<p style="border-bottom:1px solid #ccc; padding-bottom:10px; margin-bottom: 10px;">
+                                <strong>Failed Item:</strong><br>${formattedItem}<br>
+                                <strong>Message:</strong> <span style="color:red;">${batchResult.message}</span></p>`);
+                        }
+                    });
+
                     if (response.data.has_more) {
                         processBatch(offset + 10, totalRecords);
                     } else {
-                        result.html(migrationData.processed_success);
                         $('.processing-percentage').html('0%');
                         $('.start-migration').prop('disabled', false);
                         $('#migration_file').val('');
