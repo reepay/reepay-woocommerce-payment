@@ -588,6 +588,12 @@ class OrderCapture {
 			return false;
 		}
 
+
+		// for payment method with only settle.
+		if( is_array( $invoice_data ) && !array_key_exists('authorized_amount', $invoice_data) && 'settled' == $invoice_data['state'] && array_key_exists('amount', $invoice_data) && array_key_exists('settled_amount', $invoice_data) && $invoice_data['settled_amount'] === $invoice_data['amount'] ) {
+			return false;
+		}
+
 		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note );
 
 		$this->log(
@@ -748,11 +754,17 @@ class OrderCapture {
 	 */
 	public function check_capture_allowed( WC_Order $order ): bool {
 		if ( ! rp_is_order_paid_via_reepay( $order ) ||
-			class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
+			 class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) {
 			return false;
 		}
 
 		$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+
+
+		// for payment method with only settle.
+		if( is_array( $invoice_data ) && !array_key_exists('authorized_amount', $invoice_data) && 'settled' == $invoice_data['state'] && array_key_exists('amount', $invoice_data) && array_key_exists('settled_amount', $invoice_data) && $invoice_data['settled_amount'] === $invoice_data['amount'] ) {
+			return false;
+		}
 
 		return ! is_wp_error( $invoice_data ) && $invoice_data['authorized_amount'] > $invoice_data['settled_amount'];
 	}
