@@ -12,7 +12,7 @@ Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and m
 
 == Description ==
 Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and more directly on your store with the Frisbii Pay Gateway for WooCommerce.
-The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your store via Frisbii Pay\'s API.
+The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your store via Frisbii Pay's API.
 
 == Installation ==
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
