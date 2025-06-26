@@ -25,6 +25,7 @@
         "@uiw/codemirror-theme-github": "^4.22.0",
         "@uiw/react-codemirror": "^4.22.0",
         "braces": "^3.0.3",
+        "brace-expansion": ">=2.0.2",
         "clsx": "^2.1.1",
         "immer": "^9.0.21",
         "localforage": "^1.10.0",
@@ -51,6 +52,7 @@
         "@wordpress/i18n": "^4.57.0",
         "autoprefixer": "^10.4.19",
         "axios": "^1.8.4",
+        "brace-expansion": "^2.0.2",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-jsx-a11y": "^6.8.0",
@@ -62,7 +64,7 @@
         "prettier-plugin-tailwindcss": "^0.5.14",
         "tailwindcss": "^3.4.3",
         "typescript": "^5.2.2",
-        "vite": "^6.3.2",
+        "vite": "^6.3.5",
         "vite-plugin-monaco-editor": "^1.1.0"
     },
     "optionalDependencies": {

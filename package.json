@@ -11,6 +11,7 @@
     "yargs": "^17.7.1"
   },
   "devDependencies": {
+    "brace-expansion": "^1.1.12",
     "fs-extra": "^11.1.0",
     "gulp": "^5.0.0",
     "gulp-clean-css": "^4.3.0",
