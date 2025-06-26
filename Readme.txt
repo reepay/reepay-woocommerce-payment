@@ -4,7 +4,7 @@ Tags: Frisbii, billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.8
+Stable tag: 1.8.1
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -12,16 +12,19 @@ Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and m
 
 == Description ==
 Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and more directly on your store with the Frisbii Pay Gateway for WooCommerce.
-The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your store via Frisbii Pay's API.
+The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your store via Frisbii Pay\'s API.
 
 == Installation ==
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.8.1
+- [Fix] - The MobilePay logo will appear on the Vipps MobilePay Recurring payment method for currencies DKK and EUR.
+- [Fix] - The Vipps MobilePay Recurring payment method only shows for its supported currencies.
+
 v 1.8
-- [Fix] - Swish payments status failed.
-- [Fix] - Frisbii Migration tool for payment method tokens can now update old tokens with no customer ID associated.
-- [Improvement] - The Frisbii Migration tool now shows detailed feedback if some tokens could not update.
+- [Fix] - Swish payments fail.
+- [Fix] - The order received-page shows "Vent venligst lidt. Vi tjekker betalingsstatus." (Please wait. We are checking payment status.) and never shows the order details.
 
 v 1.7.16
 - [Fix] - Particular settings including "Instant Settle physical products" caused 1/100 amount instant settle.
