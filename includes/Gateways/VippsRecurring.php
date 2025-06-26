@@ -41,10 +41,10 @@ class VippsRecurring extends ReepayGateway {
 	 * VippsRecurring constructor.
 	 */
 	public function __construct() {
-		$this->id           = self::ID;
-		$this->has_fields   = true;
-		$this->method_title = __( 'Frisbii Pay - Vipps MobilePay Recurring', 'reepay-checkout-gateway' );
-		$this->supports     = array(
+		$this->id                   = self::ID;
+		$this->has_fields           = true;
+		$this->method_title         = __( 'Frisbii Pay - Vipps MobilePay Recurring', 'reepay-checkout-gateway' );
+		$this->supports             = array(
 			'products',
 			'refunds',
 			'add_payment_method',
@@ -60,7 +60,8 @@ class VippsRecurring extends ReepayGateway {
 			'subscription_payment_method_change_admin',
 			'multiple_subscriptions',
 		);
-		$this->logos        = array( 'vipps' );
+		$this->logos                = array( 'vipps' );
+		$this->supported_currencies = array( 'DKK', 'EUR', 'NOK' );
 
 		parent::__construct();
 
@@ -68,6 +69,12 @@ class VippsRecurring extends ReepayGateway {
 
 		add_action( 'wp_ajax_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
 		add_action( 'wp_ajax_nopriv_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
+
+		// Add filter for dynamic icon change based on currency.
+		add_filter( 'woocommerce_gateway_icon', array( $this, 'change_gateway_icon_based_on_currency' ), 10, 2 );
+
+		// Add filter to exclude payment gateway based on currency.
+		add_filter( 'woocommerce_available_payment_gateways', array( $this, 'exclude_payment_gateway_based_on_currency' ) );
 	}
 
 
@@ -83,5 +90,46 @@ class VippsRecurring extends ReepayGateway {
 		$this->tokenization_script();
 		$this->saved_payment_methods();
 		$this->save_payment_method_checkbox();
+	}
+
+	/**
+	 * Change payment method icon base on currency
+	 *
+	 * @param string $icon payment method icon.
+	 * @param int    $gateway_id payment method id.
+	 *
+	 * @return string
+	 */
+	public function change_gateway_icon_based_on_currency( $icon, $gateway_id ) {
+		if ( self::ID === $gateway_id ) {
+			$currency = get_woocommerce_currency();
+
+			// Use MobilePay logo for DKK and EUR, Vipps logo for NOK.
+			$logo_type = 'vipps'; // default.
+			if ( in_array( $currency, array( 'DKK', 'EUR' ), true ) ) {
+				$logo_type = 'mobilepay';
+			}
+
+			$logos = array_map(
+				function () use ( $logo_type ) {
+					$logo_url = $this->get_logo( $logo_type );
+					return array(
+						'src' => $logo_url,
+						// translators: %s gateway title.
+						'alt' => esc_attr( sprintf( __( 'Pay with %s on Frisbii Pay', 'reepay-checkout-gateway' ), $this->get_title() ) ),
+					);
+				},
+				array_filter( (array) $this->logos, 'strlen' )
+			);
+
+			$icon = reepay()->get_template(
+				'checkout/gateway-logos.php',
+				array(
+					'logos' => $logos,
+				),
+				true
+			);
+		}
+		return $icon;
 	}
 }
