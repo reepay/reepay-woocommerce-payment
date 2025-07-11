@@ -300,12 +300,6 @@ class WC_ReepayCheckout {
 
 		// Initialize Analytics Sync for better WooCommerce Analytics integration
 		new Reepay\Checkout\Analytics\AnalyticsSync();
-
-		// Initialize Debug Helper if WP_DEBUG is enabled
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			require_once $this->get_setting( 'plugin_path' ) . 'debug/DebugHelper.php';
-			require_once $this->get_setting( 'plugin_path' ) . 'debug/index.php';
-		}
 	}
 
 	/**
