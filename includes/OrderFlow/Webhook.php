@@ -190,6 +190,15 @@ class Webhook {
 
 				// Need for analytics.
 				$order->set_date_paid( time() );
+				$order->save(); // Ensure date_paid is saved for analytics
+
+				// Trigger WooCommerce update hook for analytics
+				do_action( 'woocommerce_update_order', $order->get_id() );
+
+				// Ensure analytics data is updated after authorization
+				if ( class_exists( '\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore' ) ) {
+					\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore::sync_order( $order->get_id() );
+				}
 
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 
@@ -296,8 +305,14 @@ class Webhook {
 				$data['order_id'] = $order->get_id();
 				do_action( 'reepay_webhook_invoice_settled', $data );
 
-				// Need for analytics.
-				$order->set_date_paid( time() );
+				// Trigger WooCommerce update hook for analytics
+				do_action( 'woocommerce_update_order', $order->get_id() );
+
+				// Ensure analytics data is updated after settlement
+				if ( class_exists( '\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore' ) ) {
+					\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore::sync_order( $order->get_id() );
+				}
+
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			case 'invoice_cancelled':

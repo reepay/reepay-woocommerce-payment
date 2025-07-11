@@ -297,6 +297,11 @@ class WC_ReepayCheckout {
 		new Reepay\Checkout\Frontend\Main();
 
 		new Reepay\Checkout\Actions\Main();
+
+		// Initialize Analytics Sync for better WooCommerce Analytics integration
+		new Reepay\Checkout\Analytics\AnalyticsSync();
+
+		
 	}
 
 	/**
