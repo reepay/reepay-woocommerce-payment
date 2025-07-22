@@ -403,6 +403,7 @@ class OrderStatuses {
 	 * @throws Exception If error with payment capture.
 	 */
 	public function order_status_changed( int $order_id, string $from, string $to, WC_Order $order ) {
+		error_log("Order Status Changed: order_id={$order_id}, from={$from}, to={$to}");
 		if ( ! rp_is_order_paid_via_reepay( $order ) || order_contains_subscription( $order ) ) {
 			return;
 		}
@@ -424,6 +425,9 @@ class OrderStatuses {
 						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'reepay-checkout-gateway' ), $message ) );
 					}
 				}
+				break;
+			case 'refunded':
+				error_log("Order Status Changed: order_id={$order_id}, from={$from}, to={$to}");
 				break;
 			case self::$status_sync_enabled ? self::$status_settled : 'processing':
 				// skip the processing when instant settle physical products and status settle is processing.
