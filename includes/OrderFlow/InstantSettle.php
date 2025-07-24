@@ -159,12 +159,16 @@ class InstantSettle {
 						break;
 					}
 				}
-				
+
 				// Only use total amount if all items are settleable
 				if ( $all_items_settleable ) {
 					$total_all = rp_prepare_amount( $order->get_total(), $order->get_currency() );
 				}
 				// Otherwise, use calculated total from settleable items only
+
+				// Note: Tax information will be calculated into the total amount
+				// The API settle method will calculate VAT and include it in the amount
+				// when skip_order_lines is enabled
 			}
 
 			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items );

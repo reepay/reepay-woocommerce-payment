@@ -723,7 +723,24 @@ class Api {
 		}
 
 		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
-			$request_data['amount'] = $amount;
+			// Calculate total amount including VAT from items_data
+			$total_amount_with_vat = 0;
+			if ( ! empty( $items_data ) ) {
+				foreach ( $items_data as $item_data ) {
+					$item_amount = $item_data['amount'] * $item_data['quantity'];
+					if ( ! empty( $item_data['vat'] ) && $item_data['vat'] > 0 ) {
+						// If amount_incl_vat is false, add VAT to the amount
+						if ( empty( $item_data['amount_incl_vat'] ) ) {
+							$item_amount = $item_amount * ( 1 + $item_data['vat'] );
+						}
+						// If amount_incl_vat is true, amount already includes VAT
+					}
+					$total_amount_with_vat += $item_amount;
+				}
+			}
+
+			// Use calculated amount with VAT if available, otherwise use original amount
+			$request_data['amount'] = $total_amount_with_vat > 0 ? $total_amount_with_vat : $amount;
 		} elseif ( ! empty( $amount ) && false === $line_item ) {
 			$request_data['amount'] = $amount;
 		} else {
