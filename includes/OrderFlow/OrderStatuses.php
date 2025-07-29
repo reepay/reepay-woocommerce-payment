@@ -212,8 +212,7 @@ class OrderStatuses {
 			);
 
 			if ( ! $order->has_status( $status ) ) {
-				$order->set_status( $status );
-				$order->save();
+				$order->update_status( $status, __( 'Payment completed via Reepay.', 'reepay-checkout-gateway' ) );
 			}
 		}
 	}
@@ -260,6 +259,14 @@ class OrderStatuses {
 		$order->update_meta_data( '_reepay_state_authorized', 1 );
 		$order->save_meta_data();
 
+		// Trigger WooCommerce update hook for analytics.
+		do_action( 'woocommerce_update_order', $order->get_id() );
+
+		// Ensure analytics data is updated after authorization.
+		if ( class_exists( '\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore' ) ) {
+			\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore::sync_order( $order->get_id() );
+		}
+
 		return true;
 	}
 
@@ -297,6 +304,14 @@ class OrderStatuses {
 			$order->save_meta_data();
 		}
 
+		// Trigger WooCommerce update hook for analytics.
+		do_action( 'woocommerce_update_order', $order->get_id() );
+
+		// Ensure analytics data is updated after settlement.
+		if ( class_exists( '\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore' ) ) {
+			\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore::sync_order( $order->get_id() );
+		}
+
 		return true;
 	}
 
@@ -314,10 +329,11 @@ class OrderStatuses {
 	public static function update_order_status( WC_Order $order, string $new_status, $note = '', $transaction_id = null, $manual = false ) {
 		if ( ! empty( $transaction_id ) ) {
 			$order->set_transaction_id( $transaction_id );
+			$order->save(); // Save transaction ID first.
 		}
 
-		$order->set_status( $new_status, $note, $manual );
-		$order->save();
+		// Use update_status instead of set_status to trigger proper hooks.
+		$order->update_status( $new_status, $note, $manual );
 	}
 
 	/**
@@ -408,6 +424,8 @@ class OrderStatuses {
 						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'reepay-checkout-gateway' ), $message ) );
 					}
 				}
+				break;
+			case 'refunded':
 				break;
 			case self::$status_sync_enabled ? self::$status_settled : 'processing':
 				// skip the processing when instant settle physical products and status settle is processing.
