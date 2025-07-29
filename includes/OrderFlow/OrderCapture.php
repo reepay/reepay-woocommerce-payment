@@ -435,21 +435,43 @@ class OrderCapture {
 					$line_items[] = $item;
 					$total_all   += $total;
 				} else {
-					$item_data    = $this->get_item_data( $item, $order );
-					$price        = self::get_item_price( $item, $order );
-					$total        = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
-					$items_data[] = $item_data;
-					$line_items[] = $item;
-					$total_all   += $total;
-					$this->log(
-						array(
-							__METHOD__,
-							__LINE__,
-							'order' => $order->get_id(),
-							'item'  => $item->get_id(),
-							'msg'   => 'else Condition',
-						)
-					);
+					$item_data = $this->get_item_data( $item, $order );
+					$price     = self::get_item_price( $item, $order );
+					$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
+
+					// Check for total > 0 before adding to items_data.
+					if ( $total > 0 ) {
+						$items_data[] = $item_data;
+						$line_items[] = $item;
+						$total_all   += $total;
+						$this->log(
+							array(
+								__METHOD__,
+								__LINE__,
+								'order' => $order->get_id(),
+								'item'  => $item->get_id(),
+								'msg'   => 'else Condition - item with amount > 0',
+								'data'  => array(
+									'total' => $total,
+								),
+							)
+						);
+					} else {
+						// For items with a price of 0, mark them as settled immediately.
+						$this->complete_settle( $item, $order, 0 );
+						$this->log(
+							array(
+								__METHOD__,
+								__LINE__,
+								'order' => $order->get_id(),
+								'item'  => $item->get_id(),
+								'msg'   => 'else Condition - zero amount item marked as settled',
+								'data'  => array(
+									'total' => $total,
+								),
+							)
+						);
+					}
 				}
 			}
 		}
