@@ -259,10 +259,10 @@ class OrderStatuses {
 		$order->update_meta_data( '_reepay_state_authorized', 1 );
 		$order->save_meta_data();
 
-		// Trigger WooCommerce update hook for analytics
+		// Trigger WooCommerce update hook for analytics.
 		do_action( 'woocommerce_update_order', $order->get_id() );
 
-		// Ensure analytics data is updated after authorization
+		// Ensure analytics data is updated after authorization.
 		if ( class_exists( '\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore' ) ) {
 			\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore::sync_order( $order->get_id() );
 		}
@@ -304,10 +304,10 @@ class OrderStatuses {
 			$order->save_meta_data();
 		}
 
-		// Trigger WooCommerce update hook for analytics
+		// Trigger WooCommerce update hook for analytics.
 		do_action( 'woocommerce_update_order', $order->get_id() );
 
-		// Ensure analytics data is updated after settlement
+		// Ensure analytics data is updated after settlement.
 		if ( class_exists( '\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore' ) ) {
 			\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore::sync_order( $order->get_id() );
 		}
@@ -329,10 +329,10 @@ class OrderStatuses {
 	public static function update_order_status( WC_Order $order, string $new_status, $note = '', $transaction_id = null, $manual = false ) {
 		if ( ! empty( $transaction_id ) ) {
 			$order->set_transaction_id( $transaction_id );
-			$order->save(); // Save transaction ID first
+			$order->save(); // Save transaction ID first.
 		}
 
-		// Use update_status instead of set_status to trigger proper hooks
+		// Use update_status instead of set_status to trigger proper hooks.
 		$order->update_status( $new_status, $note, $manual );
 	}
 
@@ -403,7 +403,6 @@ class OrderStatuses {
 	 * @throws Exception If error with payment capture.
 	 */
 	public function order_status_changed( int $order_id, string $from, string $to, WC_Order $order ) {
-		error_log("Order Status Changed: order_id={$order_id}, from={$from}, to={$to}");
 		if ( ! rp_is_order_paid_via_reepay( $order ) || order_contains_subscription( $order ) ) {
 			return;
 		}
@@ -427,7 +426,6 @@ class OrderStatuses {
 				}
 				break;
 			case 'refunded':
-				error_log("Order Status Changed: order_id={$order_id}, from={$from}, to={$to}");
 				break;
 			case self::$status_sync_enabled ? self::$status_settled : 'processing':
 				// skip the processing when instant settle physical products and status settle is processing.

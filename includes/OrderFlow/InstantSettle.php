@@ -148,9 +148,9 @@ class InstantSettle {
 				$total_all   += $total;
 			}
 
-			// FIX: Only use skip_order_lines total if ALL items can be settled instantly
+			// FIX: Only use skip_order_lines total if ALL items can be settled instantly.
 			if ( reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
-				// Check if all order items can be settled instantly
+				// Check if all order items can be settled instantly.
 				$all_items_settleable = true;
 				foreach ( $order->get_items() as $order_item ) {
 					$product = $order_item->get_product();
@@ -160,15 +160,15 @@ class InstantSettle {
 					}
 				}
 
-				// Only use total amount if all items are settleable
+				// Only use total amount if all items are settleable.
 				if ( $all_items_settleable ) {
 					$total_all = rp_prepare_amount( $order->get_total(), $order->get_currency() );
 				}
-				// Otherwise, use calculated total from settleable items only
+				// Otherwise, use calculated total from settleable items only.
 
-				// Note: Tax information will be calculated into the total amount
-				// The API settle method will calculate VAT and include it in the amount
-				// when skip_order_lines is enabled
+				// Note: Tax information will be calculated into the total amount.
+				// The API settle method will calculate VAT and include it in the amount.
+				// when skip_order_lines is enabled.
 			}
 
 			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items );

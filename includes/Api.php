@@ -826,7 +826,7 @@ class Api {
 			);
 		}
 
-		// Use the actual amount that was sent to the API for the settlement message
+		// Use the actual amount that was sent to the API for the settlement message.
 		$settled_amount = $this->calculate_amount_with_vat( $items_data, $amount );
 
 		$message = sprintf(
@@ -1210,10 +1210,10 @@ class Api {
 	/**
 	 * Calculate total amount including VAT from items data
 	 *
-	 * @param array     $items_data Array of item data with VAT information
-	 * @param float|int $fallback_amount Fallback amount if calculation fails
+	 * @param array     $items_data Array of item data with VAT information.
+	 * @param float|int $fallback_amount Fallback amount if calculation fails.
 	 *
-	 * @return float|int Calculated amount with VAT or fallback amount
+	 * @return float|int Calculated amount with VAT or fallback amount.
 	 */
 	private function calculate_amount_with_vat( $items_data, $fallback_amount ) {
 		$total_amount_with_vat = 0;
@@ -1222,17 +1222,17 @@ class Api {
 			foreach ( $items_data as $item_data ) {
 				$item_amount = $item_data['amount'] * $item_data['quantity'];
 				if ( ! empty( $item_data['vat'] ) && $item_data['vat'] > 0 ) {
-					// If amount_incl_vat is false, add VAT to the amount
+					// If amount_incl_vat is false, add VAT to the amount.
 					if ( empty( $item_data['amount_incl_vat'] ) ) {
 						$item_amount = $item_amount * ( 1 + $item_data['vat'] );
 					}
-					// If amount_incl_vat is true, amount already includes VAT
+					// If amount_incl_vat is true, amount already includes VAT.
 				}
 				$total_amount_with_vat += $item_amount;
 			}
 		}
 
-		// Use calculated amount with VAT if available, otherwise use fallback amount
+		// Use calculated amount with VAT if available, otherwise use fallback amount.
 		return $total_amount_with_vat > 0 ? $total_amount_with_vat : $fallback_amount;
 	}
 }

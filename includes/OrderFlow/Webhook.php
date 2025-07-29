@@ -190,12 +190,12 @@ class Webhook {
 
 				// Need for analytics.
 				$order->set_date_paid( time() );
-				$order->save(); // Ensure date_paid is saved for analytics
+				$order->save(); // Ensure date_paid is saved for analytics.
 
-				// Trigger WooCommerce update hook for analytics
+				// Trigger WooCommerce update hook for analytics.
 				do_action( 'woocommerce_update_order', $order->get_id() );
 
-				// Ensure analytics data is updated after authorization
+				// Ensure analytics data is updated after authorization.
 				if ( class_exists( '\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore' ) ) {
 					\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore::sync_order( $order->get_id() );
 				}
@@ -305,10 +305,10 @@ class Webhook {
 				$data['order_id'] = $order->get_id();
 				do_action( 'reepay_webhook_invoice_settled', $data );
 
-				// Trigger WooCommerce update hook for analytics
+				// Trigger WooCommerce update hook for analytics.
 				do_action( 'woocommerce_update_order', $order->get_id() );
 
-				// Ensure analytics data is updated after settlement
+				// Ensure analytics data is updated after settlement.
 				if ( class_exists( '\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore' ) ) {
 					\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore::sync_order( $order->get_id() );
 				}
