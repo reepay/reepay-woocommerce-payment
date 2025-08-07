@@ -7,6 +7,7 @@
 
 namespace Reepay\Checkout\Api\Controller;
 
+use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Utils\MetaField;
 use WC_Meta_Data;
 use WC_Order;
@@ -23,9 +24,16 @@ use WP_REST_Server;
  * @package Reepay\Checkout\Api\Controller
  */
 class MetaFieldsController extends WP_REST_Controller {
+	use LoggingTrait;
+
+	/**
+	 * Logging source for woo logs
+	 *
+	 * @var string
+	 */
+	private string $logging_source = 'reepay_security_event';
 	public const EXCLUDE_KEYS_META_FIELDS = array(
 		'_edit_lock',
-
 		'wp_user_level',
 		'dismissed_wp_pointers',
 		'wp_capabilities',
@@ -36,6 +44,20 @@ class MetaFieldsController extends WP_REST_Controller {
 		'rich_editing',
 		'show_admin_bar_front',
 		'dismissed_wp_pointers',
+		// Additional security-sensitive keys
+		'wp_user-settings',
+		'wp_user-settings-time',
+		'wp_dashboard_quick_press_last_post_id',
+		'managenav-menuscolumnshidden',
+		'metaboxhidden_nav-menus',
+		'nav_menu_recently_edited',
+		'session_tokens',
+		'wp_user_level',
+		// Plugin-specific sensitive keys
+		'billing_',
+		'shipping_',
+		'_woocommerce_',
+		'_customer_',
 	);
 
 	public const ORDER_ROUTE = 'shop_order';
@@ -538,8 +560,56 @@ class MetaFieldsController extends WP_REST_Controller {
 		$user = get_user_by( 'id', $id );
 
 		if ( ! $user ) {
-			return new WP_Error( 'not_found', esc_html__( 'Not found order.', 'reepay-checkout-gateway' ) );
+			return new WP_Error( 'not_found', esc_html__( 'Not found user.', 'reepay-checkout-gateway' ) );
 		}
+
+		// CRITICAL SECURITY CHECK: Validate metadata key against exclusion list
+		if ( in_array( $key, self::EXCLUDE_KEYS_META_FIELDS, true ) ) {
+			return new WP_Error(
+				'rest_forbidden_meta_key',
+				esc_html__( 'This metadata key cannot be modified.', 'reepay-checkout-gateway' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		// Additional security check for capability-related keys
+		if ( strpos( $key, 'capabilities' ) !== false ||
+			 strpos( $key, 'user_level' ) !== false ||
+			 strpos( $key, 'wp_' ) === 0 ) {
+			return new WP_Error(
+				'rest_forbidden_capability_key',
+				esc_html__( 'System metadata cannot be modified via this endpoint.', 'reepay-checkout-gateway' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		// Verify the field_id belongs to the specified user and key
+		global $wpdb;
+		$existing_meta = $wpdb->get_row( $wpdb->prepare(
+			"SELECT * FROM {$wpdb->usermeta} WHERE umeta_id = %d AND user_id = %d AND meta_key = %s",
+			$field_id,
+			$id,
+			$key
+		));
+
+		if ( ! $existing_meta ) {
+			return new WP_Error(
+				'invalid_meta_field',
+				esc_html__( 'Invalid metadata field ID for this user and key.', 'reepay-checkout-gateway' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Log the metadata change for audit purposes
+		$this->log_security_event( array(
+			'user_id' => $id,
+			'meta_key' => $key,
+			'old_value' => $existing_meta->meta_value,
+			'new_value' => $value,
+			'modified_by' => get_current_user_id(),
+			'timestamp' => current_time( 'mysql' ),
+			'ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
+		));
 
 		$decoded_value = json_decode( $value, true );
 		if ( null !== $decoded_value ) {
@@ -552,15 +622,159 @@ class MetaFieldsController extends WP_REST_Controller {
 	}
 
 	/**
-	 * Checks if a given request has access to get items.
+	 * Log security-related metadata operations
+	 *
+	 * @param array $log_data Log data array
+	 */
+	private function log_security_event( $log_data ) {
+		// Ensure required fields have defaults
+		$defaults = array(
+			'event_type'   => $log_data['event_type'] ?? 'user_metadata_modification',
+			'user_id'      => $log_data['user_id'] ?? 0,
+			'meta_key'     => $log_data['meta_key'] ?? 'unknown',
+			'timestamp'    => $log_data['timestamp'] ?? current_time( 'mysql' ),
+			'ip_address'   => $log_data['ip_address'] ?? ( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ),
+			'user_agent'   => $log_data['user_agent'] ?? ( $_SERVER['HTTP_USER_AGENT'] ?? 'unknown' ),
+			'request_uri'  => $log_data['request_uri'] ?? ( $_SERVER['REQUEST_URI'] ?? 'unknown' ),
+		);
+
+		// Merge provided data with defaults
+		$log_entry = array_merge( $defaults, $log_data );
+
+		// Add backtrace for debugging
+		$log_entry['backtrace(3)'] = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+
+		// Log using WooCommerce logging system with 'security_event' source
+		$this->log( $log_entry );
+
+		// Generate human-readable summary based on event type
+		$summary = $this->generate_security_event_summary( $log_entry );
+		$this->log( $summary );
+	}
+
+	/**
+	 * Generate human-readable summary for security events
+	 *
+	 * @param array $log_entry Complete log entry data
+	 * @return string Human-readable summary
+	 */
+	private function generate_security_event_summary( $log_entry ) {
+		$event_type = $log_entry['event_type'];
+		$user_id = $log_entry['user_id'];
+		$meta_key = $log_entry['meta_key'];
+		$ip_address = $log_entry['ip_address'];
+
+		switch ( $event_type ) {
+			case 'unauthorized_metadata_key_access':
+				$attempted_by = $log_entry['attempted_by'] ?? 'unknown';
+				return sprintf(
+					'SECURITY ALERT: User %d attempted to modify unauthorized metadata key "%s" for user %d [IP: %s, Attempted by: %d]',
+					$user_id,
+					$meta_key,
+					$user_id,
+					$ip_address,
+					$attempted_by
+				);
+
+			case 'user_metadata_modification':
+				$modified_by = $log_entry['modified_by'] ?? 'unknown';
+				$old_value = isset( $log_entry['old_value'] ) ?
+					( is_string( $log_entry['old_value'] ) ? substr( $log_entry['old_value'], 0, 100 ) : wp_json_encode( $log_entry['old_value'] ) ) :
+					'unknown';
+				$new_value = isset( $log_entry['new_value'] ) ?
+					( is_string( $log_entry['new_value'] ) ? substr( $log_entry['new_value'], 0, 100 ) : wp_json_encode( $log_entry['new_value'] ) ) :
+					'unknown';
+
+				return sprintf(
+					'Security Event: User %d (modified by %d) changed metadata "%s" for user %d from "%s" to "%s" [IP: %s]',
+					$user_id,
+					$modified_by,
+					$meta_key,
+					$user_id,
+					$old_value,
+					$new_value,
+					$ip_address
+				);
+
+			default:
+				return sprintf(
+					'Security Event [%s]: User %d, Meta Key "%s" [IP: %s]',
+					$event_type,
+					$user_id,
+					$meta_key,
+					$ip_address
+				);
+		}
+	}
+
+	/**
+	 * Checks if a given request has access to user metadata operations.
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 *
-	 * @return true|WP_Error True if the request has read access, WP_Error object otherwise.
+	 * @return true|WP_Error True if the request has access, WP_Error object otherwise.
 	 */
 	public function get_items_permissions_check( $request ) {
+		// For user metadata operations, require manage_options capability
+		if ( isset( $request['user_id'] ) ) {
+			$user_id = (int) $request['user_id'];
+
+			// Only administrators can modify user metadata
+			// OR users can modify their own non-sensitive metadata
+			if ( ! current_user_can( 'manage_options' ) ) {
+				// Allow users to modify only their own metadata
+				if ( get_current_user_id() !== $user_id ) {
+					return new WP_Error(
+						'rest_forbidden',
+						esc_html__( 'You cannot modify other users\' metadata.', 'reepay-checkout-gateway' ),
+						array( 'status' => rest_authorization_required_code() )
+					);
+				}
+
+				// For non-admin users, only allow specific safe metadata keys
+				if ( isset( $request['key'] ) ) {
+					$allowed_keys = array(
+						'locale',
+						'description',
+						'nickname',
+						'first_name',
+						'last_name'
+					);
+
+					if ( ! in_array( $request['key'], $allowed_keys, true ) ) {
+						// Log unauthorized metadata key access attempt
+						$this->log_security_event( array(
+							'event_type'   => 'unauthorized_metadata_key_access',
+							'user_id'      => $user_id,
+							'meta_key'     => $request['key'],
+							'attempted_by' => get_current_user_id(),
+							'timestamp'    => current_time( 'mysql' ),
+							'ip_address'   => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+							'user_agent'   => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+							'request_uri'  => $_SERVER['REQUEST_URI'] ?? 'unknown',
+							'error_type'   => 'forbidden_meta_key',
+							'allowed_keys' => $allowed_keys
+						));
+
+						return new WP_Error(
+							'rest_forbidden_meta_key',
+							esc_html__( 'You cannot modify this metadata key.', 'reepay-checkout-gateway' ),
+							array( 'status' => rest_authorization_required_code() )
+						);
+					}
+				}
+			}
+
+			return true;
+		}
+
+		// For order metadata operations, require appropriate post capabilities
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'delete_posts' ) ) {
-			return new WP_Error( 'rest_forbidden', esc_html__( 'You cannot view the post resource.', 'reepay-checkout-gateway' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error(
+				'rest_forbidden',
+				esc_html__( 'You cannot view the post resource.', 'reepay-checkout-gateway' ),
+				array( 'status' => rest_authorization_required_code() )
+			);
 		}
 
 		return true;
