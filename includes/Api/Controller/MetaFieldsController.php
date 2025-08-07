@@ -770,6 +770,57 @@ class MetaFieldsController extends WP_REST_Controller {
 				}
 			}
 
+			// Additional security check: Block excluded keys for ALL users at permission level
+			if ( isset( $request['key'] ) ) {
+				$key = (string) $request['key'];
+
+				// Check against exclusion list
+				if ( in_array( $key, self::EXCLUDE_KEYS_META_FIELDS, true ) ) {
+					// Log excluded key access attempt
+					$this->log_security_event( array(
+						'event_type'   => 'excluded_key_access_attempt',
+						'user_id'      => $request['user_id'] ?? 'unknown',
+						'meta_key'     => $key,
+						'attempted_by' => get_current_user_id(),
+						'timestamp'    => current_time( 'mysql' ),
+						'ip_address'   => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+						'user_agent'   => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+						'request_uri'  => $_SERVER['REQUEST_URI'] ?? 'unknown',
+						'error_type'   => 'excluded_key_blocked'
+					));
+
+					return new WP_Error(
+						'rest_forbidden_excluded_key',
+						esc_html__( 'This metadata key is protected and cannot be modified.', 'reepay-checkout-gateway' ),
+						array( 'status' => rest_authorization_required_code() )
+					);
+				}
+
+				// Additional protection for capability-related keys
+				if ( strpos( $key, 'capabilities' ) !== false ||
+					 strpos( $key, 'user_level' ) !== false ||
+					 strpos( $key, 'wp_' ) === 0 ) {
+					// Log system key access attempt
+					$this->log_security_event( array(
+						'event_type'   => 'system_key_access_attempt',
+						'user_id'      => $request['user_id'] ?? 'unknown',
+						'meta_key'     => $key,
+						'attempted_by' => get_current_user_id(),
+						'timestamp'    => current_time( 'mysql' ),
+						'ip_address'   => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+						'user_agent'   => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+						'request_uri'  => $_SERVER['REQUEST_URI'] ?? 'unknown',
+						'error_type'   => 'system_key_blocked'
+					));
+
+					return new WP_Error(
+						'rest_forbidden_system_key',
+						esc_html__( 'System metadata keys cannot be modified via this endpoint.', 'reepay-checkout-gateway' ),
+						array( 'status' => rest_authorization_required_code() )
+					);
+				}
+			}
+
 			return true;
 		}
 
