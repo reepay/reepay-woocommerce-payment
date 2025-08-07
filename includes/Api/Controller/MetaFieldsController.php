@@ -43,7 +43,6 @@ class MetaFieldsController extends WP_REST_Controller {
 		'syntax_highlighting',
 		'rich_editing',
 		'show_admin_bar_front',
-		'dismissed_wp_pointers',
 		// Additional security-sensitive keys
 		'wp_user-settings',
 		'wp_user-settings-time',
@@ -52,8 +51,7 @@ class MetaFieldsController extends WP_REST_Controller {
 		'metaboxhidden_nav-menus',
 		'nav_menu_recently_edited',
 		'session_tokens',
-		'wp_user_level',
-		// Plugin-specific sensitive keys
+		// Plugin-specific sensitive keys (using prefixes for pattern matching)
 		'billing_',
 		'shipping_',
 		'_woocommerce_',
@@ -563,22 +561,12 @@ class MetaFieldsController extends WP_REST_Controller {
 			return new WP_Error( 'not_found', esc_html__( 'Not found user.', 'reepay-checkout-gateway' ) );
 		}
 
-		// CRITICAL SECURITY CHECK: Validate metadata key against exclusion list
-		if ( in_array( $key, self::EXCLUDE_KEYS_META_FIELDS, true ) ) {
+		// CRITICAL SECURITY CHECK: Consolidated metadata key validation
+		$security_violation = $this->validate_metadata_key_security( $key );
+		if ( $security_violation ) {
 			return new WP_Error(
-				'rest_forbidden_meta_key',
-				esc_html__( 'This metadata key cannot be modified.', 'reepay-checkout-gateway' ),
-				array( 'status' => 403 )
-			);
-		}
-
-		// Additional security check for capability-related keys
-		if ( strpos( $key, 'capabilities' ) !== false ||
-			 strpos( $key, 'user_level' ) !== false ||
-			 strpos( $key, 'wp_' ) === 0 ) {
-			return new WP_Error(
-				'rest_forbidden_capability_key',
-				esc_html__( 'System metadata cannot be modified via this endpoint.', 'reepay-checkout-gateway' ),
+				$security_violation['error_code'],
+				$security_violation['message'],
 				array( 'status' => 403 )
 			);
 		}
@@ -619,6 +607,54 @@ class MetaFieldsController extends WP_REST_Controller {
 		}
 
 		return rest_ensure_response( json_decode( $request->get_body(), true ) );
+	}
+
+	/**
+	 * Consolidated metadata key security validation
+	 *
+	 * @param string $key The metadata key to validate
+	 * @return array|null Security violation details or null if key is safe
+	 */
+	private function validate_metadata_key_security( string $key ): ?array {
+		// Check against explicit exclusion list first (most specific)
+		if ( in_array( $key, self::EXCLUDE_KEYS_META_FIELDS, true ) ) {
+			return array(
+				'event_type'  => 'excluded_key_access_attempt',
+				'error_code'  => 'rest_forbidden_excluded_key',
+				'error_type'  => 'excluded_key_blocked',
+				'message'     => esc_html__( 'This metadata key is protected and cannot be modified.', 'reepay-checkout-gateway' ),
+				'reason'      => 'key_in_exclusion_list'
+			);
+		}
+
+		// Check for prefix-based patterns (catches keys not in exclusion list)
+		$dangerous_patterns = array(
+			'wp_'           => 'WordPress system key',
+			'_wp_'          => 'WordPress private key',
+			'capabilities'  => 'User capability key',
+			'user_level'    => 'User level key',
+			'session_'      => 'Session-related key',
+			'_woocommerce_' => 'WooCommerce sensitive key',
+			'billing_'      => 'Billing information key',
+			'shipping_'     => 'Shipping information key'
+		);
+
+		foreach ( $dangerous_patterns as $pattern => $description ) {
+			if ( strpos( $key, $pattern ) !== false ) {
+				return array(
+					'event_type'  => 'pattern_based_key_access_attempt',
+					'error_code'  => 'rest_forbidden_pattern_key',
+					'error_type'  => 'dangerous_pattern_blocked',
+					'message'     => esc_html__( 'This type of metadata key cannot be modified via this endpoint.', 'reepay-checkout-gateway' ),
+					'reason'      => "matches_pattern_{$pattern}",
+					'pattern'     => $pattern,
+					'description' => $description
+				);
+			}
+		}
+
+		// Key is safe
+		return null;
 	}
 
 	/**
@@ -770,15 +806,15 @@ class MetaFieldsController extends WP_REST_Controller {
 				}
 			}
 
-			// Additional security check: Block excluded keys for ALL users at permission level
+			// Consolidated security check: Block protected keys for ALL users at permission level
 			if ( isset( $request['key'] ) ) {
 				$key = (string) $request['key'];
+				$security_violation = $this->validate_metadata_key_security( $key );
 
-				// Check against exclusion list
-				if ( in_array( $key, self::EXCLUDE_KEYS_META_FIELDS, true ) ) {
-					// Log excluded key access attempt
+				if ( $security_violation ) {
+					// Log security violation attempt
 					$this->log_security_event( array(
-						'event_type'   => 'excluded_key_access_attempt',
+						'event_type'   => $security_violation['event_type'],
 						'user_id'      => $request['user_id'] ?? 'unknown',
 						'meta_key'     => $key,
 						'attempted_by' => get_current_user_id(),
@@ -786,36 +822,13 @@ class MetaFieldsController extends WP_REST_Controller {
 						'ip_address'   => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
 						'user_agent'   => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
 						'request_uri'  => $_SERVER['REQUEST_URI'] ?? 'unknown',
-						'error_type'   => 'excluded_key_blocked'
+						'error_type'   => $security_violation['error_type'],
+						'violation_reason' => $security_violation['reason']
 					));
 
 					return new WP_Error(
-						'rest_forbidden_excluded_key',
-						esc_html__( 'This metadata key is protected and cannot be modified.', 'reepay-checkout-gateway' ),
-						array( 'status' => rest_authorization_required_code() )
-					);
-				}
-
-				// Additional protection for capability-related keys
-				if ( strpos( $key, 'capabilities' ) !== false ||
-					 strpos( $key, 'user_level' ) !== false ||
-					 strpos( $key, 'wp_' ) === 0 ) {
-					// Log system key access attempt
-					$this->log_security_event( array(
-						'event_type'   => 'system_key_access_attempt',
-						'user_id'      => $request['user_id'] ?? 'unknown',
-						'meta_key'     => $key,
-						'attempted_by' => get_current_user_id(),
-						'timestamp'    => current_time( 'mysql' ),
-						'ip_address'   => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
-						'user_agent'   => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
-						'request_uri'  => $_SERVER['REQUEST_URI'] ?? 'unknown',
-						'error_type'   => 'system_key_blocked'
-					));
-
-					return new WP_Error(
-						'rest_forbidden_system_key',
-						esc_html__( 'System metadata keys cannot be modified via this endpoint.', 'reepay-checkout-gateway' ),
+						$security_violation['error_code'],
+						$security_violation['message'],
 						array( 'status' => rest_authorization_required_code() )
 					);
 				}
