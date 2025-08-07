@@ -644,12 +644,17 @@ class MetaFieldsController extends WP_REST_Controller {
 		// Add backtrace for debugging
 		$log_entry['backtrace(3)'] = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
 
-		// Log using WooCommerce logging system with 'security_event' source
-		$this->log( $log_entry );
-
 		// Generate human-readable summary based on event type
 		$summary = $this->generate_security_event_summary( $log_entry );
-		$this->log( $summary );
+
+		// Combine structured data and human-readable summary into a single log entry
+		$combined_log_entry = array(
+			'summary' => $summary,
+			'details' => $log_entry
+		);
+
+		// Log using WooCommerce logging system with 'reepay_security_event' source (single call)
+		$this->log( $combined_log_entry );
 	}
 
 	/**
@@ -668,7 +673,7 @@ class MetaFieldsController extends WP_REST_Controller {
 			case 'unauthorized_metadata_key_access':
 				$attempted_by = $log_entry['attempted_by'] ?? 'unknown';
 				return sprintf(
-					'SECURITY ALERT: User %d attempted to modify unauthorized metadata key "%s" for user %d [IP: %s, Attempted by: %d]',
+					'SECURITY ALERT: User ID %d attempted to modify unauthorized metadata key "%s" for user %d [IP: %s, Attempted by: %d]',
 					$user_id,
 					$meta_key,
 					$user_id,
