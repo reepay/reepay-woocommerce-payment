@@ -31,7 +31,7 @@ class MetaFieldsController extends WP_REST_Controller {
 	 *
 	 * @var string
 	 */
-	private string $logging_source = 'reepay_security_event';
+	private string $logging_source        = 'reepay_security_event';
 	public const EXCLUDE_KEYS_META_FIELDS = array(
 		'_edit_lock',
 		'wp_user_level',
@@ -43,7 +43,7 @@ class MetaFieldsController extends WP_REST_Controller {
 		'syntax_highlighting',
 		'rich_editing',
 		'show_admin_bar_front',
-		// Additional security-sensitive keys
+		// Additional security-sensitive keys.
 		'wp_user-settings',
 		'wp_user-settings-time',
 		'wp_dashboard_quick_press_last_post_id',
@@ -51,7 +51,7 @@ class MetaFieldsController extends WP_REST_Controller {
 		'metaboxhidden_nav-menus',
 		'nav_menu_recently_edited',
 		'session_tokens',
-		// Plugin-specific sensitive keys (using prefixes for pattern matching)
+		// Plugin-specific sensitive keys (using prefixes for pattern matching).
 		'billing_',
 		'shipping_',
 		'_woocommerce_',
@@ -561,7 +561,7 @@ class MetaFieldsController extends WP_REST_Controller {
 			return new WP_Error( 'not_found', esc_html__( 'Not found user.', 'reepay-checkout-gateway' ) );
 		}
 
-		// CRITICAL SECURITY CHECK: Consolidated metadata key validation
+		// CRITICAL SECURITY CHECK: Consolidated metadata key validation.
 		$security_violation = $this->validate_metadata_key_security( $key );
 		if ( $security_violation ) {
 			return new WP_Error(
@@ -571,14 +571,14 @@ class MetaFieldsController extends WP_REST_Controller {
 			);
 		}
 
-		// Verify the field_id belongs to the specified user and key
-		global $wpdb;
-		$existing_meta = $wpdb->get_row( $wpdb->prepare(
-			"SELECT * FROM {$wpdb->usermeta} WHERE umeta_id = %d AND user_id = %d AND meta_key = %s",
-			$field_id,
-			$id,
-			$key
-		));
+		// Verify the field_id belongs to the specified user and key.
+		// Use WordPress metadata functions instead of direct database queries.
+		$existing_meta = get_metadata_by_mid( 'user', $field_id );
+
+		// Verify the metadata belongs to the correct user and has the correct key.
+		if ( ! $existing_meta || (int) $existing_meta->user_id !== $id || $existing_meta->meta_key !== $key ) {
+			$existing_meta = null;
+		}
 
 		if ( ! $existing_meta ) {
 			return new WP_Error(
@@ -588,16 +588,18 @@ class MetaFieldsController extends WP_REST_Controller {
 			);
 		}
 
-		// Log the metadata change for audit purposes
-		$this->log_security_event( array(
-			'user_id' => $id,
-			'meta_key' => $key,
-			'old_value' => $existing_meta->meta_value,
-			'new_value' => $value,
-			'modified_by' => get_current_user_id(),
-			'timestamp' => current_time( 'mysql' ),
-			'ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
-		));
+		// Log the metadata change for audit purposes.
+		$this->log_security_event(
+			array(
+				'user_id'      => $id,
+				'set_meta_key' => $key,
+				'old_value'    => $existing_meta ? $existing_meta->meta_value : '',
+				'new_value'    => $value,
+				'modified_by'  => get_current_user_id(),
+				'timestamp'    => current_time( 'mysql' ),
+				'ip_address'   => $this->get_client_ip(),
+			)
+		);
 
 		$decoded_value = json_decode( $value, true );
 		if ( null !== $decoded_value ) {
@@ -612,22 +614,22 @@ class MetaFieldsController extends WP_REST_Controller {
 	/**
 	 * Consolidated metadata key security validation
 	 *
-	 * @param string $key The metadata key to validate
-	 * @return array|null Security violation details or null if key is safe
+	 * @param string $key The metadata key to validate.
+	 * @return array|null Security violation details or null if key is safe.
 	 */
 	private function validate_metadata_key_security( string $key ): ?array {
-		// Check against explicit exclusion list first (most specific)
+		// Check against explicit exclusion list first (most specific).
 		if ( in_array( $key, self::EXCLUDE_KEYS_META_FIELDS, true ) ) {
 			return array(
-				'event_type'  => 'excluded_key_access_attempt',
-				'error_code'  => 'rest_forbidden_excluded_key',
-				'error_type'  => 'excluded_key_blocked',
-				'message'     => esc_html__( 'This metadata key is protected and cannot be modified.', 'reepay-checkout-gateway' ),
-				'reason'      => 'key_in_exclusion_list'
+				'event_type' => 'excluded_key_access_attempt',
+				'error_code' => 'rest_forbidden_excluded_key',
+				'error_type' => 'excluded_key_blocked',
+				'message'    => esc_html__( 'This metadata key is protected and cannot be modified.', 'reepay-checkout-gateway' ),
+				'reason'     => 'key_in_exclusion_list',
 			);
 		}
 
-		// Check for prefix-based patterns (catches keys not in exclusion list)
+		// Check for prefix-based patterns (catches keys not in exclusion list).
 		$dangerous_patterns = array(
 			'wp_'           => 'WordPress system key',
 			'_wp_'          => 'WordPress private key',
@@ -636,7 +638,7 @@ class MetaFieldsController extends WP_REST_Controller {
 			'session_'      => 'Session-related key',
 			'_woocommerce_' => 'WooCommerce sensitive key',
 			'billing_'      => 'Billing information key',
-			'shipping_'     => 'Shipping information key'
+			'shipping_'     => 'Shipping information key',
 		);
 
 		foreach ( $dangerous_patterns as $pattern => $description ) {
@@ -648,61 +650,67 @@ class MetaFieldsController extends WP_REST_Controller {
 					'message'     => esc_html__( 'This type of metadata key cannot be modified via this endpoint.', 'reepay-checkout-gateway' ),
 					'reason'      => "matches_pattern_{$pattern}",
 					'pattern'     => $pattern,
-					'description' => $description
+					'description' => $description,
 				);
 			}
 		}
 
-		// Key is safe
+		// Key is safe.
 		return null;
 	}
 
 	/**
 	 * Log security-related metadata operations
 	 *
-	 * @param array $log_data Log data array
+	 * @param array $log_data Log data array.
 	 */
 	private function log_security_event( $log_data ) {
-		// Ensure required fields have defaults
+		// Ensure required fields have defaults.
 		$defaults = array(
 			'event_type'   => $log_data['event_type'] ?? 'user_metadata_modification',
 			'user_id'      => $log_data['user_id'] ?? 0,
-			'meta_key'     => $log_data['meta_key'] ?? 'unknown',
+			'set_meta_key' => $log_data['set_meta_key'] ?? 'unknown',
 			'timestamp'    => $log_data['timestamp'] ?? current_time( 'mysql' ),
-			'ip_address'   => $log_data['ip_address'] ?? ( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ),
-			'user_agent'   => $log_data['user_agent'] ?? ( $_SERVER['HTTP_USER_AGENT'] ?? 'unknown' ),
-			'request_uri'  => $log_data['request_uri'] ?? ( $_SERVER['REQUEST_URI'] ?? 'unknown' ),
+			'ip_address'   => $log_data['ip_address'] ?? $this->get_client_ip(),
+			'user_agent'   => $log_data['user_agent'] ?? $this->get_user_agent(),
+			'request_uri'  => $log_data['request_uri'] ?? $this->get_request_uri(),
 		);
 
-		// Merge provided data with defaults
+		// Merge provided data with defaults.
 		$log_entry = array_merge( $defaults, $log_data );
 
-		// Add backtrace for debugging
-		$log_entry['backtrace(3)'] = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+		// Add context information for debugging (only in development/debug mode).
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+			$log_entry['context'] = array(
+				'function' => __FUNCTION__,
+				'class'    => __CLASS__,
+				'line'     => __LINE__,
+			);
+		}
 
-		// Generate human-readable summary based on event type
+		// Generate human-readable summary based on event type.
 		$summary = $this->generate_security_event_summary( $log_entry );
 
-		// Combine structured data and human-readable summary into a single log entry
+		// Combine structured data and human-readable summary into a single log entry.
 		$combined_log_entry = array(
 			'summary' => $summary,
-			'details' => $log_entry
+			'details' => $log_entry,
 		);
 
-		// Log using WooCommerce logging system with 'reepay_security_event' source (single call)
+		// Log using WooCommerce logging system with 'reepay_security_event' source (single call).
 		$this->log( $combined_log_entry );
 	}
 
 	/**
 	 * Generate human-readable summary for security events
 	 *
-	 * @param array $log_entry Complete log entry data
-	 * @return string Human-readable summary
+	 * @param array $log_entry Complete log entry data.
+	 * @return string Human-readable summary.
 	 */
 	private function generate_security_event_summary( $log_entry ) {
 		$event_type = $log_entry['event_type'];
-		$user_id = $log_entry['user_id'];
-		$meta_key = $log_entry['meta_key'];
+		$user_id    = $log_entry['user_id'];
+		$meta_key   = $log_entry['set_meta_key'];
 		$ip_address = $log_entry['ip_address'];
 
 		switch ( $event_type ) {
@@ -719,10 +727,10 @@ class MetaFieldsController extends WP_REST_Controller {
 
 			case 'user_metadata_modification':
 				$modified_by = $log_entry['modified_by'] ?? 'unknown';
-				$old_value = isset( $log_entry['old_value'] ) ?
+				$old_value   = isset( $log_entry['old_value'] ) ?
 					( is_string( $log_entry['old_value'] ) ? substr( $log_entry['old_value'], 0, 100 ) : wp_json_encode( $log_entry['old_value'] ) ) :
 					'unknown';
-				$new_value = isset( $log_entry['new_value'] ) ?
+				$new_value   = isset( $log_entry['new_value'] ) ?
 					( is_string( $log_entry['new_value'] ) ? substr( $log_entry['new_value'], 0, 100 ) : wp_json_encode( $log_entry['new_value'] ) ) :
 					'unknown';
 
@@ -756,14 +764,14 @@ class MetaFieldsController extends WP_REST_Controller {
 	 * @return true|WP_Error True if the request has access, WP_Error object otherwise.
 	 */
 	public function get_items_permissions_check( $request ) {
-		// For user metadata operations, require manage_options capability
+		// For user metadata operations, require manage_options capability.
 		if ( isset( $request['user_id'] ) ) {
 			$user_id = (int) $request['user_id'];
 
-			// Only administrators can modify user metadata
-			// OR users can modify their own non-sensitive metadata
+			// Only administrators can modify user metadata.
+			// OR users can modify their own non-sensitive metadata.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				// Allow users to modify only their own metadata
+				// Allow users to modify only their own metadata.
 				if ( get_current_user_id() !== $user_id ) {
 					return new WP_Error(
 						'rest_forbidden',
@@ -772,30 +780,32 @@ class MetaFieldsController extends WP_REST_Controller {
 					);
 				}
 
-				// For non-admin users, only allow specific safe metadata keys
+				// For non-admin users, only allow specific safe metadata keys.
 				if ( isset( $request['key'] ) ) {
 					$allowed_keys = array(
 						'locale',
 						'description',
 						'nickname',
 						'first_name',
-						'last_name'
+						'last_name',
 					);
 
 					if ( ! in_array( $request['key'], $allowed_keys, true ) ) {
-						// Log unauthorized metadata key access attempt
-						$this->log_security_event( array(
-							'event_type'   => 'unauthorized_metadata_key_access',
-							'user_id'      => $user_id,
-							'meta_key'     => $request['key'],
-							'attempted_by' => get_current_user_id(),
-							'timestamp'    => current_time( 'mysql' ),
-							'ip_address'   => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
-							'user_agent'   => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
-							'request_uri'  => $_SERVER['REQUEST_URI'] ?? 'unknown',
-							'error_type'   => 'forbidden_meta_key',
-							'allowed_keys' => $allowed_keys
-						));
+						// Log unauthorized metadata key access attempt.
+						$this->log_security_event(
+							array(
+								'event_type'   => 'unauthorized_metadata_key_access',
+								'user_id'      => $user_id,
+								'set_meta_key' => $request['key'],
+								'attempted_by' => get_current_user_id(),
+								'timestamp'    => current_time( 'mysql' ),
+								'ip_address'   => $this->get_client_ip(),
+								'user_agent'   => $this->get_user_agent(),
+								'request_uri'  => $this->get_request_uri(),
+								'error_type'   => 'forbidden_meta_key',
+								'allowed_keys' => $allowed_keys,
+							)
+						);
 
 						return new WP_Error(
 							'rest_forbidden_meta_key',
@@ -806,25 +816,27 @@ class MetaFieldsController extends WP_REST_Controller {
 				}
 			}
 
-			// Consolidated security check: Block protected keys for ALL users at permission level
+			// Consolidated security check: Block protected keys for ALL users at permission level.
 			if ( isset( $request['key'] ) ) {
-				$key = (string) $request['key'];
+				$key                = (string) $request['key'];
 				$security_violation = $this->validate_metadata_key_security( $key );
 
 				if ( $security_violation ) {
-					// Log security violation attempt
-					$this->log_security_event( array(
-						'event_type'   => $security_violation['event_type'],
-						'user_id'      => $request['user_id'] ?? 'unknown',
-						'meta_key'     => $key,
-						'attempted_by' => get_current_user_id(),
-						'timestamp'    => current_time( 'mysql' ),
-						'ip_address'   => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
-						'user_agent'   => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
-						'request_uri'  => $_SERVER['REQUEST_URI'] ?? 'unknown',
-						'error_type'   => $security_violation['error_type'],
-						'violation_reason' => $security_violation['reason']
-					));
+					// Log security violation attempt.
+					$this->log_security_event(
+						array(
+							'event_type'       => $security_violation['event_type'],
+							'user_id'          => $request['user_id'] ?? 'unknown',
+							'set_meta_key'     => $key,
+							'attempted_by'     => get_current_user_id(),
+							'timestamp'        => current_time( 'mysql' ),
+							'ip_address'       => $this->get_client_ip(),
+							'user_agent'       => $this->get_user_agent(),
+							'request_uri'      => $this->get_request_uri(),
+							'error_type'       => $security_violation['error_type'],
+							'violation_reason' => $security_violation['reason'],
+						)
+					);
 
 					return new WP_Error(
 						$security_violation['error_code'],
@@ -837,7 +849,7 @@ class MetaFieldsController extends WP_REST_Controller {
 			return true;
 		}
 
-		// For order metadata operations, require appropriate post capabilities
+		// For order metadata operations, require appropriate post capabilities.
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'delete_posts' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
@@ -871,8 +883,8 @@ class MetaFieldsController extends WP_REST_Controller {
 		if ( isset( $schema['properties']['value'] ) ) {
 			$value = $item['value'];
 			if ( is_serialized( $value ) ) {
-				// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize
-				$value = unserialize( $value );
+				// Use maybe_unserialize() which is safer than unserialize().
+				$value = maybe_unserialize( $value );
 			}
 			if ( is_array( $value ) ) {
 				$value = wp_json_encode( $value );
@@ -915,5 +927,62 @@ class MetaFieldsController extends WP_REST_Controller {
 		);
 
 		return $this->add_additional_fields_schema( $schema );
+	}
+
+	/**
+	 * Get client IP address safely
+	 *
+	 * @return string Client IP address
+	 */
+	private function get_client_ip(): string {
+		// Check for various headers that might contain the real IP.
+		$ip_headers = array(
+			'HTTP_CF_CONNECTING_IP',     // Cloudflare.
+			'HTTP_CLIENT_IP',            // Proxy.
+			'HTTP_X_FORWARDED_FOR',      // Load balancer/proxy.
+			'HTTP_X_FORWARDED',          // Proxy.
+			'HTTP_X_CLUSTER_CLIENT_IP',  // Cluster.
+			'HTTP_FORWARDED_FOR',        // Proxy.
+			'HTTP_FORWARDED',            // Proxy.
+			'REMOTE_ADDR',                // Standard.
+		);
+
+		foreach ( $ip_headers as $header ) {
+			if ( ! empty( $_SERVER[ $header ] ) ) {
+				$ip = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
+				// Handle comma-separated IPs (take the first one).
+				if ( strpos( $ip, ',' ) !== false ) {
+					$ip = trim( explode( ',', $ip )[0] );
+				}
+				// Validate IP address.
+				if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+					return $ip;
+				}
+			}
+		}
+
+		return 'unknown';
+	}
+
+	/**
+	 * Get user agent safely
+	 *
+	 * @return string User agent string
+	 */
+	private function get_user_agent(): string {
+		return ! empty( $_SERVER['HTTP_USER_AGENT'] )
+			? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) )
+			: 'unknown';
+	}
+
+	/**
+	 * Get request URI safely
+	 *
+	 * @return string Request URI
+	 */
+	private function get_request_uri(): string {
+		return ! empty( $_SERVER['REQUEST_URI'] )
+			? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) )
+			: 'unknown';
 	}
 }
