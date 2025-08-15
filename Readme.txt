@@ -18,6 +18,9 @@ The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.8.2.1
+- [Fix] - User privilege escalation vulnerability.
+
 v 1.8.2
 - [FIX] - WooCommerce Analytics totals are updated when the status of an order is changed to "Processing".
 - [FIX] - Free products caused the following products on the order not to be processed.
