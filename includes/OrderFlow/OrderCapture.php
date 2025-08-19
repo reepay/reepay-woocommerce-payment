@@ -391,6 +391,20 @@ class OrderCapture {
 				)
 			);
 
+			// Skip bundle products to be consistent with other methods.
+			if ( WPCProductBundlesWooCommerceIntegration::is_order_item_bundle( $item ) ) {
+				$this->log(
+					array(
+						__METHOD__,
+						__LINE__,
+						'order' => $order->get_id(),
+						'item'  => $item->get_id(),
+						'msg'   => 'Skipping bundle product',
+					)
+				);
+				continue;
+			}
+
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );
 				$price     = self::get_item_price( $item, $order );
