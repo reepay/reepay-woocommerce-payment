@@ -261,10 +261,12 @@ class OrderStatuses {
 
 		// Trigger WooCommerce update hook for analytics.
 		do_action( 'woocommerce_update_order', $order->get_id() );
+		//do_action( 'woocommerce_analytics_update_order_stats', $order->get_id() );
 
-		// Ensure analytics data is updated after authorization.
-		if ( class_exists( '\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore' ) ) {
-			\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore::sync_order( $order->get_id() );
+		// Trigger order save to ensure analytics are updated
+		$order = wc_get_order( $order->get_id());
+		if ( $order ) {
+			$order->save();
 		}
 
 		return true;
@@ -306,10 +308,12 @@ class OrderStatuses {
 
 		// Trigger WooCommerce update hook for analytics.
 		do_action( 'woocommerce_update_order', $order->get_id() );
+		//do_action( 'woocommerce_analytics_update_order_stats', $order->get_id() );
 
-		// Ensure analytics data is updated after settlement.
-		if ( class_exists( '\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore' ) ) {
-			\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore::sync_order( $order->get_id() );
+		// Trigger order save to ensure analytics are updated
+		$order = wc_get_order( $order->get_id());
+		if ( $order ) {
+			$order->save();
 		}
 
 		return true;
