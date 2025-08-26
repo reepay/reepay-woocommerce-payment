@@ -71,9 +71,8 @@ class AnalyticsSync {
 	private function force_analytics_sync( $order_id ) {
 		// Trigger the WooCommerce update hook.
 		do_action( 'woocommerce_update_order', $order_id );
-		//do_action( 'woocommerce_analytics_update_order_stats', $order_id );
-    
-		// Trigger order save to ensure analytics are updated
+
+		// Trigger order save to ensure analytics are updated.
 		$order = wc_get_order( $order_id );
 		if ( $order ) {
 			$order->save();

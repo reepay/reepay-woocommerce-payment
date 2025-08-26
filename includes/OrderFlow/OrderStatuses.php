@@ -261,10 +261,9 @@ class OrderStatuses {
 
 		// Trigger WooCommerce update hook for analytics.
 		do_action( 'woocommerce_update_order', $order->get_id() );
-		//do_action( 'woocommerce_analytics_update_order_stats', $order->get_id() );
 
-		// Trigger order save to ensure analytics are updated
-		$order = wc_get_order( $order->get_id());
+		// Trigger order save to ensure analytics are updated.
+		$order = wc_get_order( $order->get_id() );
 		if ( $order ) {
 			$order->save();
 		}
@@ -308,10 +307,9 @@ class OrderStatuses {
 
 		// Trigger WooCommerce update hook for analytics.
 		do_action( 'woocommerce_update_order', $order->get_id() );
-		//do_action( 'woocommerce_analytics_update_order_stats', $order->get_id() );
 
-		// Trigger order save to ensure analytics are updated
-		$order = wc_get_order( $order->get_id());
+		// Trigger order save to ensure analytics are updated.
+		$order = wc_get_order( $order->get_id() );
 		if ( $order ) {
 			$order->save();
 		}

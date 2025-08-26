@@ -760,7 +760,7 @@ class Api {
 						$request_data
 					);
 
-					// Add success order note if the retry was successful
+					// Add success order note if the retry was successful.
 					if ( ! is_wp_error( $retry_result ) && ! empty( $retry_result['transaction'] ) ) {
 						$message = sprintf(
 							// translators: %1$s amount to settle, %2$s transaction number.
@@ -792,7 +792,7 @@ class Api {
 								$request_data
 							);
 
-							// Add success order note if the retry was successful
+							// Add success order note if the retry was successful.
 							if ( ! is_wp_error( $retry_result ) && ! empty( $retry_result['transaction'] ) ) {
 								$message = sprintf(
 									// translators: %1$s amount to settle, %2$s transaction number.
