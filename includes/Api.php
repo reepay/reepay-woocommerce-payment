@@ -814,6 +814,11 @@ class Api {
 				}
 			}
 
+			// Skip add order note process if error code is 31 (Invoice not found)
+			if ($result->get_error_code() == 31 ) {
+				return $result;
+			}
+
 			$error = sprintf(
 				// translators: %1$s amount, %2$s error message.
 				__( 'Failed to settle %1$s. Error: %2$s.', 'reepay-checkout-gateway' ),
