@@ -393,6 +393,7 @@ class OrderCapture {
 
 			// Skip bundle products to be consistent with other methods.
 			if ( WPCProductBundlesWooCommerceIntegration::is_order_item_bundle( $item ) ) {
+				$item_data = $this->get_item_data( $item, $order );
 				$this->log(
 					array(
 						__METHOD__,
@@ -400,6 +401,9 @@ class OrderCapture {
 						'order' => $order->get_id(),
 						'item'  => $item->get_id(),
 						'msg'   => 'Skipping bundle product',
+						'data'  => array(
+							'$item_data' => $item_data,
+						),
 					)
 				);
 				continue;
