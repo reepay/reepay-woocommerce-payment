@@ -814,8 +814,8 @@ class Api {
 				}
 			}
 
-			// Skip add order note process if error code is 31 (Invoice not found)
-			if ($result->get_error_code() == 31 ) {
+			// Skip add order note process if error code is 31 (Invoice not found).
+			if ( $result->get_error_code() === 31 ) {
 				return $result;
 			}
 
