@@ -4,7 +4,7 @@ Tags: Frisbii, billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.8.2.1
+Stable tag: 1.8.3
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,6 +18,12 @@ The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.8.3
+- [FIX] - In case Frisbii process a renewal successfully for a subscriptionorder that is marked as Completed in WooCommerce then the order note will not say the settlement failed and the invoice wasn't found.
+- [Fix] - Replaces calls to buggy sync_order API endpoint in WooCommerce 10.1.0.
+- [Fix] - An order note "Payment has been settled" was missing when capturing all items for orders containing bundle products.
+- [Fix] - The order is updated with any surcharge fees when charged.
+
 v 1.8.2.1
 - [Fix] - User privilege escalation vulnerability.
 

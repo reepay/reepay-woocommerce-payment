@@ -340,26 +340,30 @@ class OrderCapture {
 		);
 
 		if ( is_array( $invoice_data ) && array_key_exists( 'order_lines', $invoice_data ) ) {
+			$this->log( sprintf( 'Capture order: %s checking surcharge fee', $invoice_data['handle'] ) );
 			foreach ( $invoice_data['order_lines'] as $invoice_line ) {
-				$is_exist = false;
-				foreach ( $order->get_items( 'fee' ) as $item ) {
-					if ( $item['name'] === $invoice_line['ordertext'] ) {
-						$is_exist = true;
+				if ( 'surcharge_fee' === $invoice_line['origin'] ) {
+					$is_exist = false;
+					foreach ( $order->get_items( 'fee' ) as $item ) {
+						if ( $item->get_name() === $invoice_line['ordertext'] ) {
+							$is_exist = true;
+							break;
+						}
 					}
-				}
-
-				if ( ! $is_exist ) {
-					if ( 'surcharge_fee' === $invoice_line['origin'] ) {
+					if ( ! $is_exist ) {
+						$this->log( sprintf( 'Capture order: %s adding surcharge fee', $invoice_data['handle'] ) );
 						$fees_item = new WC_Order_Item_Fee();
 						$fees_item->set_name( $invoice_line['ordertext'] );
 						$fees_item->set_amount( floatval( $invoice_line['unit_amount'] ) / 100 );
 						$fees_item->set_total( floatval( $invoice_line['amount'] ) / 100 );
-						$fees_item->set_tax_class( 'zero-rate' );
+						$fees_item->set_tax_status( 'none' );
 						$fees_item->add_meta_data( '_is_card_fee', true );
 						$order->add_item( $fees_item );
-
 						$order->calculate_totals( false );
 						$order->save();
+						$this->log( sprintf( 'Capture order: %s surcharge fee added', $invoice_data['handle'] ) );
+					} else {
+						$this->log( sprintf( 'Capture order: %s surcharge fee already exists', $invoice_data['handle'] ) );
 					}
 				}
 			}
@@ -390,6 +394,24 @@ class OrderCapture {
 					),
 				)
 			);
+
+			// Skip bundle products to be consistent with other methods.
+			if ( WPCProductBundlesWooCommerceIntegration::is_order_item_bundle( $item ) ) {
+				$item_data = $this->get_item_data( $item, $order );
+				$this->log(
+					array(
+						__METHOD__,
+						__LINE__,
+						'order' => $order->get_id(),
+						'item'  => $item->get_id(),
+						'msg'   => 'Skipping bundle product',
+						'data'  => array(
+							'$item_data' => $item_data,
+						),
+					)
+				);
+				continue;
+			}
 
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
 				$item_data = $this->get_item_data( $item, $order );

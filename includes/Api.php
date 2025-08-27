@@ -703,7 +703,7 @@ class Api {
 	 * @ToDO refactor function. $amount is useless.
 	 */
 	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false, bool $instant_note = true ) {
-		$this->log( sprintf( 'Settle: %s, %s', $order->get_id(), $amount ) );
+		$this->log( sprintf( 'Settle: %s, Amount: %s', $order->get_id(), $amount ) );
 
 		$handle = rp_get_order_handle( $order );
 		if ( empty( $handle ) ) {
@@ -754,11 +754,29 @@ class Api {
 					$request_data['amount'] = $remaining;
 					unset( $request_data['order_lines'] );
 
-					return $this->request(
+					$retry_result = $this->request(
 						'POST',
 						'https://api.reepay.com/v1/charge/' . $handle . '/settle',
 						$request_data
 					);
+
+					// Add success order note if the retry was successful.
+					if ( ! is_wp_error( $retry_result ) && ! empty( $retry_result['transaction'] ) ) {
+						$message = sprintf(
+							// translators: %1$s amount to settle, %2$s transaction number.
+							__( 'Payment has been settled. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
+							rp_make_initial_amount( $remaining, $order->get_currency() ) . ' ' . $order->get_currency(),
+							$retry_result['transaction']
+						);
+
+						if ( $instant_note ) {
+							$order->add_order_note( $message );
+						} else {
+							$order->add_order_note( $message, true, true );
+						}
+					}
+
+					return $retry_result;
 				} else {
 					$price = OrderCapture::get_item_price( $line_item, $order );
 					if ( $remaining > 0 &&
@@ -768,14 +786,37 @@ class Api {
 						if ( $full > 0 ) {
 							$request_data['order_lines'][0]['amount'] = $full;
 
-							return $this->request(
+							$retry_result = $this->request(
 								'POST',
 								'https://api.reepay.com/v1/charge/' . $handle . '/settle',
 								$request_data
 							);
+
+							// Add success order note if the retry was successful.
+							if ( ! is_wp_error( $retry_result ) && ! empty( $retry_result['transaction'] ) ) {
+								$message = sprintf(
+									// translators: %1$s amount to settle, %2$s transaction number.
+									__( 'Payment has been settled. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
+									rp_make_initial_amount( $full, $order->get_currency() ) . ' ' . $order->get_currency(),
+									$retry_result['transaction']
+								);
+
+								if ( $instant_note ) {
+									$order->add_order_note( $message );
+								} else {
+									$order->add_order_note( $message, true, true );
+								}
+							}
+
+							return $retry_result;
 						}
 					}
 				}
+			}
+
+			// Skip add order note process if error code is 31 (Invoice not found).
+			if ( $result->get_error_code() === 31 ) {
+				return $result;
 			}
 
 			$error = sprintf(

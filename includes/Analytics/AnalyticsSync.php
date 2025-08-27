@@ -72,19 +72,10 @@ class AnalyticsSync {
 		// Trigger the WooCommerce update hook.
 		do_action( 'woocommerce_update_order', $order_id );
 
-		// Direct sync with analytics.
-		if ( class_exists( '\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore' ) ) {
-			\Automattic\WooCommerce\Admin\API\Reports\Orders\Stats\DataStore::sync_order( $order_id );
-		}
-
-		// Schedule import if needed.
-		if ( class_exists( '\Automattic\WooCommerce\Internal\Admin\Schedulers\OrdersScheduler' ) ) {
-			\Automattic\WooCommerce\Internal\Admin\Schedulers\OrdersScheduler::possibly_schedule_import( $order_id );
-		}
-
-		// Clear analytics cache.
-		if ( class_exists( '\Automattic\WooCommerce\Admin\API\Reports\Cache' ) ) {
-			\Automattic\WooCommerce\Admin\API\Reports\Cache::invalidate();
+		// Trigger order save to ensure analytics are updated.
+		$order = wc_get_order( $order_id );
+		if ( $order ) {
+			$order->save();
 		}
 	}
 
