@@ -23,6 +23,7 @@ use WC_Order;
 use WC_Order_Item_Fee;
 use WC_Order_Item_Product;
 use WC_Payment_Gateway;
+use WC_Rate_Limiter;
 use Reepay\Checkout\OrderFlow\InstantSettle;
 use Reepay\Checkout\OrderFlow\OrderCapture;
 use WC_Reepay_Renewals;
@@ -314,9 +315,28 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 */
 	public function reepay_card_store() {
 		$reepay_token = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
+		$current_user_id = get_current_user_id();
+
+		// Rate limiting to prevent rapid duplicate submissions
+		$rate_limit_id = 'reepay_add_payment_method_' . $current_user_id . '_' . md5( $reepay_token );
+		$delay = 10; // 10 seconds delay between same token additions
+
+		if ( WC_Rate_Limiter::retried_too_soon( $rate_limit_id ) ) {
+			wc_add_notice( __( 'Please wait before adding the same payment method again.', 'reepay-checkout-gateway' ), 'error' );
+			wp_redirect( wc_get_account_endpoint_url( 'add-payment-method' ) );
+			exit();
+		}
+
+		// Set rate limit
+		WC_Rate_Limiter::set_rate_limit( $rate_limit_id, $delay );
 
 		try {
-			$token = ReepayTokens::add_payment_token_to_customer( get_current_user_id(), $reepay_token )['token'];
+			$token = ReepayTokens::add_payment_token_to_customer( $current_user_id, $reepay_token )['token'];
+
+			// Check if token was actually created (not returned from existing)
+			if ( ! $token || ! $token->get_id() ) {
+				throw new Exception( __( 'Failed to create payment token.', 'reepay-checkout-gateway' ) );
+			}
 		} catch ( Exception $e ) {
 			wc_add_notice( __( 'There was a problem adding the card.', 'reepay-checkout-gateway' ), 'error' );
 			wp_redirect( wc_get_account_endpoint_url( 'add-payment-method' ) );
