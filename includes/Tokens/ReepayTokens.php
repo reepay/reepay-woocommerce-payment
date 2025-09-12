@@ -163,7 +163,7 @@ abstract class ReepayTokens {
 			throw new Exception( esc_html__( 'Card not found', 'reepay-checkout-gateway' ) );
 		}
 
-		// Check if token already exists to prevent duplicates
+		// Check if token already exists to prevent duplicates.
 		$existing_token = self::get_payment_token( $card_info['id'] );
 		if ( $existing_token && $existing_token->get_user_id() === $customer_id ) {
 			return array(
@@ -172,7 +172,7 @@ abstract class ReepayTokens {
 			);
 		}
 
-		// Additional check using user-specific method
+		// Additional check using user-specific method.
 		if ( self::user_has_token( $customer_id, $card_info['id'] ) ) {
 			$existing_token = self::get_payment_token( $card_info['id'] );
 			if ( $existing_token ) {

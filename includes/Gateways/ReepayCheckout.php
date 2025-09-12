@@ -93,9 +93,6 @@ class ReepayCheckout extends ReepayGateway {
 		add_action( 'wp_ajax_nopriv_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
 		add_action( 'wp_ajax_reepay_finalize', array( $this, 'reepay_finalize' ) );
 		add_action( 'wp_ajax_nopriv_reepay_finalize', array( $this, 'reepay_finalize' ) );
-
-		// Enqueue protection script on add payment method page
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_add_payment_method_protection' ) );
 	}
 
 	/**
@@ -831,23 +828,5 @@ class ReepayCheckout extends ReepayGateway {
 			<p><?php echo wp_kses_post( $notice_message ); ?></p>
 		</div>
 		<?php
-	}
-
-	/**
-	 * Enqueue add payment method protection script
-	 */
-	public function enqueue_add_payment_method_protection() {
-		// Only load on add payment method page
-		if ( ! is_add_payment_method_page() ) {
-			return;
-		}
-
-		wp_enqueue_script(
-			'reepay-add-payment-method-protection',
-			reepay()->get_setting( 'js_url' ) . 'add-payment-method-protection.js',
-			array( 'jquery' ),
-			reepay()->get_setting( 'plugin_version' ),
-			true
-		);
 	}
 }
