@@ -50,6 +50,9 @@ class MetaField {
 		'_reepay_remaining_balance',
 		// user fields.
 		'reepay_customer_id',
+		// product fields - age verification.
+		'_reepay_enable_age_verification',
+		'_reepay_minimum_age',
 	);
 
 	/**
@@ -78,5 +81,63 @@ class MetaField {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Check if age verification is enabled for a product
+	 *
+	 * @param int $product_id Product ID.
+	 * @return bool
+	 */
+	public static function is_age_verification_enabled( int $product_id ): bool {
+		$enabled = get_post_meta( $product_id, '_reepay_enable_age_verification', true );
+		return 'yes' === $enabled;
+	}
+
+	/**
+	 * Get minimum age for a product
+	 *
+	 * @param int $product_id Product ID.
+	 * @return int|null Minimum age or null if not set
+	 */
+	public static function get_minimum_age( int $product_id ): ?int {
+		$age = get_post_meta( $product_id, '_reepay_minimum_age', true );
+		return ! empty( $age ) && is_numeric( $age ) ? (int) $age : null;
+	}
+
+	/**
+	 * Get available age options for age verification
+	 *
+	 * @return array
+	 */
+	public static function get_age_options(): array {
+		return array(
+			15 => __( '15', 'reepay-checkout-gateway' ),
+			16 => __( '16', 'reepay-checkout-gateway' ),
+			18 => __( '18', 'reepay-checkout-gateway' ),
+			21 => __( '21', 'reepay-checkout-gateway' ),
+		);
+	}
+
+	/**
+	 * Validate age verification settings for a product
+	 *
+	 * @param int $product_id Product ID.
+	 * @return array Array of validation errors (empty if valid)
+	 */
+	public static function validate_age_verification( int $product_id ): array {
+		$errors = array();
+
+		if ( self::is_age_verification_enabled( $product_id ) ) {
+			$minimum_age = self::get_minimum_age( $product_id );
+
+			if ( null === $minimum_age ) {
+				$errors[] = __( 'Minimum age is required when age verification is enabled.', 'reepay-checkout-gateway' );
+			} elseif ( ! array_key_exists( $minimum_age, self::get_age_options() ) ) {
+				$errors[] = __( 'Invalid minimum age selected.', 'reepay-checkout-gateway' );
+			}
+		}
+
+		return $errors;
 	}
 }
