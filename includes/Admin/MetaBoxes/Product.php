@@ -33,6 +33,11 @@ class Product {
 	 * @return void
 	 */
 	public function add_age_verification_tab() {
+		// Only show tab if global age verification setting is enabled
+		if ( ! MetaField::is_global_age_verification_enabled() ) {
+			return;
+		}
+
 		?>
 		<li class="age_verification_tab age_verification_options">
 			<a href="#age_verification_product_data">
@@ -49,7 +54,12 @@ class Product {
 	 */
 	public function add_age_verification_panel() {
 		global $post;
-		
+
+		// Only show panel if global age verification setting is enabled
+		if ( ! MetaField::is_global_age_verification_enabled() ) {
+			return;
+		}
+
 		$product = wc_get_product( $post->ID );
 		if ( ! $product ) {
 			return;
