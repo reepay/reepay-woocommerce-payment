@@ -140,4 +140,110 @@ class MetaField {
 
 		return $errors;
 	}
+
+	/**
+	 * Check if global age verification is enabled
+	 *
+	 * @return bool
+	 */
+	public static function is_global_age_verification_enabled(): bool {
+		$gateway_settings = get_option( 'woocommerce_reepay_checkout_settings', array() );
+		return isset( $gateway_settings['age_verification'] ) && 'yes' === $gateway_settings['age_verification'];
+	}
+
+	/**
+	 * Get age-restricted products in the current cart
+	 *
+	 * @return array Array of product data with age requirements
+	 */
+	public static function get_age_restricted_products_in_cart(): array {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return array();
+		}
+
+		$age_restricted_products = array();
+		$cart_contents = WC()->cart->get_cart_contents();
+
+		foreach ( $cart_contents as $cart_item_key => $cart_item ) {
+			$product_id = $cart_item['product_id'];
+			$variation_id = $cart_item['variation_id'] ?? 0;
+
+			// Check variation first, then parent product
+			$check_product_id = $variation_id > 0 ? $variation_id : $product_id;
+
+			if ( self::is_age_verification_enabled( $check_product_id ) ) {
+				$minimum_age = self::get_minimum_age( $check_product_id );
+
+				if ( null !== $minimum_age ) {
+					$age_restricted_products[] = array(
+						'product_id' => $product_id,
+						'variation_id' => $variation_id,
+						'minimum_age' => $minimum_age,
+						'quantity' => $cart_item['quantity'],
+						'cart_item_key' => $cart_item_key,
+					);
+				}
+			}
+		}
+
+		return $age_restricted_products;
+	}
+
+	/**
+	 * Get the maximum age requirement from all products in cart
+	 *
+	 * @return int|null Maximum age requirement or null if no age restrictions
+	 */
+	public static function get_cart_maximum_age(): ?int {
+		$age_restricted_products = self::get_age_restricted_products_in_cart();
+
+		if ( empty( $age_restricted_products ) ) {
+			return null;
+		}
+
+		$max_age = 0;
+		foreach ( $age_restricted_products as $product ) {
+			if ( $product['minimum_age'] > $max_age ) {
+				$max_age = $product['minimum_age'];
+			}
+		}
+
+		return $max_age > 0 ? $max_age : null;
+	}
+
+	/**
+	 * Determine if age verification should be included in checkout session
+	 *
+	 * @return bool
+	 */
+	public static function should_include_age_verification(): bool {
+		// First check if global setting is enabled
+		if ( ! self::is_global_age_verification_enabled() ) {
+			return false;
+		}
+
+		// Then check if cart has any age-restricted products
+		$age_restricted_products = self::get_age_restricted_products_in_cart();
+		return ! empty( $age_restricted_products );
+	}
+
+	/**
+	 * Get age verification data for checkout session
+	 *
+	 * @return array|null Age verification data or null if not needed
+	 */
+	public static function get_age_verification_session_data(): ?array {
+		if ( ! self::should_include_age_verification() ) {
+			return null;
+		}
+
+		$max_age = self::get_cart_maximum_age();
+		$age_restricted_products = self::get_age_restricted_products_in_cart();
+
+		return array(
+			'minimum_age' => $max_age,
+			'products_count' => count( $age_restricted_products ),
+			'products' => $age_restricted_products,
+		);
+	}
 }
