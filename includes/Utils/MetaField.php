@@ -13,6 +13,31 @@ namespace Reepay\Checkout\Utils;
  * @package Reepay\Checkout\Utils
  */
 class MetaField {
+	/**
+	 * Static logging method for debugging
+	 *
+	 * @param mixed $message Log message.
+	 * @return void
+	 */
+	private static function log( $message ) {
+		if ( ! is_string( $message ) ) {
+			$message = print_r( $message, true );
+		}
+
+		if ( function_exists( 'wc_get_logger' ) ) {
+			wc_get_logger()->debug(
+				$message,
+				array(
+					'source'  => 'reepay-metafield',
+					'_legacy' => true,
+				)
+			);
+		} else {
+			// if Woocommerce disabled.
+			error_log( print_r( $message, true ) );
+		}
+	}
+
 	public const BILLWERK_FIELD_KEYS = array(
 		// order fields.
 		'reepay_session_id',
@@ -157,34 +182,67 @@ class MetaField {
 	 * @return array Array of product data with age requirements
 	 */
 	public static function get_age_restricted_products_in_cart(): array {
-		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+				if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
 			return array();
 		}
 
 		$age_restricted_products = array();
 		$cart_contents = WC()->cart->get_cart_contents();
+		$cart_items_processed = array();
+
+		// Log cart contents overview
+		self::log(
+			array(
+				'source' => 'get_age_restricted_products_process',
+				'wc_function_exists' => function_exists( 'WC' ),
+				'wc_cart_exists' => function_exists( 'WC' ) && WC()->cart ? true : false,
+				'total_cart_items' => count( $cart_contents ),
+				'cart_item_keys' => array_keys( $cart_contents ),
+			)
+		);
 
 		foreach ( $cart_contents as $cart_item_key => $cart_item ) {
 			$product_id = $cart_item['product_id'];
 			$variation_id = $cart_item['variation_id'] ?? 0;
 
 			// Check variation first, then parent product
-			$check_product_id = $variation_id > 0 ? $variation_id : $product_id;
+			// TO DO implement if age verification is set on varaint level with this code: $check_product_id = $variation_id > 0 ? $variation_id : $product_id;
+			$check_product_id = $product_id;
 
-			if ( self::is_age_verification_enabled( $check_product_id ) ) {
-				$minimum_age = self::get_minimum_age( $check_product_id );
+			$is_age_enabled = self::is_age_verification_enabled( $check_product_id );
+			$minimum_age = $is_age_enabled ? self::get_minimum_age( $check_product_id ) : null;
 
-				if ( null !== $minimum_age ) {
-					$age_restricted_products[] = array(
-						'product_id' => $product_id,
-						'variation_id' => $variation_id,
-						'minimum_age' => $minimum_age,
-						'quantity' => $cart_item['quantity'],
-						'cart_item_key' => $cart_item_key,
-					);
-				}
+			// Log each product analysis
+			$cart_items_processed[] = array(
+				'cart_item_key' => $cart_item_key,
+				'product_id' => $product_id,
+				'variation_id' => $variation_id,
+				'check_product_id' => $check_product_id,
+				'is_age_verification_enabled' => $is_age_enabled,
+				'minimum_age' => $minimum_age,
+				'quantity' => $cart_item['quantity'],
+				'will_be_included' => $is_age_enabled && null !== $minimum_age,
+			);
+
+			if ( $is_age_enabled && null !== $minimum_age ) {
+				$age_restricted_products[] = array(
+					'product_id' => $product_id,
+					'variation_id' => $variation_id,
+					'minimum_age' => $minimum_age,
+					'quantity' => $cart_item['quantity'],
+					'cart_item_key' => $cart_item_key,
+				);
 			}
 		}
+
+		// Log final result
+		self::log(
+			array(
+				'source' => 'get_age_restricted_products_result',
+				'age_restricted_products_count' => count( $age_restricted_products ),
+				'cart_items_processed' => $cart_items_processed
+			)
+		);
 
 		return $age_restricted_products;
 	}
@@ -197,18 +255,51 @@ class MetaField {
 	public static function get_cart_maximum_age(): ?int {
 		$age_restricted_products = self::get_age_restricted_products_in_cart();
 
+		// Log initial cart analysis
+		self::log(
+			array(
+				'source' => 'get_cart_maximum_age_start',
+				'cart_exists' => function_exists( 'WC' ) && WC()->cart ? true : false,
+				'cart_contents_count' => function_exists( 'WC' ) && WC()->cart ? WC()->cart->get_cart_contents_count() : 0,
+				'age_restricted_products_count' => count( $age_restricted_products ),
+				'age_restricted_products' => $age_restricted_products,
+			)
+		);
+
 		if ( empty( $age_restricted_products ) ) {
 			return null;
 		}
 
 		$max_age = 0;
+		$product_ages = array();
+
 		foreach ( $age_restricted_products as $product ) {
+			$product_ages[] = array(
+				'product_id' => $product['product_id'],
+				'variation_id' => $product['variation_id'],
+				'minimum_age' => $product['minimum_age'],
+				'quantity' => $product['quantity'],
+			);
+
 			if ( $product['minimum_age'] > $max_age ) {
 				$max_age = $product['minimum_age'];
 			}
 		}
 
-		return $max_age > 0 ? $max_age : null;
+		$final_result = $max_age > 0 ? $max_age : null;
+
+		// Log final result
+		self::log(
+			array(
+				'source' => 'get_cart_maximum_age_result',
+				'product_ages' => $product_ages,
+				'calculated_max_age' => $max_age,
+				'final_result' => $final_result,
+				'result_is_null' => null === $final_result,
+			)
+		);
+
+		return $final_result;
 	}
 
 	/**
