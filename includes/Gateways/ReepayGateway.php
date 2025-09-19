@@ -2183,8 +2183,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 */
 	private function add_age_verification_to_charge_session( array &$params, WC_Order $order ): void {
 		// Check if age verification should be included
-		$should_include = MetaField::should_include_age_verification();
-		$max_age = MetaField::get_cart_maximum_age();
+		$should_include = MetaField::should_include_age_verification( $order->get_id() );
+		$max_age = MetaField::get_cart_maximum_age( $order->get_id() );
 		$payment_method = $order->get_payment_method();
 
 		$this->log(

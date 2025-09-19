@@ -179,10 +179,11 @@ class MetaField {
 	/**
 	 * Get age-restricted products in the current cart
 	 *
+	 * @param int|null $order_id Optional order ID for logging context.
 	 * @return array Array of product data with age requirements
 	 */
-	public static function get_age_restricted_products_in_cart(): array {
-				if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+	public static function get_age_restricted_products_in_cart( ?int $order_id = null ): array {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
 			return array();
 		}
 
@@ -194,8 +195,7 @@ class MetaField {
 		self::log(
 			array(
 				'source' => 'get_age_restricted_products_process',
-				'wc_function_exists' => function_exists( 'WC' ),
-				'wc_cart_exists' => function_exists( 'WC' ) && WC()->cart ? true : false,
+				'order_id' => $order_id,
 				'total_cart_items' => count( $cart_contents ),
 				'cart_item_keys' => array_keys( $cart_contents ),
 			)
@@ -217,11 +217,9 @@ class MetaField {
 				'cart_item_key' => $cart_item_key,
 				'product_id' => $product_id,
 				'variation_id' => $variation_id,
-				'check_product_id' => $check_product_id,
 				'is_age_verification_enabled' => $is_age_enabled,
 				'minimum_age' => $minimum_age,
 				'quantity' => $cart_item['quantity'],
-				'will_be_included' => $is_age_enabled && null !== $minimum_age,
 			);
 
 			if ( $is_age_enabled && null !== $minimum_age ) {
@@ -239,6 +237,7 @@ class MetaField {
 		self::log(
 			array(
 				'source' => 'get_age_restricted_products_result',
+				'order_id' => $order_id,
 				'age_restricted_products_count' => count( $age_restricted_products ),
 				'cart_items_processed' => $cart_items_processed
 			)
@@ -250,15 +249,17 @@ class MetaField {
 	/**
 	 * Get the maximum age requirement from all products in cart
 	 *
+	 * @param int|null $order_id Optional order ID for logging context.
 	 * @return int|null Maximum age requirement or null if no age restrictions
 	 */
-	public static function get_cart_maximum_age(): ?int {
-		$age_restricted_products = self::get_age_restricted_products_in_cart();
+	public static function get_cart_maximum_age( ?int $order_id = null ): ?int {
+		$age_restricted_products = self::get_age_restricted_products_in_cart( $order_id );
 
 		// Log initial cart analysis
 		self::log(
 			array(
 				'source' => 'get_cart_maximum_age_start',
+				'order_id' => $order_id,
 				'cart_exists' => function_exists( 'WC' ) && WC()->cart ? true : false,
 				'cart_contents_count' => function_exists( 'WC' ) && WC()->cart ? WC()->cart->get_cart_contents_count() : 0,
 				'age_restricted_products_count' => count( $age_restricted_products ),
@@ -292,6 +293,7 @@ class MetaField {
 		self::log(
 			array(
 				'source' => 'get_cart_maximum_age_result',
+				'order_id' => $order_id,
 				'product_ages' => $product_ages,
 				'calculated_max_age' => $max_age,
 				'final_result' => $final_result,
@@ -305,31 +307,33 @@ class MetaField {
 	/**
 	 * Determine if age verification should be included in checkout session
 	 *
+	 * @param int|null $order_id Optional order ID for logging context.
 	 * @return bool
 	 */
-	public static function should_include_age_verification(): bool {
+	public static function should_include_age_verification( ?int $order_id = null ): bool {
 		// First check if global setting is enabled
 		if ( ! self::is_global_age_verification_enabled() ) {
 			return false;
 		}
 
 		// Then check if cart has any age-restricted products
-		$age_restricted_products = self::get_age_restricted_products_in_cart();
+		$age_restricted_products = self::get_age_restricted_products_in_cart( $order_id );
 		return ! empty( $age_restricted_products );
 	}
 
 	/**
 	 * Get age verification data for checkout session
 	 *
+	 * @param int|null $order_id Optional order ID for logging context.
 	 * @return array|null Age verification data or null if not needed
 	 */
-	public static function get_age_verification_session_data(): ?array {
-		if ( ! self::should_include_age_verification() ) {
+	public static function get_age_verification_session_data( ?int $order_id = null ): ?array {
+		if ( ! self::should_include_age_verification( $order_id ) ) {
 			return null;
 		}
 
-		$max_age = self::get_cart_maximum_age();
-		$age_restricted_products = self::get_age_restricted_products_in_cart();
+		$max_age = self::get_cart_maximum_age( $order_id );
+		$age_restricted_products = self::get_age_restricted_products_in_cart( $order_id );
 
 		return array(
 			'minimum_age' => $max_age,
