@@ -316,7 +316,7 @@ class ReepayCheckout extends ReepayGateway {
 				'label'   => __( 'Enable Save CC feature', 'reepay-checkout-gateway' ),
 				'default' => 'no',
 			),
-			'age_verification'                    => array(
+			'age_verification'           => array(
 				'title'   => __( 'Age Verification', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable', 'reepay-checkout-gateway' ),

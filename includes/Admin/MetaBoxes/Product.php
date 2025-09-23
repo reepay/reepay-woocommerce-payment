@@ -33,7 +33,7 @@ class Product {
 	 * @return void
 	 */
 	public function add_age_verification_tab() {
-		// Only show tab if global age verification setting is enabled
+		// Only show tab if global age verification setting is enabled.
 		if ( ! MetaField::is_global_age_verification_enabled() ) {
 			return;
 		}
@@ -55,7 +55,7 @@ class Product {
 	public function add_age_verification_panel() {
 		global $post;
 
-		// Only show panel if global age verification setting is enabled
+		// Only show panel if global age verification setting is enabled.
 		if ( ! MetaField::is_global_age_verification_enabled() ) {
 			return;
 		}
@@ -66,8 +66,8 @@ class Product {
 		}
 
 		$enable_age_verification = get_post_meta( $post->ID, '_reepay_enable_age_verification', true );
-		$minimum_age = get_post_meta( $post->ID, '_reepay_minimum_age', true );
-		
+		$minimum_age             = get_post_meta( $post->ID, '_reepay_minimum_age', true );
+
 		?>
 		<div id="age_verification_product_data" class="panel woocommerce_options_panel hidden">
 			<div class="options_group">
@@ -86,12 +86,12 @@ class Product {
 
 				woocommerce_wp_select(
 					array(
-						'id'          => '_reepay_minimum_age',
-						'value'       => $minimum_age,
-						'label'       => __( 'Minimum user age', 'reepay-checkout-gateway' ),
-						'description' => __( 'Select the minimum age required for this product.', 'reepay-checkout-gateway' ),
-						'desc_tip'    => true,
-						'options'     => $age_options,
+						'id'            => '_reepay_minimum_age',
+						'value'         => $minimum_age,
+						'label'         => __( 'Minimum user age', 'reepay-checkout-gateway' ),
+						'description'   => __( 'Select the minimum age required for this product.', 'reepay-checkout-gateway' ),
+						'desc_tip'      => true,
+						'options'       => $age_options,
 						'wrapper_class' => 'reepay-minimum-age-field',
 					)
 				);
@@ -108,42 +108,45 @@ class Product {
 	 * @return void
 	 */
 	public function save_age_verification_fields( $post_id ) {
-		// Verify nonce for security
+		// Verify nonce for security.
 		if ( ! isset( $_POST['woocommerce_meta_nonce'] ) || ! wp_verify_nonce( $_POST['woocommerce_meta_nonce'], 'woocommerce_save_data' ) ) {
 			return;
 		}
 
-		// Check if user has permission to edit this post
+		// Check if user has permission to edit this post.
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return;
 		}
 
-		// Save enable age verification checkbox
+		// Save enable age verification checkbox.
 		$enable_age_verification = isset( $_POST['_reepay_enable_age_verification'] ) ? 'yes' : 'no';
 		update_post_meta( $post_id, '_reepay_enable_age_verification', $enable_age_verification );
 
-		// Save minimum age dropdown
+		// Save minimum age dropdown.
 		if ( isset( $_POST['_reepay_minimum_age'] ) ) {
 			$minimum_age = sanitize_text_field( $_POST['_reepay_minimum_age'] );
 
-			// Validate minimum age if age verification is enabled
+			// Validate minimum age if age verification is enabled.
 			if ( 'yes' === $enable_age_verification ) {
 				$valid_ages = array_keys( MetaField::get_age_options() );
 				if ( ! empty( $minimum_age ) && in_array( (int) $minimum_age, $valid_ages, true ) ) {
 					update_post_meta( $post_id, '_reepay_minimum_age', $minimum_age );
 				} else {
-					// Clear invalid age
+					// Clear invalid age.
 					delete_post_meta( $post_id, '_reepay_minimum_age' );
 
-					// Add admin notice for invalid age
-					add_action( 'admin_notices', function() {
-						echo '<div class="notice notice-error"><p>' .
+					// Add admin notice for invalid age.
+					add_action(
+						'admin_notices',
+						function () {
+							echo '<div class="notice notice-error"><p>' .
 							esc_html__( 'Invalid minimum age selected for age verification. Please choose a valid age.', 'reepay-checkout-gateway' ) .
 							'</p></div>';
-					} );
+						}
+					);
 				}
 			} else {
-				// Clear minimum age if age verification is disabled
+				// Clear minimum age if age verification is disabled.
 				delete_post_meta( $post_id, '_reepay_minimum_age' );
 			}
 		}
@@ -157,11 +160,11 @@ class Product {
 	 */
 	public function enqueue_scripts( $hook ) {
 		global $post;
-		
+
 		if ( 'post.php' !== $hook && 'post-new.php' !== $hook ) {
 			return;
 		}
-		
+
 		if ( ! $post || 'product' !== $post->post_type ) {
 			return;
 		}

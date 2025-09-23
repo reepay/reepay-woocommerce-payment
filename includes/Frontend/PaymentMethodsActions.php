@@ -22,7 +22,7 @@ class PaymentMethodsActions {
 	 * PaymentMethodsActions constructor.
 	 */
 	public function __construct() {
-		add_action( 'wp', array( __CLASS__, 'delete_payment_method_action' ), 10 ); //Before WooCommerce action
+		add_action( 'wp', array( __CLASS__, 'delete_payment_method_action' ), 10 ); // Before WooCommerce action.
 	}
 
 	/**
@@ -47,9 +47,9 @@ class PaymentMethodsActions {
 		}
 
 		// Check if ReepayTokens class exists and method.
-		$reepay_tokens_exists = class_exists( ReepayTokens::class );
+		$reepay_tokens_exists         = class_exists( ReepayTokens::class );
 		$reepay_gateway_method_exists = method_exists( ReepayGateway::class, 'is_reepay_token' );
-		$is_reepay_token = false;
+		$is_reepay_token              = false;
 
 		if ( $reepay_tokens_exists ) {
 			$is_reepay_token = ReepayTokens::is_reepay_token( $token );
@@ -59,18 +59,18 @@ class PaymentMethodsActions {
 
 		// Only handle Reepay tokens, let WooCommerce handle others.
 		if ( ( $reepay_tokens_exists && ! ReepayTokens::is_reepay_token( $token ) ) ||
-		     ( $reepay_gateway_method_exists && ! ReepayGateway::is_reepay_token( $token ) ) ) {
+			( $reepay_gateway_method_exists && ! ReepayGateway::is_reepay_token( $token ) ) ) {
 			return;
 		}
 
 		wc_nocache_headers();
 
-		//Check nonce and user validation.
+		// Check nonce and user validation.
 		$current_user_id = get_current_user_id();
-		$token_user_id = $token->get_user_id();
-		$nonce_isset = isset( $_REQUEST['_wpnonce'] );
-		$nonce_value = $nonce_isset ? $_REQUEST['_wpnonce'] : '';
-		$nonce_valid = $nonce_isset ? wp_verify_nonce( wp_unslash( $_REQUEST['_wpnonce'] ), 'delete-payment-method-' . $token_id ) : false;
+		$token_user_id   = $token->get_user_id();
+		$nonce_isset     = isset( $_REQUEST['_wpnonce'] );
+		$nonce_value     = $nonce_isset ? $_REQUEST['_wpnonce'] : '';
+		$nonce_valid     = $nonce_isset ? wp_verify_nonce( wp_unslash( $_REQUEST['_wpnonce'] ), 'delete-payment-method-' . $token_id ) : false;
 
 		if ( $current_user_id !== $token_user_id || ! $nonce_isset || false === $nonce_valid ) {
 			wc_add_notice( __( 'Invalid payment method.', 'reepay-checkout-gateway' ), 'error' );
@@ -79,7 +79,7 @@ class PaymentMethodsActions {
 
 			if ( class_exists( ReepayTokens::class ) ) {
 				$deleted = ReepayTokens::delete_card( $token );
-			} else if ( method_exists( ReepayGateway::class, 'is_reepay_token' ) ) {
+			} elseif ( method_exists( ReepayGateway::class, 'is_reepay_token' ) ) {
 				$deleted = ReepayGateway::delete_card( $token );
 			}
 

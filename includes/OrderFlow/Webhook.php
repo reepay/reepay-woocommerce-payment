@@ -98,14 +98,15 @@ class Webhook {
 	 * @todo remove code duplication
 	 */
 	public function process( array $data ) {
-		// Log caller information to reepay_order_statuses log
-		$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 );
-		$caller = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
+		// Log caller information to reepay_order_statuses log.
+		$backtrace    = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 );
+		$caller       = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
 		$caller_class = isset( $backtrace[1]['class'] ) ? $backtrace[1]['class'] . '::' : '';
 
 		if ( function_exists( 'wc_get_logger' ) ) {
 			wc_get_logger()->debug(
-				sprintf( 'Webhook::process called for event %s from %s%s',
+				sprintf(
+					'Webhook::process called for event %s from %s%s',
 					$data['event_type'] ?? 'unknown',
 					$caller_class,
 					$caller
@@ -314,10 +315,11 @@ class Webhook {
 				}
 
 				if ( empty( $order->get_meta( '_reepay_subscription_handle' ) ) ) {
-					// Log to reepay_order_statuses log
+					// Log to reepay_order_statuses log.
 					if ( function_exists( 'wc_get_logger' ) ) {
 						wc_get_logger()->debug(
-							sprintf( 'Webhook::process calling set_settled_status for Order ID %d in invoice_settled case',
+							sprintf(
+								'Webhook::process calling set_settled_status for Order ID %d in invoice_settled case',
 								$order->get_id()
 							),
 							array(
@@ -332,19 +334,18 @@ class Webhook {
 						'',
 						$data['transaction']
 					);
-				} else {
-					// Log to reepay_order_statuses log
-					if ( function_exists( 'wc_get_logger' ) ) {
-						wc_get_logger()->debug(
-							sprintf( 'Webhook::process skipping set_settled_status for Order ID %d (has subscription handle)',
-								$order->get_id()
-							),
-							array(
-								'source'  => 'reepay_order_statuses',
-								'_legacy' => true,
-							)
-						);
-					}
+				} elseif ( function_exists( 'wc_get_logger' ) ) {
+					// Log to reepay_order_statuses log.
+					wc_get_logger()->debug(
+						sprintf(
+							'Webhook::process skipping set_settled_status for Order ID %d (has subscription handle)',
+							$order->get_id()
+						),
+						array(
+							'source'  => 'reepay_order_statuses',
+							'_legacy' => true,
+						)
+					);
 				}
 
 				$order->update_meta_data( '_reepay_capture_transaction', $data['transaction'] );

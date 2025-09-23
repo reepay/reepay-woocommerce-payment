@@ -611,7 +611,7 @@ class Api {
 			$params['session_data']['vipps_recurring_amount'] = rp_prepare_amount( $order->get_total(), $order->get_currency() );
 		}
 
-		// Add age verification data if needed
+		// Add age verification data if needed.
 		$this->add_age_verification_to_session_data( $params, $order );
 
 		return $this->request(
@@ -735,7 +735,7 @@ class Api {
 		}
 
 		if ( ! empty( $items_data ) && floatval( current( $items_data )['amount'] ) <= 0 ) {
-			return new WP_Error( 100, 'Amount must be lager than zero' );
+			return new WP_Error( 100, 'Amount must be larger than zero' );
 		}
 
 		$result = $this->request(
@@ -937,11 +937,11 @@ class Api {
 	 *
 	 * @param WC_Order       $order  order to refund.
 	 * @param float|int|null $amount amount ot refund.
-	 * @param string|null    $reason refund reason.
+	 * @param string         $reason refund reason.
 	 *
 	 * @return array|WP_Error
 	 */
-	public function refund( WC_Order $order, $amount = null, string $reason = null ) {
+	public function refund( WC_Order $order, $amount = null, $reason = '' ) {
 		$handle = rp_get_order_handle( $order );
 		if ( empty( $handle ) ) {
 			return new WP_Error( 0, 'Unable to get order handle' );
@@ -1289,20 +1289,20 @@ class Api {
 	 * @return void
 	 */
 	private function add_age_verification_to_session_data( array &$params, WC_Order $order ): void {
-		// Check if age verification should be included
+		// Check if age verification should be included.
 		$should_include = MetaField::should_include_age_verification( $order->get_id() );
-		$max_age = MetaField::get_cart_maximum_age( $order->get_id() );
+		$max_age        = MetaField::get_cart_maximum_age( $order->get_id() );
 		$payment_method = $order->get_payment_method();
 
 		$this->log(
 			array(
-				'source' => 'add_age_verification_start',
-				'order_id' => $order->get_id(),
-				'payment_method' => $payment_method,
-				'has_existing_session_data' => isset( $params['session_data'] ),
+				'source'                                 => 'add_age_verification_start',
+				'order_id'                               => $order->get_id(),
+				'payment_method'                         => $payment_method,
+				'has_existing_session_data'              => isset( $params['session_data'] ),
 				'age_verification_global_setting_enable' => $should_include,
-				'max_age' => $max_age,
-				'max_age_is_null' => null === $max_age,
+				'max_age'                                => $max_age,
+				'max_age_is_null'                        => null === $max_age,
 
 			)
 		);
@@ -1315,61 +1315,61 @@ class Api {
 			return;
 		}
 
-		// Initialize session_data if not exists
+		// Initialize session_data if not exists.
 		$session_data_existed = isset( $params['session_data'] );
 		if ( ! $session_data_existed ) {
 			$params['session_data'] = array();
 		}
 
-		// Add age verification data based on payment method
+		// Add age verification data based on payment method.
 		$fields_added = array();
-		$log_source = '';
+		$log_source   = '';
 
 		switch ( $payment_method ) {
 			case 'reepay_mobilepay':
 			case 'reepay_mobilepay_subscriptions':
 				$params['session_data']['mpo_minimum_user_age'] = $max_age;
-				$fields_added = array( 'mpo_minimum_user_age' );
-				$log_source = 'add_age_verification_mobilepay_configured';
+				$fields_added                                   = array( 'mpo_minimum_user_age' );
+				$log_source                                     = 'add_age_verification_mobilepay_configured';
 				break;
 
 			case 'reepay_vipps':
 			case 'reepay_vipps_recurring':
 				$params['session_data']['vipps_epayment_minimum_user_age'] = $max_age;
 				$fields_added = array( 'vipps_epayment_minimum_user_age' );
-				$log_source = 'add_age_verification_vipps_configured';
+				$log_source   = 'add_age_verification_vipps_configured';
 				break;
 
 			case 'reepay_checkout':
 			default:
-				// For main payment method or unknown methods, add both keys
-				$params['session_data']['mpo_minimum_user_age'] = $max_age;
+				// For main payment method or unknown methods, add both keys.
+				$params['session_data']['mpo_minimum_user_age']            = $max_age;
 				$params['session_data']['vipps_epayment_minimum_user_age'] = $max_age;
 				$fields_added = array( 'mpo_minimum_user_age', 'vipps_epayment_minimum_user_age' );
-				$log_source = 'add_age_verification_default_configured';
+				$log_source   = 'add_age_verification_default_configured';
 				break;
 		}
 
-		// Single log entry for all payment methods
+		// Single log entry for all payment methods.
 		$this->log(
 			array(
-				'source' => $log_source,
-				'order_id' => $order->get_id(),
+				'source'         => $log_source,
+				'order_id'       => $order->get_id(),
 				'payment_method' => $payment_method,
-				'max_age' => $max_age,
-				'fields_added' => $fields_added,
+				'max_age'        => $max_age,
+				'fields_added'   => $fields_added,
 			)
 		);
 
 		// Log age verification data for debugging.
 		$this->log(
 			array(
-				'source' => 'add_age_verification_completed',
-				'order_id' => $order->get_id(),
+				'source'                  => 'add_age_verification_completed',
+				'order_id'                => $order->get_id(),
 				'final_session_data_keys' => array_keys( $params['session_data'] ),
 				'age_verification_fields' => array_filter(
 					$params['session_data'],
-					function( $key ) {
+					function ( $key ) {
 						return in_array( $key, array( 'mpo_minimum_user_age', 'vipps_epayment_minimum_user_age' ) );
 					},
 					ARRAY_FILTER_USE_KEY

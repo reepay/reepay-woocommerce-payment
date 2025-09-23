@@ -212,8 +212,8 @@ class OrderStatuses {
 	 * @param int $order_id order id.
 	 */
 	public function payment_complete( int $order_id ) {
-		$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 );
-		$caller = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
+		$backtrace    = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 );
+		$caller       = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
 		$caller_class = isset( $backtrace[1]['class'] ) ? $backtrace[1]['class'] . '::' : '';
 
 		$this->log( sprintf( 'payment_complete called for Order ID %d from %s%s', $order_id, $caller_class, $caller ) );
@@ -297,10 +297,10 @@ class OrderStatuses {
 	 * @return bool
 	 */
 	public static function set_settled_status( WC_Order $order, string $note = '', string $transaction_id = '' ): bool {
-		// Log using WooCommerce logger directly since this is a static method
+		// Log using WooCommerce logger directly since this is a static method.
 		if ( function_exists( 'wc_get_logger' ) ) {
-			$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 );
-			$caller = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
+			$backtrace    = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 );
+			$caller       = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
 			$caller_class = isset( $backtrace[1]['class'] ) ? $backtrace[1]['class'] . '::' : '';
 
 			wc_get_logger()->debug(
@@ -470,12 +470,14 @@ class OrderStatuses {
 
 				// Capture payment.
 				$value = get_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
-				$this->log( sprintf(
-					'Order ID %d - transient value: %s, can_capture: %s',
-					$order_id,
-					var_export( $value, true ),
-					$gateway->can_capture( $order ) ? 'true' : 'false'
-				) );
+				$this->log(
+					sprintf(
+						'Order ID %d - transient value: %s, can_capture: %s',
+						$order_id,
+						var_export( $value, true ),
+						$gateway->can_capture( $order ) ? 'true' : 'false'
+					)
+				);
 
 				if ( ( '1' === $value || false === $value ) && $gateway->can_capture( $order ) ) {
 					try {
@@ -515,19 +517,28 @@ class OrderStatuses {
 }
 
 // Disable WooCommerce's global saved tokens list when a Frisbii gateway is available.
-add_filter('woocommerce_get_saved_payment_methods_list_html', function ($html, $available_gateways) {
-    if (!is_checkout() || empty($available_gateways)) {
-        return $html;
-    }
-    foreach ($available_gateways as $gateway) {
-        if (strpos($gateway->id, 'reepay_') === 0) {
-            return ''; // Hide the global list; Frisbii renders its own token selector.
-        }
-    }
-    return $html;
-}, 10, 2);
+add_filter(
+	'woocommerce_get_saved_payment_methods_list_html',
+	function ( $html, $available_gateways ) {
+		if ( ! is_checkout() || empty( $available_gateways ) ) {
+			return $html;
+		}
+		foreach ( $available_gateways as $gateway ) {
+			if ( strpos( $gateway->id, 'reepay_' ) === 0 ) {
+				return ''; // Hide the global list; Frisbii renders its own token selector.
+			}
+		}
+		return $html;
+	},
+	10,
+	2
+);
 
 // Also ensure items array is empty if some themes/templates still call the list builder directly.
-add_filter('woocommerce_saved_payment_methods_list', function ($list) {
-    return is_checkout() ? array() : $list;
-}, 10);
+add_filter(
+	'woocommerce_saved_payment_methods_list',
+	function ( $list ) {
+		return is_checkout() ? array() : $list;
+	},
+	10
+);
