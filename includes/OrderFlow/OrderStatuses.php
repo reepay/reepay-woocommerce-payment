@@ -212,9 +212,15 @@ class OrderStatuses {
 	 * @param int $order_id order id.
 	 */
 	public function payment_complete( int $order_id ) {
-		$backtrace    = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 );
-		$caller       = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
-		$caller_class = isset( $backtrace[1]['class'] ) ? $backtrace[1]['class'] . '::' : '';
+		$caller       = 'unknown';
+		$caller_class = '';
+
+		// Only collect backtrace information when debugging is enabled.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$backtrace    = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+			$caller       = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
+			$caller_class = isset( $backtrace[1]['class'] ) ? $backtrace[1]['class'] . '::' : '';
+		}
 
 		$this->log( sprintf( 'payment_complete called for Order ID %d from %s%s', $order_id, $caller_class, $caller ) );
 
@@ -299,9 +305,15 @@ class OrderStatuses {
 	public static function set_settled_status( WC_Order $order, string $note = '', string $transaction_id = '' ): bool {
 		// Log using WooCommerce logger directly since this is a static method.
 		if ( function_exists( 'wc_get_logger' ) ) {
-			$backtrace    = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 );
-			$caller       = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
-			$caller_class = isset( $backtrace[1]['class'] ) ? $backtrace[1]['class'] . '::' : '';
+			$caller       = 'unknown';
+			$caller_class = '';
+
+			// Only collect backtrace information when debugging is enabled.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				$backtrace    = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+				$caller       = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
+				$caller_class = isset( $backtrace[1]['class'] ) ? $backtrace[1]['class'] . '::' : '';
+			}
 
 			wc_get_logger()->debug(
 				sprintf( 'set_settled_status called for Order ID %d from %s%s', $order->get_id(), $caller_class, $caller ),
@@ -474,7 +486,7 @@ class OrderStatuses {
 					sprintf(
 						'Order ID %d - transient value: %s, can_capture: %s',
 						$order_id,
-						var_export( $value, true ),
+						wp_json_encode( $value ),
 						$gateway->can_capture( $order ) ? 'true' : 'false'
 					)
 				);
@@ -537,8 +549,8 @@ add_filter(
 // Also ensure items array is empty if some themes/templates still call the list builder directly.
 add_filter(
 	'woocommerce_saved_payment_methods_list',
-	function ( $list ) {
-		return is_checkout() ? array() : $list;
+	function ( $payment_methods ) {
+		return is_checkout() ? array() : $payment_methods;
 	},
 	10
 );

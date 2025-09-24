@@ -1370,7 +1370,7 @@ class Api {
 				'age_verification_fields' => array_filter(
 					$params['session_data'],
 					function ( $key ) {
-						return in_array( $key, array( 'mpo_minimum_user_age', 'vipps_epayment_minimum_user_age' ) );
+						return in_array( $key, array( 'mpo_minimum_user_age', 'vipps_epayment_minimum_user_age' ), true );
 					},
 					ARRAY_FILTER_USE_KEY
 				),

@@ -99,9 +99,15 @@ class Webhook {
 	 */
 	public function process( array $data ) {
 		// Log caller information to reepay_order_statuses log.
-		$backtrace    = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 );
-		$caller       = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
-		$caller_class = isset( $backtrace[1]['class'] ) ? $backtrace[1]['class'] . '::' : '';
+		$caller       = 'unknown';
+		$caller_class = '';
+
+		// Only collect backtrace information when debugging is enabled.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$backtrace    = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+			$caller       = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
+			$caller_class = isset( $backtrace[1]['class'] ) ? $backtrace[1]['class'] . '::' : '';
+		}
 
 		if ( function_exists( 'wc_get_logger' ) ) {
 			wc_get_logger()->debug(
