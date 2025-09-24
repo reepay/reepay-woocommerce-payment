@@ -163,6 +163,26 @@ abstract class ReepayTokens {
 			throw new Exception( esc_html__( 'Card not found', 'reepay-checkout-gateway' ) );
 		}
 
+		// Check if token already exists to prevent duplicates.
+		$existing_token = self::get_payment_token( $card_info['id'] );
+		if ( $existing_token && $existing_token->get_user_id() === $customer_id ) {
+			return array(
+				'token'     => $existing_token,
+				'card_info' => $card_info,
+			);
+		}
+
+		// Additional check using user-specific method.
+		if ( self::user_has_token( $customer_id, $card_info['id'] ) ) {
+			$existing_token = self::get_payment_token( $card_info['id'] );
+			if ( $existing_token ) {
+				return array(
+					'token'     => $existing_token,
+					'card_info' => $card_info,
+				);
+			}
+		}
+
 		if ( 'ms_' === substr( $card_info['id'], 0, 3 ) ) {
 			$token = new TokenReepayMS();
 			$token->set_gateway_id( reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id );
@@ -282,6 +302,45 @@ abstract class ReepayTokens {
 		wp_cache_set( $token, $token_id, 'reepay_tokens' );
 
 		return WC_Payment_Tokens::get( $token_id );
+	}
+
+	/**
+	 * Check if user already has this token to prevent duplicates
+	 *
+	 * @param int    $user_id User ID.
+	 * @param string $token   Token string.
+	 *
+	 * @return bool
+	 */
+	public static function user_has_token( int $user_id, string $token ): bool {
+		global $wpdb;
+
+		if ( empty( $token ) || $user_id < 1 ) {
+			return false;
+		}
+
+		// Create a unique cache key for this user-token combination.
+		$cache_key     = "user_{$user_id}_token_{$token}";
+		$cached_result = wp_cache_get( $cache_key, 'reepay_user_tokens' );
+
+		if ( false !== $cached_result ) {
+			return (bool) $cached_result;
+		}
+
+		$count = (int) $wpdb->get_var( //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE token = %s AND user_id = %d",
+				$token,
+				$user_id
+			)
+		);
+
+		$has_token = $count > 0;
+
+		// Cache the result for future requests.
+		wp_cache_set( $cache_key, $has_token, 'reepay_user_tokens' );
+
+		return $has_token;
 	}
 
 	/**

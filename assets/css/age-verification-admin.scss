@@ -1,0 +1,109 @@
+/**
+ * Age Verification Admin CSS
+ * Styles for the age verification fields in WooCommerce product admin
+ */
+
+/* Age Verification Tab Styling */
+.wc-tabs {
+    li.age_verification_tab {
+        a {
+            position: relative;
+
+            &:before {
+                content: "\f534"; // Dashicons shield icon
+                font-family: dashicons;
+                font-size: 16px;
+                margin-right: 5px;
+                vertical-align: middle;
+            }
+        }
+    }
+}
+
+/* Age Verification Panel Styling */
+#age_verification_product_data {
+    padding: 12px;
+
+    .options_group {
+        border-bottom: 1px solid #eee;
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+
+        &:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+    }
+
+    /* Enable Age Verification Checkbox */
+    .form-field._reepay_enable_age_verification_field {
+        margin-bottom: 16px;
+
+        label {
+            font-weight: 600;
+            color: #23282d;
+        }
+    }
+
+    /* Field descriptions */
+    .woocommerce-help-tip {
+        margin-left: 5px;
+    }
+}
+
+/* Minimum Age Field */
+.reepay-minimum-age-field {
+    // Hidden by default, shown via JavaScript when checkbox is checked
+    display: none;
+    margin-top: 8px;
+
+    label {
+        font-weight: 500;
+        color: #555;
+    }
+
+    select {
+        min-width: 150px;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 782px) {
+    #age_verification_product_data {
+        .form-field {
+            label {
+                display: block;
+                margin-bottom: 5px;
+            }
+        }
+    }
+
+    .reepay-minimum-age-field {
+        select {
+            width: 100%;
+            min-width: auto;
+        }
+    }
+}
+
+/* Focus states for accessibility */
+#_reepay_enable_age_verification,
+#_reepay_minimum_age {
+    &:focus {
+        outline: 2px solid #0073aa;
+        outline-offset: 1px;
+    }
+}
+
+/* Error state styling (for future validation) */
+.reepay-age-verification-error {
+    border-color: #dc3232 !important;
+    box-shadow: 0 0 2px rgba(220, 50, 50, 0.8);
+}
+
+.reepay-age-verification-error-message {
+    color: #dc3232;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}

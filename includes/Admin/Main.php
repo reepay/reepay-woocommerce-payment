@@ -27,6 +27,7 @@ class Main {
 		new Ajax();
 		new MetaBoxes\Order();
 		new MetaBoxes\User();
+		new MetaBoxes\Product();
 		new OrderTable();
 		new MigrationMobilepayToVipps();
 
