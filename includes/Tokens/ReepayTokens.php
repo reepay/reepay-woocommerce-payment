@@ -319,6 +319,14 @@ abstract class ReepayTokens {
 			return false;
 		}
 
+		// Create a unique cache key for this user-token combination.
+		$cache_key     = "user_{$user_id}_token_{$token}";
+		$cached_result = wp_cache_get( $cache_key, 'reepay_user_tokens' );
+
+		if ( false !== $cached_result ) {
+			return (bool) $cached_result;
+		}
+
 		$count = (int) $wpdb->get_var( //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE token = %s AND user_id = %d",
@@ -327,7 +335,12 @@ abstract class ReepayTokens {
 			)
 		);
 
-		return $count > 0;
+		$has_token = $count > 0;
+
+		// Cache the result for future requests.
+		wp_cache_set( $cache_key, $has_token, 'reepay_user_tokens' );
+
+		return $has_token;
 	}
 
 	/**
