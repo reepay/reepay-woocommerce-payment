@@ -720,7 +720,8 @@ class OrderCapture {
 			return false;
 		}
 
-		if ( $price['subtotal'] > $price['original'] ) {
+		// Amount calculation in case product has a discount for tax-excluding pricing
+		if ( $price['subtotal'] > $price['original'] && ! wc_prices_include_tax() ) {
 			$unit_price          = round( $price['original'] / $item->get_quantity(), 2 );
 			$item_data['amount'] = rp_prepare_amount( $unit_price, $order->get_currency() );
 		}
