@@ -8,6 +8,7 @@
 namespace Reepay\Checkout\Gateways;
 
 use Reepay\Checkout\Frontend\Assets;
+use Reepay\Checkout\Utils\MetaField;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -81,7 +82,29 @@ class PPSepa extends ReepayGateway {
 		parent::payment_fields();
 
 		$this->tokenization_script();
-		$this->saved_payment_methods();
+
+		// Don't show saved cards if there are age restricted products in the cart
+		if ( ! $this->has_age_restricted_products_in_cart() ) {
+			$this->saved_payment_methods();
+		}
+
 		$this->save_payment_method_checkbox();
+	}
+
+	/**
+	 * Check if there are age restricted products in the cart
+	 *
+	 * @return bool True if there are age restricted products in cart
+	 */
+	private function has_age_restricted_products_in_cart(): bool {
+		// Check if global age verification is enabled
+		if ( ! MetaField::is_global_age_verification_enabled() ) {
+			return false;
+		}
+
+		// Get age restricted products from cart
+		$age_restricted_products = MetaField::get_age_restricted_products_in_cart();
+
+		return ! empty( $age_restricted_products );
 	}
 }
