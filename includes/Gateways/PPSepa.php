@@ -83,7 +83,7 @@ class PPSepa extends ReepayGateway {
 
 		$this->tokenization_script();
 
-		// Don't show saved cards if there are age restricted products in the cart
+		// Don't show saved cards if there are age restricted products in the cart.
 		if ( ! $this->has_age_restricted_products_in_cart() ) {
 			$this->saved_payment_methods();
 		}
@@ -97,12 +97,12 @@ class PPSepa extends ReepayGateway {
 	 * @return bool True if there are age restricted products in cart
 	 */
 	private function has_age_restricted_products_in_cart(): bool {
-		// Check if global age verification is enabled
+		// Check if global age verification is enabled.
 		if ( ! MetaField::is_global_age_verification_enabled() ) {
 			return false;
 		}
 
-		// Get age restricted products from cart
+		// Get age restricted products from cart.
 		$age_restricted_products = MetaField::get_age_restricted_products_in_cart();
 
 		return ! empty( $age_restricted_products );

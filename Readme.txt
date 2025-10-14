@@ -4,7 +4,7 @@ Tags: Frisbii, billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.8.4
+Stable tag: 1.8.4.1
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,6 +18,10 @@ The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.8.4.1
+- [Fix] - Age verification support.
+- [Fix] - Capture for individual orderlines with discount did not include VAT.
+
 v 1.8.4
 - [Fix] - Can use saved card to pay for WooCommerce subscription product in WooBlocks checkout.
 - [Fix] - Saved cards can be deleted from the my-account page of the user.

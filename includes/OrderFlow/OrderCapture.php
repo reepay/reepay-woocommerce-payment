@@ -720,8 +720,8 @@ class OrderCapture {
 			return false;
 		}
 
-		// Amount calculation in case product has a discount for tax-excluding pricing
-		// Only apply this override when prices do NOT include tax to prevent incorrect capture amounts
+		// Amount calculation in case product has a discount for tax-excluding pricing.
+		// Only apply this override when prices do NOT include tax to prevent incorrect capture amounts.
 		if ( $price['subtotal'] > $price['original'] && ! wc_prices_include_tax() ) {
 			$unit_price          = round( $price['original'] / $item->get_quantity(), 2 );
 			$item_data['amount'] = rp_prepare_amount( $unit_price, $order->get_currency() );
@@ -868,10 +868,10 @@ class OrderCapture {
 			$unit_price = ( $prices_incl_tax ? $price['with_tax'] : $price['original'] );
 			$ordertext  = rp_clear_ordertext( $order_item->get_name() );
 		} else {
-			// BWPM-176: Always use 'with_tax' (after discount) to ensure consistency with total amount
-			// Previously used 'subtotal_with_tax' (before discount) which caused API mismatch
+			// BWPM-176: Always use 'with_tax' (after discount) to ensure consistency with total amount.
+			// Previously used 'subtotal_with_tax' (before discount) which caused API mismatch.
 			$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
-			$ordertext = rp_clear_ordertext( $order_item->get_name() );
+			$ordertext  = rp_clear_ordertext( $order_item->get_name() );
 		}
 
 		return array(

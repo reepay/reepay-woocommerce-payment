@@ -1325,32 +1325,32 @@ class Api {
 		}
 
 		// Add both age verification keys to session_data (always send both regardless of payment method).
-		$params['session_data']['mpo_minimum_user_age'] = $max_age;
+		$params['session_data']['mpo_minimum_user_age']            = $max_age;
 		$params['session_data']['vipps_epayment_minimum_user_age'] = $max_age;
 
 		$fields_added = array( 'minimum_user_age', 'mpo_minimum_user_age', 'vipps_epayment_minimum_user_age' );
-		$log_source = 'add_age_verification_all_fields_configured';
+		$log_source   = 'add_age_verification_all_fields_configured';
 
 		// Single log entry for all payment methods.
 		$this->log(
 			array(
-				'source' => $log_source,
-				'order_id' => $order->get_id(),
+				'source'         => $log_source,
+				'order_id'       => $order->get_id(),
 				'payment_method' => $payment_method,
-				'max_age' => $max_age,
-				'fields_added' => $fields_added,
+				'max_age'        => $max_age,
+				'fields_added'   => $fields_added,
 			)
 		);
 
 		// Log age verification data for debugging.
 		$this->log(
 			array(
-				'source' => 'add_age_verification_completed',
-				'order_id' => $order->get_id(),
+				'source'                  => 'add_age_verification_completed',
+				'order_id'                => $order->get_id(),
 				'final_session_data_keys' => array_keys( $params['session_data'] ),
 				'age_verification_fields' => array_filter(
 					$params['session_data'],
-					function( $key ) {
+					function ( $key ) {
 						return in_array( $key, array( 'mpo_minimum_user_age', 'vipps_epayment_minimum_user_age' ), true );
 					},
 					ARRAY_FILTER_USE_KEY
