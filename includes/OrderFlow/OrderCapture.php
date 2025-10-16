@@ -720,6 +720,7 @@ class OrderCapture {
 			return false;
 		}
 
+		// Amount calculation in case product has a discount for tax-excluding pricing.
 		if ( $price['subtotal'] > $price['original'] ) {
 			$unit_price          = round( $price['original'] / $item->get_quantity(), 2 );
 			$item_data['amount'] = rp_prepare_amount( $unit_price, $order->get_currency() );
