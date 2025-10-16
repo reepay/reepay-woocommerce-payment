@@ -20,7 +20,6 @@ See installation guide right here: https://docu.billwerk.plus/help/en/apps/wooco
 == Changelog ==
 v 1.8.4.1
 - [Fix] - Age verification support.
-- [Fix] - Capture for individual orderlines with discount did not include VAT.
 
 v 1.8.4
 - [Fix] - Can use saved card to pay for WooCommerce subscription product in WooBlocks checkout.
