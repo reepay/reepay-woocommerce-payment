@@ -1674,6 +1674,17 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				)
 			);
 
+			$this->log(
+				array(
+					'source'       => 'process_session_charge_payment_window_display_debug',
+					'order_id'     => $order->get_id(),
+					'payment_type' => $this->payment_type,
+					'accept_url'         => $this->get_return_url( $order ),
+					'result_url'   => $result['url'] ?? 'N/A',
+					'note'         => 'This should check payment_type before returning hash redirect',
+				)
+			);
+
 			return array(
 				'result'             => 'success',
 				'redirect'           => '#!reepay-checkout',

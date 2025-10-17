@@ -397,7 +397,7 @@ class OrderCapture {
 
 			// Skip bundle products to be consistent with other methods.
 			if ( WPCProductBundlesWooCommerceIntegration::is_order_item_bundle( $item ) ) {
-				$item_data = $this->get_item_data( $item, $order );
+				$item_data = $this->get_item_data( $item, $order, true );
 				$this->log(
 					array(
 						__METHOD__,
@@ -414,7 +414,7 @@ class OrderCapture {
 			}
 
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
-				$item_data = $this->get_item_data( $item, $order );
+				$item_data = $this->get_item_data( $item, $order, true );
 				$price     = self::get_item_price( $item, $order );
 				$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
@@ -457,7 +457,7 @@ class OrderCapture {
 					$line_items[] = $item;
 					$total_all   += $total;
 				} else {
-					$item_data = $this->get_item_data( $item, $order );
+					$item_data = $this->get_item_data( $item, $order, true );
 					$price     = self::get_item_price( $item, $order );
 					$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
@@ -545,7 +545,7 @@ class OrderCapture {
 
 		foreach ( $order->get_items( array( 'shipping', 'fee', PWGiftCardsIntegration::KEY_PW_GIFT_ITEMS ) ) as $item ) {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
-				$item_data = $this->get_item_data( $item, $order );
+				$item_data = $this->get_item_data( $item, $order, true );
 				$price     = self::get_item_price( $item, $order );
 				$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
@@ -558,7 +558,7 @@ class OrderCapture {
 		}
 
 		foreach ( $order->get_items( WCGiftCardsIntegration::KEY_WC_GIFT_ITEMS ) as $item ) {
-			$item_data    = $this->get_item_data( $item, $order );
+			$item_data    = $this->get_item_data( $item, $order, true );
 			$price        = $item->get_amount() * - 1;
 			$total        = rp_prepare_amount( $price, $order->get_currency() );
 			$items_data[] = $item_data;
@@ -666,7 +666,10 @@ class OrderCapture {
 		}
 
 		foreach ( $line_items as $item ) {
-			$item_data = $this->get_item_data( $item, $order );
+			// Note: This is called after settle_items() succeeds, just to mark items as settled
+			// The actual API call already happened with the correct amounts from multi_settle()
+			// We use the same $use_pre_discount_price flag for consistency, but it doesn't affect the API
+			$item_data = $this->get_item_data( $item, $order, true );
 			$total     = $item_data['amount'] * $item_data['quantity'];
 			$this->complete_settle( $item, $order, $total );
 		}
@@ -721,7 +724,11 @@ class OrderCapture {
 		}
 
 		// Amount calculation in case product has a discount for tax-excluding pricing.
-		if ( $price['subtotal'] > $price['original'] ) {
+		// BWPM-177: Only apply this fix for tax-EXCLUDING pricing scenarios.
+		// When prices include tax, the amount from get_item_data() is already correct.
+		// The condition 'subtotal > original' is TRUE whenever ANY discount is applied,
+		// but we should only override the amount for tax-exclusive pricing.
+		if ( ! wc_prices_include_tax() && $price['subtotal'] > $price['original'] ) {
 			$unit_price          = round( $price['original'] / $item->get_quantity(), 2 );
 			$item_data['amount'] = rp_prepare_amount( $unit_price, $order->get_currency() );
 		}
@@ -843,12 +850,13 @@ class OrderCapture {
 	/**
 	 * Prepare order item data for reepay
 	 *
-	 * @param WC_Order_Item $order_item order item to get data.
-	 * @param WC_Order      $order      current order.
+	 * @param WC_Order_Item $order_item              order item to get data.
+	 * @param WC_Order      $order                   current order.
+	 * @param bool          $use_pre_discount_price  whether to use pre-discount price (for multi_settle with separate discount line).
 	 *
 	 * @return array
 	 */
-	public function get_item_data( WC_Order_Item $order_item, WC_Order $order ): array {
+	public function get_item_data( WC_Order_Item $order_item, WC_Order $order, bool $use_pre_discount_price = false ): array {
 		$prices_incl_tax = wc_prices_include_tax();
 		$price           = self::get_item_price( $order_item, $order );
 
@@ -867,9 +875,16 @@ class OrderCapture {
 			$unit_price = ( $prices_incl_tax ? $price['with_tax'] : $price['original'] );
 			$ordertext  = rp_clear_ordertext( $order_item->get_name() );
 		} else {
-			if ( $order->get_total_discount( false ) > 0 ) {
+			// BWPM-177: Handle two different capture scenarios:
+			// 1. multi_settle (Capture All): Uses pre-discount prices + separate discount line
+			// 2. settle_item (Capture Individual): Uses post-discount prices directly
+			if ( $use_pre_discount_price ) {
+				// For multi_settle: use pre-discount prices (subtotal_with_tax/subtotal)
+				// because discount will be added as a separate line item
 				$unit_price = round( ( $prices_incl_tax ? $price['subtotal_with_tax'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
 			} else {
+				// For settle_item: use post-discount prices (with_tax/original)
+				// because we're capturing the item at its actual final price
 				$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
 			}
 			$ordertext = rp_clear_ordertext( $order_item->get_name() );
