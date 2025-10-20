@@ -11,12 +11,8 @@ jQuery(function ($) {
      * This prevents guest users from checking out when guest checkout is disabled
      */
     jQuery('form.checkout').on('checkout_place_order', function (e) {
-        // Get the selected payment method
-        var paymentMethod = $('input[name="payment_method"]:checked').val();
-
         // Check if WC_Gateway_Reepay_Checkout object exists
         if (typeof WC_Gateway_Reepay_Checkout !== 'undefined') {
-            console.log(WC_Gateway_Reepay_Checkout)
             // Check if guest checkout is disabled and user is not logged in
             if (WC_Gateway_Reepay_Checkout.guest_checkout_disabled &&
                 !WC_Gateway_Reepay_Checkout.is_user_logged_in) {
@@ -63,7 +59,20 @@ jQuery(function ($) {
                 history.pushState('', document.title, window.location.pathname);
             }, 300);
         }
-        console.log('boyd test')
+
+        // Check if WC_Gateway_Reepay_Checkout object exists
+        if (typeof WC_Gateway_Reepay_Checkout !== 'undefined') {
+            // Check if guest checkout is disabled and user is not logged in
+            if (WC_Gateway_Reepay_Checkout.guest_checkout_disabled &&
+                !WC_Gateway_Reepay_Checkout.is_user_logged_in) {
+
+                // Show error message
+                wc_reepay.throw_error(WC_Gateway_Reepay_Checkout.guest_checkout_error_message);
+
+                // Log for debugging
+                console.log('Reepay: Guest checkout blocked - user must log in');
+            }
+        }
     });
 });
 
