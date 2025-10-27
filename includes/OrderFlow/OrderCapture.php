@@ -703,22 +703,7 @@ class OrderCapture {
 	public function settle_item( WC_Order_Item $item, WC_Order $order ): bool {
 		$settled = $item->get_meta( 'settled' );
 
-		// LOG: Start of settle_item
-		$this->log(
-			array(
-				'=== SETTLE_ITEM START ===',
-				'method'       => __METHOD__,
-				'line'         => __LINE__,
-				'order_id'     => $order->get_id(),
-				'item_id'      => $item->get_id(),
-				'item_name'    => $item->get_name(),
-				'item_qty'     => $item->get_quantity(),
-				'already_settled' => ! empty( $settled ),
-			)
-		);
-
 		if ( ! empty( $settled ) ) {
-			$this->log( 'Item already settled, skipping' );
 			return true;
 		}
 
@@ -728,177 +713,46 @@ class OrderCapture {
 		$price     = self::get_item_price( $item, $order );
 		$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
-		// LOG: Initial data after get_item_data
-		$this->log(
-			array(
-				'--- Initial Data ---',
-				'item_data_before_override' => $item_data,
-				'price_data'                => $price,
-				'total'                     => $total,
-				'total_formatted'           => rp_make_initial_amount( $total, $order->get_currency() ),
-			)
-		);
-
 		if ( $total <= 0 ) {
-			$this->log( 'Total is zero or negative, marking as settled' );
 			do_action( 'reepay_order_item_settled', $item, $order );
-
 			return true;
 		}
 
 		if ( ! $this->check_capture_allowed( $order ) ) {
-			$this->log( 'Capture not allowed for this order' );
 			return false;
 		}
 
-		// Amount calculation in case product has a discount for tax-excluding pricing.
-		// BWPM-177: Only apply this fix for tax-EXCLUDING pricing scenarios.
-		// When prices include tax, the amount from get_item_data() is already correct.
-		// The condition 'subtotal > original' is TRUE whenever ANY discount is applied,
-		// but we should only override the amount for tax-exclusive pricing.
-		//
-		// TAX-EXCLUSIVE-DISCOUNT-BUG FIX:
-		// When tax-exclusive mode + discount, we need to send the amount INCLUDING VAT
-		// because Reepay API expects the total amount to capture, not the base amount.
-		// The original code was sending amount WITHOUT VAT, causing under-capture.
-
+		// BWPM-177: Fix for tax-exclusive pricing with discounts
 		$condition_triggered = ! wc_prices_include_tax() && $price['subtotal'] > $price['original'];
 
-		// LOG: Check if override condition will trigger
-		$this->log(
-			array(
-				'--- Override Condition Check ---',
-				'wc_prices_include_tax'     => wc_prices_include_tax(),
-				'price[subtotal]'           => $price['subtotal'],
-				'price[original]'           => $price['original'],
-				'has_discount'              => $price['subtotal'] > $price['original'],
-				'condition_will_trigger'    => $condition_triggered,
-			)
-		);
-
 		if ( $condition_triggered ) {
-			// Store original values for logging
-			$original_item_data = $item_data;
-			$original_total     = $total;
-
-			// CRITICAL FIX: WooCommerce's get_line_total() already rounds the value
-			// For example: 22.5 * 1.25 = 28.125, but get_line_total() returns 28.13 (rounded up)
-			// We need to calculate from the raw values to apply floor() correctly
-			// Calculate: original (excl. VAT) * (1 + tax_percent/100) = with_tax (incl. VAT)
-			$tax_rate = $price['tax_percent'] / 100;
+			// Recalculate from raw values: WooCommerce pre-rounds, we need raw value for floor()
+			$tax_rate     = $price['tax_percent'] / 100;
 			$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
 
-			// Use with_tax_raw (amount including VAT) instead of original (amount excluding VAT)
-			// ROUNDING FIX: Use floor() to round DOWN to match Frisbii's rounding behavior
-			// Example: 28.125 -> 28.12 (not 28.13)
-			// This prevents 0.01 discrepancy between WooCommerce and Reepay
-			$unit_price_before_floor = $with_tax_raw / $item->get_quantity();
-			$unit_price              = floor( $unit_price_before_floor * 100 ) / 100;
+			// Floor to round down (match Frisbii behavior)
+			$unit_price              = floor( ( $with_tax_raw / $item->get_quantity() ) * 100 ) / 100;
 			$item_data['amount']     = rp_prepare_amount( $unit_price, $order->get_currency() );
-			// Set vat to 0 and amount_incl_vat to true since amount already includes VAT
-			$item_data['vat']             = 0;
+			$item_data['vat']        = 0;
 			$item_data['amount_incl_vat'] = true;
-
-			// IMPORTANT: Update $total to match the floored amount
-			// This ensures we send the same amount in both $total and $item_data['amount']
-			$total = $item_data['amount'];
-
-			// LOG: Override applied
-			$this->log(
-				array(
-					'--- Override Applied ---',
-					'price[original]'           => $price['original'],
-					'price[with_tax]'           => $price['with_tax'],
-					'tax_rate'                  => $tax_rate,
-					'with_tax_raw'              => $with_tax_raw,
-					'unit_price_before_floor'   => $unit_price_before_floor,
-					'unit_price_after_floor'    => $unit_price,
-					'rounding_difference'       => $unit_price_before_floor - $unit_price,
-					'amount_in_cents'           => $item_data['amount'],
-					'amount_formatted'          => rp_make_initial_amount( $item_data['amount'], $order->get_currency() ),
-					'original_total'            => $original_total,
-					'new_total'                 => $total,
-					'total_difference'          => $original_total - $total,
-					'original_item_data'        => $original_item_data,
-					'new_item_data'             => $item_data,
-				)
-			);
+			$total                   = $item_data['amount'];
 		}
 
-		// LOG: Final data before sending to API
-		$this->log(
-			array(
-				'--- Final Data Before API Call ---',
-				'order_id'              => $order->get_id(),
-				'item_id'               => $item->get_id(),
-				'item_name'             => $item->get_name(),
-				'currency'              => $order->get_currency(),
-				'wc_prices_include_tax' => wc_prices_include_tax(),
-				'item_data'             => $item_data,
-				'total'                 => $total,
-				'total_formatted'       => rp_make_initial_amount( $total, $order->get_currency() ),
-				'order_lines_to_send'   => array( $item_data ),
-			)
-		);
-
 		$result = reepay()->api( $order )->settle( $order, $total, array( $item_data ), $item );
-
-		// LOG: API Response
-		$this->log(
-			array(
-				'--- API Response ---',
-				'is_error'      => is_wp_error( $result ),
-				'result'        => $result,
-			)
-		);
 
 		if ( is_wp_error( $result ) ) {
 			$error_message = $result->get_error_message();
 			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $error_message ) );
 			set_transient( 'reepay_api_action_error', $error_message, MINUTE_IN_SECONDS / 2 );
-
-			// LOG: Error details
-			$this->log(
-				array(
-					'!!! API ERROR !!!',
-					'error_message' => $error_message,
-					'error_code'    => $result->get_error_code(),
-					'error_data'    => $result->get_error_data(),
-				)
-			);
-
 			return false;
 		}
 
 		if ( 'failed' === $result['state'] ) {
 			set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
-
-			// LOG: Settlement failed
-			$this->log(
-				array(
-					'!!! SETTLEMENT FAILED !!!',
-					'result_state' => $result['state'],
-					'result'       => $result,
-				)
-			);
-
 			return false;
 		}
 
 		$this->complete_settle( $item, $order, $total );
-
-		// LOG: Success
-		$this->log(
-			array(
-				'=== SETTLE_ITEM SUCCESS ===',
-				'order_id'        => $order->get_id(),
-				'item_id'         => $item->get_id(),
-				'item_name'       => $item->get_name(),
-				'captured_amount' => rp_make_initial_amount( $total, $order->get_currency() ),
-				'currency'        => $order->get_currency(),
-				'result'          => $result,
-			)
-		);
 
 		return true;
 	}
