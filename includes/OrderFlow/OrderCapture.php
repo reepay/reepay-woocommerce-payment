@@ -734,7 +734,7 @@ class OrderCapture {
 			$tax_rate     = $price['tax_percent'] / 100;
 			$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
 
-			// CRITICAL FIX: Send total amount directly to avoid rounding error.
+			// Calculate total amount directly to avoid rounding error.
 			$total_amount_before_floor = $with_tax_raw;
 			$total_amount_floored      = floor( $with_tax_raw * 100 ) / 100;
 
@@ -750,7 +750,7 @@ class OrderCapture {
 			// LOG: Override applied.
 			$this->log(
 				array(
-					'--- Override Applied ---',
+					'--- Override Applied for tax-exclusive pricing with discounts ---',
 					'price[original]'    => $price['original'],
 					'price[with_tax]'    => $price['with_tax'],
 					'tax_rate'           => $tax_rate,
