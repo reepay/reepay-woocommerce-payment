@@ -728,10 +728,33 @@ class OrderCapture {
 		// When prices include tax, the amount from get_item_data() is already correct.
 		// The condition 'subtotal > original' is TRUE whenever ANY discount is applied,
 		// but we should only override the amount for tax-exclusive pricing.
+		//
+		// TAX-EXCLUSIVE-DISCOUNT-BUG FIX:
+		// When tax-exclusive mode + discount, we need to send the amount INCLUDING VAT
+		// because Reepay API expects the total amount to capture, not the base amount.
+		// The original code was sending amount WITHOUT VAT, causing under-capture.
 		if ( ! wc_prices_include_tax() && $price['subtotal'] > $price['original'] ) {
-			$unit_price          = round( $price['original'] / $item->get_quantity(), 2 );
+			// Use with_tax (amount including VAT) instead of original (amount excluding VAT)
+			$unit_price          = round( $price['with_tax'] / $item->get_quantity(), 2 );
 			$item_data['amount'] = rp_prepare_amount( $unit_price, $order->get_currency() );
+			// Set vat to 0 and amount_incl_vat to true since amount already includes VAT
+			$item_data['vat']             = 0;
+			$item_data['amount_incl_vat'] = true;
 		}
+
+		// DEBUG: Log item data before sending to API
+		$this->log(
+			array(
+				__METHOD__,
+				__LINE__,
+				'order'                => $order->get_id(),
+				'item'                 => $item->get_id(),
+				'wc_prices_include_tax' => wc_prices_include_tax(),
+				'price'                => $price,
+				'item_data'            => $item_data,
+				'total'                => $total,
+			)
+		);
 
 		$result = reepay()->api( $order )->settle( $order, $total, array( $item_data ), $item );
 
