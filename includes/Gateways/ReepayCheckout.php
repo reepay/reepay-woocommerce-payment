@@ -671,7 +671,7 @@ class ReepayCheckout extends ReepayGateway {
 			$this->tokenization_script();
 
 			if ( 'yes' === $this->save_cc ) {
-				// Don't show saved cards if there are age restricted products in the cart
+				// Don't show saved cards if there are age restricted products in the cart.
 				if ( ! $this->has_age_restricted_products_in_cart() ) {
 					$this->saved_payment_methods();
 				}
@@ -687,12 +687,12 @@ class ReepayCheckout extends ReepayGateway {
 	 * @return bool True if there are age restricted products in cart
 	 */
 	private function has_age_restricted_products_in_cart(): bool {
-		// Check if global age verification is enabled
+		// Check if global age verification is enabled.
 		if ( ! MetaField::is_global_age_verification_enabled() ) {
 			return false;
 		}
 
-		// Get age restricted products from cart
+		// Get age restricted products from cart.
 		$age_restricted_products = MetaField::get_age_restricted_products_in_cart();
 
 		return ! empty( $age_restricted_products );
@@ -812,13 +812,13 @@ class ReepayCheckout extends ReepayGateway {
 	 */
 	public function get_localize_script_data(): array {
 		return array(
-			'payment_type'                  => $this->payment_type,
-			'cancel_text'                   => __( 'Payment was canceled, please try again', 'reepay-checkout-gateway' ),
-			'error_text'                    => __( 'Error with payment, please try again', 'reepay-checkout-gateway' ),
-			// Guest checkout validation (BWPM-178)
-			'guest_checkout_disabled'       => WC()->checkout()->is_registration_required(),
-			'is_user_logged_in'             => is_user_logged_in(),
-			'guest_checkout_error_message'  => sprintf(
+			'payment_type'                 => $this->payment_type,
+			'cancel_text'                  => __( 'Payment was canceled, please try again', 'reepay-checkout-gateway' ),
+			'error_text'                   => __( 'Error with payment, please try again', 'reepay-checkout-gateway' ),
+			// Guest checkout validation (BWPM-178).
+			'guest_checkout_disabled'      => WC()->checkout()->is_registration_required(),
+			'is_user_logged_in'            => is_user_logged_in(),
+			'guest_checkout_error_message' => sprintf(
 				/* translators: 1: login URL, 2: register URL */
 				__( 'You must be logged in to checkout. Please <a href="%1$s" class="showlogin">log in</a> or <a href="%2$s">create an account</a> to continue.', 'reepay-checkout-gateway' ),
 				esc_url( wc_get_page_permalink( 'myaccount' ) ),
