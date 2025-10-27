@@ -734,16 +734,18 @@ class OrderCapture {
 			$tax_rate     = $price['tax_percent'] / 100;
 			$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
 
-			// Floor to round down (match Frisbii behavior)
-			$unit_price_before_floor = $with_tax_raw / $item->get_quantity();
-			$unit_price              = floor( ( $with_tax_raw / $item->get_quantity() ) * 100 ) / 100;
-			$item_data['amount']     = rp_prepare_amount( $unit_price, $order->get_currency() );
-			$item_data['vat']        = 0;
+			// CRITICAL FIX: Send total amount directly to avoid rounding error
+			$total_amount_before_floor = $with_tax_raw;
+			$total_amount_floored      = floor( $with_tax_raw * 100 ) / 100;
+
+			// Send total amount as "amount" with quantity=1
+			$item_data['amount']   = rp_prepare_amount( $total_amount_floored, $order->get_currency() );
+			$item_data['quantity'] = 1;
+			$item_data['vat']      = 0;
 			$item_data['amount_incl_vat'] = true;
 
-			// IMPORTANT: Update $total to match the floored amount
-			// This ensures we send the same amount in both $total and $item_data['amount']
-			$total = $item_data['amount'];
+			// Update $total to match the floored amount
+			$total = rp_prepare_amount( $total_amount_floored, $order->get_currency() );
 
 			// LOG: Override applied
 			$this->log(
@@ -753,11 +755,11 @@ class OrderCapture {
 					'price[with_tax]'           => $price['with_tax'],
 					'tax_rate'                  => $tax_rate,
 					'with_tax_raw'              => $with_tax_raw,
-					'unit_price_before_floor'   => $unit_price_before_floor,
-					'unit_price_after_floor'    => $unit_price,
-					'rounding_difference'       => $unit_price_before_floor - $unit_price,
+					'total_before_floor'        => $total_amount_before_floor,
+					'total_after_floor'         => $total_amount_floored,
 					'amount_in_cents'           => $item_data['amount'],
 					'amount_formatted'          => rp_make_initial_amount( $item_data['amount'], $order->get_currency() ),
+					'quantity'                  => $item_data['quantity'],
 					'original_total'            => $original_total,
 					'new_total'                 => $total,
 					'total_difference'          => $original_total - $total,
