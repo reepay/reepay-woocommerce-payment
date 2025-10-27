@@ -726,16 +726,45 @@ class OrderCapture {
 		$condition_triggered = ! wc_prices_include_tax() && $price['subtotal'] > $price['original'];
 
 		if ( $condition_triggered ) {
+			// Store original values for logging
+			$original_item_data = $item_data;
+			$original_total     = $total;
+
 			// Recalculate from raw values: WooCommerce pre-rounds, we need raw value for floor()
 			$tax_rate     = $price['tax_percent'] / 100;
 			$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
 
 			// Floor to round down (match Frisbii behavior)
+			$unit_price_before_floor = $with_tax_raw / $item->get_quantity();
 			$unit_price              = floor( ( $with_tax_raw / $item->get_quantity() ) * 100 ) / 100;
 			$item_data['amount']     = rp_prepare_amount( $unit_price, $order->get_currency() );
 			$item_data['vat']        = 0;
 			$item_data['amount_incl_vat'] = true;
-			$total                   = $item_data['amount'];
+
+			// IMPORTANT: Update $total to match the floored amount
+			// This ensures we send the same amount in both $total and $item_data['amount']
+			$total = $item_data['amount'];
+
+			// LOG: Override applied
+			$this->log(
+				array(
+					'--- Override Applied ---',
+					'price[original]'           => $price['original'],
+					'price[with_tax]'           => $price['with_tax'],
+					'tax_rate'                  => $tax_rate,
+					'with_tax_raw'              => $with_tax_raw,
+					'unit_price_before_floor'   => $unit_price_before_floor,
+					'unit_price_after_floor'    => $unit_price,
+					'rounding_difference'       => $unit_price_before_floor - $unit_price,
+					'amount_in_cents'           => $item_data['amount'],
+					'amount_formatted'          => rp_make_initial_amount( $item_data['amount'], $order->get_currency() ),
+					'original_total'            => $original_total,
+					'new_total'                 => $total,
+					'total_difference'          => $original_total - $total,
+					'original_item_data'        => $original_item_data,
+					'new_item_data'             => $item_data,
+				)
+			);
 		}
 
 		$result = reepay()->api( $order )->settle( $order, $total, array( $item_data ), $item );
