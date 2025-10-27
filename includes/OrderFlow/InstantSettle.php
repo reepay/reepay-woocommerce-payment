@@ -97,8 +97,8 @@ class InstantSettle {
 		if ( ! empty( $settle_items ) ) {
 			foreach ( $settle_items as $item ) {
 				if ( empty( $item->get_meta( 'settled' ) ) ) {
-					// BWPM-177 FIX: Use pre-discount price (true) to match multi_settle behavior
-					// This ensures discount is handled as a separate line item
+					// BWPM-177 FIX: Use pre-discount price (true) to match multi_settle behavior.
+					// This ensures discount is handled as a separate line item.
 					$item_data = self::$order_capture->get_item_data( $item, $order, true );
 					$price     = OrderCapture::get_item_price( $item, $order );
 					$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );

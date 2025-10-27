@@ -666,9 +666,9 @@ class OrderCapture {
 		}
 
 		foreach ( $line_items as $item ) {
-			// Note: This is called after settle_items() succeeds, just to mark items as settled
-			// The actual API call already happened with the correct amounts from multi_settle()
-			// We use the same $use_pre_discount_price flag for consistency, but it doesn't affect the API
+			// Note: This is called after settle_items() succeeds, just to mark items as settled.
+			// The actual API call already happened with the correct amounts from multi_settle().
+			// We use the same $use_pre_discount_price flag for consistency, but it doesn't affect the API.
 			$item_data = $this->get_item_data( $item, $order, true );
 			$total     = $item_data['amount'] * $item_data['quantity'];
 			$this->complete_settle( $item, $order, $total );
@@ -722,49 +722,49 @@ class OrderCapture {
 			return false;
 		}
 
-		// BWPM-177: Fix for tax-exclusive pricing with discounts
+		// BWPM-177: Fix for tax-exclusive pricing with discounts.
 		$condition_triggered = ! wc_prices_include_tax() && $price['subtotal'] > $price['original'];
 
 		if ( $condition_triggered ) {
-			// Store original values for logging
+			// Store original values for logging.
 			$original_item_data = $item_data;
 			$original_total     = $total;
 
-			// Recalculate from raw values: WooCommerce pre-rounds, we need raw value for floor()
+			// Recalculate from raw values: WooCommerce pre-rounds, we need raw value for floor().
 			$tax_rate     = $price['tax_percent'] / 100;
 			$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
 
-			// CRITICAL FIX: Send total amount directly to avoid rounding error
+			// CRITICAL FIX: Send total amount directly to avoid rounding error.
 			$total_amount_before_floor = $with_tax_raw;
 			$total_amount_floored      = floor( $with_tax_raw * 100 ) / 100;
 
-			// Send total amount as "amount" with quantity=1
-			$item_data['amount']   = rp_prepare_amount( $total_amount_floored, $order->get_currency() );
-			$item_data['quantity'] = 1;
-			$item_data['vat']      = 0;
+			// Send total amount as "amount" with quantity=1.
+			$item_data['amount']          = rp_prepare_amount( $total_amount_floored, $order->get_currency() );
+			$item_data['quantity']        = 1;
+			$item_data['vat']             = 0;
 			$item_data['amount_incl_vat'] = true;
 
-			// Update $total to match the floored amount
+			// Update $total to match the floored amount.
 			$total = rp_prepare_amount( $total_amount_floored, $order->get_currency() );
 
-			// LOG: Override applied
+			// LOG: Override applied.
 			$this->log(
 				array(
 					'--- Override Applied ---',
-					'price[original]'           => $price['original'],
-					'price[with_tax]'           => $price['with_tax'],
-					'tax_rate'                  => $tax_rate,
-					'with_tax_raw'              => $with_tax_raw,
-					'total_before_floor'        => $total_amount_before_floor,
-					'total_after_floor'         => $total_amount_floored,
-					'amount_in_cents'           => $item_data['amount'],
-					'amount_formatted'          => rp_make_initial_amount( $item_data['amount'], $order->get_currency() ),
-					'quantity'                  => $item_data['quantity'],
-					'original_total'            => $original_total,
-					'new_total'                 => $total,
-					'total_difference'          => $original_total - $total,
-					'original_item_data'        => $original_item_data,
-					'new_item_data'             => $item_data,
+					'price[original]'    => $price['original'],
+					'price[with_tax]'    => $price['with_tax'],
+					'tax_rate'           => $tax_rate,
+					'with_tax_raw'       => $with_tax_raw,
+					'total_before_floor' => $total_amount_before_floor,
+					'total_after_floor'  => $total_amount_floored,
+					'amount_in_cents'    => $item_data['amount'],
+					'amount_formatted'   => rp_make_initial_amount( $item_data['amount'], $order->get_currency() ),
+					'quantity'           => $item_data['quantity'],
+					'original_total'     => $original_total,
+					'new_total'          => $total,
+					'total_difference'   => $original_total - $total,
+					'original_item_data' => $original_item_data,
+					'new_item_data'      => $item_data,
 				)
 			);
 		}
@@ -911,15 +911,15 @@ class OrderCapture {
 			$ordertext  = rp_clear_ordertext( $order_item->get_name() );
 		} else {
 			// BWPM-177: Handle two different capture scenarios:
-			// 1. multi_settle (Capture All): Uses pre-discount prices + separate discount line
-			// 2. settle_item (Capture Individual): Uses post-discount prices directly
+			// 1. multi_settle (Capture All): Uses pre-discount prices + separate discount line.
+			// 2. settle_item (Capture Individual): Uses post-discount prices directly.
 			if ( $use_pre_discount_price ) {
-				// For multi_settle: use pre-discount prices (subtotal_with_tax/subtotal)
-				// because discount will be added as a separate line item
+				// For multi_settle: use pre-discount prices (subtotal_with_tax/subtotal).
+				// because discount will be added as a separate line item.
 				$unit_price = round( ( $prices_incl_tax ? $price['subtotal_with_tax'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
 			} else {
-				// For settle_item: use post-discount prices (with_tax/original)
-				// because we're capturing the item at its actual final price
+				// For settle_item: use post-discount prices (with_tax/original).
+				// because we're capturing the item at its actual final price.
 				$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
 			}
 			$ordertext = rp_clear_ordertext( $order_item->get_name() );
