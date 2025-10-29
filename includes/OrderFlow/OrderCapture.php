@@ -722,54 +722,73 @@ class OrderCapture {
 			return false;
 		}
 
-		// BWPM-177: Fix for tax-exclusive pricing with discounts.
+		// BWPM-177: Fix for tax-exclusive pricing with discounts
 		$condition_triggered = ! wc_prices_include_tax() && $price['subtotal'] > $price['original'];
+		$order_lines         = array( $item_data );
 
 		if ( $condition_triggered ) {
-			// Store original values for logging.
-			$original_item_data = $item_data;
-			$original_total     = $total;
+			// Calculate pre-discount unit price (excl. VAT)
+			$tax_rate                = $price['tax_percent'] / 100;
+			$unit_price_pre_discount = floor( ( $price['subtotal'] / $item->get_quantity() ) * 100 ) / 100;
 
-			// Recalculate from raw values: WooCommerce pre-rounds, we need raw value for floor().
-			$tax_rate     = $price['tax_percent'] / 100;
+			// Calculate discount amount (excl. VAT)
+			$discount_amount = floor( ( $price['subtotal'] - $price['original'] ) * 100 ) / 100;
+
+			// Create item line (pre-discount price, excl. VAT)
+			$item_line = array(
+				'ordertext'       => $item_data['ordertext'],
+				'quantity'        => $item->get_quantity(),
+				'amount'          => rp_prepare_amount( $unit_price_pre_discount, $order->get_currency() ),
+				'vat'             => round( $tax_rate, 2 ),
+				'amount_incl_vat' => false,
+			);
+
+			// Create discount line (negative amount, excl. VAT)
+			$discount_line = array(
+				'ordertext'       => 'Discount',
+				'quantity'        => 1,
+				'amount'          => -rp_prepare_amount( $discount_amount, $order->get_currency() ),
+				'vat'             => round( $tax_rate, 2 ),
+				'amount_incl_vat' => false,
+			);
+
+			// Replace order lines with item + discount
+			$order_lines = array( $item_line, $discount_line );
+
+			// Recalculate total (incl. VAT) from raw values
 			$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
+			$total        = rp_prepare_amount( floor( $with_tax_raw * 100 ) / 100, $order->get_currency() );
 
-			// Calculate total amount directly to avoid rounding error.
-			$total_amount_before_floor = $with_tax_raw;
-			$total_amount_floored      = floor( $with_tax_raw * 100 ) / 100;
-
-			// Send total amount as "amount" with quantity=1.
-			$item_data['amount']          = rp_prepare_amount( $total_amount_floored, $order->get_currency() );
-			$item_data['quantity']        = 1;
-			$item_data['vat']             = 0;
-			$item_data['amount_incl_vat'] = true;
-
-			// Update $total to match the floored amount.
-			$total = rp_prepare_amount( $total_amount_floored, $order->get_currency() );
-
-			// LOG: Override applied.
+			// LOG: Override applied
 			$this->log(
 				array(
-					'--- Override Applied for tax-exclusive pricing with discounts ---',
-					'price[original]'    => $price['original'],
-					'price[with_tax]'    => $price['with_tax'],
-					'tax_rate'           => $tax_rate,
-					'with_tax_raw'       => $with_tax_raw,
-					'total_before_floor' => $total_amount_before_floor,
-					'total_after_floor'  => $total_amount_floored,
-					'amount_in_cents'    => $item_data['amount'],
-					'amount_formatted'   => rp_make_initial_amount( $item_data['amount'], $order->get_currency() ),
-					'quantity'           => $item_data['quantity'],
-					'original_total'     => $original_total,
-					'new_total'          => $total,
-					'total_difference'   => $original_total - $total,
-					'original_item_data' => $original_item_data,
-					'new_item_data'      => $item_data,
+					'--- Override Applied (Separate Lines) ---',
+					'price[subtotal]'           => $price['subtotal'],
+					'price[original]'           => $price['original'],
+					'tax_rate'                  => $tax_rate,
+					'unit_price_pre_discount'   => $unit_price_pre_discount,
+					'discount_amount'           => $discount_amount,
+					'with_tax_raw'              => $with_tax_raw,
+					'total'                     => $total,
+					'item_line'                 => $item_line,
+					'discount_line'             => $discount_line,
 				)
 			);
 		}
 
-		$result = reepay()->api( $order )->settle( $order, $total, array( $item_data ), $item );
+		$this->log(
+		array(
+			__METHOD__,
+			__LINE__,
+			'order' => $order->get_id(),
+			'data'  => array(
+				'$order_lines' => $order_lines,
+				'$line_items'  => $item,
+				'$total_all'   => $total,
+			),
+		));
+
+		$result = reepay()->api( $order )->settle( $order, $total, $order_lines, $item );
 
 		if ( is_wp_error( $result ) ) {
 			$error_message = $result->get_error_message();
