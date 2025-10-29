@@ -722,19 +722,19 @@ class OrderCapture {
 			return false;
 		}
 
-		// BWPM-177: Fix for tax-exclusive pricing with discounts
+		// BWPM-177: Fix for tax-exclusive pricing with discounts.
 		$condition_triggered = ! wc_prices_include_tax() && $price['subtotal'] > $price['original'];
 		$order_lines         = array( $item_data );
 
 		if ( $condition_triggered ) {
-			// Calculate pre-discount unit price (excl. VAT)
+			// Calculate pre-discount unit price (excl. VAT).
 			$tax_rate                = $price['tax_percent'] / 100;
 			$unit_price_pre_discount = floor( ( $price['subtotal'] / $item->get_quantity() ) * 100 ) / 100;
 
-			// Calculate discount amount (excl. VAT)
+			// Calculate discount amount (excl. VAT).
 			$discount_amount = floor( ( $price['subtotal'] - $price['original'] ) * 100 ) / 100;
 
-			// Create item line (pre-discount price, excl. VAT)
+			// Create item line (pre-discount price, excl. VAT).
 			$item_line = array(
 				'ordertext'       => $item_data['ordertext'],
 				'quantity'        => $item->get_quantity(),
@@ -743,7 +743,7 @@ class OrderCapture {
 				'amount_incl_vat' => false,
 			);
 
-			// Create discount line (negative amount, excl. VAT)
+			// Create discount line (negative amount, excl. VAT).
 			$discount_line = array(
 				'ordertext'       => 'Discount',
 				'quantity'        => 1,
@@ -752,41 +752,41 @@ class OrderCapture {
 				'amount_incl_vat' => false,
 			);
 
-			// Replace order lines with item + discount
+			// Replace order lines with item + discount.
 			$order_lines = array( $item_line, $discount_line );
 
-			// Recalculate total (incl. VAT) from raw values
+			// Recalculate total (incl. VAT) from raw values.
 			$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
 			$total        = rp_prepare_amount( floor( $with_tax_raw * 100 ) / 100, $order->get_currency() );
 
-			// LOG: Override applied
 			$this->log(
 				array(
 					'--- Override Applied (Separate Lines) ---',
-					'price[subtotal]'           => $price['subtotal'],
-					'price[original]'           => $price['original'],
-					'tax_rate'                  => $tax_rate,
-					'unit_price_pre_discount'   => $unit_price_pre_discount,
-					'discount_amount'           => $discount_amount,
-					'with_tax_raw'              => $with_tax_raw,
-					'total'                     => $total,
-					'item_line'                 => $item_line,
-					'discount_line'             => $discount_line,
+					'price[subtotal]'         => $price['subtotal'],
+					'price[original]'         => $price['original'],
+					'tax_rate'                => $tax_rate,
+					'unit_price_pre_discount' => $unit_price_pre_discount,
+					'discount_amount'         => $discount_amount,
+					'with_tax_raw'            => $with_tax_raw,
+					'total'                   => $total,
+					'item_line'               => $item_line,
+					'discount_line'           => $discount_line,
 				)
 			);
 		}
 
 		$this->log(
-		array(
-			__METHOD__,
-			__LINE__,
-			'order' => $order->get_id(),
-			'data'  => array(
-				'$order_lines' => $order_lines,
-				'$line_items'  => $item,
-				'$total_all'   => $total,
-			),
-		));
+			array(
+				__METHOD__,
+				__LINE__,
+				'order' => $order->get_id(),
+				'data'  => array(
+					'$order_lines' => $order_lines,
+					'$line_items'  => $item,
+					'$total_all'   => $total,
+				),
+			)
+		);
 
 		$result = reepay()->api( $order )->settle( $order, $total, $order_lines, $item );
 
