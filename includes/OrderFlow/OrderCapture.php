@@ -568,6 +568,16 @@ class OrderCapture {
 
 		if ( reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
 			$total_all = rp_prepare_amount( $order->get_total(), $order->get_currency() );
+			// Keep only 1 item with total amount
+			$items_data = array(
+				array(
+					'ordertext'       => isset( $items_data[0]['ordertext'] ) ? $items_data[0]['ordertext'] : __( 'Order Total', 'reepay-checkout-gateway' ),
+					'quantity'        => 1,
+					'amount'          => $total_all,
+					'vat'             => 0,
+					'amount_incl_vat' => isset( $items_data[0]['amount_incl_vat'] ) ? $items_data[0]['amount_incl_vat'] : '',
+				)
+			);
 			// Note: Even with skip_order_lines=yes, we still pass $items_data to settle_items
 			// so the API can calculate VAT and include it in the settlement amount.
 		}
