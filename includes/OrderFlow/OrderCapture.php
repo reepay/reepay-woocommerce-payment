@@ -567,7 +567,16 @@ class OrderCapture {
 		}
 
 		if ( reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
-			$total_all = rp_prepare_amount( $order->get_total(), $order->get_currency() );
+			// Get remaining amount from API invoice
+			$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+
+			if ( ! is_wp_error( $invoice_data ) && isset( $invoice_data['authorized_amount'], $invoice_data['settled_amount'] ) ) {
+				$total_all = $invoice_data['authorized_amount'] - $invoice_data['settled_amount'];
+			} else {
+				// Fallback to order total if API call fails
+				$total_all = rp_prepare_amount( $order->get_total(), $order->get_currency() );
+			}
+
 			// Keep only 1 item with total amount
 			$items_data = array(
 				array(
