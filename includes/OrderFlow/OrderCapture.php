@@ -737,53 +737,89 @@ class OrderCapture {
 		$order_lines         = array( $item_data );
 
 		if ( $condition_triggered ) {
-			// Calculate pre-discount unit price (excl. VAT)
-			$tax_rate                = $price['tax_percent'] / 100;
-			$unit_price_pre_discount = floor( ( $price['subtotal'] / $item->get_quantity() ) * 100 ) / 100;
+			$tax_rate = $price['tax_percent'] / 100;
 
-			// Calculate discount amount (excl. VAT)
-			$discount_amount = floor( ( $price['subtotal'] - $price['original'] ) * 100 ) / 100;
+			// Check if skip_order_lines is enabled
+			if ( reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
+				// Single line mode: Send one item with total amount (incl. VAT)
+				$amount_total = $price['original'];
+				$pd_price     = $amount_total + ($amount_total * $tax_rate );
 
-			// Create item line (pre-discount price, excl. VAT)
-			$item_line = array(
-				'ordertext'       => $item_data['ordertext'],
-				'quantity'        => $item->get_quantity(),
-				'amount'          => rp_prepare_amount( $unit_price_pre_discount, $order->get_currency() ),
-				'vat'             => round( $tax_rate, 2 ),
-				'amount_incl_vat' => false,
-			);
+				$item_line = array(
+					'ordertext'       => $item_data['ordertext'],
+					'quantity'        => 1,
+					'amount'          => rp_prepare_amount( $pd_price, $order->get_currency() ),
+					'vat'             => 0,
+					'amount_incl_vat' => true,
+				);
 
-			// Create discount line (negative amount, excl. VAT)
-			$discount_line = array(
-				'ordertext'       => 'Discount',
-				'quantity'        => 1,
-				'amount'          => -rp_prepare_amount( $discount_amount, $order->get_currency() ),
-				'vat'             => round( $tax_rate, 2 ),
-				'amount_incl_vat' => false,
-			);
+				$order_lines = array( $item_line );
+				$total       = rp_prepare_amount( floor( $pd_price * 100 ) / 100, $order->get_currency() );
 
-			// Replace order lines with item + discount
-			$order_lines = array( $item_line, $discount_line );
+				// LOG: Single line mode
+				$this->log(
+					array(
+						__METHOD__,
+						__LINE__,
+						'--- Override Applied (Single Line) ---',
+						'skip_order_lines'  => 'yes',
+						'amount_total'      => $amount_total,
+						'pd_price'          => $pd_price,
+						'total'             => $total,
+						'item_line'         => $item_line,
+					)
+				);
+			} else {
+				// Multi-line mode: Send item + discount separately
+				$unit_price_pre_discount = floor( ( $price['subtotal'] / $item->get_quantity() ) * 100 ) / 100;
+				$discount_amount         = floor( ( $price['subtotal'] - $price['original'] ) * 100 ) / 100;
 
-			// Recalculate total (incl. VAT) from raw values
-			$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
-			$total        = rp_prepare_amount( floor( $with_tax_raw * 100 ) / 100, $order->get_currency() );
+				// Create item line (pre-discount price, excl. VAT)
+				$item_line = array(
+					'ordertext'       => $item_data['ordertext'],
+					'quantity'        => $item->get_quantity(),
+					'amount'          => rp_prepare_amount( $unit_price_pre_discount, $order->get_currency() ),
+					'vat'             => round( $tax_rate, 2 ),
+					'amount_incl_vat' => false,
+				);
 
-			// LOG: Override applied
-			$this->log(
-				array(
-					'--- Override Applied (Separate Lines) ---',
-					'price[subtotal]'           => $price['subtotal'],
-					'price[original]'           => $price['original'],
-					'tax_rate'                  => $tax_rate,
-					'unit_price_pre_discount'   => $unit_price_pre_discount,
-					'discount_amount'           => $discount_amount,
-					'with_tax_raw'              => $with_tax_raw,
-					'total'                     => $total,
-					'item_line'                 => $item_line,
-					'discount_line'             => $discount_line,
-				)
-			);
+				// Create discount line (negative amount, excl. VAT)
+				$discount_line = array(
+					'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
+					'quantity'        => 1,
+					'amount'          => -rp_prepare_amount( $discount_amount, $order->get_currency() ),
+					'vat'             => round( $tax_rate, 2 ),
+					'amount_incl_vat' => false,
+				);
+
+
+
+				// Replace order lines with item + discount
+				$order_lines = array( $item_line, $discount_line );
+
+				// Recalculate total (incl. VAT) from raw values
+				$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
+				$total        = rp_prepare_amount( floor( $with_tax_raw * 100 ) / 100, $order->get_currency() );
+
+				// LOG: Multi-line mode
+				$this->log(
+					array(
+						__METHOD__,
+						__LINE__,
+						'--- Override Applied (Multi-Line) ---',
+						'skip_order_lines'          => 'no',
+						'price[subtotal]'           => $price['subtotal'],
+						'price[original]'           => $price['original'],
+						'tax_rate'                  => $tax_rate,
+						'unit_price_pre_discount'   => $unit_price_pre_discount,
+						'discount_amount'           => $discount_amount,
+						'with_tax_raw'              => $with_tax_raw,
+						'total'                     => $total,
+						'item_line'                 => $item_line,
+						'discount_line'             => $discount_line,
+					)
+				);
+			}
 		}
 
 		$this->log(
