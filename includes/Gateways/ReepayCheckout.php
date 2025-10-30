@@ -812,9 +812,18 @@ class ReepayCheckout extends ReepayGateway {
 	 */
 	public function get_localize_script_data(): array {
 		return array(
-			'payment_type' => $this->payment_type,
-			'cancel_text'  => __( 'Payment was canceled, please try again', 'reepay-checkout-gateway' ),
-			'error_text'   => __( 'Error with payment, please try again', 'reepay-checkout-gateway' ),
+			'payment_type'                 => $this->payment_type,
+			'cancel_text'                  => __( 'Payment was canceled, please try again', 'reepay-checkout-gateway' ),
+			'error_text'                   => __( 'Error with payment, please try again', 'reepay-checkout-gateway' ),
+			// Guest checkout validation (BWPM-178).
+			'guest_checkout_disabled'      => WC()->checkout()->is_registration_required(),
+			'is_user_logged_in'            => is_user_logged_in(),
+			'guest_checkout_error_message' => sprintf(
+				/* translators: 1: login URL, 2: register URL */
+				__( 'You must be logged in to checkout. Please <a href="%1$s" class="showlogin">log in</a> or <a href="%2$s">create an account</a> to continue.', 'reepay-checkout-gateway' ),
+				esc_url( wc_get_page_permalink( 'myaccount' ) ),
+				esc_url( wc_get_account_endpoint_url( 'register' ) )
+			),
 		);
 	}
 

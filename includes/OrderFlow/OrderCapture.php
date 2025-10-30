@@ -397,7 +397,7 @@ class OrderCapture {
 
 			// Skip bundle products to be consistent with other methods.
 			if ( WPCProductBundlesWooCommerceIntegration::is_order_item_bundle( $item ) ) {
-				$item_data = $this->get_item_data( $item, $order );
+				$item_data = $this->get_item_data( $item, $order, true );
 				$this->log(
 					array(
 						__METHOD__,
@@ -414,7 +414,7 @@ class OrderCapture {
 			}
 
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
-				$item_data = $this->get_item_data( $item, $order );
+				$item_data = $this->get_item_data( $item, $order, true );
 				$price     = self::get_item_price( $item, $order );
 				$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
@@ -457,7 +457,7 @@ class OrderCapture {
 					$line_items[] = $item;
 					$total_all   += $total;
 				} else {
-					$item_data = $this->get_item_data( $item, $order );
+					$item_data = $this->get_item_data( $item, $order, true );
 					$price     = self::get_item_price( $item, $order );
 					$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
@@ -545,7 +545,7 @@ class OrderCapture {
 
 		foreach ( $order->get_items( array( 'shipping', 'fee', PWGiftCardsIntegration::KEY_PW_GIFT_ITEMS ) ) as $item ) {
 			if ( empty( $item->get_meta( 'settled' ) ) ) {
-				$item_data = $this->get_item_data( $item, $order );
+				$item_data = $this->get_item_data( $item, $order, true );
 				$price     = self::get_item_price( $item, $order );
 				$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
@@ -558,7 +558,7 @@ class OrderCapture {
 		}
 
 		foreach ( $order->get_items( WCGiftCardsIntegration::KEY_WC_GIFT_ITEMS ) as $item ) {
-			$item_data    = $this->get_item_data( $item, $order );
+			$item_data    = $this->get_item_data( $item, $order, true );
 			$price        = $item->get_amount() * - 1;
 			$total        = rp_prepare_amount( $price, $order->get_currency() );
 			$items_data[] = $item_data;
@@ -567,8 +567,27 @@ class OrderCapture {
 		}
 
 		if ( reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
-			$total_all = rp_prepare_amount( $order->get_total(), $order->get_currency() );
-			// Note: Even with skip_order_lines=yes, we still pass $items_data to settle_items
+			// Get remaining amount from API invoice.
+			$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+
+			if ( ! is_wp_error( $invoice_data ) && isset( $invoice_data['authorized_amount'], $invoice_data['settled_amount'] ) ) {
+				$total_all = $invoice_data['authorized_amount'] - $invoice_data['settled_amount'];
+			} else {
+				// Fallback to order total if API call fails.
+				$total_all = rp_prepare_amount( $order->get_total(), $order->get_currency() );
+			}
+
+			// Keep only 1 item with total amount.
+			$items_data = array(
+				array(
+					'ordertext'       => isset( $items_data[0]['ordertext'] ) ? $items_data[0]['ordertext'] : __( 'Order Total', 'reepay-checkout-gateway' ),
+					'quantity'        => 1,
+					'amount'          => $total_all,
+					'vat'             => 0,
+					'amount_incl_vat' => isset( $items_data[0]['amount_incl_vat'] ) ? $items_data[0]['amount_incl_vat'] : '',
+				),
+			);
+			// Note: Even with skip_order_lines=yes, we still pass $items_data to settle_items.
 			// so the API can calculate VAT and include it in the settlement amount.
 		}
 
@@ -613,7 +632,7 @@ class OrderCapture {
 	 * @return bool
 	 */
 	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = true ): bool {
-		unset( $_POST['post_status'] ); // // Prevent order status changing by WooCommerce
+		unset( $_POST['post_status'] ); // Prevent order status changing by WooCommerce.
 
 		$this->log(
 			array(
@@ -666,7 +685,10 @@ class OrderCapture {
 		}
 
 		foreach ( $line_items as $item ) {
-			$item_data = $this->get_item_data( $item, $order );
+			// Note: This is called after settle_items() succeeds, just to mark items as settled.
+			// The actual API call already happened with the correct amounts from multi_settle().
+			// We use the same $use_pre_discount_price flag for consistency, but it doesn't affect the API.
+			$item_data = $this->get_item_data( $item, $order, true );
 			$total     = $item_data['amount'] * $item_data['quantity'];
 			$this->complete_settle( $item, $order, $total );
 		}
@@ -712,7 +734,6 @@ class OrderCapture {
 
 		if ( $total <= 0 ) {
 			do_action( 'reepay_order_item_settled', $item, $order );
-
 			return true;
 		}
 
@@ -720,24 +741,166 @@ class OrderCapture {
 			return false;
 		}
 
-		// Amount calculation in case product has a discount for tax-excluding pricing.
-		if ( $price['subtotal'] > $price['original'] ) {
-			$unit_price          = round( $price['original'] / $item->get_quantity(), 2 );
-			$item_data['amount'] = rp_prepare_amount( $unit_price, $order->get_currency() );
+		// BWPM-177: Fix for tax-exclusive pricing with discounts.
+		$condition_triggered = ! wc_prices_include_tax() && $price['subtotal'] > $price['original'];
+		$order_lines         = array( $item_data );
+
+		if ( $condition_triggered ) {
+			$tax_rate = $price['tax_percent'] / 100;
+
+			// Check if skip_order_lines is enabled.
+			if ( reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
+				// Single line mode: Send one item with total amount (incl. VAT).
+				$amount_total = $price['original'];
+				$pd_price     = $amount_total + ( $amount_total * $tax_rate );
+
+				$item_line = array(
+					'ordertext'       => $item_data['ordertext'],
+					'quantity'        => 1,
+					'amount'          => rp_prepare_amount( $pd_price, $order->get_currency() ),
+					'vat'             => 0,
+					'amount_incl_vat' => true,
+				);
+
+				$order_lines = array( $item_line );
+				$total       = rp_prepare_amount( floor( $pd_price * 100 ) / 100, $order->get_currency() );
+
+				// LOG: Single line mode.
+				$this->log(
+					array(
+						__METHOD__,
+						__LINE__,
+						'--- Override Applied (Single Line) ---',
+						'skip_order_lines' => 'yes',
+						'amount_total'     => $amount_total,
+						'pd_price'         => $pd_price,
+						'total'            => $total,
+						'item_line'        => $item_line,
+					)
+				);
+			} else {
+				// Multi-line mode: Send item + discount separately.
+				$unit_price_pre_discount = floor( ( $price['subtotal'] / $item->get_quantity() ) * 100 ) / 100;
+				$discount_amount         = floor( ( $price['subtotal'] - $price['original'] ) * 100 ) / 100;
+
+				// Create item line (pre-discount price, excl. VAT).
+				$item_line = array(
+					'ordertext'       => $item_data['ordertext'],
+					'quantity'        => $item->get_quantity(),
+					'amount'          => rp_prepare_amount( $unit_price_pre_discount, $order->get_currency() ),
+					'vat'             => round( $tax_rate, 2 ),
+					'amount_incl_vat' => false,
+				);
+
+				// Create discount line (negative amount, excl. VAT).
+				$discount_line = array(
+					'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
+					'quantity'        => 1,
+					'amount'          => -rp_prepare_amount( $discount_amount, $order->get_currency() ),
+					'vat'             => round( $tax_rate, 2 ),
+					'amount_incl_vat' => false,
+				);
+
+				// Replace order lines with item + discount.
+				$order_lines = array( $item_line, $discount_line );
+
+				// Recalculate total (incl. VAT) from raw values.
+				$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
+				$total        = rp_prepare_amount( floor( $with_tax_raw * 100 ) / 100, $order->get_currency() );
+
+				// BWPM-177: Validate against remaining amount from API.
+				$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+
+				if ( ! is_wp_error( $invoice_data ) && isset( $invoice_data['authorized_amount'], $invoice_data['settled_amount'] ) ) {
+					$order_total_due = $invoice_data['authorized_amount'] - $invoice_data['settled_amount'];
+
+					// Calculate what Reepay will compute from our order_lines (including VAT).
+					$calculated_with_vat = 0;
+					foreach ( $order_lines as $line ) {
+						$line_amount = $line['amount'];
+						if ( isset( $line['vat'] ) && $line['vat'] > 0 && ( ! isset( $line['amount_incl_vat'] ) || ! $line['amount_incl_vat'] ) ) {
+							// Reepay will add VAT.
+							$line_amount = floor( $line_amount * ( 1 + $line['vat'] ) );
+						}
+						$calculated_with_vat += $line_amount * ( isset( $line['quantity'] ) ? $line['quantity'] : 1 );
+					}
+
+					// If calculated amount exceeds remaining, add adjustment.
+					if ( $calculated_with_vat > $order_total_due ) {
+						$adjustment_amount = $order_total_due - $calculated_with_vat;
+
+						$other_line = array(
+							'ordertext'       => __( 'Other', 'reepay-checkout-gateway' ),
+							'quantity'        => 1,
+							'amount'          => $adjustment_amount,
+							'vat'             => 0,
+							'amount_incl_vat' => true,
+						);
+
+						$order_lines[] = $other_line;
+						$total         = $order_total_due;
+
+						$this->log(
+							array(
+								__METHOD__,
+								__LINE__,
+								'--- Amount Adjustment ---',
+								'authorized_amount'   => $invoice_data['authorized_amount'],
+								'settled_amount'      => $invoice_data['settled_amount'],
+								'order_total_due'     => $order_total_due,
+								'calculated_with_vat' => $calculated_with_vat,
+								'adjustment_amount'   => $adjustment_amount,
+								'other_line'          => $other_line,
+							)
+						);
+					}
+				}
+
+				// LOG: Multi-line mode.
+				$this->log(
+					array(
+						__METHOD__,
+						__LINE__,
+						'--- Override Applied (Multi-Line) ---',
+						'skip_order_lines'        => 'no',
+						'price[subtotal]'         => $price['subtotal'],
+						'price[original]'         => $price['original'],
+						'tax_rate'                => $tax_rate,
+						'unit_price_pre_discount' => $unit_price_pre_discount,
+						'discount_amount'         => $discount_amount,
+						'with_tax_raw'            => $with_tax_raw,
+						'total'                   => $total,
+						'item_line'               => $item_line,
+						'discount_line'           => $discount_line,
+					)
+				);
+			}
 		}
 
-		$result = reepay()->api( $order )->settle( $order, $total, array( $item_data ), $item );
+		$this->log(
+			array(
+				__METHOD__,
+				__LINE__,
+				'order' => $order->get_id(),
+				'data'  => array(
+					'$order_lines' => $order_lines,
+					'$line_items'  => $item,
+					'$total_all'   => $total,
+				),
+			)
+		);
+
+		$result = reepay()->api( $order )->settle( $order, $total, $order_lines, $item );
 
 		if ( is_wp_error( $result ) ) {
-			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $result->get_error_message() ) );
-			set_transient( 'reepay_api_action_error', $result->get_error_message(), MINUTE_IN_SECONDS / 2 );
-
+			$error_message = $result->get_error_message();
+			rp_get_payment_method( $order )->log( sprintf( '%s Error: %s', __METHOD__, $error_message ) );
+			set_transient( 'reepay_api_action_error', $error_message, MINUTE_IN_SECONDS / 2 );
 			return false;
 		}
 
 		if ( 'failed' === $result['state'] ) {
 			set_transient( 'reepay_api_action_error', __( 'Failed to settle item', 'reepay-checkout-gateway' ), MINUTE_IN_SECONDS / 2 );
-
 			return false;
 		}
 
@@ -843,12 +1006,13 @@ class OrderCapture {
 	/**
 	 * Prepare order item data for reepay
 	 *
-	 * @param WC_Order_Item $order_item order item to get data.
-	 * @param WC_Order      $order      current order.
+	 * @param WC_Order_Item $order_item              order item to get data.
+	 * @param WC_Order      $order                   current order.
+	 * @param bool          $use_pre_discount_price  whether to use pre-discount price (for multi_settle with separate discount line).
 	 *
 	 * @return array
 	 */
-	public function get_item_data( WC_Order_Item $order_item, WC_Order $order ): array {
+	public function get_item_data( WC_Order_Item $order_item, WC_Order $order, bool $use_pre_discount_price = false ): array {
 		$prices_incl_tax = wc_prices_include_tax();
 		$price           = self::get_item_price( $order_item, $order );
 
@@ -867,9 +1031,16 @@ class OrderCapture {
 			$unit_price = ( $prices_incl_tax ? $price['with_tax'] : $price['original'] );
 			$ordertext  = rp_clear_ordertext( $order_item->get_name() );
 		} else {
-			if ( $order->get_total_discount( false ) > 0 ) {
+			// BWPM-177: Handle two different capture scenarios:
+			// 1. multi_settle (Capture All): Uses pre-discount prices + separate discount line.
+			// 2. settle_item (Capture Individual): Uses post-discount prices directly.
+			if ( $use_pre_discount_price ) {
+				// For multi_settle: use pre-discount prices (subtotal_with_tax/subtotal).
+				// because discount will be added as a separate line item.
 				$unit_price = round( ( $prices_incl_tax ? $price['subtotal_with_tax'] : $price['subtotal'] ) / $order_item->get_quantity(), 2 );
 			} else {
+				// For settle_item: use post-discount prices (with_tax/original).
+				// because we're capturing the item at its actual final price.
 				$unit_price = round( ( $prices_incl_tax ? $price['with_tax'] : $price['original'] ) / $order_item->get_quantity(), 2 );
 			}
 			$ordertext = rp_clear_ordertext( $order_item->get_name() );

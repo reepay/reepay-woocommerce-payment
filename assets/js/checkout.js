@@ -5,6 +5,33 @@
 window.rp = new Reepay.ModalCheckout();
 
 jQuery(function ($) {
+    /**
+     * Guest Checkout Validation
+     * Validates guest checkout settings before allowing checkout to proceed
+     * This prevents guest users from checking out when guest checkout is disabled
+     */
+    jQuery('form.checkout').on('checkout_place_order', function (e) {
+        // Check if WC_Gateway_Reepay_Checkout object exists
+        if (typeof WC_Gateway_Reepay_Checkout !== 'undefined') {
+            // Check if guest checkout is disabled and user is not logged in
+            if (WC_Gateway_Reepay_Checkout.guest_checkout_disabled &&
+                !WC_Gateway_Reepay_Checkout.is_user_logged_in) {
+
+                // Show error message
+                wc_reepay.throw_error(WC_Gateway_Reepay_Checkout.guest_checkout_error_message);
+
+                // Log for debugging
+                console.log('Reepay: Guest checkout blocked - user must log in');
+
+                // Prevent checkout from proceeding
+                return false;
+            }
+        }
+
+        // Allow checkout to proceed
+        return true;
+    });
+
     jQuery('form.checkout').on('checkout_place_order_success', function (e, result) {
         if (!result.hasOwnProperty('is_reepay_checkout')) {
             return true;
@@ -31,6 +58,20 @@ jQuery(function ($) {
                 wc_reepay.buildModalCheckout(rid, accept_url);
                 history.pushState('', document.title, window.location.pathname);
             }, 300);
+        }
+
+        // Check if WC_Gateway_Reepay_Checkout object exists
+        if (typeof WC_Gateway_Reepay_Checkout !== 'undefined') {
+            // Check if guest checkout is disabled and user is not logged in
+            if (WC_Gateway_Reepay_Checkout.guest_checkout_disabled &&
+                !WC_Gateway_Reepay_Checkout.is_user_logged_in) {
+
+                // Show error message
+                wc_reepay.throw_error(WC_Gateway_Reepay_Checkout.guest_checkout_error_message);
+
+                // Log for debugging
+                console.log('Reepay: Guest checkout blocked - user must log in');
+            }
         }
     });
 });

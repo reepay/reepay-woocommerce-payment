@@ -97,8 +97,12 @@ class InstantSettle {
 		if ( ! empty( $settle_items ) ) {
 			foreach ( $settle_items as $item ) {
 				if ( empty( $item->get_meta( 'settled' ) ) ) {
-					$item_data = self::$order_capture->get_item_data( $item, $order );
-					$total     = $item_data['amount'] * $item_data['quantity'];
+					// BWPM-177 FIX: Use pre-discount price (true) to match multi_settle behavior.
+					// This ensures discount is handled as a separate line item.
+					$item_data = self::$order_capture->get_item_data( $item, $order, true );
+					$price     = OrderCapture::get_item_price( $item, $order );
+					$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
+
 					if ( $total <= 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
 						WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 					} elseif ( $total > 0 && self::$order_capture->check_capture_allowed( $order ) ) {

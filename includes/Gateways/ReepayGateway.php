@@ -772,6 +772,30 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @throws Exception If payment error.
 	 */
 	public function process_payment( $order_id ) {
+		// VALIDATION: Check guest checkout settings (BWPM-178)
+		// Prevent guest users from checking out when guest checkout is disabled.
+		if ( ! is_user_logged_in() && WC()->checkout()->is_registration_required() ) {
+			$this->log(
+				array(
+					'source'   => 'process_payment_guest_checkout_blocked',
+					'order_id' => $order_id,
+					'message'  => 'Guest checkout is disabled and user is not logged in',
+				)
+			);
+
+			wc_add_notice(
+				sprintf(
+					/* translators: 1: login URL, 2: register URL */
+					__( 'You must be logged in to checkout. Please <a href="%1$s" class="showlogin">log in</a> or <a href="%2$s">create an account</a> to continue.', 'reepay-checkout-gateway' ),
+					esc_url( wc_get_page_permalink( 'myaccount' ) ),
+					esc_url( wc_get_account_endpoint_url( 'register' ) )
+				),
+				'error'
+			);
+
+			return false;
+		}
+
 		$is_woo_blocks_checkout_request = false;
 
 		if ( isset( $_SERVER['CONTENT_TYPE'] ) && 'application/json' === $_SERVER['CONTENT_TYPE'] ) {
@@ -1671,6 +1695,17 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'order_id'   => $order->get_id(),
 					'session_id' => $result['id'],
 					'has_url'    => ! empty( $result['url'] ),
+				)
+			);
+
+			$this->log(
+				array(
+					'source'       => 'process_session_charge_payment_window_display_debug',
+					'order_id'     => $order->get_id(),
+					'payment_type' => $this->payment_type,
+					'accept_url'   => $this->get_return_url( $order ),
+					'result_url'   => $result['url'] ?? 'N/A',
+					'note'         => 'This should check payment_type before returning hash redirect',
 				)
 			);
 
