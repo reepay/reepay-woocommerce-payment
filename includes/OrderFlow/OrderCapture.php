@@ -792,14 +792,60 @@ class OrderCapture {
 					'amount_incl_vat' => false,
 				);
 
-
-
 				// Replace order lines with item + discount
 				$order_lines = array( $item_line, $discount_line );
 
 				// Recalculate total (incl. VAT) from raw values
 				$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
 				$total        = rp_prepare_amount( floor( $with_tax_raw * 100 ) / 100, $order->get_currency() );
+
+				// BWPM-177: Validate against remaining amount from API
+				$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+
+				if ( ! is_wp_error( $invoice_data ) && isset( $invoice_data['authorized_amount'], $invoice_data['settled_amount'] ) ) {
+					$order_total_due = $invoice_data['authorized_amount'] - $invoice_data['settled_amount'];
+
+					// Calculate what Reepay will compute from our order_lines (including VAT)
+					$calculated_with_vat = 0;
+					foreach ( $order_lines as $line ) {
+						$line_amount = $line['amount'];
+						if ( isset( $line['vat'] ) && $line['vat'] > 0 && ( ! isset( $line['amount_incl_vat'] ) || ! $line['amount_incl_vat'] ) ) {
+							// Reepay will add VAT
+							$line_amount = floor( $line_amount * ( 1 + $line['vat'] ) );
+						}
+						$calculated_with_vat += $line_amount * ( isset( $line['quantity'] ) ? $line['quantity'] : 1 );
+					}
+
+					// If calculated amount exceeds remaining, add adjustment
+					if ( $calculated_with_vat > $order_total_due ) {
+						$adjustment_amount = $order_total_due - $calculated_with_vat;
+
+						$other_line = array(
+							'ordertext'       => __( 'Other', 'reepay-checkout-gateway' ),
+							'quantity'        => 1,
+							'amount'          => $adjustment_amount,
+							'vat'             => 0,
+							'amount_incl_vat' => true,
+						);
+
+						$order_lines[] = $other_line;
+						$total         = $order_total_due;
+
+						$this->log(
+							array(
+								__METHOD__,
+								__LINE__,
+								'--- Amount Adjustment ---',
+								'authorized_amount'     => $invoice_data['authorized_amount'],
+								'settled_amount'        => $invoice_data['settled_amount'],
+								'order_total_due'       => $order_total_due,
+								'calculated_with_vat'   => $calculated_with_vat,
+								'adjustment_amount'     => $adjustment_amount,
+								'other_line'            => $other_line,
+							)
+						);
+					}
+				}
 
 				// LOG: Multi-line mode
 				$this->log(
