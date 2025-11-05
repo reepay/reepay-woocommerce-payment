@@ -741,140 +741,136 @@ class OrderCapture {
 			return false;
 		}
 
-		// BWPM-177: Fix for tax-exclusive pricing with discounts.
-		$condition_triggered = ! wc_prices_include_tax() && $price['subtotal'] > $price['original'];
+		// BWPM-177: Fix for pricing with discounts.
 		$order_lines         = array( $item_data );
+		$tax_rate = $price['tax_percent'] / 100;
 
-		if ( $condition_triggered ) {
-			$tax_rate = $price['tax_percent'] / 100;
+		// Check if skip_order_lines is enabled.
+		if ( reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
+			// Single line mode: Send one item with total amount (incl. VAT).
+			$amount_total = $price['original'];
+			$pd_price     = $amount_total + ( $amount_total * $tax_rate );
 
-			// Check if skip_order_lines is enabled.
-			if ( reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
-				// Single line mode: Send one item with total amount (incl. VAT).
-				$amount_total = $price['original'];
-				$pd_price     = $amount_total + ( $amount_total * $tax_rate );
+			$item_line = array(
+				'ordertext'       => $item_data['ordertext'],
+				'quantity'        => 1,
+				'amount'          => rp_prepare_amount( $pd_price, $order->get_currency() ),
+				'vat'             => 0,
+				'amount_incl_vat' => true,
+			);
 
-				$item_line = array(
-					'ordertext'       => $item_data['ordertext'],
-					'quantity'        => 1,
-					'amount'          => rp_prepare_amount( $pd_price, $order->get_currency() ),
-					'vat'             => 0,
-					'amount_incl_vat' => true,
-				);
+			$order_lines = array( $item_line );
+			$total       = rp_prepare_amount( floor( $pd_price * 100 ) / 100, $order->get_currency() );
 
-				$order_lines = array( $item_line );
-				$total       = rp_prepare_amount( floor( $pd_price * 100 ) / 100, $order->get_currency() );
+			// LOG: Single line mode.
+			$this->log(
+				array(
+					__METHOD__,
+					__LINE__,
+					'--- Override Applied (Single Line) ---',
+					'skip_order_lines' => 'yes',
+					'amount_total'     => $amount_total,
+					'pd_price'         => $pd_price,
+					'total'            => $total,
+					'item_line'        => $item_line,
+				)
+			);
+		} else {
+			// Multi-line mode: Send item + discount separately.
+			$unit_price_pre_discount = floor( ( $price['subtotal'] / $item->get_quantity() ) * 100 ) / 100;
+			$discount_amount         = floor( ( $price['subtotal'] - $price['original'] ) * 100 ) / 100;
 
-				// LOG: Single line mode.
-				$this->log(
-					array(
-						__METHOD__,
-						__LINE__,
-						'--- Override Applied (Single Line) ---',
-						'skip_order_lines' => 'yes',
-						'amount_total'     => $amount_total,
-						'pd_price'         => $pd_price,
-						'total'            => $total,
-						'item_line'        => $item_line,
-					)
-				);
-			} else {
-				// Multi-line mode: Send item + discount separately.
-				$unit_price_pre_discount = floor( ( $price['subtotal'] / $item->get_quantity() ) * 100 ) / 100;
-				$discount_amount         = floor( ( $price['subtotal'] - $price['original'] ) * 100 ) / 100;
+			// Create item line (pre-discount price, excl. VAT).
+			$item_line = array(
+				'ordertext'       => $item_data['ordertext'],
+				'quantity'        => $item->get_quantity(),
+				'amount'          => rp_prepare_amount( $unit_price_pre_discount, $order->get_currency() ),
+				'vat'             => round( $tax_rate, 2 ),
+				'amount_incl_vat' => false,
+			);
 
-				// Create item line (pre-discount price, excl. VAT).
-				$item_line = array(
-					'ordertext'       => $item_data['ordertext'],
-					'quantity'        => $item->get_quantity(),
-					'amount'          => rp_prepare_amount( $unit_price_pre_discount, $order->get_currency() ),
-					'vat'             => round( $tax_rate, 2 ),
-					'amount_incl_vat' => false,
-				);
+			// Create discount line (negative amount, excl. VAT).
+			$discount_line = array(
+				'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
+				'quantity'        => 1,
+				'amount'          => -rp_prepare_amount( $discount_amount, $order->get_currency() ),
+				'vat'             => round( $tax_rate, 2 ),
+				'amount_incl_vat' => false,
+			);
 
-				// Create discount line (negative amount, excl. VAT).
-				$discount_line = array(
-					'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
-					'quantity'        => 1,
-					'amount'          => -rp_prepare_amount( $discount_amount, $order->get_currency() ),
-					'vat'             => round( $tax_rate, 2 ),
-					'amount_incl_vat' => false,
-				);
+			// Replace order lines with item + discount.
+			$order_lines = array( $item_line, $discount_line );
 
-				// Replace order lines with item + discount.
-				$order_lines = array( $item_line, $discount_line );
+			// Recalculate total (incl. VAT) from raw values.
+			$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
+			$total        = rp_prepare_amount( floor( $with_tax_raw * 100 ) / 100, $order->get_currency() );
 
-				// Recalculate total (incl. VAT) from raw values.
-				$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
-				$total        = rp_prepare_amount( floor( $with_tax_raw * 100 ) / 100, $order->get_currency() );
+			// BWPM-177: Validate against remaining amount from API.
+			$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
 
-				// BWPM-177: Validate against remaining amount from API.
-				$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+			if ( ! is_wp_error( $invoice_data ) && isset( $invoice_data['authorized_amount'], $invoice_data['settled_amount'] ) ) {
+				$order_total_due = $invoice_data['authorized_amount'] - $invoice_data['settled_amount'];
 
-				if ( ! is_wp_error( $invoice_data ) && isset( $invoice_data['authorized_amount'], $invoice_data['settled_amount'] ) ) {
-					$order_total_due = $invoice_data['authorized_amount'] - $invoice_data['settled_amount'];
-
-					// Calculate what Reepay will compute from our order_lines (including VAT).
-					$calculated_with_vat = 0;
-					foreach ( $order_lines as $line ) {
-						$line_amount = $line['amount'];
-						if ( isset( $line['vat'] ) && $line['vat'] > 0 && ( ! isset( $line['amount_incl_vat'] ) || ! $line['amount_incl_vat'] ) ) {
-							// Reepay will add VAT.
-							$line_amount = floor( $line_amount * ( 1 + $line['vat'] ) );
-						}
-						$calculated_with_vat += $line_amount * ( isset( $line['quantity'] ) ? $line['quantity'] : 1 );
+				// Calculate what Reepay will compute from our order_lines (including VAT).
+				$calculated_with_vat = 0;
+				foreach ( $order_lines as $line ) {
+					$line_amount = $line['amount'];
+					if ( isset( $line['vat'] ) && $line['vat'] > 0 && ( ! isset( $line['amount_incl_vat'] ) || ! $line['amount_incl_vat'] ) ) {
+						// Reepay will add VAT.
+						$line_amount = floor( $line_amount * ( 1 + $line['vat'] ) );
 					}
-
-					// If calculated amount exceeds remaining, add adjustment.
-					if ( $calculated_with_vat > $order_total_due ) {
-						$adjustment_amount = $order_total_due - $calculated_with_vat;
-
-						$other_line = array(
-							'ordertext'       => __( 'Other', 'reepay-checkout-gateway' ),
-							'quantity'        => 1,
-							'amount'          => $adjustment_amount,
-							'vat'             => 0,
-							'amount_incl_vat' => true,
-						);
-
-						$order_lines[] = $other_line;
-						$total         = $order_total_due;
-
-						$this->log(
-							array(
-								__METHOD__,
-								__LINE__,
-								'--- Amount Adjustment ---',
-								'authorized_amount'   => $invoice_data['authorized_amount'],
-								'settled_amount'      => $invoice_data['settled_amount'],
-								'order_total_due'     => $order_total_due,
-								'calculated_with_vat' => $calculated_with_vat,
-								'adjustment_amount'   => $adjustment_amount,
-								'other_line'          => $other_line,
-							)
-						);
-					}
+					$calculated_with_vat += $line_amount * ( isset( $line['quantity'] ) ? $line['quantity'] : 1 );
 				}
 
-				// LOG: Multi-line mode.
-				$this->log(
-					array(
-						__METHOD__,
-						__LINE__,
-						'--- Override Applied (Multi-Line) ---',
-						'skip_order_lines'        => 'no',
-						'price[subtotal]'         => $price['subtotal'],
-						'price[original]'         => $price['original'],
-						'tax_rate'                => $tax_rate,
-						'unit_price_pre_discount' => $unit_price_pre_discount,
-						'discount_amount'         => $discount_amount,
-						'with_tax_raw'            => $with_tax_raw,
-						'total'                   => $total,
-						'item_line'               => $item_line,
-						'discount_line'           => $discount_line,
-					)
-				);
+				// If calculated amount exceeds remaining, add adjustment.
+				if ( $calculated_with_vat > $order_total_due ) {
+					$adjustment_amount = $order_total_due - $calculated_with_vat;
+
+					$other_line = array(
+						'ordertext'       => __( 'Other', 'reepay-checkout-gateway' ),
+						'quantity'        => 1,
+						'amount'          => $adjustment_amount,
+						'vat'             => 0,
+						'amount_incl_vat' => true,
+					);
+
+					$order_lines[] = $other_line;
+					$total         = $order_total_due;
+
+					$this->log(
+						array(
+							__METHOD__,
+							__LINE__,
+							'--- Amount Adjustment ---',
+							'authorized_amount'   => $invoice_data['authorized_amount'],
+							'settled_amount'      => $invoice_data['settled_amount'],
+							'order_total_due'     => $order_total_due,
+							'calculated_with_vat' => $calculated_with_vat,
+							'adjustment_amount'   => $adjustment_amount,
+							'other_line'          => $other_line,
+						)
+					);
+				}
 			}
+
+			// LOG: Multi-line mode.
+			$this->log(
+				array(
+					__METHOD__,
+					__LINE__,
+					'--- Override Applied (Multi-Line) ---',
+					'skip_order_lines'        => 'no',
+					'price[subtotal]'         => $price['subtotal'],
+					'price[original]'         => $price['original'],
+					'tax_rate'                => $tax_rate,
+					'unit_price_pre_discount' => $unit_price_pre_discount,
+					'discount_amount'         => $discount_amount,
+					'with_tax_raw'            => $with_tax_raw,
+					'total'                   => $total,
+					'item_line'               => $item_line,
+					'discount_line'           => $discount_line,
+				)
+			);
 		}
 
 		$this->log(
