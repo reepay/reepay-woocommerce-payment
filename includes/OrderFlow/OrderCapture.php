@@ -742,8 +742,8 @@ class OrderCapture {
 		}
 
 		// BWPM-177: Fix for pricing with discounts.
-		$order_lines         = array( $item_data );
-		$tax_rate = $price['tax_percent'] / 100;
+		$order_lines = array( $item_data );
+		$tax_rate    = $price['tax_percent'] / 100;
 
 		// Check if skip_order_lines is enabled.
 		if ( reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
