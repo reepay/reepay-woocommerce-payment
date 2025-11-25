@@ -178,7 +178,7 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 	public function test_line_item_capture_one_line_item() {
 		$this->api_mock->method( 'get_invoice_data' )->willReturn(
 			array(
-				'authorized_amount' => 100,
+				'authorized_amount' => 2058,  // Enough to cover 20.48 (2048) + some buffer
 				'settled_amount'    => 10,
 				'refunded_amount'   => 0,
 			)
