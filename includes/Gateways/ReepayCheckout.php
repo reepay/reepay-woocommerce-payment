@@ -815,8 +815,9 @@ class ReepayCheckout extends ReepayGateway {
 			'payment_type'                 => $this->payment_type,
 			'cancel_text'                  => __( 'Payment was canceled, please try again', 'reepay-checkout-gateway' ),
 			'error_text'                   => __( 'Error with payment, please try again', 'reepay-checkout-gateway' ),
-			// Guest checkout validation (BWPM-178).
+			// Guest checkout validation (BWPM-178, BWPM-184).
 			'guest_checkout_disabled'      => WC()->checkout()->is_registration_required(),
+			'registration_enabled'         => WC()->checkout()->is_registration_enabled(),
 			'is_user_logged_in'            => is_user_logged_in(),
 			'guest_checkout_error_message' => sprintf(
 				/* translators: 1: login URL, 2: register URL */
