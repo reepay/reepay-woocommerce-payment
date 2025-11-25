@@ -512,7 +512,6 @@ class OrderCapture {
 		);
 
 		// Add discount line.
-		// BWPM-177: Calculate proportional discount for unsettled items only.
 		if ( $order->get_total_discount( false ) > 0 ) {
 			$prices_incl_tax   = wc_prices_include_tax();
 			$discount          = $order->get_total_discount();
@@ -529,31 +528,7 @@ class OrderCapture {
 				$simple_discount_amount = $discount;
 			}
 
-			// Calculate proportional discount based on unsettled items.
-			// Get total order subtotal (before discount).
-			$order_subtotal = 0;
-			$unsettled_subtotal = 0;
-
-			foreach ( $order->get_items() as $order_item ) {
-				$item_price = self::get_item_price( $order_item, $order );
-				$item_subtotal = $prices_incl_tax ? $item_price['subtotal_with_tax'] : $item_price['subtotal'];
-				$order_subtotal += $item_subtotal;
-
-				// Only count unsettled items.
-				if ( empty( $order_item->get_meta( 'settled' ) ) ) {
-					$unsettled_subtotal += $item_subtotal;
-				}
-			}
-
-			// Calculate proportional discount for unsettled items.
-			if ( $order_subtotal > 0 ) {
-				$discount_ratio = $unsettled_subtotal / $order_subtotal;
-				$proportional_discount = $simple_discount_amount * $discount_ratio;
-			} else {
-				$proportional_discount = $simple_discount_amount;
-			}
-
-			$discount_amount = round( - 1 * rp_prepare_amount( $proportional_discount, $order->get_currency() ) );
+			$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
 
 			if ( $discount_amount < 0 ) {
 				$items_discount = array(
