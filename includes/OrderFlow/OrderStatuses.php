@@ -70,7 +70,8 @@ class OrderStatuses {
 
 		add_filter( 'woocommerce_payment_complete_order_status', array( $this, 'payment_complete_order_status' ), 10, 3 );
 
-		add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 10 );
+		// Changed from 'plugins_loaded' to 'init' to ensure translations are loaded first.
+		add_action( 'init', array( $this, 'plugins_loaded' ), 10 );
 
 		add_action( 'woocommerce_payment_complete', array( $this, 'payment_complete' ), 10, 1 );
 

@@ -8,20 +8,23 @@ jQuery(function ($) {
     /**
      * Guest Checkout Validation
      * Validates guest checkout settings before allowing checkout to proceed
-     * This prevents guest users from checking out when guest checkout is disabled
+     * BWPM-178: Prevents guest users from checking out when guest checkout is disabled
+     * BWPM-184: Allows account creation during checkout if registration is enabled
      */
     jQuery('form.checkout').on('checkout_place_order', function (e) {
         // Check if WC_Gateway_Reepay_Checkout object exists
         if (typeof WC_Gateway_Reepay_Checkout !== 'undefined') {
-            // Check if guest checkout is disabled and user is not logged in
+            // Check if guest checkout is disabled, registration is disabled, and user is not logged in
+            // Only block if BOTH guest checkout AND registration are disabled
             if (WC_Gateway_Reepay_Checkout.guest_checkout_disabled &&
+                !WC_Gateway_Reepay_Checkout.registration_enabled &&
                 !WC_Gateway_Reepay_Checkout.is_user_logged_in) {
 
                 // Show error message
                 wc_reepay.throw_error(WC_Gateway_Reepay_Checkout.guest_checkout_error_message);
 
                 // Log for debugging
-                console.log('Reepay: Guest checkout blocked - user must log in');
+                console.log('Reepay: Guest checkout blocked - user must log in (registration disabled)');
 
                 // Prevent checkout from proceeding
                 return false;
@@ -62,15 +65,17 @@ jQuery(function ($) {
 
         // Check if WC_Gateway_Reepay_Checkout object exists
         if (typeof WC_Gateway_Reepay_Checkout !== 'undefined') {
+            console.log(WC_Gateway_Reepay_Checkout);
             // Check if guest checkout is disabled and user is not logged in
             if (WC_Gateway_Reepay_Checkout.guest_checkout_disabled &&
+                !WC_Gateway_Reepay_Checkout.registration_enabled &&
                 !WC_Gateway_Reepay_Checkout.is_user_logged_in) {
 
                 // Show error message
                 wc_reepay.throw_error(WC_Gateway_Reepay_Checkout.guest_checkout_error_message);
 
                 // Log for debugging
-                console.log('Reepay: Guest checkout blocked - user must log in');
+                console.log('Reepay: Guest checkout blocked - user must log in (registration disabled)');
             }
         }
     });

@@ -37,11 +37,11 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 	 * @dataProvider \Reepay\Checkout\Tests\Helpers\DataProvider::order_statuses()
 	 */
 	public function test_payment_complete_action_setted( string $status ) {
-		remove_all_actions( 'plugins_loaded' );
+		remove_all_actions( 'init' );
 
 		$order_statuses = new OrderStatuses();
 
-		do_action( 'plugins_loaded' );
+		do_action( 'init' );
 
 		$this->assertTrue(
 			has_action( 'woocommerce_payment_complete_order_status_' . $status, array( $order_statuses, 'payment_complete' ) ) > 0

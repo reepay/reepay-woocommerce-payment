@@ -772,14 +772,18 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @throws Exception If payment error.
 	 */
 	public function process_payment( $order_id ) {
-		// VALIDATION: Check guest checkout settings (BWPM-178)
-		// Prevent guest users from checking out when guest checkout is disabled.
-		if ( ! is_user_logged_in() && WC()->checkout()->is_registration_required() ) {
+		// VALIDATION: Check guest checkout settings (BWPM-178, BWPM-184)
+		// Prevent guest users from checking out when guest checkout is disabled
+		// BUT allow account creation during checkout if registration is enabled.
+		if ( ! is_user_logged_in() &&
+			WC()->checkout()->is_registration_required() &&
+			! WC()->checkout()->is_registration_enabled() ) {
+
 			$this->log(
 				array(
 					'source'   => 'process_payment_guest_checkout_blocked',
 					'order_id' => $order_id,
-					'message'  => 'Guest checkout is disabled and user is not logged in',
+					'message'  => 'Guest checkout is disabled, registration is disabled, and user is not logged in',
 				)
 			);
 

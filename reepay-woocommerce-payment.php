@@ -4,7 +4,7 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: Frisbii
  * Author URI: https://frisbii.com
- * Version: 1.8.5
+ * Version: 1.8.6
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -67,14 +67,13 @@ class WC_ReepayCheckout {
 		Statistics::get_instance( $this->get_setting( 'plugin_file' ) );
 
 		new LifeCycle( $this->get_setting( 'plugin_path' ) );
-		new WoocommerceExists();
-		new WoocommerceHPOS();
 
 		new Reepay\Checkout\Functions\Main();
 
 		add_action( 'plugins_loaded', array( $this, 'include_classes' ), 0 );
 
-		add_action( 'init', array( $this, 'init' ) );
+		// Priority 0 to ensure gateways are initialized before other plugins that depend on them
+		add_action( 'init', array( $this, 'init' ), 0 );
 
 		add_action( 'rest_api_init', array( $this, 'init_rest_api' ) );
 	}
@@ -83,7 +82,17 @@ class WC_ReepayCheckout {
 	 * Init
 	 */
 	public function init(){
+		// Load text domain first before any classes that use translation functions
 		load_plugin_textdomain( 'reepay-checkout-gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+
+		// Initialize classes that may use translation functions
+		new WoocommerceExists();
+		new WoocommerceHPOS();
+
+		// Initialize gateways after translations are loaded
+		if ( WoocommerceExists::woo_activated() ) {
+			$this->gateways = new Reepay\Checkout\Gateways();
+		}
 	}
 
 	/**
@@ -290,7 +299,7 @@ class WC_ReepayCheckout {
 
 		new Reepay\Checkout\OrderFlow\Main();
 
-		$this->gateways = new Reepay\Checkout\Gateways();
+		// Gateways initialization moved to init() to ensure translations are loaded first
 
 		new Reepay\Checkout\Integrations\Main();
 

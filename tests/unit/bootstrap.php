@@ -45,7 +45,7 @@ tests_add_filter(
 
 // Init Reepay.
 tests_add_filter(
-	'plugins_loaded',
+	'init',
 	function () {
 		( new OptionsController() )->set_option( 'enabled', 'yes' );
 	}
