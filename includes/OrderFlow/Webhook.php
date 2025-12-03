@@ -209,6 +209,21 @@ class Webhook {
 					);
 				}
 
+				// Save card information from invoice
+				try {
+					ReepayTokens::save_card_info_from_invoice( $order, $data['invoice'] );
+				} catch ( Exception $e ) {
+					// Log error but don't fail webhook processing
+					$this->log(
+						sprintf(
+							'WebHook invoice_authorized: Failed to save card info. Order: %d, Invoice: %s, Error: %s',
+							$order->get_id(),
+							$data['invoice'],
+							$e->getMessage()
+						)
+					);
+				}
+
 				self::unlock_order( $order->get_id() );
 
 				$data['order_id'] = $order->get_id();
@@ -350,6 +365,21 @@ class Webhook {
 						array(
 							'source'  => 'reepay_order_statuses',
 							'_legacy' => true,
+						)
+					);
+				}
+
+				// Save card information from invoice
+				try {
+					ReepayTokens::save_card_info_from_invoice( $order, $data['invoice'] );
+				} catch ( Exception $e ) {
+					// Log error but don't fail webhook processing
+					$this->log(
+						sprintf(
+							'WebHook invoice_settled: Failed to save card info. Order: %d, Invoice: %s, Error: %s',
+							$order->get_id(),
+							$data['invoice'],
+							$e->getMessage()
 						)
 					);
 				}
