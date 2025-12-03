@@ -1140,6 +1140,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			} else {
 				try {
 					ReepayTokens::assign_payment_token( $order, $token );
+					// Use legacy method for zero amount orders (no invoice created yet)
 					ReepayTokens::save_card_info_to_order( $order, $token->get_token() );
 					$this->log(
 						array(
@@ -1242,6 +1243,27 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 							'result'   => is_array( $result ) ? array_keys( $result ) : 'non-array-result',
 						)
 					);
+
+					// Save card information from invoice (after direct charge creates invoice)
+					try {
+						ReepayTokens::save_card_info_from_invoice( $order );
+						$this->log(
+							array(
+								'source'   => 'process_payment_saved_card_info_from_invoice',
+								'order_id' => $order_id,
+								'token'    => $token->get_token(),
+							)
+						);
+					} catch ( Exception $e ) {
+						// Log error but don't fail the payment process
+						$this->log(
+							array(
+								'source'   => 'process_payment_saved_card_info_failed',
+								'order_id' => $order_id,
+								'error'    => $e->getMessage(),
+							)
+						);
+					}
 				}
 
 				do_action( 'reepay_instant_settle', $order );

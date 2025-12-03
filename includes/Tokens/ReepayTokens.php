@@ -82,23 +82,9 @@ abstract class ReepayTokens {
 			$token = self::add_payment_token_to_order( $order, $reepay_token );
 		}
 
-		// Save card information from invoice (preferred method)
-		try {
-			self::save_card_info_from_invoice( $order );
-		} catch ( Exception $e ) {
-			// Log error but don't fail the token save process
-			if ( \function_exists( 'wc_get_logger' ) ) {
-				\wc_get_logger()->warning(
-					\sprintf(
-						'Failed to save card info from invoice in reepay_save_token. Order: %d, Token: %s, Error: %s',
-						$order->get_id(),
-						$reepay_token,
-						$e->getMessage()
-					),
-					array( 'source' => 'reepay-save-card-info' )
-				);
-			}
-		}
+		// Note: Card info will be saved later via webhook or finalize process
+		// when invoice is created in Frisbii. Don't call save_card_info_from_invoice here
+		// as invoice may not exist yet.
 
 		return $token;
 	}
@@ -216,7 +202,10 @@ abstract class ReepayTokens {
 	}
 
 	/**
-	 * Save Payment Data (card type and masked card)
+	 * Save Payment Data (card type and masked card) - Legacy Method
+	 *
+	 * This method should be used ONLY when invoice is not yet created in Frisbii.
+	 * For saved cards after invoice creation, use save_card_info_from_invoice() instead.
 	 *
 	 * @param WC_Order     $order     order to save.
 	 * @param string|array $card_info card token or card info.
@@ -224,26 +213,7 @@ abstract class ReepayTokens {
 	 * @throws Exception If invalid token or order.
 	 */
 	public static function save_card_info_to_order( WC_Order $order, $card_info ) {
-		// Try new method first (preferred)
-		try {
-			if ( self::save_card_info_from_invoice( $order ) ) {
-				return; // Success with new method
-			}
-		} catch ( Exception $e ) {
-			// Log but don't fail - try legacy method
-			if ( \function_exists( 'wc_get_logger' ) ) {
-				\wc_get_logger()->warning(
-					\sprintf(
-						'save_card_info_from_invoice failed, falling back to legacy method. Order: %d, Error: %s',
-						$order->get_id(),
-						$e->getMessage()
-					),
-					array( 'source' => 'reepay-save-card-info' )
-				);
-			}
-		}
-
-		// Fallback to legacy method
+		// Use legacy token-based method (for backward compatibility)
 		if ( \is_string( $card_info ) ) {
 			$customer_handle = rp_get_customer_handle( $order->get_customer_id() );
 			$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $card_info );
@@ -261,8 +231,21 @@ abstract class ReepayTokens {
 			$order->update_meta_data( 'reepay_card_type', $card_info['card_type'] );
 		}
 
+		// Note: Legacy method may not have provider/acquirer info
 		$order->update_meta_data( '_reepay_source', $card_info );
 		$order->save_meta_data();
+
+		// Log usage of legacy method
+		if ( \function_exists( 'wc_get_logger' ) ) {
+			\wc_get_logger()->info(
+				\sprintf(
+					'Used legacy save_card_info_to_order method. Order: %d, Card: %s',
+					$order->get_id(),
+					$card_info['masked_card'] ?? 'unknown'
+				),
+				array( 'source' => 'reepay-save-card-info' )
+			);
+		}
 	}
 
 	/**
