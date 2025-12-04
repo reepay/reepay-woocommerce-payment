@@ -92,17 +92,17 @@ abstract class ReepayTokens {
 	/**
 	 * Save card information from Frisbii Invoice API
 	 *
-	 * @param WC_Order    $order         Order to save card info
-	 * @param string|null $invoice_handle Optional invoice handle (auto-detect if null)
+	 * @param WC_Order    $order         Order to save card info.
+	 * @param string|null $invoice_handle Optional invoice handle (auto-detect if null).
 	 *
 	 * @return bool Success/failure
-	 * @throws Exception If API call fails or data invalid
+	 * @throws Exception If API call fails or data invalid.
 	 */
 	public static function save_card_info_from_invoice( WC_Order $order, ?string $invoice_handle = null ): bool {
 		$start_time = microtime( true );
 
 		try {
-			// Get invoice handle
+			// Get invoice handle.
 			if ( empty( $invoice_handle ) ) {
 				$invoice_handle = rp_get_order_handle( $order );
 			}
@@ -111,19 +111,19 @@ abstract class ReepayTokens {
 				throw new Exception( 'Empty invoice handle' );
 			}
 
-			// Check cache first
-			$cache_key = 'reepay_invoice_card_' . $invoice_handle;
+			// Check cache first.
+			$cache_key        = 'reepay_invoice_card_' . $invoice_handle;
 			$card_transaction = wp_cache_get( $cache_key );
 
 			if ( false === $card_transaction ) {
-				// Get invoice data from API
+				// Get invoice data from API.
 				$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
 
 				if ( is_wp_error( $invoice_data ) ) {
 					throw new Exception( 'Failed to get invoice data: ' . $invoice_data->get_error_message() );
 				}
 
-				// Extract card transaction from invoice
+				// Extract card transaction from invoice.
 				if ( empty( $invoice_data['transactions'] ) || empty( $invoice_data['transactions'][0] ) ) {
 					throw new Exception( 'No transactions found in invoice' );
 				}
@@ -136,21 +136,21 @@ abstract class ReepayTokens {
 
 				$card_transaction = $transaction['card_transaction'];
 
-				// Cache for 5 minutes
+				// Cache for 5 minutes.
 				wp_cache_set( $cache_key, $card_transaction, '', 300 );
 			}
 
-			// Extract and sanitize card information
-			$card_type = \sanitize_text_field( $card_transaction['card_type'] ?? '' );
+			// Extract and sanitize card information.
+			$card_type   = \sanitize_text_field( $card_transaction['card_type'] ?? '' );
 			$masked_card = \sanitize_text_field( $card_transaction['masked_card'] ?? '' );
-			$provider = \sanitize_text_field( $card_transaction['provider'] ?? '' );
+			$provider    = \sanitize_text_field( $card_transaction['provider'] ?? '' );
 
-			// Validate required fields
+			// Validate required fields.
 			if ( empty( $card_type ) || empty( $masked_card ) ) {
 				throw new Exception( 'Missing required card information' );
 			}
 
-			// Save card information to order meta
+			// Save card information to order meta.
 			$order->update_meta_data( 'reepay_card_type', $card_type );
 			$order->update_meta_data( 'reepay_masked_card', $masked_card );
 
@@ -158,11 +158,11 @@ abstract class ReepayTokens {
 				$order->update_meta_data( 'reepay_acquirer', $provider );
 			}
 
-			// Save complete card transaction data
+			// Save complete card transaction data.
 			$order->update_meta_data( '_reepay_source', $card_transaction );
 			$order->save_meta_data();
 
-			// Log success
+			// Log success.
 			$execution_time = \microtime( true ) - $start_time;
 			if ( \function_exists( 'wc_get_logger' ) ) {
 				\wc_get_logger()->info(
@@ -183,7 +183,7 @@ abstract class ReepayTokens {
 		} catch ( Exception $e ) {
 			$execution_time = \microtime( true ) - $start_time;
 
-			// Log error
+			// Log error.
 			if ( \function_exists( 'wc_get_logger' ) ) {
 				\wc_get_logger()->error(
 					\sprintf(
@@ -213,7 +213,7 @@ abstract class ReepayTokens {
 	 * @throws Exception If invalid token or order.
 	 */
 	public static function save_card_info_to_order( WC_Order $order, $card_info ) {
-		// Use legacy token-based method (for backward compatibility)
+		// Use legacy token-based method (for backward compatibility).
 		if ( \is_string( $card_info ) ) {
 			$customer_handle = rp_get_customer_handle( $order->get_customer_id() );
 			$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $card_info );
@@ -231,11 +231,11 @@ abstract class ReepayTokens {
 			$order->update_meta_data( 'reepay_card_type', $card_info['card_type'] );
 		}
 
-		// Note: Legacy method may not have provider/acquirer info
+		// Note: Legacy method may not have provider/acquirer info.
 		$order->update_meta_data( '_reepay_source', $card_info );
 		$order->save_meta_data();
 
-		// Log usage of legacy method
+		// Log usage of legacy method.
 		if ( \function_exists( 'wc_get_logger' ) ) {
 			\wc_get_logger()->info(
 				\sprintf(

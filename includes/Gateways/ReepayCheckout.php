@@ -738,16 +738,16 @@ class ReepayCheckout extends ReepayGateway {
 
 			$token = ReepayTokens::reepay_save_token( $order, $reepay_token );
 
-			// Save card information from invoice
+			// Save card information from invoice.
 			try {
 				ReepayTokens::save_card_info_from_invoice( $order );
 			} catch ( Exception $e ) {
-				// Log error but don't fail the process
+				// Log error but don't fail the process.
 				$this->log(
 					array(
-						'source' => 'reepay_finalize_save_card_error',
+						'source'   => 'reepay_finalize_save_card_error',
 						'order_id' => $order->get_id(),
-						'error' => $e->getMessage(),
+						'error'    => $e->getMessage(),
 					)
 				);
 			}

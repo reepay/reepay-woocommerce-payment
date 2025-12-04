@@ -209,11 +209,11 @@ class Webhook {
 					);
 				}
 
-				// Save card information from invoice
+				// Save card information from invoice.
 				try {
 					ReepayTokens::save_card_info_from_invoice( $order, $data['invoice'] );
 				} catch ( Exception $e ) {
-					// Log error but don't fail webhook processing
+					// Log error but don't fail webhook processing.
 					$this->log(
 						sprintf(
 							'WebHook invoice_authorized: Failed to save card info. Order: %d, Invoice: %s, Error: %s',
@@ -369,11 +369,11 @@ class Webhook {
 					);
 				}
 
-				// Save card information from invoice
+				// Save card information from invoice.
 				try {
 					ReepayTokens::save_card_info_from_invoice( $order, $data['invoice'] );
 				} catch ( Exception $e ) {
-					// Log error but don't fail webhook processing
+					// Log error but don't fail webhook processing.
 					$this->log(
 						sprintf(
 							'WebHook invoice_settled: Failed to save card info. Order: %d, Invoice: %s, Error: %s',
@@ -384,7 +384,7 @@ class Webhook {
 					);
 				}
 
-				// For subscription renewals, also update parent subscription order
+				// For subscription renewals, also update parent subscription order.
 				if ( isset( $data['subscription'] ) ) {
 					$subscription_order = rp_get_order_by_subscription_handle( $data['subscription'] );
 					if ( $subscription_order && $subscription_order->get_id() !== $order->get_id() ) {
@@ -399,7 +399,7 @@ class Webhook {
 								)
 							);
 						} catch ( Exception $e ) {
-							// Log error but don't fail webhook processing
+							// Log error but don't fail webhook processing.
 							$this->log(
 								sprintf(
 									'WebHook invoice_settled: Failed to save card info for subscription order. Subscription Order: %d, Invoice: %s, Error: %s',
