@@ -29,9 +29,17 @@ if ( ! function_exists( 'rp_get_order_handle' ) ) {
 		}
 
 		if ( empty( $handle ) ) {
-			$handle = $unique ?
-				'order-' . $order->get_order_number() . '-' . $current_time :
-				'order-' . $order->get_order_number();
+			$prefix = reepay()->get_setting( 'order_handle_prefix' );
+
+			if ( empty( $prefix ) ) {
+				$prefix = '';
+			}
+
+			if ( $unique ) {
+				$handle = $prefix . $order->get_order_number() . '-' . $current_time;
+			} else {
+				$handle = $prefix . $order->get_order_number();
+			}
 
 			$order->add_meta_data( '_reepay_order', $handle );
 
