@@ -194,6 +194,7 @@ class WC_ReepayCheckout {
 				'enable_order_autocancel'    => ! empty( $gateway_settings['enable_order_autocancel'] ) ? $gateway_settings['enable_order_autocancel'] : '',
 				'is_webhook_configured'      => ! empty( $gateway_settings['is_webhook_configured'] ) ? $gateway_settings['is_webhook_configured'] : '',
 				'handle_failover'            => ! empty( $gateway_settings['handle_failover'] ) ? $gateway_settings['handle_failover'] : '',
+				'order_handle_prefix'        => isset ( $gateway_settings['order_handle_prefix'] ) ? $gateway_settings['order_handle_prefix'] : 'order-',
 				'payment_button_text'        => ! empty( $gateway_settings['payment_button_text'] ) ? $gateway_settings['payment_button_text'] : '',
 				'enable_sync'                => ! empty( $gateway_settings['enable_sync'] ) ? $gateway_settings['enable_sync'] : '',
 				'status_created'             => ! empty( $gateway_settings['status_created'] ) ? $gateway_settings['status_created'] : '',
