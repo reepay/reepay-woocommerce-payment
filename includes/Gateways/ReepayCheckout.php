@@ -794,6 +794,20 @@ class ReepayCheckout extends ReepayGateway {
 
 			$token = ReepayTokens::reepay_save_token( $order, $reepay_token );
 
+			// Save card information from invoice.
+			try {
+				ReepayTokens::save_card_info_from_invoice( $order );
+			} catch ( Exception $e ) {
+				// Log error but don't fail the process.
+				$this->log(
+					array(
+						'source'   => 'reepay_finalize_save_card_error',
+						'order_id' => $order->get_id(),
+						'error'    => $e->getMessage(),
+					)
+				);
+			}
+
 			// translators: %s new payment method name.
 			$order->add_order_note( sprintf( __( 'Payment method changed to "%s"', 'reepay-checkout-gateway' ), $token->get_display_name() ) );
 

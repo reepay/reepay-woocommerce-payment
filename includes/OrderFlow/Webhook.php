@@ -209,6 +209,21 @@ class Webhook {
 					);
 				}
 
+				// Save card information from invoice.
+				try {
+					ReepayTokens::save_card_info_from_invoice( $order, $data['invoice'] );
+				} catch ( Exception $e ) {
+					// Log error but don't fail webhook processing.
+					$this->log(
+						sprintf(
+							'WebHook invoice_authorized: Failed to save card info. Order: %d, Invoice: %s, Error: %s',
+							$order->get_id(),
+							$data['invoice'],
+							$e->getMessage()
+						)
+					);
+				}
+
 				self::unlock_order( $order->get_id() );
 
 				$data['order_id'] = $order->get_id();
@@ -352,6 +367,49 @@ class Webhook {
 							'_legacy' => true,
 						)
 					);
+				}
+
+				// Save card information from invoice.
+				try {
+					ReepayTokens::save_card_info_from_invoice( $order, $data['invoice'] );
+				} catch ( Exception $e ) {
+					// Log error but don't fail webhook processing.
+					$this->log(
+						sprintf(
+							'WebHook invoice_settled: Failed to save card info. Order: %d, Invoice: %s, Error: %s',
+							$order->get_id(),
+							$data['invoice'],
+							$e->getMessage()
+						)
+					);
+				}
+
+				// For subscription renewals, also update parent subscription order.
+				if ( isset( $data['subscription'] ) ) {
+					$subscription_order = rp_get_order_by_subscription_handle( $data['subscription'] );
+					if ( $subscription_order && $subscription_order->get_id() !== $order->get_id() ) {
+						try {
+							ReepayTokens::save_card_info_from_invoice( $subscription_order, $data['invoice'] );
+							$this->log(
+								sprintf(
+									'WebHook invoice_settled: Saved card info for subscription order. Subscription Order: %d, Renewal Order: %d, Invoice: %s',
+									$subscription_order->get_id(),
+									$order->get_id(),
+									$data['invoice']
+								)
+							);
+						} catch ( Exception $e ) {
+							// Log error but don't fail webhook processing.
+							$this->log(
+								sprintf(
+									'WebHook invoice_settled: Failed to save card info for subscription order. Subscription Order: %d, Invoice: %s, Error: %s',
+									$subscription_order->get_id(),
+									$data['invoice'],
+									$e->getMessage()
+								)
+							);
+						}
+					}
 				}
 
 				$order->update_meta_data( '_reepay_capture_transaction', $data['transaction'] );

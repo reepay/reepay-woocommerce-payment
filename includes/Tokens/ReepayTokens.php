@@ -82,11 +82,130 @@ abstract class ReepayTokens {
 			$token = self::add_payment_token_to_order( $order, $reepay_token );
 		}
 
+		// Note: Card info will be saved later via webhook or finalize process
+		// when invoice is created in Frisbii. Don't call save_card_info_from_invoice here
+		// as invoice may not exist yet.
+
 		return $token;
 	}
 
 	/**
-	 * Save Payment Data (card type and masked card)
+	 * Save card information from Frisbii Invoice API
+	 *
+	 * @param WC_Order    $order         Order to save card info.
+	 * @param string|null $invoice_handle Optional invoice handle (auto-detect if null).
+	 *
+	 * @return bool Success/failure
+	 * @throws Exception If API call fails or data invalid.
+	 */
+	public static function save_card_info_from_invoice( WC_Order $order, ?string $invoice_handle = null ): bool {
+		$start_time = microtime( true );
+
+		try {
+			// Get invoice handle.
+			if ( empty( $invoice_handle ) ) {
+				$invoice_handle = rp_get_order_handle( $order );
+			}
+
+			if ( empty( $invoice_handle ) ) {
+				throw new Exception( 'Empty invoice handle' );
+			}
+
+			// Check cache first.
+			$cache_key        = 'reepay_invoice_card_' . $invoice_handle;
+			$card_transaction = wp_cache_get( $cache_key );
+
+			if ( false === $card_transaction ) {
+				// Get invoice data from API.
+				$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+
+				if ( is_wp_error( $invoice_data ) ) {
+					throw new Exception( 'Failed to get invoice data: ' . $invoice_data->get_error_message() );
+				}
+
+				// Extract card transaction from invoice.
+				if ( empty( $invoice_data['transactions'] ) || empty( $invoice_data['transactions'][0] ) ) {
+					throw new Exception( 'No transactions found in invoice' );
+				}
+
+				$transaction = $invoice_data['transactions'][0];
+
+				if ( empty( $transaction['card_transaction'] ) ) {
+					throw new Exception( 'No card transaction found' );
+				}
+
+				$card_transaction = $transaction['card_transaction'];
+
+				// Cache for 5 minutes.
+				wp_cache_set( $cache_key, $card_transaction, '', 300 );
+			}
+
+			// Extract and sanitize card information.
+			$card_type   = \sanitize_text_field( $card_transaction['card_type'] ?? '' );
+			$masked_card = \sanitize_text_field( $card_transaction['masked_card'] ?? '' );
+			$provider    = \sanitize_text_field( $card_transaction['provider'] ?? '' );
+
+			// Validate required fields.
+			if ( empty( $card_type ) || empty( $masked_card ) ) {
+				throw new Exception( 'Missing required card information' );
+			}
+
+			// Save card information to order meta.
+			$order->update_meta_data( 'reepay_card_type', $card_type );
+			$order->update_meta_data( 'reepay_masked_card', $masked_card );
+
+			if ( ! empty( $provider ) ) {
+				$order->update_meta_data( 'reepay_acquirer', $provider );
+			}
+
+			// Save complete card transaction data.
+			$order->update_meta_data( '_reepay_source', $card_transaction );
+			$order->save_meta_data();
+
+			// Log success.
+			$execution_time = \microtime( true ) - $start_time;
+			if ( \function_exists( 'wc_get_logger' ) ) {
+				\wc_get_logger()->info(
+					\sprintf(
+						'Card info saved from invoice. Order: %d, Invoice: %s, Card: %s, Provider: %s, Time: %.3fs',
+						$order->get_id(),
+						$invoice_handle,
+						$masked_card,
+						$provider,
+						$execution_time
+					),
+					array( 'source' => 'reepay-save-card-info' )
+				);
+			}
+
+			return true;
+
+		} catch ( Exception $e ) {
+			$execution_time = \microtime( true ) - $start_time;
+
+			// Log error.
+			if ( \function_exists( 'wc_get_logger' ) ) {
+				\wc_get_logger()->error(
+					\sprintf(
+						'Failed to save card info from invoice. Order: %d, Invoice: %s, Error: %s, Time: %.3fs',
+						$order->get_id(),
+						$invoice_handle ?? 'unknown',
+						$e->getMessage(),
+						$execution_time
+					),
+					array( 'source' => 'reepay-save-card-info' )
+				);
+			}
+
+			throw $e;
+		}
+	}
+
+	/**
+	 * Save Payment Data (card type and masked card) - Legacy Method
+	 *
+	 * This method should be used ONLY when invoice is not yet created in Frisbii.
+	 * For saved cards after invoice creation, use save_card_info_from_invoice() instead.
 	 *
 	 * @param WC_Order     $order     order to save.
 	 * @param string|array $card_info card token or card info.
@@ -94,7 +213,8 @@ abstract class ReepayTokens {
 	 * @throws Exception If invalid token or order.
 	 */
 	public static function save_card_info_to_order( WC_Order $order, $card_info ) {
-		if ( is_string( $card_info ) ) {
+		// Use legacy token-based method (for backward compatibility).
+		if ( \is_string( $card_info ) ) {
 			$customer_handle = rp_get_customer_handle( $order->get_customer_id() );
 			$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $card_info );
 
@@ -111,8 +231,21 @@ abstract class ReepayTokens {
 			$order->update_meta_data( 'reepay_card_type', $card_info['card_type'] );
 		}
 
+		// Note: Legacy method may not have provider/acquirer info.
 		$order->update_meta_data( '_reepay_source', $card_info );
 		$order->save_meta_data();
+
+		// Log usage of legacy method.
+		if ( \function_exists( 'wc_get_logger' ) ) {
+			\wc_get_logger()->info(
+				\sprintf(
+					'Used legacy save_card_info_to_order method. Order: %d, Card: %s',
+					$order->get_id(),
+					$card_info['masked_card'] ?? 'unknown'
+				),
+				array( 'source' => 'reepay-save-card-info' )
+			);
+		}
 	}
 
 	/**
