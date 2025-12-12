@@ -20,6 +20,7 @@ See installation guide right here: https://docu.billwerk.plus/help/en/apps/wooco
 == Changelog ==
 v 1.8.7
 - [Improvement] - New setting “Order Handle Prefix” for custom prefix in the Frisbii order handle.
+– [Improvement] – Makes acquirer & card type available for data export.
 
 v 1.8.6
 - [Fix] - Round-off issue in capture for individual order lines with setting “Exclude order lines”.
