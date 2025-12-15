@@ -4,7 +4,7 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: Frisbii
  * Author URI: https://frisbii.com
- * Version: 1.8.6
+ * Version: 1.8.7
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -194,6 +194,7 @@ class WC_ReepayCheckout {
 				'enable_order_autocancel'    => ! empty( $gateway_settings['enable_order_autocancel'] ) ? $gateway_settings['enable_order_autocancel'] : '',
 				'is_webhook_configured'      => ! empty( $gateway_settings['is_webhook_configured'] ) ? $gateway_settings['is_webhook_configured'] : '',
 				'handle_failover'            => ! empty( $gateway_settings['handle_failover'] ) ? $gateway_settings['handle_failover'] : '',
+				'order_handle_prefix'        => isset ( $gateway_settings['order_handle_prefix'] ) ? $gateway_settings['order_handle_prefix'] : 'order-',
 				'payment_button_text'        => ! empty( $gateway_settings['payment_button_text'] ) ? $gateway_settings['payment_button_text'] : '',
 				'enable_sync'                => ! empty( $gateway_settings['enable_sync'] ) ? $gateway_settings['enable_sync'] : '',
 				'status_created'             => ! empty( $gateway_settings['status_created'] ) ? $gateway_settings['status_created'] : '',

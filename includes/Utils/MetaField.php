@@ -50,6 +50,7 @@ class MetaField {
 		'_reepay_locked',
 		'reepay_masked_card',
 		'reepay_card_type',
+		'reepay_acquirer',
 		'_reepay_source',
 		'_is_instant_settled',
 		'_reepay_another_orders',
