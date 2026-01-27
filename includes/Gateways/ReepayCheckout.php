@@ -461,12 +461,12 @@ class ReepayCheckout extends ReepayGateway {
 				'default'     => 'no',
 			),
 			'enable_order_autocancel'    => array(
-				'title'       => __( 'The automatic order auto-cancel', 'reepay-checkout-gateway' ),
-				'description' => __( 'The automatic order auto-cancel', 'reepay-checkout-gateway' ),
+				'title'       => __( 'Order auto-cancel', 'reepay-checkout-gateway' ),
+				'description' => __( 'Allow or prefer no automatic order cancel', 'reepay-checkout-gateway' ),
 				'type'        => 'select',
 				'options'     => array(
-					'yes' => 'Enable auto-cancel',
-					'no'  => 'Ignore / disable auto-cancel',
+					'yes' => 'Allow auto-cancel',
+					'no'  => 'Prefer no auto-cancel',
 				),
 				'default'     => 'no',
 			),
