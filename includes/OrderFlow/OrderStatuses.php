@@ -303,7 +303,7 @@ class OrderStatuses {
 	 *
 	 * @return bool
 	 */
-	public static function set_settled_status( WC_Order $order, string $note = '', string $transaction_id = '' ): bool {
+	public static function set_settled_status( WC_Order $order, string $note = '', ?string $transaction_id = '' ): bool {
 		// Log using WooCommerce logger directly since this is a static method.
 		if ( function_exists( 'wc_get_logger' ) ) {
 			$caller       = 'unknown';
