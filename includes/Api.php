@@ -609,6 +609,7 @@ class Api {
 		if ( VippsRecurring::ID === $order->get_payment_method() ) {
 			$params['currency']                               = $order->get_currency();
 			$params['session_data']['vipps_recurring_amount'] = rp_prepare_amount( $order->get_total(), $order->get_currency() );
+			$params['session_data']['vipps_recurring_pricing_type'] = 'variable';
 		}
 
 		// Add age verification data if needed.
