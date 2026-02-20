@@ -2078,7 +2078,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		if ( in_array(
 			$locale,
-			array( 'en_US', 'da_DK', 'sv_SE', 'no_NO', 'de_DE', 'es_ES', 'fr_FR', 'it_IT', 'nl_NL' ),
+			array( 'en_US', 'da_DK', 'sv_SE', 'no_NO', 'fi_FI', 'is_IS', 'de_DE', 'es_ES', 'fr_FR', 'it_IT', 'nl_NL', 'pl_PL', 'hu_HU', 'ro_RO', 'cs_CZ', 'el_GR', 'sk_SK', 'sr_RS' ),
 			true
 		) ) {
 			return $locale;
