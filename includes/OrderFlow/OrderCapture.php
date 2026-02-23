@@ -828,7 +828,9 @@ class OrderCapture {
 			);
 
 			// Start with just the item line.
-			$order_lines = array( $item_line );
+			$order_lines   = array( $item_line );
+			$discount_line = null;
+			$with_tax_raw  = null;
 
 			// Add discount line only if there's an actual discount.
 			if ( $discount_amount > 0 ) {
