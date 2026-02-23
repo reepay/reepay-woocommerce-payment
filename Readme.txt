@@ -4,7 +4,7 @@ Tags: Frisbii, billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.8.8.1
+Stable tag: 1.8.9
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,6 +18,11 @@ The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.8.9
+- [Fix] - Partial captures of an invoice with percentage discount settled one discount amount less.
+- [Fix] - Fix for do_action calls parameter count.
+- [Fix] - Corrected Vipps MobilePay Recurring checkout to show the actual price and charge interval.
+
 v 1.8.8.1
 - [Fix] - Some languages supported by the Frisbii payment window could not be selected in the settings. 
 
