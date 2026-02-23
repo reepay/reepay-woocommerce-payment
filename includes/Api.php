@@ -659,11 +659,11 @@ class Api {
 				)
 			);
 
-			$params['currency']                                       	= $order->get_currency();
-			$params['session_data']['vipps_recurring_amount']        	= rp_prepare_amount( $order->get_total(), $order->get_currency() );
-			$params['session_data']['vipps_recurring_pricing_type'] 	= 'legacy';
-			$params['session_data']['vipps_recurring_interval_unit']  	= $vipps_interval_unit;
-			$params['session_data']['vipps_recurring_interval_count']	= $vipps_interval_count;
+			$params['currency']                                       = $order->get_currency();
+			$params['session_data']['vipps_recurring_amount']         = rp_prepare_amount( $order->get_total(), $order->get_currency() );
+			$params['session_data']['vipps_recurring_pricing_type']   = 'legacy';
+			$params['session_data']['vipps_recurring_interval_unit']  = $vipps_interval_unit;
+			$params['session_data']['vipps_recurring_interval_count'] = $vipps_interval_count;
 		}
 
 		// Add age verification data if needed.
