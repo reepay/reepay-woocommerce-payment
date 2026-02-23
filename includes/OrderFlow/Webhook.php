@@ -233,12 +233,11 @@ class Webhook {
 				$order->set_date_paid( time() );
 				$order->save(); // Ensure date_paid is saved for analytics.
 
-				// Trigger WooCommerce update hook for analytics.
-				do_action( 'woocommerce_update_order', $order->get_id() );
-
 				// Trigger order save to ensure analytics are updated.
 				$order = wc_get_order( $order->get_id() );
 				if ( $order ) {
+					// Trigger WooCommerce update hook for analytics.
+					do_action( 'woocommerce_update_order', $order->get_id(), $order );
 					$order->save();
 				}
 
@@ -420,12 +419,11 @@ class Webhook {
 				$data['order_id'] = $order->get_id();
 				do_action( 'reepay_webhook_invoice_settled', $data );
 
-				// Trigger WooCommerce update hook for analytics.
-				do_action( 'woocommerce_update_order', $order->get_id() );
-
 				// Trigger order save to ensure analytics are updated.
 				$order = wc_get_order( $order->get_id() );
 				if ( $order ) {
+					// Trigger WooCommerce update hook for analytics.
+					do_action( 'woocommerce_update_order', $order->get_id(), $order );
 					$order->save();
 				}
 
