@@ -511,35 +511,62 @@ class OrderCapture {
 			)
 		);
 
-		// Add discount line.
+		// BWPM-177: Add discount line only for unsettled items.
+		// causing over-deduction when mixing individual capture with capture all.
 		if ( $order->get_total_discount( false ) > 0 ) {
-			$prices_incl_tax   = wc_prices_include_tax();
-			$discount          = $order->get_total_discount();
-			$discount_with_tax = $order->get_total_discount( false );
-			$tax               = $discount_with_tax - $discount;
-			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
+			$prices_incl_tax = wc_prices_include_tax();
 
-			if ( $prices_incl_tax ) {
-				/**
-				 * Discount for simple product included tax
-				 */
-				$simple_discount_amount = $discount_with_tax;
-			} else {
-				$simple_discount_amount = $discount;
+			// Calculate discount only for unsettled items (items in $line_items).
+			$remaining_discount          = 0;
+			$remaining_discount_with_tax = 0;
+
+			foreach ( $line_items as $unsettled_item ) {
+				// Only calculate discount for product items, not shipping/fees.
+				if ( $unsettled_item->is_type( 'line_item' ) ) {
+					$item_price = self::get_item_price( $unsettled_item, $order );
+					// Discount = subtotal - total (pre-discount - post-discount).
+					$remaining_discount          += ( $item_price['subtotal'] - $item_price['original'] );
+					$remaining_discount_with_tax += ( $item_price['subtotal_with_tax'] - $item_price['with_tax'] );
+				}
 			}
 
-			$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
+			$this->log(
+				array(
+					__METHOD__,
+					__LINE__,
+					'order' => $order->get_id(),
+					'data'  => array(
+						'full_order_discount'          => $order->get_total_discount(),
+						'full_order_discount_with_tax' => $order->get_total_discount( false ),
+						'remaining_discount'           => $remaining_discount,
+						'remaining_discount_with_tax'  => $remaining_discount_with_tax,
+					),
+				)
+			);
 
-			if ( $discount_amount < 0 ) {
-				$items_discount = array(
-					'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
-					'quantity'        => 1,
-					'amount'          => round( $discount_amount, 2 ),
-					'vat'             => round( $tax_percent / 100, 2 ),
-					'amount_incl_vat' => $prices_incl_tax,
-				);
-				$items_data[]   = $items_discount;
-				$total_all     += $discount_amount;
+			if ( $remaining_discount > 0 ) {
+				$tax         = $remaining_discount_with_tax - $remaining_discount;
+				$tax_percent = ( $tax > 0 && $remaining_discount > 0 ) ? round( 100 / ( $remaining_discount / $tax ) ) : 0;
+
+				if ( $prices_incl_tax ) {
+					$simple_discount_amount = $remaining_discount_with_tax;
+				} else {
+					$simple_discount_amount = $remaining_discount;
+				}
+
+				$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
+
+				if ( $discount_amount < 0 ) {
+					$items_discount = array(
+						'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
+						'quantity'        => 1,
+						'amount'          => round( $discount_amount, 2 ),
+						'vat'             => round( $tax_percent / 100, 2 ),
+						'amount_incl_vat' => $prices_incl_tax,
+					);
+					$items_data[]   = $items_discount;
+					$total_all     += $discount_amount;
+				}
 			}
 		}
 
@@ -760,7 +787,7 @@ class OrderCapture {
 			);
 
 			$order_lines = array( $item_line );
-			$total       = rp_prepare_amount( floor( $pd_price * 100 ) / 100, $order->get_currency() );
+			$total       = rp_prepare_amount( round( $pd_price, 2 ), $order->get_currency() );
 
 			// LOG: Single line mode.
 			$this->log(
@@ -777,33 +804,55 @@ class OrderCapture {
 			);
 		} else {
 			// Multi-line mode: Send item + discount separately.
-			$unit_price_pre_discount = floor( ( $price['subtotal'] / $item->get_quantity() ) * 100 ) / 100;
-			$discount_amount         = floor( ( $price['subtotal'] - $price['original'] ) * 100 ) / 100;
+			$prices_incl_tax = wc_prices_include_tax();
 
-			// Create item line (pre-discount price, excl. VAT).
+			// BWPM-177: Use appropriate price based on tax setting
+			// Changed floor() to round() to fix micro-rounding issues (e.g., -1.59 instead of -1.60).
+			if ( $prices_incl_tax ) {
+				// Tax-inclusive mode: use subtotal_with_tax for pre-discount price.
+				$unit_price_pre_discount = round( $price['subtotal_with_tax'] / $item->get_quantity(), 2 );
+				$discount_amount         = round( $price['subtotal_with_tax'] - $price['with_tax'], 2 );
+			} else {
+				// Tax-exclusive mode: use subtotal for pre-discount price.
+				$unit_price_pre_discount = round( $price['subtotal'] / $item->get_quantity(), 2 );
+				$discount_amount         = round( $price['subtotal'] - $price['original'], 2 );
+			}
+
+			// Create item line (pre-discount price, respecting tax setting).
 			$item_line = array(
 				'ordertext'       => $item_data['ordertext'],
 				'quantity'        => $item->get_quantity(),
 				'amount'          => rp_prepare_amount( $unit_price_pre_discount, $order->get_currency() ),
 				'vat'             => round( $tax_rate, 2 ),
-				'amount_incl_vat' => false,
+				'amount_incl_vat' => $prices_incl_tax,
 			);
 
-			// Create discount line (negative amount, excl. VAT).
-			$discount_line = array(
-				'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
-				'quantity'        => 1,
-				'amount'          => -rp_prepare_amount( $discount_amount, $order->get_currency() ),
-				'vat'             => round( $tax_rate, 2 ),
-				'amount_incl_vat' => false,
-			);
+			// Start with just the item line.
+			$order_lines   = array( $item_line );
+			$discount_line = null;
+			$with_tax_raw  = null;
 
-			// Replace order lines with item + discount.
-			$order_lines = array( $item_line, $discount_line );
+			// Add discount line only if there's an actual discount.
+			if ( $discount_amount > 0 ) {
+				$discount_line = array(
+					'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
+					'quantity'        => 1,
+					'amount'          => -rp_prepare_amount( $discount_amount, $order->get_currency() ),
+					'vat'             => round( $tax_rate, 2 ),
+					'amount_incl_vat' => $prices_incl_tax,
+				);
+				$order_lines[] = $discount_line;
+			}
 
-			// Recalculate total (incl. VAT) from raw values.
-			$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
-			$total        = rp_prepare_amount( floor( $with_tax_raw * 100 ) / 100, $order->get_currency() );
+			// Recalculate total based on tax setting.
+			if ( $prices_incl_tax ) {
+				// Tax-inclusive: use final price with tax directly.
+				$total = rp_prepare_amount( round( $price['with_tax'], 2 ), $order->get_currency() );
+			} else {
+				// Tax-exclusive: calculate total including VAT from original price.
+				$with_tax_raw = $price['original'] * ( 1 + $tax_rate );
+				$total        = rp_prepare_amount( round( $with_tax_raw, 2 ), $order->get_currency() );
+			}
 
 			// BWPM-177: Validate against remaining amount from API.
 			$invoice_data = reepay()->api( $order )->get_invoice_data( $order );

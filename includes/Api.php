@@ -607,8 +607,63 @@ class Api {
 		}
 
 		if ( VippsRecurring::ID === $order->get_payment_method() ) {
-			$params['currency']                               = $order->get_currency();
-			$params['session_data']['vipps_recurring_amount'] = rp_prepare_amount( $order->get_total(), $order->get_currency() );
+			$vipps_interval_unit  = 'month';
+			$vipps_interval_count = 1;
+
+			$order_product_items = $order->get_items();
+			$order_product_item  = reset( $order_product_items );
+			$sub_product         = $order_product_item ? $order_product_item->get_product() : null;
+
+			if ( $sub_product instanceof \WC_Product && class_exists( '\WC_Reepay_Subscription_Plan_Simple' ) ) {
+				$sub_type      = $sub_product->get_meta( '_reepay_subscription_schedule_type' );
+				$sub_type_data = $sub_product->get_meta( '_reepay_subscription_' . $sub_type );
+				$sub_interval  = \WC_Reepay_Subscription_Plan_Simple::get_interval( $sub_product->get_id(), $sub_type, $sub_type_data );
+
+				if ( false !== $sub_interval ) {
+					$vipps_interval_count = (int) $sub_interval;
+
+					// Map Reepay schedule_type to Vipps interval unit (day, week, month, year).
+					switch ( $sub_type ) {
+						case 'daily':
+							$vipps_interval_unit = 'day';
+							break;
+						case 'weekly_fixedday':
+							$vipps_interval_unit = 'week';
+							break;
+						case 'month_startdate':
+						case 'month_fixedday':
+						case 'month_lastday':
+						case 'primo':
+						case 'ultimo':
+						case 'half_yearly':
+						case 'month_startdate_12':
+							$vipps_interval_unit = 'month';
+							break;
+						default:
+							$vipps_interval_unit = 'month';
+							break;
+					}
+				}
+			}
+
+			$this->log(
+				array(
+					'method'               => __METHOD__,
+					'line'                 => __LINE__,
+					'source'               => 'vipps_recurring_session_data',
+					'sub_product_id'       => $sub_product ? $sub_product->get_id() : null,
+					'sub_type'             => isset( $sub_type ) ? $sub_type : null,
+					'sub_type_data'        => isset( $sub_type_data ) ? $sub_type_data : null,
+					'vipps_interval_unit'  => $vipps_interval_unit,
+					'vipps_interval_count' => $vipps_interval_count,
+				)
+			);
+
+			$params['currency']                                       = $order->get_currency();
+			$params['session_data']['vipps_recurring_amount']         = rp_prepare_amount( $order->get_total(), $order->get_currency() );
+			$params['session_data']['vipps_recurring_pricing_type']   = 'legacy';
+			$params['session_data']['vipps_recurring_interval_unit']  = $vipps_interval_unit;
+			$params['session_data']['vipps_recurring_interval_count'] = $vipps_interval_count;
 		}
 
 		// Add age verification data if needed.

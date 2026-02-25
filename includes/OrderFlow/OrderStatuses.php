@@ -282,12 +282,11 @@ class OrderStatuses {
 		$order->update_meta_data( '_reepay_state_authorized', 1 );
 		$order->save_meta_data();
 
-		// Trigger WooCommerce update hook for analytics.
-		do_action( 'woocommerce_update_order', $order->get_id() );
-
 		// Trigger order save to ensure analytics are updated.
 		$order = wc_get_order( $order->get_id() );
 		if ( $order ) {
+			// Trigger WooCommerce update hook for analytics.
+			do_action( 'woocommerce_update_order', $order->get_id(), $order );
 			$order->save();
 		}
 
@@ -349,12 +348,11 @@ class OrderStatuses {
 			$order->save_meta_data();
 		}
 
-		// Trigger WooCommerce update hook for analytics.
-		do_action( 'woocommerce_update_order', $order->get_id() );
-
 		// Trigger order save to ensure analytics are updated.
 		$order = wc_get_order( $order->get_id() );
 		if ( $order ) {
+			// Trigger WooCommerce update hook for analytics.
+			do_action( 'woocommerce_update_order', $order->get_id(), $order );
 			$order->save();
 		}
 
