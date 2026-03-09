@@ -21,7 +21,7 @@ See installation guide right here: https://docu.billwerk.plus/help/en/apps/wooco
 v 1.8.9
 - [Fix] - Partial captures of an invoice with percentage discount settled one discount amount less.
 - [Fix] - Fix for do_action calls parameter count.
-- [Fix] - Corrected Vipps MobilePay Recurring checkout to show the actual price and charge interval.
+- [Fix] - Display of price and charge interval in the payment window for Vipps MobilePay Recurring payment.
 
 v 1.8.8.1
 - [Fix] - Some languages supported by the Frisbii payment window could not be selected in the settings. 
