@@ -116,9 +116,9 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 			if ( $show_customer_details ) {
 				wc_get_template( 'order/order-details-customer.php', array( 'order' => $order ) );
 			}
-		} else {
-			do_action( 'woocommerce_thankyou', $order->get_id() );
 		}
+
+		do_action( 'woocommerce_thankyou', $order->get_id() );
 		?>
 
 	<?php else : ?>

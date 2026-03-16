@@ -3,9 +3,9 @@ msgstr ""
 "Project-Id-Version: Woocommerce Gateway ReePay Checkout\n"
 "POT-Creation-Date: 2024-07-08 09:45+0700\n"
 "PO-Revision-Date: 2026-03-10 12:00+0000\n"
-"Last-Translator: aait <info@aait.se>\n"
-"Language-Team: \n"
-"Language: en_US\n"
+"Last-Translator: Frisbii <support@frisbii.com>\n"
+"Language-Team: Danish\n"
+"Language: da_DK\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -22,7 +22,7 @@ msgstr ""
 #: ../includes/Gateways/ReepayCheckout.php:122
 #: ../templates/admin/admin-options.php:29
 msgid "Frisbii Pay"
-msgstr ""
+msgstr "Frisbii Pay"
 
 #: ../assets/dist/js/woo-blocks.js:99
 msgid "Use a new payment method"
@@ -137,7 +137,7 @@ msgstr ""
 
 #: ../includes/Admin/PluginsPage.php:36
 msgid "Settings"
-msgstr ""
+msgstr "Indstillinger"
 
 #: ../includes/Api.php:248
 #, php-format
@@ -364,330 +364,338 @@ msgstr ""
 
 #: ../includes/Gateways/ReepayCheckout.php:104
 msgid "Enable/Disable"
-msgstr ""
+msgstr "Aktiver/Deaktiver"
 
 #: ../includes/Gateways/ReepayCheckout.php:106
 msgid "Enable plugin"
-msgstr ""
+msgstr "Aktiver plugin"
 
 #: ../includes/Gateways/ReepayCheckout.php:113
 msgid "Title"
-msgstr ""
+msgstr "Titel"
 
 #: ../includes/Gateways/ReepayCheckout.php:115
 msgid "This controls the title which the user sees during checkout"
-msgstr ""
+msgstr "Dette styrer titlen, som brugeren ser under checkout"
 
 #: ../includes/Gateways/ReepayCheckout.php:119
 msgid "Description"
-msgstr ""
+msgstr "Beskrivelse"
 
 #: ../includes/Gateways/ReepayCheckout.php:121
 msgid "This controls the description which the user sees during checkout"
-msgstr ""
+msgstr "Dette styrer beskrivelsen, som brugeren ser under checkout"
 
 #: ../includes/Gateways/ReepayCheckout.php:128
 msgid "Live Private Key"
-msgstr ""
+msgstr "Live privat nøgle"
 
 #: ../includes/Gateways/ReepayCheckout.php:130
 msgid "Insert your private key from your live account"
-msgstr ""
+msgstr "Indsæt din private nøgle fra din live-konto"
 
 #: ../includes/Gateways/ReepayCheckout.php:140
 #: ../includes/Gateways/ReepayCheckout.php:180
 msgid "Account"
-msgstr ""
+msgstr "Konto"
 
 #: ../includes/Gateways/ReepayCheckout.php:149
 #: ../includes/Gateways/ReepayCheckout.php:189
 #: ../templates/meta-boxes/invoice.php:39
 msgid "State"
-msgstr ""
+msgstr "Status"
 
 #: ../includes/Gateways/ReepayCheckout.php:168
 msgid "Test Private Key"
-msgstr ""
+msgstr "Test privat nøgle"
 
 #: ../includes/Gateways/ReepayCheckout.php:170
 msgid "Insert your private key from your test account"
-msgstr ""
+msgstr "Indsæt din private nøgle fra din testkonto"
 
 #: ../includes/Gateways/ReepayCheckout.php:209
 msgid "Test Mode"
-msgstr ""
+msgstr "Testtilstand"
 
 #: ../includes/Gateways/ReepayCheckout.php:211
 msgid "Enable Test Mode"
-msgstr ""
+msgstr "Aktiver testtilstand"
 
 #: ../includes/Gateways/ReepayCheckout.php:218
 #: ../includes/Gateways/ReepayCheckout.php:220
 msgid "Email address for notification about failed webhooks"
-msgstr ""
+msgstr "E-mailadresse til notifikation om fejlede webhooks"
 
 #: ../includes/Gateways/ReepayCheckout.php:225
 msgid "Email address is invalid."
-msgstr ""
+msgstr "E-mailadressen er ugyldig."
 
 #: ../includes/Gateways/ReepayCheckout.php:233
 msgid "Payment Window Display"
-msgstr ""
+msgstr "Betalingsvindue visning"
 
 #: ../includes/Gateways/ReepayCheckout.php:234
 msgid ""
 "Choose between a redirect window or a overlay window. Note that some payment "
 "methods like Apple Pay do not work for overlay window."
 msgstr ""
+"Vælg mellem et redirect-vindue eller et overlay-vindue. Bemærk, at nogle "
+"betalingsmetoder som Apple Pay ikke fungerer med overlay-vindue."
 
 #: ../includes/Gateways/ReepayCheckout.php:243
 #: ../includes/Gateways/ReepayCheckout.php:244
 msgid "Payment Methods"
-msgstr ""
+msgstr "Betalingsmetoder"
 
 #: ../includes/Gateways/ReepayCheckout.php:277
 msgid "Instant Settle"
-msgstr ""
+msgstr "Øjeblikkelig afregning"
 
 #: ../includes/Gateways/ReepayCheckout.php:278
 msgid "Instant Settle will charge your customers right away"
-msgstr ""
+msgstr "Øjeblikkelig afregning vil opkræve dine kunder med det samme"
 
 #: ../includes/Gateways/ReepayCheckout.php:282
 msgid "Instant Settle online / virtualproducts"
-msgstr ""
+msgstr "Øjeblikkelig afregning af online / virtuelle produkter"
 
 #: ../includes/Gateways/ReepayCheckout.php:283
 msgid "Instant Settle physical  products"
-msgstr ""
+msgstr "Øjeblikkelig afregning af fysiske produkter"
 
 #: ../includes/Gateways/ReepayCheckout.php:284
 msgid "Instant Settle recurring (subscription) products"
-msgstr ""
+msgstr "Øjeblikkelig afregning af abonnementsprodukter"
 
 #: ../includes/Gateways/ReepayCheckout.php:285
 msgid "Instant Settle fees"
-msgstr ""
+msgstr "Øjeblikkelig afregning af gebyrer"
 
 #: ../includes/Gateways/ReepayCheckout.php:291
 msgid "Language In Payment Window"
-msgstr ""
+msgstr "Sprog i betalingsvindue"
 
 #: ../includes/Gateways/ReepayCheckout.php:294
 msgid "Detect Automatically"
-msgstr ""
+msgstr "Registrer automatisk"
 
 #: ../includes/Gateways/ReepayCheckout.php:295
 msgid "English"
-msgstr ""
+msgstr "Engelsk"
 
 #: ../includes/Gateways/ReepayCheckout.php:296
 msgid "Danish"
-msgstr ""
+msgstr "Dansk"
 
 #: ../includes/Gateways/ReepayCheckout.php:297
 msgid "Swedish"
-msgstr ""
+msgstr "Svensk"
 
 #: ../includes/Gateways/ReepayCheckout.php:298
 msgid "Norwegian"
-msgstr ""
+msgstr "Norsk"
 
 #: ../includes/Gateways/ReepayCheckout.php:299
 msgid "German"
-msgstr ""
+msgstr "Tysk"
 
 #: ../includes/Gateways/ReepayCheckout.php:300
 msgid "Spanish"
-msgstr ""
+msgstr "Spansk"
 
 #: ../includes/Gateways/ReepayCheckout.php:301
 msgid "French"
-msgstr ""
+msgstr "Fransk"
 
 #: ../includes/Gateways/ReepayCheckout.php:302
 msgid "Italian"
-msgstr ""
+msgstr "Italiensk"
 
 #: ../includes/Gateways/ReepayCheckout.php:303
 msgid "Netherlands"
-msgstr ""
+msgstr "Nederlandsk"
 
 #: ../includes/Gateways/ReepayCheckout.php:308
 msgid "Auto-settle"
-msgstr ""
+msgstr "Automatisk afregning"
 
 #: ../includes/Gateways/ReepayCheckout.php:309
 msgid "Disable settle orders on status changing to completed"
-msgstr ""
+msgstr "Deaktiver afregning af ordrer ved statusændring til fuldført"
 
 #: ../includes/Gateways/ReepayCheckout.php:311
 msgid "Disable auto-settle"
-msgstr ""
+msgstr "Deaktiver automatisk afregning"
 
 #: ../includes/Gateways/ReepayCheckout.php:315
 msgid "Allow Credit Card saving"
-msgstr ""
+msgstr "Tillad lagring af kreditkort"
 
 #: ../includes/Gateways/ReepayCheckout.php:317
 msgid "Enable Save CC feature"
-msgstr ""
+msgstr "Aktiver gem kreditkort-funktion"
 
 #: ../includes/Gateways/ReepayCheckout.php:324
 msgid "Debug"
-msgstr ""
+msgstr "Fejlsøgning"
 
 #: ../includes/Gateways/ReepayCheckout.php:326
 msgid "Enable logging"
-msgstr ""
+msgstr "Aktiver logning"
 
 #: ../includes/Gateways/ReepayCheckout.php:330
 msgid "Show meta fields in orders"
-msgstr ""
+msgstr "Vis metafelter i ordrer"
 
 #: ../includes/Gateways/ReepayCheckout.php:332
 #: ../includes/Gateways/ReepayCheckout.php:338
 msgid "Enable display"
-msgstr ""
+msgstr "Aktiver visning"
 
 #: ../includes/Gateways/ReepayCheckout.php:336
 msgid "Show meta fields in users"
-msgstr ""
+msgstr "Vis metafelter i brugere"
 
 #: ../includes/Gateways/ReepayCheckout.php:345
 msgid "Payment Logos"
-msgstr ""
+msgstr "Betalingslogoer"
 
 #: ../includes/Gateways/ReepayCheckout.php:347
 msgid ""
 "Choose the logos you would like to show in WooCommerce checkout. Make sure "
 "that they are enabled in Frisbii Pay Dashboard"
 msgstr ""
+"Vælg de logoer, du vil vise i WooCommerce checkout. Sørg for, at de er "
+"aktiveret i Frisbii Pay Dashboard"
 
 #: ../includes/Gateways/ReepayCheckout.php:353
 msgid "Dankort"
-msgstr ""
+msgstr "Dankort"
 
 #: ../includes/Gateways/ReepayCheckout.php:354
 msgid "Visa"
-msgstr ""
+msgstr "Visa"
 
 #: ../includes/Gateways/ReepayCheckout.php:355
 msgid "MasterCard"
-msgstr ""
+msgstr "MasterCard"
 
 #: ../includes/Gateways/ReepayCheckout.php:356
 msgid "Visa Electron"
-msgstr ""
+msgstr "Visa Electron"
 
 #: ../includes/Gateways/ReepayCheckout.php:357
 msgid "Maestro"
-msgstr ""
+msgstr "Maestro"
 
 #: ../includes/Gateways/ReepayCheckout.php:358
 msgid "Paypal"
-msgstr ""
+msgstr "Paypal"
 
 #: ../includes/Gateways/ReepayCheckout.php:359
 msgid "MobilePay Online"
-msgstr ""
+msgstr "MobilePay Online"
 
 #: ../includes/Gateways/ReepayCheckout.php:360
 msgid "ApplePay"
-msgstr ""
+msgstr "ApplePay"
 
 #: ../includes/Gateways/ReepayCheckout.php:361
 msgid "Klarna"
-msgstr ""
+msgstr "Klarna"
 
 #: ../includes/Gateways/ReepayCheckout.php:362
 msgid "Viabill"
-msgstr ""
+msgstr "Viabill"
 
 #: ../includes/Gateways/ReepayCheckout.php:364
 msgid "Forbrugsforeningen"
-msgstr ""
+msgstr "Forbrugsforeningen"
 
 #: ../includes/Gateways/ReepayCheckout.php:365
 msgid "AMEX"
-msgstr ""
+msgstr "AMEX"
 
 #: ../includes/Gateways/ReepayCheckout.php:366
 msgid "JCB"
-msgstr ""
+msgstr "JCB"
 
 #: ../includes/Gateways/ReepayCheckout.php:367
 msgid "Diners Club"
-msgstr ""
+msgstr "Diners Club"
 
 #: ../includes/Gateways/ReepayCheckout.php:368
 msgid "Unionpay"
-msgstr ""
+msgstr "Unionpay"
 
 #: ../includes/Gateways/ReepayCheckout.php:369
 msgid "Discover"
-msgstr ""
+msgstr "Discover"
 
 #: ../includes/Gateways/ReepayCheckout.php:370
 msgid "Google pay"
-msgstr ""
+msgstr "Google pay"
 
 #: ../includes/Gateways/ReepayCheckout.php:371
 msgid "Vipps"
-msgstr ""
+msgstr "Vipps"
 
 #: ../includes/Gateways/ReepayCheckout.php:377
 msgid "Logo Height"
-msgstr ""
+msgstr "Logo højde"
 
 #: ../includes/Gateways/ReepayCheckout.php:379
 msgid "Set the Logo height in pixels"
-msgstr ""
+msgstr "Indstil logoens højde i pixels"
 
 #: ../includes/Gateways/ReepayCheckout.php:386
 #: ../includes/Gateways/ReepayCheckout.php:388
 msgid "Order handle failover"
-msgstr ""
+msgstr "Ordre handle failover"
 
 #: ../includes/Gateways/ReepayCheckout.php:410
 msgid ""
 "In case an invoice with the current handle was settled before, the plugin "
 "will generate a unique handle."
 msgstr ""
+"Hvis en faktura med det aktuelle handle er blevet afregnet før, vil "
+"plugin'et generere et unikt handle."
 
 #: ../includes/Gateways/ReepayCheckout.php:393
 msgid "Skip order lines"
-msgstr ""
+msgstr "Spring ordrelinjer over"
 
 #: ../includes/Gateways/ReepayCheckout.php:394
 msgid "Select if order lines should not be send to Frisbii Pay"
-msgstr ""
+msgstr "Vælg om ordrelinjer ikke skal sendes til Frisbii Pay"
 
 #: ../includes/Gateways/ReepayCheckout.php:480
 msgid "Order auto-cancel"
-msgstr ""
+msgstr "Automatisk annullering af ordrer"
 
 #: ../includes/Gateways/ReepayCheckout.php:481
 msgid "Allow or prefer no automatic order cancel?"
-msgstr ""
+msgstr "Tillad automatisk annullering af ordrer?"
 
 #: ../includes/Gateways/ReepayCheckout.php:413
 msgid "Payment button text"
-msgstr ""
+msgstr "Betalingsknap tekst"
 
 #: ../includes/Gateways/ReepayCheckout.php:415
 msgid ""
 "Text on button which will be displayed on payment page if subscription "
 "products is being purchased"
 msgstr ""
+"Tekst på knappen, der vises på betalingssiden, hvis abonnementsprodukter "
+"købes"
 
 #: ../includes/Gateways/ReepayCheckout.php:518
 msgid "Save and verify"
-msgstr ""
+msgstr "Gem og verificer"
 
 #: ../includes/Gateways/ReepayCheckout.php:560
 msgid "Webhook"
-msgstr ""
+msgstr "Webhook"
 
 #: ../includes/Gateways/ReepayCheckout.php:702
 #, php-format
@@ -776,29 +784,31 @@ msgstr ""
 
 #: ../includes/OrderFlow/OrderStatuses.php:109
 msgid "Sync statuses"
-msgstr ""
+msgstr "Synkroniser statusser"
 
 #: ../includes/OrderFlow/OrderStatuses.php:111
 msgid "Enable sync"
-msgstr ""
+msgstr "Aktiver synkronisering"
 
 #: ../includes/OrderFlow/OrderStatuses.php:112
 msgid ""
 "2-way synchronization of order statuses in Woocommerce with invoice statuses "
 "in Frisbii Pay"
 msgstr ""
+"2-vejs synkronisering af ordrestatusser i WooCommerce med fakturastatusser "
+"i Frisbii Pay"
 
 #: ../includes/OrderFlow/OrderStatuses.php:127
 msgid "Status: Frisbii Pay Created"
-msgstr ""
+msgstr "Status: Frisbii Pay oprettet"
 
 #: ../includes/OrderFlow/OrderStatuses.php:142
 msgid "Status: Frisbii Pay Authorized"
-msgstr ""
+msgstr "Status: Frisbii Pay autoriseret"
 
 #: ../includes/OrderFlow/OrderStatuses.php:157
 msgid "Status: Frisbii Pay Settled"
-msgstr ""
+msgstr "Status: Frisbii Pay afregnet"
 
 #: ../includes/OrderFlow/OrderStatuses.php:412
 #: ../includes/OrderFlow/OrderStatuses.php:447
@@ -929,25 +939,27 @@ msgstr ""
 
 #: ../includes/Gateways/ReepayCheckout.php:317
 msgid "Partial instant settle"
-msgstr ""
+msgstr "Delvis øjeblikkelig afregning"
 
 #: ../includes/Gateways/ReepayCheckout.php:319
 msgid "Allow partial instant settlement"
-msgstr ""
+msgstr "Tillad delvis øjeblikkelig afregning"
 
 #: ../includes/Gateways/ReepayCheckout.php:320
 msgid ""
 "Un-check to hinder that orders for mixed product types get automatic "
 "settlement for some of the products."
 msgstr ""
+"Fravælg dette for at hindre at ordrer med blandede produkttyper kan blive "
+"automatisk afregnet for en del af produkterne."
 
 #: ../includes/Gateways/ReepayCheckout.php:324
 msgid "Pro-rated information"
-msgstr ""
+msgstr "Pro rata information"
 
 #: ../includes/Gateways/ReepayCheckout.php:326
 msgid "Don't show pro-rated information on the Thanks for order page"
-msgstr ""
+msgstr "Vis ikke pro rata information på Tak for ordre-siden"
 
 #: ../includes/Gateways/ReepayCheckout.php:327
 msgid ""
@@ -955,18 +967,21 @@ msgid ""
 "page. This improves page load speed for mixed orders when pro-rated pricing "
 "is not used."
 msgstr ""
+"Markér dette for at springe pro rata abonnementspristjek over på Tak for "
+"ordre-siden. Dette forbedrer sideindlæsningshastigheden for blandede ordrer, "
+"når pro rata prissætning ikke bruges."
 
 #: ../includes/Gateways/ReepayCheckout.php:337
 msgid "Age Verification"
-msgstr ""
+msgstr "Aldersbekræftelse"
 
 #: ../includes/Gateways/ReepayCheckout.php:339
 msgid "Enable"
-msgstr ""
+msgstr "Aktiver"
 
 #: ../includes/Gateways/ReepayCheckout.php:414
 msgid "Order Handle Prefix"
-msgstr ""
+msgstr "Ordre handle præfix"
 
 #: ../includes/Gateways/ReepayCheckout.php:417
 msgid ""
@@ -975,6 +990,10 @@ msgid ""
 "strong> Add hyphen (-) or underscore (_) at the end if you want separation. "
 "Maximum 8 characters allowed."
 msgstr ""
+"Præfix før Frisbii ordre handles.<br><strong>Med præfix \"order-\" bliver et "
+"ordre handle \"order-123456\", for eksempel.</strong><br><br><strong>Bemærk:"
+"</strong> Tilføj bindestreg (-) eller understregning (_), hvis der skal være "
+"et mellemrum. Maksimalt 8 tegn tilladt."
 
 #: ../includes/Gateways/ReepayCheckout.php:432
 #, php-format
@@ -983,6 +1002,8 @@ msgid ""
 "characters (reserving 12 for order number, total max: 20 characters as per "
 "Frisbii API)."
 msgstr ""
+"Ordre handle præfiks er for langt (%1$d tegn). Maksimalt tilladt: %2$d tegn "
+"(12 reserveret til ordrenummer, maks. 20 tegn i alt jf. Frisbii API)."
 
 #: ../includes/Gateways/ReepayCheckout.php:442
 #, php-format
@@ -991,6 +1012,9 @@ msgid ""
 "A-Z), Numbers (0-9), Hyphens (-), Underscores (_). Special characters like "
 "@, #, $, !, spaces, etc. are not allowed."
 msgstr ""
+"Ugyldigt præfiks \"%s\". Kun disse tegn er tilladt: Bogstaver (a-z, A-Z), "
+"tal (0-9), bindestreger (-), understregninger (_). Specialtegn som @, #, $, "
+"!, mellemrum osv. er ikke tilladt."
 
 #: ../includes/Gateways/ReepayCheckout.php:451
 #, php-format
@@ -999,6 +1023,9 @@ msgid ""
 "underscore (_). Try adding letters or numbers at the beginning. Examples: "
 "\"[order-]\", \"[order_]\""
 msgstr ""
+"Ugyldigt præfiks \"%s\". Præfikset kan ikke starte med en bindestreg (-) "
+"eller understregning (_). Prøv at tilføje bogstaver eller tal i "
+"begyndelsen. Eksempler: \"[order-]\", \"[order_]\""
 
 #: ../includes/Gateways/ReepayCheckout.php:460
 #, php-format
@@ -1007,55 +1034,59 @@ msgid ""
 "or underscores (__). Use single hyphens or underscores only. Example: "
 "\"[order-2024]\" instead of \"[order--2024]\""
 msgstr ""
+"Ugyldigt præfiks \"%s\". Præfikset kan ikke indeholde fortløbende "
+"bindestreger (--) eller understregninger (__). Brug kun enkelte bindestreger "
+"eller understregninger. Eksempel: \"[order-2024]\" i stedet for "
+"\"[order--2024]\""
 
 #: ../includes/Gateways/ReepayCheckout.php:474
 msgid "Include order lines"
-msgstr ""
+msgstr "Inkludér ordrelinjer"
 
 #: ../includes/Gateways/ReepayCheckout.php:484
 msgid "Allow auto-cancel"
-msgstr ""
+msgstr "Tillad automatisk annullering"
 
 #: ../includes/Gateways/ReepayCheckout.php:485
 msgid "Prefer no auto-cancel"
-msgstr ""
+msgstr "Foretræk ingen automatisk annullering"
 
 #: ../includes/Gateways/ReepayCheckout.php:252
 msgid "Finnish"
-msgstr ""
+msgstr "Finsk"
 
 #: ../includes/Gateways/ReepayCheckout.php:253
 msgid "Icelandic"
-msgstr ""
+msgstr "Islandsk"
 
 #: ../includes/Gateways/ReepayCheckout.php:259
 msgid "Polish"
-msgstr ""
+msgstr "Polsk"
 
 #: ../includes/Gateways/ReepayCheckout.php:260
 msgid "Hungarian"
-msgstr ""
+msgstr "Ungarsk"
 
 #: ../includes/Gateways/ReepayCheckout.php:261
 msgid "Romanian"
-msgstr ""
+msgstr "Rumænsk"
 
 #: ../includes/Gateways/ReepayCheckout.php:262
 msgid "Czech"
-msgstr ""
+msgstr "Tjekkisk"
 
 #: ../includes/Gateways/ReepayCheckout.php:263
 msgid "Greek"
-msgstr ""
+msgstr "Græsk"
 
 #: ../includes/Gateways/ReepayCheckout.php:264
 msgid "Slovak"
-msgstr ""
+msgstr "Slovakisk"
 
 #: ../includes/Gateways/ReepayCheckout.php:265
 msgid "Serbian"
-msgstr ""
+msgstr "Serbisk"
 
 #: ../includes/Gateways/ReepayCheckout.php:258
 msgid "Dutch"
-msgstr ""
+msgstr "Nederlandsk"
