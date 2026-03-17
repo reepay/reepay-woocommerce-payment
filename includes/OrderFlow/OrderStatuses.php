@@ -168,7 +168,7 @@ class OrderStatuses {
 			'title'   => __( 'Status: Frisbii Pay Settled', 'reepay-checkout-gateway' ),
 			'type'    => 'select',
 			'options' => $settled_statuses,
-			'default' => 'wc-processing',
+			'default' => 'wc-completed',
 		);
 
 		return $form_fields;

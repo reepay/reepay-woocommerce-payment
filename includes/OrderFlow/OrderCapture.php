@@ -193,7 +193,7 @@ class OrderCapture {
 			)
 		);
 
-		if ( 'completed' === $this_status_transition_to && 'no' === reepay()->get_setting( 'disable_auto_settle' ) && ( '1' === $value || false === $value ) ) {
+		if ( OrderStatuses::$status_settled === $this_status_transition_to && 'no' === reepay()->get_setting( 'disable_auto_settle' ) && ( '1' === $value || false === $value ) ) {
 			$this->log(
 				array(
 					__METHOD__,

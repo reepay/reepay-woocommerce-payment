@@ -316,7 +316,7 @@ class Webhook {
 					$order = wc_get_order( $order->get_id() );
 				}
 
-				if ( $order->has_status( OrderStatuses::$status_settled ) ) {
+				if ( $order->has_status( OrderStatuses::$status_settled ) && ! empty( $order->get_meta( '_reepay_state_settled' ) ) ) {
 					$this->log(
 						sprintf(
 							'WebHook: Event type: %s success. But the order had status early: %s',
