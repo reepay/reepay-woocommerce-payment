@@ -49,13 +49,17 @@ class Ajax {
 	}
 
 	/**
-	 * Exit if wrong nonce
+	 * Exit if wrong nonce or insufficient permissions
 	 *
 	 * @param string $action action to verify.
 	 *
 	 * @return bool
 	 */
 	private function verify_nonce( $action = 'nonce' ): bool {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( 'Unauthorized', 403 );
+		}
+
 		if ( ! wp_verify_nonce( $_REQUEST['nonce'] ?? '', $action ) ) {
 			exit( 'No naughty business' );
 		}

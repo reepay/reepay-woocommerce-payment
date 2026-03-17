@@ -1293,6 +1293,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'source'          => 'process_payment_updating_customer',
 					'order_id'        => $order_id,
 					'customer_handle' => $customer_handle,
+					'customer_data'   => $params['order']['customer'],
 				)
 			);
 

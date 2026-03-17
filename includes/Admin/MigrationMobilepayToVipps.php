@@ -90,6 +90,7 @@ class MigrationMobilepayToVipps {
 			'migration-mobilepay-vippsmobilepay',
 			'migrationData',
 			array(
+				'nonce'             => wp_create_nonce( 'reepay_migration_nonce' ),
 				'upload_csv'        => __( 'Only upload .csv', 'reepay-checkout-gateway' ),
 				'confirm_migration' => __( 'Are you sure you want to start the migration?', 'reepay-checkout-gateway' ),
 				'choose_file'       => __( 'Choose file before upload', 'reepay-checkout-gateway' ),
@@ -127,6 +128,12 @@ class MigrationMobilepayToVipps {
 	 * Ajax upload csv to database.
 	 */
 	public function upload_csv() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Unauthorized', 403 );
+		}
+
+		check_ajax_referer( 'reepay_migration_nonce', 'nonce' );
+
 		if ( ! empty( $_FILES['migration_file']['tmp_name'] ) ) {
 
 			global $wp_filesystem;
@@ -168,6 +175,12 @@ class MigrationMobilepayToVipps {
 	 * Ajax process update data.
 	 */
 	public function process_batch() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Unauthorized', 403 );
+		}
+
+		check_ajax_referer( 'reepay_migration_nonce', 'nonce' );
+
 		global $wpdb;
 
 		$offset   = isset( $_POST['offset'] ) ? intval( $_POST['offset'] ) : 0;

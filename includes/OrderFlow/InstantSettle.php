@@ -158,7 +158,8 @@ class InstantSettle {
 					$price     = OrderCapture::get_item_price( $item, $order );
 					$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
-					if ( $total <= 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
+					$_product = method_exists( $item, 'get_product' ) ? $item->get_product() : false;
+					if ( $total <= 0 && $_product instanceof WC_Product && wcs_is_subscription_product( $_product ) ) {
 						WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 					} elseif ( $total > 0 && self::$order_capture->check_capture_allowed( $order ) ) {
 						$items_data[] = $item_data;

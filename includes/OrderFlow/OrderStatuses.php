@@ -345,6 +345,12 @@ class OrderStatuses {
 		} else {
 			$order->payment_complete( $transaction_id );
 
+			// Apply the custom settled status if sync is enabled and differs from default.
+			if ( self::$status_sync_enabled && 'completed' !== self::$status_settled ) {
+				$order->set_status( self::$status_settled );
+				$order->save();
+			}
+
 			if ( $note ) {
 				$order->add_order_note( $note, true, true );
 			}
