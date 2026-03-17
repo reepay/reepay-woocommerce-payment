@@ -49,6 +49,28 @@ class InstantSettle {
 	}
 
 	/**
+	 * Check if all order items are virtual (no shipping needed).
+	 *
+	 * Note: This differs from WC_Order::needs_processing() which requires products
+	 * to be both virtual AND downloadable. We only check virtual/no-shipping since
+	 * virtual-only products (not downloadable) should also be eligible for auto-settlement.
+	 *
+	 * @param WC_Order $order order to check.
+	 *
+	 * @return bool
+	 */
+	private static function is_order_virtual_only( WC_Order $order ): bool {
+		foreach ( $order->get_items() as $item ) {
+			$product = $item->get_product();
+			if ( $product && $product->needs_shipping() ) {
+				return false;
+			}
+		}
+
+		return count( $order->get_items() ) > 0;
+	}
+
+	/**
 	 * Set order capture instance
 	 *
 	 * @TODO remove this static method and replace other static methods with non static methods
@@ -73,6 +95,27 @@ class InstantSettle {
 					return;
 				}
 				$this->process_instant_settle( $order );
+
+				// If instant settle didn't settle any items and the order contains
+				// only virtual products, call payment_complete() so WooCommerce and
+				// third-party plugins can set the correct order status (e.g. "completed").
+				// OrderCapture::capture_full_order() handles settlement on "completed" transition.
+				// Only do this when settle types are configured — if nothing is selected,
+				// the merchant has not opted into instant settlement.
+				$settle_types = reepay()->get_setting( 'settle' ) ?: array();
+
+				if ( ! empty( $settle_types ) && empty( $order->get_meta( '_is_instant_settled' ) ) && self::is_order_virtual_only( $order ) ) {
+					// Allow payment_complete() to run on "processing" orders since
+					// the webhook handler may have already set the authorized status.
+					$allow_processing = function ( $statuses ) {
+						$statuses[] = 'processing';
+						return $statuses;
+					};
+
+					add_filter( 'woocommerce_valid_order_statuses_for_payment_complete', $allow_processing );
+					$order->payment_complete();
+					remove_filter( 'woocommerce_valid_order_statuses_for_payment_complete', $allow_processing );
+				}
 			}
 		}
 	}
@@ -89,6 +132,18 @@ class InstantSettle {
 			return;
 		}
 
+		// When partial instant settle is disabled, only settle if ALL product items
+		// can be settled instantly. If any product item cannot be settled, skip entirely.
+		// This only checks product items — fees and shipping follow existing logic.
+		if ( 'no' === reepay()->get_setting( 'allow_partial_settle' ) ) {
+			foreach ( $order->get_items() as $order_item ) {
+				$product = $order_item->get_product();
+				if ( ! self::can_product_be_settled_instantly( $product ) ) {
+					return;
+				}
+			}
+		}
+
 		$settle_items = self::get_instant_settle_items( $order );
 
 		$items_data = array();
@@ -103,7 +158,8 @@ class InstantSettle {
 					$price     = OrderCapture::get_item_price( $item, $order );
 					$total     = rp_prepare_amount( $price['with_tax'], $order->get_currency() );
 
-					if ( $total <= 0 && method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
+					$_product = method_exists( $item, 'get_product' ) ? $item->get_product() : false;
+					if ( $total <= 0 && $_product instanceof WC_Product && wcs_is_subscription_product( $_product ) ) {
 						WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 					} elseif ( $total > 0 && self::$order_capture->check_capture_allowed( $order ) ) {
 						$items_data[] = $item_data;

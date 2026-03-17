@@ -38,6 +38,14 @@ class ReepayCustomer {
 	 * @param int $user_id user id to set handle.
 	 */
 	public static function set_reepay_handle( int $user_id ): string {
+		// Per-request cache: prevents duplicate API lookups for the same user within one request.
+		// This avoids a double call when user_register hook fires first, then rp_get_customer_handle()
+		// calls set_reepay_handle() again during the same checkout process.
+		static $cache = array();
+		if ( array_key_exists( $user_id, $cache ) ) {
+			return $cache[ $user_id ];
+		}
+
 		$customer = new WC_Customer( $user_id );
 
 		$email = $customer->get_billing_email();
@@ -50,20 +58,23 @@ class ReepayCustomer {
 		}
 
 		if ( empty( $email ) ) {
-			return '';
+			$cache[ $user_id ] = '';
+			return $cache[ $user_id ];
 		}
 
 		$reepay_customers = reepay()->api( 'reepay_user_register' )->request( 'GET', "https://api.reepay.com/v1/list/customer?email=$email" );
 
 		if ( is_wp_error( $reepay_customers ) || empty( $reepay_customers['content'][0] ) ) {
-			return '';
+			$cache[ $user_id ] = '';
+			return $cache[ $user_id ];
 		}
 
 		$customer_handle = $reepay_customers['content'][0]['handle'];
 
 		update_user_meta( $user_id, 'reepay_customer_id', $customer_handle );
 
-		return $customer_handle;
+		$cache[ $user_id ] = $customer_handle;
+		return $cache[ $user_id ];
 	}
 
 	/**

@@ -156,7 +156,8 @@ class ThankyouPage {
 			 *
 			 * @var WC_Order_Item_Product $item
 			 */
-			if ( intval( $order->get_total() ) <= 0 && wcs_is_subscription_product( $item->get_product() ) ) {
+			$_product = $item->get_product();
+			if ( intval( $order->get_total() ) <= 0 && $_product instanceof WC_Product && wcs_is_subscription_product( $_product ) ) {
 				$ret = array(
 					'state'   => 'paid',
 					'message' => 'Subscription is activated in trial',
@@ -217,6 +218,7 @@ class ThankyouPage {
 	 * Ajax: get order description on mix order.
 	 */
 	public function ajax_order_descriptions() {
+		check_ajax_referer( 'reepay', 'nonce' );
 
 		$order_id  = isset( $_POST['order_id'] ) ? wc_clean( $_POST['order_id'] ) : '';
 		$order_key = isset( $_POST['order_key'] ) ? wc_clean( $_POST['order_key'] ) : '';

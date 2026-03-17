@@ -4,7 +4,7 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: Frisbii
  * Author URI: https://frisbii.com
- * Version: 1.8.9
+ * Version: 1.8.10
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -184,6 +184,8 @@ class WC_ReepayCheckout {
 				'private_key_test'           => ! empty( $gateway_settings['private_key_test'] ) ? $gateway_settings['private_key_test'] : '',
 				'test_mode'                  => ! empty( $gateway_settings['test_mode'] ) ? $gateway_settings['test_mode'] : '',
 				'settle'                     => ! empty( $gateway_settings['settle'] ) ? $gateway_settings['settle'] : array(),
+				'allow_partial_settle'       => ! empty( $gateway_settings['allow_partial_settle'] ) ? $gateway_settings['allow_partial_settle'] : 'yes',
+				'skip_pro_rated_on_thankyou' => ! empty( $gateway_settings['skip_pro_rated_on_thankyou'] ) ? $gateway_settings['skip_pro_rated_on_thankyou'] : 'no',
 				'language'                   => ! empty( $gateway_settings['language'] ) ? $gateway_settings['language'] : '',
 				'debug'                      => ! empty( $gateway_settings['debug'] ) ? $gateway_settings['debug'] : '',
 				'show_meta_fields_in_orders' => ! empty( $gateway_settings['show_meta_fields_in_orders'] ) ? $gateway_settings['show_meta_fields_in_orders'] : '',
