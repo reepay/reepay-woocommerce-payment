@@ -24,6 +24,7 @@ v 1.8.10
 - [Improvement] - Added several improved UI texts and translations
 - [Improvement] - New setting: Allow partial instant settle
 - [Improvement] - 'upload_csv' and 'process_batch' security upgraded
+- [Improvement] - Gracefully handle order capture if products are deleted or inactive in WooCommerce
 
 v 1.8.9
 - [Fix] - Partial captures of an invoice with percentage discount settled one discount amount less.
