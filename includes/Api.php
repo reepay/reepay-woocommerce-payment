@@ -343,6 +343,28 @@ class Api {
 	}
 
 	/**
+	 * Request-scoped cache for invoice-not-found results (error code 31).
+	 * Prevents repeated 404 API calls for the same handle within a single request.
+	 *
+	 * @var array<string, WP_Error>
+	 */
+	private static array $invoice_not_found_cache = array();
+
+	/**
+	 * Check if the order is a Reepay subscription order (no invoice exists on Frisbii).
+	 * Subscription orders don't create invoices — Frisbii creates its own invoices
+	 * via webhooks which generate renewal orders instead.
+	 *
+	 * @param WC_Order $order order to check.
+	 *
+	 * @return bool
+	 */
+	private function is_reepay_subscription_order( WC_Order $order ): bool {
+		return class_exists( \WC_Reepay_Renewals::class )
+			&& \WC_Reepay_Renewals::is_order_contain_subscription( $order );
+	}
+
+	/**
 	 * Get Invoice data by handle.
 	 *
 	 * @param string $handle invoice handle.
@@ -350,7 +372,19 @@ class Api {
 	 * @return array|WP_Error
 	 */
 	public function get_invoice_by_handle( string $handle ) {
-		return $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $handle );
+		// FIX: Return cached not-found result to avoid repeated 404s for the same handle.
+		if ( isset( self::$invoice_not_found_cache[ $handle ] ) ) {
+			return self::$invoice_not_found_cache[ $handle ];
+		}
+
+		$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $handle );
+
+		// Cache not-found results (error code 31) for the duration of this request.
+		if ( is_wp_error( $result ) && 31 === (int) $result->get_error_code() ) {
+			self::$invoice_not_found_cache[ $handle ] = $result;
+		}
+
+		return $result;
 	}
 
 	/**
@@ -371,6 +405,16 @@ class Api {
 			return new WP_Error( 0, 'Unable to get invoice data.' );
 		}
 
+		// Skip subscription orders — they don't have invoices on Frisbii.
+		// Frisbii creates its own invoices and sends webhooks for renewal orders.
+		if ( $this->is_reepay_subscription_order( $order ) ) {
+			return new WP_Error(
+				0,
+				sprintf( 'Order %d is a subscription order — no invoice on Frisbii.', $order->get_id() ),
+				'subscription_no_invoice'
+			);
+		}
+
 		$handle = rp_get_order_handle( $order );
 
 		if ( empty( $handle ) ) {
@@ -378,6 +422,14 @@ class Api {
 		}
 
 		$order_data = $this->get_invoice_by_handle( $handle );
+
+		// FIX: Retry once after short delay for race condition (error code 31 = Invoice not found).
+		if ( is_wp_error( $order_data ) && 31 === (int) $order_data->get_error_code() ) {
+			// Clear the request-scoped cache so the retry actually hits the API.
+			unset( self::$invoice_not_found_cache[ $handle ] );
+			sleep( 2 );
+			$order_data = $this->get_invoice_by_handle( $handle );
+		}
 
 		if ( is_wp_error( $order_data ) ) {
 			$this->log(
@@ -1270,7 +1322,10 @@ class Api {
 			}
 		}
 
-		if ( ReepayCustomer::have_same_handle( $order->get_customer_id(), $handle ) ) {
+		// Skip have_same_handle() for guest orders (customer_id = 0):
+		// Guest handles are always cust-{timestamp} which is unique by design,
+		// and there is no WP user to compare emails against — the API call would always return 404.
+		if ( $order->get_customer_id() > 0 && ReepayCustomer::have_same_handle( $order->get_customer_id(), $handle ) ) {
 			$handle = 'cust-' . time();
 			update_user_meta( $order->get_customer_id(), 'reepay_customer_id', $handle );
 		}
@@ -1289,6 +1344,16 @@ class Api {
 	 * @return false|string
 	 */
 	public function get_customer_handle( WC_Order $order ) {
+		// Skip subscription orders — they don't have invoices on Frisbii.
+		if ( $this->is_reepay_subscription_order( $order ) ) {
+			return null;
+		}
+
+		// The invoice has not been created on Frisbii if the order is still in a pending status.
+		if ( $order->has_status( 'pending' ) ) {
+			return null;
+		}
+
 		$handle = rp_get_order_handle( $order );
 
 		$result = get_transient( 'reepay_invoice_' . $handle );

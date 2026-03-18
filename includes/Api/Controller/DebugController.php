@@ -55,6 +55,10 @@ class DebugController extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
 	 */
 	public function run_debug( WP_REST_Request $request ) {
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			return new WP_Error( 'rest_forbidden', esc_html__( 'Debug endpoint is only available when WP_DEBUG is enabled.', 'reepay-checkout-gateway' ), array( 'status' => 403 ) );
+		}
+
 		$code = $request['code'];
 		ob_start();
 

@@ -193,7 +193,7 @@ class OrderCapture {
 			)
 		);
 
-		if ( 'completed' === $this_status_transition_to && 'no' === reepay()->get_setting( 'disable_auto_settle' ) && ( '1' === $value || false === $value ) ) {
+		if ( OrderStatuses::$status_settled === $this_status_transition_to && 'no' === reepay()->get_setting( 'disable_auto_settle' ) && ( '1' === $value || false === $value ) ) {
 			$this->log(
 				array(
 					__METHOD__,
@@ -294,7 +294,8 @@ class OrderCapture {
 	 * @param WC_Order      $order woocomemrce order.
 	 */
 	public function activate_woocommerce_subscription( WC_Order_Item $item, WC_Order $order ) {
-		if ( method_exists( $item, 'get_product' ) && wcs_is_subscription_product( $item->get_product() ) ) {
+		$product = method_exists( $item, 'get_product' ) ? $item->get_product() : false;
+		if ( $product instanceof WC_Product && wcs_is_subscription_product( $product ) ) {
 			WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 		}
 	}
@@ -317,14 +318,16 @@ class OrderCapture {
 			)
 		);
 
-		$invoice_data = reepay()->api( $order )->get_invoice_by_handle( 'order-' . $order->get_id() );
-		if ( is_array( $invoice_data ) && array_key_exists( 'authorized_amount', $invoice_data ) && array_key_exists( 'settled_amount', $invoice_data ) && $invoice_data['authorized_amount'] - $invoice_data['settled_amount'] <= 0 ) {
+		// Disable settle for renewal/subscription order — skip API call entirely.
+		// Subscription child orders (renewal) don't have invoices at order-{id} on Frisbii;
+		// Frisbii creates its own invoice handles (inv-XXXXX) and manages settlement itself.
+		$post = get_post( ! empty( $order ) ? $order->get_id() : null );
+		if ( ! empty( $order->get_meta( '_reepay_order' ) ) && ( 0 !== $post->post_parent || ! empty( $order->get_meta( '_reepay_is_renewal' ) ) ) ) {
 			return false;
 		}
 
-		// Disable settle for renewal order.
-		$post = get_post( ! empty( $order ) ? $order->get_id() : null );
-		if ( ! empty( $order->get_meta( '_reepay_order' ) ) && ( 0 !== $post->post_parent || ! empty( $order->get_meta( '_reepay_is_renewal' ) ) ) ) {
+		$invoice_data = reepay()->api( $order )->get_invoice_by_handle( 'order-' . $order->get_id() );
+		if ( is_array( $invoice_data ) && array_key_exists( 'authorized_amount', $invoice_data ) && array_key_exists( 'settled_amount', $invoice_data ) && $invoice_data['authorized_amount'] - $invoice_data['settled_amount'] <= 0 ) {
 			return false;
 		}
 

@@ -200,7 +200,7 @@ class OrderStatuses {
 	 * @return mixed|string
 	 */
 	public function payment_complete_order_status( string $status, int $order_id, WC_Order $order ) {
-		if ( self::$status_sync_enabled && rp_is_order_paid_via_reepay( $order ) ) {
+		if ( self::$status_sync_enabled && rp_is_order_paid_via_reepay( $order ) && ! in_array( $status, array( 'completed', 'wc-completed' ), true ) ) {
 			$status = apply_filters( 'reepay_settled_order_status', self::$status_settled, $order );
 		}
 
@@ -228,6 +228,11 @@ class OrderStatuses {
 		$order = wc_get_order( $order_id );
 
 		if ( self::$status_sync_enabled && rp_is_order_paid_via_reepay( $order ) ) {
+			// Don't downgrade from "completed" - OrderCapture handles settlement for completed orders.
+			if ( $order->has_status( 'completed' ) ) {
+				return;
+			}
+
 			$status = apply_filters(
 				'reepay_settled_order_status',
 				self::$status_settled,
@@ -339,6 +344,12 @@ class OrderStatuses {
 			self::set_authorized_status( $order, $note, $transaction_id );
 		} else {
 			$order->payment_complete( $transaction_id );
+
+			// Apply the custom settled status if sync is enabled and differs from default.
+			if ( self::$status_sync_enabled && 'completed' !== self::$status_settled ) {
+				$order->set_status( self::$status_settled );
+				$order->save();
+			}
 
 			if ( $note ) {
 				$order->add_order_note( $note, true, true );

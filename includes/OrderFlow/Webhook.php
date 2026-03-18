@@ -72,9 +72,27 @@ class Webhook {
 
 		$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
 		if ( $check !== $data['signature'] ) {
-			$this->log( 'WebHook: Error: Signature verification failed' );
+			// FIX: Retry with fresh secret in case it was recently rotated.
+			delete_transient( 'reepay_webhook_settings_secret' );
+			$result = reepay()->api( $this->logging_source )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
+			if ( ! is_wp_error( $result ) && ! empty( $result['secret'] ) ) {
+				$secret = $result['secret'];
+				set_transient( 'reepay_webhook_settings_secret', $secret, HOUR_IN_SECONDS );
+				$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
+			}
 
-			return;
+			if ( $check !== $data['signature'] ) {
+				$this->log(
+					sprintf(
+						'WebHook: Error: Signature verification failed. Event: %s, ID: %s, Remote IP: %s',
+						$data['event_type'] ?? 'unknown',
+						$data['id'] ?? 'unknown',
+						$_SERVER['REMOTE_ADDR'] ?? 'unknown'
+					)
+				);
+
+				return;
+			}
 		}
 
 		try {
@@ -298,7 +316,7 @@ class Webhook {
 					$order = wc_get_order( $order->get_id() );
 				}
 
-				if ( $order->has_status( OrderStatuses::$status_settled ) ) {
+				if ( $order->has_status( OrderStatuses::$status_settled ) && ! empty( $order->get_meta( '_reepay_state_settled' ) ) ) {
 					$this->log(
 						sprintf(
 							'WebHook: Event type: %s success. But the order had status early: %s',
@@ -354,6 +372,14 @@ class Webhook {
 						'',
 						$data['transaction']
 					);
+
+					// Force renewal orders to "completed" regardless of the status_settled setting.
+					if ( isset( $data['subscription'] ) ) {
+						$order = wc_get_order( $order->get_id() );
+						if ( $order && ! $order->has_status( 'completed' ) ) {
+							$order->update_status( 'completed', __( 'Renewal order completed via Frisbii.', 'reepay-checkout-gateway' ) );
+						}
+					}
 				} elseif ( function_exists( 'wc_get_logger' ) ) {
 					// Log to reepay_order_statuses log.
 					wc_get_logger()->debug(
@@ -542,9 +568,16 @@ class Webhook {
 				$this->log( sprintf( 'WebHook: Success event type: %s', $data['event_type'] ) );
 				break;
 			case 'invoice_created':
+				// FIX: Graceful skip for non-subscription invoices that lack these params.
 				if ( ! isset( $data['invoice'] ) || ! isset( $data['subscription'] ) ) {
-					$this->log( $data );
-					throw new Exception( 'Missing invoice or subscription parameter' );
+					$this->log(
+						sprintf(
+							'WebHook: invoice_created event skipped — missing %s. ID: %s',
+							! isset( $data['invoice'] ) ? 'invoice' : 'subscription',
+							$data['id'] ?? 'unknown'
+						)
+					);
+					break;
 				}
 
 				$order = rp_get_order_by_subscription_handle( $data['subscription'] );

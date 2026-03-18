@@ -40,7 +40,11 @@ defined( 'ABSPATH' ) || exit();
 
 	
 	<?php
-	$pro_rated_subscription = ThankyouPage::get_pro_rated_reepay_subscription( $order );
+	if ( 'yes' === reepay()->get_setting( 'skip_pro_rated_on_thankyou' ) ) {
+		$pro_rated_subscription = null;
+	} else {
+		$pro_rated_subscription = ThankyouPage::get_pro_rated_reepay_subscription( $order );
+	}
 	if ( null !== $pro_rated_subscription ) {
 		?>
 		<li class="woocommerce-order-overview__total reepay-pro-rated total">
