@@ -372,6 +372,14 @@ class Webhook {
 						'',
 						$data['transaction']
 					);
+
+					// Force renewal orders to "completed" regardless of the status_settled setting.
+					if ( isset( $data['subscription'] ) ) {
+						$order = wc_get_order( $order->get_id() );
+						if ( $order && ! $order->has_status( 'completed' ) ) {
+							$order->update_status( 'completed', __( 'Renewal order completed via Frisbii.', 'reepay-checkout-gateway' ) );
+						}
+					}
 				} elseif ( function_exists( 'wc_get_logger' ) ) {
 					// Log to reepay_order_statuses log.
 					wc_get_logger()->debug(
