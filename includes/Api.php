@@ -1229,6 +1229,8 @@ class Api {
 			'cards'             => array(),
 			'mps_subscriptions' => array(),
 			'vipps_recurring'   => array(),
+			'applepay'          => array(),
+			'googlepay'         => array(),
 		);
 		if ( $result['count'] > 0 ) {
 			foreach ( $result['content'] as $payment_method ) {
@@ -1247,6 +1249,16 @@ class Api {
 					$vipps_recurring = array_merge( $vipps_recurring, $payment_method['vipps_recurring_mandate'] );
 					unset( $vipps_recurring['vipps_recurring_mandate'], $vipps_recurring['payment_type'] );
 					$tmp['vipps_recurring_mandate'][] = $vipps_recurring;
+				} elseif ( 'applepay' === $payment_method['payment_type'] ) {
+					$applepay = $payment_method;
+					$applepay = array_merge( $applepay, $payment_method['applepay'] );
+					unset( $applepay['applepay'], $applepay['gateway'], $applepay['card_agreement'], $applepay['payment_type'] );
+					$tmp['applepay'][] = $applepay;
+				} elseif ( 'googlepay' === $payment_method['payment_type'] ) {
+					$googlepay = $payment_method;
+					$googlepay = array_merge( $googlepay, $payment_method['googlepay'] );
+					unset( $googlepay['googlepay'], $googlepay['gateway'], $googlepay['card_agreement'], $googlepay['payment_type'] );
+					$tmp['googlepay'][] = $googlepay;
 				}
 			}
 		}
@@ -1280,6 +1292,22 @@ class Api {
 			foreach ( $mps_subscriptions as $subscription ) {
 				if ( ( $subscription['id'] === $reepay_token || $subscription['reference'] === $reepay_token ) && 'active' === $subscription['state'] ) {
 					return $subscription;
+				}
+			}
+		}
+
+		if ( ! empty( $result['applepay'] ) ) {
+			foreach ( $result['applepay'] as $applepay ) {
+				if ( $applepay['id'] === $reepay_token && 'active' === $applepay['state'] ) {
+					return $applepay;
+				}
+			}
+		}
+
+		if ( ! empty( $result['googlepay'] ) ) {
+			foreach ( $result['googlepay'] as $googlepay ) {
+				if ( $googlepay['id'] === $reepay_token && 'active' === $googlepay['state'] ) {
+					return $googlepay;
 				}
 			}
 		}
