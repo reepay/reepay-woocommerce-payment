@@ -320,11 +320,9 @@ class ThankyouPage {
 
 		while ( $attempts < $max_attempts ) {
 			$_reepay_order = $order->get_meta( '_reepay_order', true );
-			if( empty( $_reepay_order ) ) {
-				return null; // Exit if the Reepay order ID is not available.
+			if( !empty( $_reepay_order ) ) {
+				$invoice_data = reepay_s()->api()->request( "invoice/$_reepay_order" );
 			}
-			
-			$invoice_data = reepay_s()->api()->request( "invoice/$_reepay_order" );
 
 			if ( ! is_wp_error( $invoice_data ) ) {
 				break;
