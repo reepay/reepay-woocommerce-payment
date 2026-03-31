@@ -20,6 +20,7 @@ jQuery(function ($) {
             url: WC_Reepay_Thankyou.ajax_url,
             data: {
                 action: 'reepay_order_descriptions',
+                nonce: WC_Reepay_Thankyou.nonce,
                 order_id: WC_Reepay_Thankyou.order_id,
                 order_key: WC_Reepay_Thankyou.order_key,
             },

@@ -319,7 +319,10 @@ class ThankyouPage {
 		$invoice_data = null;
 
 		while ( $attempts < $max_attempts ) {
-			$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+			$_reepay_order = $order->get_meta( '_reepay_order', true );
+			if ( ! empty( $_reepay_order ) ) {
+				$invoice_data = reepay_s()->api()->request( "invoice/$_reepay_order" );
+			}
 
 			if ( ! is_wp_error( $invoice_data ) ) {
 				break;
