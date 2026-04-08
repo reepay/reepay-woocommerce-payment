@@ -195,7 +195,12 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 			$this->markTestSkipped( 'Reepay subscriptions activated. It\'s changing default function behavior via filter' );
 		}
 
-		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+		$this->order_generator->set_props(
+			array(
+				'payment_method' => reepay()->gateways()->checkout(),
+				'status'         => 'on-hold',
+			)
+		);
 
 		self::$options->set_options(
 			array(
