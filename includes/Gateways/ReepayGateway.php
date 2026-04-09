@@ -814,7 +814,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			);
 
 			try {
-				$_POST = json_decode( file_get_contents( 'php://input' ), true );
+				$json_data = json_decode( file_get_contents( 'php://input' ), true );
+				if ( is_array( $json_data ) ) {
+					$_POST = $json_data;
+				}
 				foreach ( $_POST['payment_data'] ?? array() as $data ) {
 					if ( empty( $_POST[ $data['key'] ] ) ) {
 						$_POST[ $data['key'] ] = $data['value'];

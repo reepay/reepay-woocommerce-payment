@@ -23,22 +23,22 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 ?>
 
 <ul class="order_action order_action_reepay_subscriotions clearfix">
-	<input type="hidden" id="reepay_currency" value="<?php echo get_woocommerce_currency_symbol( $order->get_currency() ); ?>">
-	<input type="hidden" id="reepay_order_id" data-order-id="<?php echo $order_id; ?>"/>
-	<input type="hidden" id="reepay_order_total_authorized" value="<?php echo $order_data['authorized_amount']; ?>" data-initial-amount="<?php echo rp_make_initial_amount( $order_data['authorized_amount'], $order->get_currency() ); ?>" />
-	<input type="hidden" id="reepay_order_total_settled" value="<?php echo $order_data['settled_amount']; ?>" data-initial-amount="<?php echo rp_make_initial_amount( $order_data['settled_amount'], $order->get_currency() ); ?>" />
-	<input type="hidden" id="reepay_order_total" data-order-total="<?php echo $order->get_total(); ?>" value="<?php echo $order->get_total() . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ); ?>"/>
+	<input type="hidden" id="reepay_currency" value="<?php echo esc_attr( get_woocommerce_currency_symbol( $order->get_currency() ) ); ?>">
+	<input type="hidden" id="reepay_order_id" data-order-id="<?php echo esc_attr( $order_id ); ?>"/>
+	<input type="hidden" id="reepay_order_total_authorized" value="<?php echo esc_attr( $order_data['authorized_amount'] ); ?>" data-initial-amount="<?php echo esc_attr( rp_make_initial_amount( $order_data['authorized_amount'], $order->get_currency() ) ); ?>" />
+	<input type="hidden" id="reepay_order_total_settled" value="<?php echo esc_attr( $order_data['settled_amount'] ); ?>" data-initial-amount="<?php echo esc_attr( rp_make_initial_amount( $order_data['settled_amount'], $order->get_currency() ) ); ?>" />
+	<input type="hidden" id="reepay_order_total" data-order-total="<?php echo esc_attr( $order->get_total() ); ?>" value="<?php echo esc_attr( $order->get_total() . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ) ); ?>"/>
 	<li class="reepay-admin-section-li-header-small">
 		<?php echo __( 'Invoice handle', 'reepay-checkout-gateway' ); ?>
 	</li>
 	<li class="reepay-admin-section-li-small">
-		<?php echo $order_data['handle']; ?>
+		<?php echo esc_html( $order_data['handle'] ); ?>
 	</li>
 
 	<li class="reepay-admin-section-li-header-small">
 		<?php echo __( 'State', 'reepay-checkout-gateway' ); ?>
 	</li>
-	<li class="reepay-admin-section-li-small reepay-invoice-status reepay-invoice-status-<?php echo $order_data['state']; ?> ">
+	<li class="reepay-admin-section-li-small reepay-invoice-status reepay-invoice-status-<?php echo esc_attr( $order_data['state'] ); ?> ">
 		<?php echo ucfirst( $order_data['state'] ); ?>
 	</li>
 	<?php if ( $order_is_cancelled ) : ?>
@@ -54,7 +54,7 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 		<li class="reepay-admin-section-li-small" style="display: flex;  align-items: center;">
 			<?php if ( isset( $card_logo ) ) : ?>
 				<img style="max-width: 70px; margin-right: 0"
-					src="<?php echo $card_logo; ?>"
+					src="<?php echo esc_url( $card_logo ); ?>"
 					class="reepay-admin-card-logo"/>
 			<?php endif; ?>
 			<?php echo esc_html( rp_format_credit_card( $order_data['transactions'][0]['card_transaction']['masked_card'] ) ); ?>
@@ -63,7 +63,7 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 
 	<?php if ( isset( $order_data['transactions'][0]['mps_transaction'] ) ) : ?>
 		<div style="text-align: center;">
-			<img src="<?php echo $gateway->get_logo( 'ms_subscripiton' ); ?>" class="reepay-admin-card-logo"/>
+			<img src="<?php echo esc_url( $gateway->get_logo( 'ms_subscripiton' ) ); ?>" class="reepay-admin-card-logo"/>
 		</div>
 	<?php endif; ?>
 
@@ -75,7 +75,7 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 			<span class='reepay-balance__currency'>
 				&nbsp;
 			</span>
-			<?php echo $order_data['authorized_amount'] ? rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ) : $order_data['authorized_amount'] . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ); ?>
+			<?php echo esc_html( $order_data['authorized_amount'] ? rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ) : $order_data['authorized_amount'] . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ) ); ?>
 		</span>
 	</li>
 	<li class="reepay-admin-section-li">
@@ -86,7 +86,7 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 			<span class='reepay-balance__currency'>
 				&nbsp;
 			</span>
-			<?php echo rp_make_initial_amount( $order_data['authorized_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ); ?>
+			<?php echo esc_html( rp_make_initial_amount( $order_data['authorized_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ) ); ?>
 		</span>
 	</li>
 
@@ -98,7 +98,7 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 			<span class='reepay-balance__currency'>
 				&nbsp;
 			</span>
-			<?php echo rp_make_initial_amount( $order_data['settled_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ); ?>
+			<?php echo esc_html( rp_make_initial_amount( $order_data['settled_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ) ); ?>
 		</span>
 	</li>
 	<li class="reepay-admin-section-li">
@@ -109,7 +109,7 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 			<span class='reepay-balance__currency'>
 				&nbsp;
 			</span>
-			<?php echo rp_make_initial_amount( $order_data['refunded_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ); ?>
+			<?php echo esc_html( rp_make_initial_amount( $order_data['refunded_amount'], $order_data['currency'] ) . ' ' . get_woocommerce_currency_symbol( $order->get_currency() ) ); ?>
 		</span>
 	</li>
 	<?php
@@ -122,7 +122,7 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 				<?php echo esc_html__( 'Capture amount', 'reepay-checkout-gateway' ); ?>:
 			</span>
 			<span class="reepay-balance__amount reepay-balance__capture-amount-input">
-				<input type="text" id="reepay-capture-amount-input" name="reepay_capture_amount_input" class="capture-amount-input" value="<?php echo $capture_amount_format; ?>" />&nbsp;&nbsp;<?php echo get_woocommerce_currency_symbol( $order->get_currency() ); ?>
+				<input type="text" id="reepay-capture-amount-input" name="reepay_capture_amount_input" class="capture-amount-input" value="<?php echo esc_attr( $capture_amount_format ); ?>" />&nbsp;&nbsp;<?php echo esc_html( get_woocommerce_currency_symbol( $order->get_currency() ) ); ?>
 			</span>
 		</li>
 		<li class="reepay-admin-section-li-small">
@@ -135,8 +135,8 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 	?>
 
 	<li class="reepay-admin-section-li-small" style="margin-top: 15px;">
-		<a class="button" href="<?php echo $link; ?>" target="_blank">
-			<?php _e( 'See invoice', 'reepay-checkout-gateway' ); ?>
+		<a class="button" href="<?php echo esc_url( $link ); ?>" target="_blank">
+			<?php esc_html_e( 'See invoice', 'reepay-checkout-gateway' ); ?>
 		</a>
 	</li>
 </ul>

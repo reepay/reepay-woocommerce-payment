@@ -9,4 +9,4 @@
 
 defined( 'ABSPATH' ) || exit;
 ?>
-<div class="billwerk-meta-fields" data-post-type="<?php echo $args['post_type']; ?>"></div>
+<div class="billwerk-meta-fields" data-post-type="<?php echo esc_attr( $args['post_type'] ); ?>"></div>

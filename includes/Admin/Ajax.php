@@ -61,7 +61,7 @@ class Ajax {
 		}
 
 		if ( ! wp_verify_nonce( $_REQUEST['nonce'] ?? '', $action ) ) {
-			exit( 'No naughty business' );
+			wp_send_json_error( 'Invalid nonce', 403 );
 		}
 
 		return true;

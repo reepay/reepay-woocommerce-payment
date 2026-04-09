@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit();
 		<?php esc_html_e( 'Order number:', 'reepay-checkout-gateway' ); ?>
 		<strong>
 		<?php
-		echo $order->get_order_number(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo esc_html( $order->get_order_number() );
 		?>
 			</strong>
 	</li>
@@ -34,7 +34,7 @@ defined( 'ABSPATH' ) || exit();
 	<?php if ( is_user_logged_in() && $order->get_user_id() === get_current_user_id() && $order->get_billing_email() ) : ?>
 		<li class="woocommerce-order-overview__email email">
 			<?php esc_html_e( 'Email:', 'reepay-checkout-gateway' ); ?>
-			<strong><?php echo $order->get_billing_email(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></strong>
+			<strong><?php echo esc_html( $order->get_billing_email() ); ?></strong>
 		</li>
 	<?php endif; ?>
 

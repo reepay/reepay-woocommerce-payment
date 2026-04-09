@@ -15,8 +15,8 @@ defined( 'ABSPATH' ) || exit();
 	<?php foreach ( $logos as $logo ) : ?>
 	<li class="reepay-logo">
 		<img
-			src="<?php echo $logo['src']; ?>"
-			alt="<?php echo $logo['alt']; ?>"
+			src="<?php echo esc_url( $logo['src'] ); ?>"
+			alt="<?php echo esc_attr( $logo['alt'] ); ?>"
 		>
 	</li>
 	<?php endforeach; ?>

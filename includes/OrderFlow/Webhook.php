@@ -39,6 +39,30 @@ class Webhook {
 	}
 
 	/**
+	 * Filter sensitive data from arrays before logging.
+	 *
+	 * @param array $data Data to filter.
+	 *
+	 * @return array Filtered data.
+	 */
+	private function filter_sensitive_data( array $data ): array {
+		$sensitive_keys = array( 'card_number', 'cvv', 'cvc', 'masked_card', 'card_token', 'pan', 'secret', 'password', 'authorization' );
+		$filtered       = array();
+
+		foreach ( $data as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$filtered[ $key ] = $this->filter_sensitive_data( $value );
+			} elseif ( in_array( strtolower( $key ), $sensitive_keys, true ) ) {
+				$filtered[ $key ] = '***REDACTED***';
+			} else {
+				$filtered[ $key ] = $value;
+			}
+		}
+
+		return $filtered;
+	}
+
+	/**
 	 * WebHook Callback
 	 *
 	 * @return void
@@ -47,8 +71,8 @@ class Webhook {
 		http_response_code( 200 );
 
 		$raw_body = file_get_contents( 'php://input' );
-		$this->log( sprintf( 'WebHook: Initialized %s from %s', $_SERVER['REQUEST_URI'] ?? '', $_SERVER['REMOTE_ADDR'] ?? '' ) );
-		$this->log( sprintf( 'WebHook: Post data: %s', var_export( $raw_body, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
+		$this->log( sprintf( 'WebHook: Initialized %s from %s', sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) ), sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) ) ) );
+		$this->log( sprintf( 'WebHook: Post data: %s', wp_json_encode( $this->filter_sensitive_data( json_decode( $raw_body, true ) ?: array() ) ) ) );
 		$data = json_decode( $raw_body, true );
 		if ( ! $data ) {
 			$this->log( 'WebHook: Error: Missing parameters' );
@@ -87,7 +111,7 @@ class Webhook {
 						'WebHook: Error: Signature verification failed. Event: %s, ID: %s, Remote IP: %s',
 						$data['event_type'] ?? 'unknown',
 						$data['id'] ?? 'unknown',
-						$_SERVER['REMOTE_ADDR'] ?? 'unknown'
+						sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ) )
 					)
 				);
 
@@ -148,7 +172,7 @@ class Webhook {
 			sprintf(
 				'WebHook %1$s: Data: %2$s',
 				$data['event_type'],
-				var_export( $data, true ) //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
+				wp_json_encode( $this->filter_sensitive_data( $data ) )
 			)
 		);
 
