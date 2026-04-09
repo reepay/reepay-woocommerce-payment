@@ -135,6 +135,21 @@ class MigrationMobilepayToVipps {
 		check_ajax_referer( 'reepay_migration_nonce', 'nonce' );
 
 		if ( ! empty( $_FILES['migration_file']['tmp_name'] ) ) {
+			// Security: Validate file type
+			$file_type = wp_check_filetype_and_ext(
+				$_FILES['migration_file']['tmp_name'],
+				$_FILES['migration_file']['name'],
+				array( 'csv' => 'text/csv' )
+			);
+
+			if ( ! $file_type['ext'] || $file_type['ext'] !== 'csv' ) {
+				wp_send_json_error( 'Invalid file type. Only CSV files are allowed.' );
+			}
+
+			// Security: Validate file size (max 5MB)
+			if ( $_FILES['migration_file']['size'] > 5 * 1024 * 1024 ) {
+				wp_send_json_error( 'File too large. Maximum size is 5MB.' );
+			}
 
 			global $wp_filesystem;
 			if ( empty( $wp_filesystem ) ) {
@@ -146,7 +161,18 @@ class MigrationMobilepayToVipps {
 
 			if ( $wp_filesystem->exists( $csv_file ) ) {
 				$file_content = $wp_filesystem->get_contents( $csv_file );
+
+				// Security: Validate file is not too large
+				if ( strlen( $file_content ) > 5 * 1024 * 1024 ) {
+					wp_send_json_error( 'File content too large.' );
+				}
+
 				$lines        = explode( "\n", $file_content );
+
+				// Security: Validate CSV structure
+				if ( count( $lines ) > 10000 ) {
+					wp_send_json_error( 'File contains too many lines. Maximum 10,000 records.' );
+				}
 				$first_line   = $lines[0]; // Get the first line.
 				if ( strpos( $first_line, ';' ) !== false ) {
 					$delimiter = ';'; // set delimiter to semicolon.
@@ -183,7 +209,7 @@ class MigrationMobilepayToVipps {
 
 		global $wpdb;
 
-		$offset   = isset( $_POST['offset'] ) ? intval( $_POST['offset'] ) : 0;
+		$offset   = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
 		$csv_data = get_option( 'reepay_csv_data_migration_mobilepay_to_vipps', array() );
 
 		if ( empty( $csv_data ) ) {

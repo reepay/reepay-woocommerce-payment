@@ -58,7 +58,14 @@ class TokenReepay extends WC_Payment_Token_CC {
 			$style = 'style="width: 46px; height: 24px;"';
 		}
 
-		$type             = $this->get_card_type();
+		// Security: Whitelist allowed card types to prevent path traversal
+		$allowed_types = array( 'visa', 'mastercard', 'amex', 'discover', 'jcb', 'maestro', 'dankort', 'diners', 'china_union_pay' );
+		$type          = strtolower( $this->get_card_type() );
+
+		if ( ! in_array( $type, $allowed_types, true ) ) {
+			$type = 'default';
+		}
+
 		$reepay_logo_url  = reepay()->get_setting( 'images_url' ) . $type . '.png';
 		$reepay_logo_path = reepay()->get_setting( 'images_path' ) . $type . '.png';
 		if ( file_exists( $reepay_logo_path ) ) {
@@ -68,8 +75,8 @@ class TokenReepay extends WC_Payment_Token_CC {
 
 		ob_start();
 		?>
-		<img <?php echo $style; ?> src="<?php echo $img; ?>"
-									alt="<?php echo wc_get_credit_card_type_label( $this->get_card_type() ); ?>"/>
+		<img <?php echo esc_attr( $style ); ?> src="<?php echo esc_url( $img ); ?>"
+									alt="<?php echo esc_attr( wc_get_credit_card_type_label( $this->get_card_type() ) ); ?>"/>
 		<?php echo esc_html( $this->get_masked_card() ); ?>
 		<?php echo esc_html( $this->get_expiry_month() . '/' . substr( $this->get_expiry_year(), 2 ) ); ?>
 

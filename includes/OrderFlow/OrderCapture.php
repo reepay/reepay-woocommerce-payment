@@ -230,6 +230,16 @@ class OrderCapture {
 				return;
 		}
 
+		// Security: Verify nonce
+		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'update-post_' . $_POST['post_ID'] ) ) {
+			return;
+		}
+
+		// Security: Check user capability
+		if ( ! current_user_can( 'edit_shop_orders' ) ) {
+			return;
+		}
+
 		if ( ! isset( $_POST['line_item_capture'] ) && ! isset( $_POST['all_items_capture'] ) ) {
 			return;
 		}

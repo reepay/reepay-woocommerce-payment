@@ -315,6 +315,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Ajax: Add Payment Method
 	 */
 	public function reepay_card_store() {
+		// Security: Verify nonce
+		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'reepay_add_card' ) ) {
+			wc_add_notice( __( 'Security check failed. Please try again.', 'reepay-checkout-gateway' ), 'error' );
+			wp_redirect( wc_get_account_endpoint_url( 'add-payment-method' ) );
+			exit();
+		}
+
 		$reepay_token    = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
 		$current_user_id = get_current_user_id();
 
