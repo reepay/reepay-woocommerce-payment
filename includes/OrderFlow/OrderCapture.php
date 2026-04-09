@@ -272,6 +272,16 @@ class OrderCapture {
 				return;
 		}
 
+		// Security: Verify nonce for capture amount action
+		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'reepay_capture_amount_' . $_POST['post_ID'] ) ) {
+			return;
+		}
+
+		// Security: Check user capability
+		if ( ! current_user_can( 'edit_shop_orders' ) ) {
+			return;
+		}
+
 		if ( ! isset( $_POST['reepay_capture_amount_button'] ) ) {
 			return;
 		}

@@ -182,7 +182,9 @@ class MigrationMobilepayToVipps {
 
 				$csv_data = array_map(
 					function ( $row ) use ( $delimiter ) {
-						return str_getcsv( $row, $delimiter );
+						$parsed_row = str_getcsv( $row, $delimiter );
+						// Security: Sanitize CSV values to prevent formula injection
+						return array_map( array( $this, 'sanitize_csv_value' ), $parsed_row );
 					},
 					$lines
 				);
@@ -432,6 +434,32 @@ class MigrationMobilepayToVipps {
 				'batch_results' => $batch_results,
 			)
 		);
+	}
+
+	/**
+	 * Sanitize CSV value to prevent formula injection
+	 *
+	 * Security: Prevents CSV/Formula injection attacks by escaping values
+	 * that start with formula indicators (=, +, -, @, tab, carriage return)
+	 *
+	 * @param string $value The CSV value to sanitize.
+	 * @return string Sanitized value.
+	 */
+	private function sanitize_csv_value( $value ) {
+		if ( ! is_string( $value ) ) {
+			return $value;
+		}
+
+		// Security: List of formula indicators that could be exploited
+		$formula_indicators = array( '=', '+', '-', '@', "\t", "\r" );
+
+		// Check if value starts with a formula indicator
+		if ( in_array( substr( $value, 0, 1 ), $formula_indicators, true ) ) {
+			// Prefix with single quote to force text interpretation in spreadsheet applications
+			$value = "'" . $value;
+		}
+
+		return sanitize_text_field( $value );
 	}
 }
 ?>
