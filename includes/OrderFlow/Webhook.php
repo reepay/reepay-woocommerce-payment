@@ -91,7 +91,18 @@ class Webhook {
 
 			$secret = $result['secret'];
 
-			set_transient( 'reepay_webhook_settings_secret', $secret, HOUR_IN_SECONDS );
+			/**
+			 * Cache webhook secret for 10 minutes to reduce API calls while limiting exposure window.
+			 * Note: For PCI DSS compliance in high-security environments, consider implementing
+			 * encryption at rest or disabling caching via the filter below.
+			 *
+			 * @param int $ttl Time to live in seconds. Default 600 (10 minutes). Set to 0 to disable caching.
+			 */
+			$cache_ttl = apply_filters( 'reepay_webhook_secret_cache_ttl', 10 * MINUTE_IN_SECONDS );
+
+			if ( $cache_ttl > 0 ) {
+				set_transient( 'reepay_webhook_settings_secret', $secret, $cache_ttl );
+			}
 		}
 
 		$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
@@ -101,7 +112,11 @@ class Webhook {
 			$result = reepay()->api( $this->logging_source )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
 			if ( ! is_wp_error( $result ) && ! empty( $result['secret'] ) ) {
 				$secret = $result['secret'];
-				set_transient( 'reepay_webhook_settings_secret', $secret, HOUR_IN_SECONDS );
+				// Use the same cache TTL as above for consistency.
+				$cache_ttl = apply_filters( 'reepay_webhook_secret_cache_ttl', 10 * MINUTE_IN_SECONDS );
+				if ( $cache_ttl > 0 ) {
+					set_transient( 'reepay_webhook_settings_secret', $secret, $cache_ttl );
+				}
 				$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
 			}
 

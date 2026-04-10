@@ -66,8 +66,8 @@ class PaymentMethodsActions {
 		wc_nocache_headers();
 
 		// Security: Verify nonce first (from GET parameter)
-		if ( ! isset( $_GET['_wpnonce'] ) || 
-		     ! wp_verify_nonce( wp_unslash( $_GET['_wpnonce'] ), 'delete-payment-method-' . $token_id ) ) {
+		if ( ! isset( $_GET['_wpnonce'] ) ||
+			! wp_verify_nonce( wp_unslash( $_GET['_wpnonce'] ), 'delete-payment-method-' . $token_id ) ) {
 			wc_add_notice( __( 'Security check failed.', 'reepay-checkout-gateway' ), 'error' );
 			wp_safe_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
 			exit();

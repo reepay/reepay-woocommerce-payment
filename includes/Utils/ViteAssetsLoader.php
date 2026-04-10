@@ -45,12 +45,12 @@ class ViteAssetsLoader {
 					<script src="{$host}/@vite/client" type="module"></script>
 				HTML;
 				// phpcs:enable
-				
+
 				$allowed_html = array(
 					'script' => array(
 						'type' => array(),
-						'src' => array()
-					)
+						'src'  => array(),
+					),
 				);
 				echo wp_kses( $scripts, $allowed_html );
 			}
@@ -74,19 +74,19 @@ class ViteAssetsLoader {
 		add_action(
 			$admin_footer ? 'admin_footer' : 'wp_footer',
 			function () use ( $entry_point ) {
-				$host = esc_url( self::HMR_HOST );
+				$host        = esc_url( self::HMR_HOST );
 				$entry_point = esc_attr( $entry_point );
 				// phpcs:disable
 				$scripts = <<<HTML
 					<script src="{$host}/{$entry_point}" type="module"></script>
 				HTML;
 				// phpcs:enable
-				
+
 				$allowed_html = array(
 					'script' => array(
 						'type' => array(),
-						'src' => array()
-					)
+						'src'  => array(),
+					),
 				);
 				echo wp_kses( $scripts, $allowed_html );
 			}

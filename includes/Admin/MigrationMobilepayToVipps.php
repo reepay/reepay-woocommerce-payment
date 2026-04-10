@@ -167,13 +167,13 @@ class MigrationMobilepayToVipps {
 					wp_send_json_error( 'File content too large.' );
 				}
 
-				$lines        = explode( "\n", $file_content );
+				$lines = explode( "\n", $file_content );
 
 				// Security: Validate CSV structure
 				if ( count( $lines ) > 10000 ) {
 					wp_send_json_error( 'File contains too many lines. Maximum 10,000 records.' );
 				}
-				$first_line   = $lines[0]; // Get the first line.
+				$first_line = $lines[0]; // Get the first line.
 				if ( strpos( $first_line, ';' ) !== false ) {
 					$delimiter = ';'; // set delimiter to semicolon.
 				} else {
