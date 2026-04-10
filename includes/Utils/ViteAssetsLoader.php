@@ -27,7 +27,7 @@ class ViteAssetsLoader {
 		add_action(
 			$admin_footer ? 'admin_footer' : 'wp_footer',
 			function () {
-				$host = self::HMR_HOST;
+				$host = esc_url( self::HMR_HOST );
 				// phpcs:disable
 				$scripts = <<<HTML
 					<script type="module">
@@ -40,7 +40,14 @@ class ViteAssetsLoader {
 					<script src="{$host}/@vite/client" type="module"></script>
 				HTML;
 				// phpcs:enable
-				echo $scripts;
+				
+				$allowed_html = array(
+					'script' => array(
+						'type' => array(),
+						'src' => array()
+					)
+				);
+				echo wp_kses( $scripts, $allowed_html );
 			}
 		);
 	}
@@ -57,13 +64,21 @@ class ViteAssetsLoader {
 		add_action(
 			$admin_footer ? 'admin_footer' : 'wp_footer',
 			function () use ( $entry_point ) {
-				$host = self::HMR_HOST;
+				$host = esc_url( self::HMR_HOST );
+				$entry_point = esc_attr( $entry_point );
 				// phpcs:disable
 				$scripts = <<<HTML
 					<script src="{$host}/{$entry_point}" type="module"></script>
 				HTML;
 				// phpcs:enable
-				echo $scripts;
+				
+				$allowed_html = array(
+					'script' => array(
+						'type' => array(),
+						'src' => array()
+					)
+				);
+				echo wp_kses( $scripts, $allowed_html );
 			}
 		);
 	}

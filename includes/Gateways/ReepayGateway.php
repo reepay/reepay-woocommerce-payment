@@ -205,9 +205,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		// Allow to pay exist orders by guests.
 		if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) {
-			$order_id = wc_get_order_id_by_order_key( $_GET['key'] );
+			$order_id = wc_get_order_id_by_order_key( wc_clean( $_GET['key'] ) );
 			if ( $order_id ) {
 				$order = wc_get_order( $order_id );
+
+				// Security: Verify user ownership
+				if ( ! $order || ( $order->get_customer_id() && $order->get_customer_id() !== get_current_user_id() ) ) {
+					wc_add_notice( __( 'Invalid order.', 'reepay-checkout-gateway' ), 'error' );
+					wp_redirect( wc_get_account_endpoint_url( 'orders' ) );
+					exit();
+				}
 
 				// Get customer handle by order.
 				$gateway         = rp_get_payment_method( $order );
