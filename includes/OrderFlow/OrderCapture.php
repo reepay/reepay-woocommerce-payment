@@ -223,15 +223,20 @@ class OrderCapture {
 			if ( ! rp_hpos_is_order_page() ) {
 				return;
 			}
+			$order_id      = absint( $_GET['id'] );
+			$nonce_action  = 'update-order_' . $order_id;
 		} elseif ( ! isset( $_POST['post_type'] ) ||
 				'shop_order' !== $_POST['post_type'] ||
 				! isset( $_POST['post_ID'] ) ) {
 
 				return;
+		} else {
+			$order_id     = absint( $_POST['post_ID'] );
+			$nonce_action = 'update-post_' . $order_id;
 		}
 
 		// Security: Verify nonce.
-		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'update-post_' . $_POST['post_ID'] ) ) {
+		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), $nonce_action ) ) {
 			return;
 		}
 
@@ -244,7 +249,7 @@ class OrderCapture {
 			return;
 		}
 
-		$order = wc_get_order( $_POST['post_ID'] );
+		$order = wc_get_order( $order_id );
 
 		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
 			return;
@@ -265,15 +270,20 @@ class OrderCapture {
 			if ( ! rp_hpos_is_order_page() ) {
 				return;
 			}
+			$order_id     = absint( $_GET['id'] );
+			$nonce_action = 'update-order_' . $order_id;
 		} elseif ( ! isset( $_POST['post_type'] ) ||
 				'shop_order' !== $_POST['post_type'] ||
 				! isset( $_POST['post_ID'] ) ) {
 
 				return;
+		} else {
+			$order_id     = absint( $_POST['post_ID'] );
+			$nonce_action = 'update-post_' . $order_id;
 		}
 
 		// Security: Verify nonce for capture amount action.
-		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'reepay_capture_amount_' . $_POST['post_ID'] ) ) {
+		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), $nonce_action ) ) {
 			return;
 		}
 
@@ -296,7 +306,7 @@ class OrderCapture {
 
 		$reepay_capture_amount_input = wc_format_decimal( $_POST['reepay_capture_amount_input'] );
 
-		$order = wc_get_order( $_POST['post_ID'] );
+		$order = wc_get_order( $order_id );
 
 		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
 			return;
