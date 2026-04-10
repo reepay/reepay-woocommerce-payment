@@ -93,7 +93,7 @@ class TokenReepayVR extends WC_Payment_Token {
 
 		if ( rp_is_reepay_payment_method( $method['method']['gateway'] ) ) {
 			$token = new TokenReepayVR( $method['method']['id'] );
-			echo esc_html( $token->get_display_name() );
+			echo wp_kses_post( $token->get_display_name() );
 		}
 	}
 }

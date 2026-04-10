@@ -55,7 +55,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 		$style = '';
 
 		if ( $this->get_card_type() === 'visa_dk' ) {
-			$style = 'style="width: 46px; height: 24px;"';
+			$style = 'width: 46px; height: 24px;';
 		}
 
 		// Security: Whitelist allowed card types to prevent path traversal.
@@ -70,12 +70,12 @@ class TokenReepay extends WC_Payment_Token_CC {
 		$reepay_logo_path = reepay()->get_setting( 'images_path' ) . $type . '.png';
 		if ( file_exists( $reepay_logo_path ) ) {
 			$img   = $reepay_logo_url;
-			$style = 'style="width: 46px; height: 24px;"';
+			$style = 'width: 46px; height: 24px;';
 		}
 
 		ob_start();
 		?>
-		<img <?php echo esc_attr( $style ); ?> src="<?php echo esc_url( $img ); ?>"
+		<img style="<?php echo esc_attr( $style ); ?>" src="<?php echo esc_url( $img ); ?>"
 									alt="<?php echo esc_attr( wc_get_credit_card_type_label( $this->get_card_type() ) ); ?>"/>
 		<?php echo esc_html( $this->get_masked_card() ); ?>
 		<?php echo esc_html( $this->get_expiry_month() . '/' . substr( $this->get_expiry_year(), 2 ) ); ?>
@@ -222,7 +222,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 		if ( rp_is_reepay_payment_method( $method['method']['gateway'] ) ) {
 			try {
 				$token = new TokenReepay( $method['method']['id'] );
-				echo esc_html( $token->get_display_name() );
+				echo wp_kses_post( $token->get_display_name() );
 			} catch ( Exception $e ) {
 				_e( 'Token not found', 'reepay-checkout-gateway' );
 			}
