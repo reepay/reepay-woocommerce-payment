@@ -27,12 +27,12 @@ function rp_hpos_enabled(): bool {
  * @return bool
  */
 function rp_hpos_is_order_page(): bool {
-	// Security: Validate GET parameter before use
+	// Security: Validate GET parameter before use.
 	if ( ! is_admin() || ! rp_hpos_enabled() || ! isset( $_GET['id'] ) ) {
 		return false;
 	}
 
-	// Security: Sanitize and validate order ID
+	// Security: Sanitize and validate order ID.
 	$order_id = absint( $_GET['id'] );
 
 	if ( $order_id <= 0 ) {

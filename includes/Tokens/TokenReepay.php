@@ -58,7 +58,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 			$style = 'style="width: 46px; height: 24px;"';
 		}
 
-		// Security: Whitelist allowed card types to prevent path traversal
+		// Security: Whitelist allowed card types to prevent path traversal.
 		$allowed_types = array( 'visa', 'mastercard', 'amex', 'discover', 'jcb', 'maestro', 'dankort', 'diners', 'china_union_pay' );
 		$type          = strtolower( $this->get_card_type() );
 

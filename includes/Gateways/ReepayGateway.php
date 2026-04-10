@@ -209,7 +209,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			if ( $order_id ) {
 				$order = wc_get_order( $order_id );
 
-				// Security: Verify user ownership
+				// Security: Verify user ownership.
 				if ( ! $order || ( $order->get_customer_id() && $order->get_customer_id() !== get_current_user_id() ) ) {
 					wc_add_notice( __( 'Invalid order.', 'reepay-checkout-gateway' ), 'error' );
 					wp_redirect( wc_get_account_endpoint_url( 'orders' ) );
@@ -322,7 +322,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Ajax: Add Payment Method
 	 */
 	public function reepay_card_store() {
-		// Security: Verify nonce
+		// Security: Verify nonce.
 		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'reepay_add_card' ) ) {
 			wc_add_notice( __( 'Security check failed. Please try again.', 'reepay-checkout-gateway' ), 'error' );
 			wp_redirect( wc_get_account_endpoint_url( 'add-payment-method' ) );

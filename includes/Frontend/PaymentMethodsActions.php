@@ -65,7 +65,7 @@ class PaymentMethodsActions {
 
 		wc_nocache_headers();
 
-		// Security: Verify nonce first (from GET parameter)
+		// Security: Verify nonce first (from GET parameter).
 		if ( ! isset( $_GET['_wpnonce'] ) ||
 			! wp_verify_nonce( wp_unslash( $_GET['_wpnonce'] ), 'delete-payment-method-' . $token_id ) ) {
 			wc_add_notice( __( 'Security check failed.', 'reepay-checkout-gateway' ), 'error' );
@@ -73,7 +73,7 @@ class PaymentMethodsActions {
 			exit();
 		}
 
-		// Security: Verify user ownership
+		// Security: Verify user ownership.
 		$current_user_id = get_current_user_id();
 		if ( $current_user_id !== $token->get_user_id() ) {
 			wc_add_notice( __( 'Invalid payment method.', 'reepay-checkout-gateway' ), 'error' );
@@ -81,7 +81,7 @@ class PaymentMethodsActions {
 			exit();
 		}
 
-		// Delete the token
+		// Delete the token.
 		$deleted = false;
 		if ( class_exists( ReepayTokens::class ) ) {
 			$deleted = ReepayTokens::delete_card( $token );

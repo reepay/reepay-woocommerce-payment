@@ -80,12 +80,12 @@ class Ajax {
 		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
 		$order    = wc_get_order( $order_id );
 
-		// Security: Validate order exists and belongs to Reepay
+		// Security: Validate order exists and belongs to Reepay.
 		if ( ! $order || ! $order instanceof WC_Order ) {
 			wp_send_json_error( __( 'Invalid order', 'reepay-checkout-gateway' ) );
 		}
 
-		// Security: Verify order is paid via Reepay
+		// Security: Verify order is paid via Reepay.
 		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
 			wp_send_json_error( __( 'Order not paid via Reepay', 'reepay-checkout-gateway' ) );
 		}
@@ -113,12 +113,12 @@ class Ajax {
 		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
 		$order    = wc_get_order( $order_id );
 
-		// Security: Validate order exists and belongs to Reepay
+		// Security: Validate order exists and belongs to Reepay.
 		if ( ! $order || ! $order instanceof WC_Order ) {
 			wp_send_json_error( __( 'Invalid order', 'reepay-checkout-gateway' ) );
 		}
 
-		// Security: Verify order is paid via Reepay
+		// Security: Verify order is paid via Reepay.
 		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
 			wp_send_json_error( __( 'Order not paid via Reepay', 'reepay-checkout-gateway' ) );
 		}
@@ -159,12 +159,12 @@ class Ajax {
 		$order_id = (int) wc_clean( $_REQUEST['order_id'] );
 		$order    = wc_get_order( $order_id );
 
-		// Security: Validate order exists and belongs to Reepay
+		// Security: Validate order exists and belongs to Reepay.
 		if ( ! $order || ! $order instanceof WC_Order ) {
 			wp_send_json_error( __( 'Invalid order', 'reepay-checkout-gateway' ) );
 		}
 
-		// Security: Verify order is paid via Reepay
+		// Security: Verify order is paid via Reepay.
 		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
 			wp_send_json_error( __( 'Order not paid via Reepay', 'reepay-checkout-gateway' ) );
 		}

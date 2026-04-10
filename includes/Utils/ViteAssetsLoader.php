@@ -24,7 +24,7 @@ class ViteAssetsLoader {
 	 * @return void
 	 */
 	public static function output_vite_dev( bool $admin_footer = true ): void {
-		// Security: Only load in development mode
+		// Security: Only load in development mode.
 		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG || ! defined( 'SCRIPT_DEBUG' ) || ! SCRIPT_DEBUG ) {
 			return;
 		}
@@ -66,7 +66,7 @@ class ViteAssetsLoader {
 	 * @return void
 	 */
 	public static function output_vite_dev_entry_point( string $entry_point, bool $admin_footer = true ): void {
-		// Security: Only load in development mode
+		// Security: Only load in development mode.
 		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG || ! defined( 'SCRIPT_DEBUG' ) || ! SCRIPT_DEBUG ) {
 			return;
 		}

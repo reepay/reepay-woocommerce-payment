@@ -230,12 +230,12 @@ class OrderCapture {
 				return;
 		}
 
-		// Security: Verify nonce
+		// Security: Verify nonce.
 		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'update-post_' . $_POST['post_ID'] ) ) {
 			return;
 		}
 
-		// Security: Check user capability
+		// Security: Check user capability.
 		if ( ! current_user_can( 'edit_shop_orders' ) ) {
 			return;
 		}
@@ -272,12 +272,12 @@ class OrderCapture {
 				return;
 		}
 
-		// Security: Verify nonce for capture amount action
+		// Security: Verify nonce for capture amount action.
 		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'reepay_capture_amount_' . $_POST['post_ID'] ) ) {
 			return;
 		}
 
-		// Security: Check user capability
+		// Security: Check user capability.
 		if ( ! current_user_can( 'edit_shop_orders' ) ) {
 			return;
 		}

@@ -118,7 +118,7 @@ if ( ! empty( $order_data['transactions'][0] ) && ! empty( $order_data['transact
 		$capture_amount_format = $capture_amount;
 		?>
 		<?php
-		// Security: Add nonce field for capture amount action
+		// Security: Add nonce field for capture amount action.
 		wp_nonce_field( 'reepay_capture_amount_' . $order_id, '_wpnonce' );
 		?>
 		<li class="reepay-admin-section-li">

@@ -784,7 +784,7 @@ class ReepayCheckout extends ReepayGateway {
 	 * @see ReepayGateway::change_payment_method
 	 */
 	public function reepay_finalize() {
-		// Security: Verify nonce
+		// Security: Verify nonce.
 		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'reepay_finalize' ) ) {
 			wc_add_notice( __( 'Security check failed. Please try again.', 'reepay-checkout-gateway' ), 'error' );
 			wp_redirect( wc_get_checkout_url() );

@@ -33,6 +33,7 @@
         <properties>
             <property name="custom_capabilities" type="array">
                 <element value="manage_woocommerce"/>
+                <element value="edit_shop_orders"/>
             </property>
         </properties>
     </rule>

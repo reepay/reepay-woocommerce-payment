@@ -135,18 +135,23 @@ class MigrationMobilepayToVipps {
 		check_ajax_referer( 'reepay_migration_nonce', 'nonce' );
 
 		if ( ! empty( $_FILES['migration_file']['tmp_name'] ) ) {
-			// Security: Validate file type
+			// Ensure required file fields are present.
+			if ( ! isset( $_FILES['migration_file']['name'], $_FILES['migration_file']['size'] ) ) {
+				wp_send_json_error( 'Invalid file data.' );
+			}
+
+			// Security: Validate file type.
 			$file_type = wp_check_filetype_and_ext(
 				$_FILES['migration_file']['tmp_name'],
 				$_FILES['migration_file']['name'],
 				array( 'csv' => 'text/csv' )
 			);
 
-			if ( ! $file_type['ext'] || $file_type['ext'] !== 'csv' ) {
+			if ( ! $file_type['ext'] || 'csv' !== $file_type['ext'] ) {
 				wp_send_json_error( 'Invalid file type. Only CSV files are allowed.' );
 			}
 
-			// Security: Validate file size (max 5MB)
+			// Security: Validate file size (max 5MB).
 			if ( $_FILES['migration_file']['size'] > 5 * 1024 * 1024 ) {
 				wp_send_json_error( 'File too large. Maximum size is 5MB.' );
 			}
@@ -162,14 +167,14 @@ class MigrationMobilepayToVipps {
 			if ( $wp_filesystem->exists( $csv_file ) ) {
 				$file_content = $wp_filesystem->get_contents( $csv_file );
 
-				// Security: Validate file is not too large
+				// Security: Validate file is not too large.
 				if ( strlen( $file_content ) > 5 * 1024 * 1024 ) {
 					wp_send_json_error( 'File content too large.' );
 				}
 
 				$lines = explode( "\n", $file_content );
 
-				// Security: Validate CSV structure
+				// Security: Validate CSV structure.
 				if ( count( $lines ) > 10000 ) {
 					wp_send_json_error( 'File contains too many lines. Maximum 10,000 records.' );
 				}
@@ -183,7 +188,7 @@ class MigrationMobilepayToVipps {
 				$csv_data = array_map(
 					function ( $row ) use ( $delimiter ) {
 						$parsed_row = str_getcsv( $row, $delimiter );
-						// Security: Sanitize CSV values to prevent formula injection
+						// Security: Sanitize CSV values to prevent formula injection.
 						return array_map( array( $this, 'sanitize_csv_value' ), $parsed_row );
 					},
 					$lines
@@ -450,12 +455,12 @@ class MigrationMobilepayToVipps {
 			return $value;
 		}
 
-		// Security: List of formula indicators that could be exploited
+		// Security: List of formula indicators that could be exploited.
 		$formula_indicators = array( '=', '+', '-', '@', "\t", "\r" );
 
-		// Check if value starts with a formula indicator
+		// Check if value starts with a formula indicator.
 		if ( in_array( substr( $value, 0, 1 ), $formula_indicators, true ) ) {
-			// Prefix with single quote to force text interpretation in spreadsheet applications
+			// Prefix with single quote to force text interpretation in spreadsheet applications.
 			$value = "'" . $value;
 		}
 
