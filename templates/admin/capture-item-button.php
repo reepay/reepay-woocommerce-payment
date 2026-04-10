@@ -18,5 +18,5 @@ defined( 'ABSPATH' ) || exit();
 	name="<?php echo esc_attr( $name ); ?>"
 	value="<?php echo esc_attr( $value ); ?>"
 >
-	<?php echo esc_html( $text ); ?>
+	<?php echo wp_kses_post( $text ); ?>
 </button>
