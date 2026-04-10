@@ -71,7 +71,7 @@ class OrderCapture {
 	 */
 	public function unset_specific_order_item_meta_data( array $formatted_meta, WC_Order_Item $item ): array {
 		// Only on emails notifications.
-		if ( is_admin() && isset( $_GET['post'] ) ) {
+		if ( is_admin() && isset( $_GET['post'] ) && current_user_can( 'edit_shop_orders' ) ) {
 			foreach ( $formatted_meta as $i => $meta ) {
 				if ( in_array( $meta->key, array( 'settled' ), true ) ) {
 					$meta->display_key = 'Settled';
