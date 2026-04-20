@@ -19,6 +19,7 @@ class Admin {
 	public function __construct() {
 		add_action( 'admin_notices', array( $this, 'admin_notice_api_action' ) );
 		add_action( 'admin_notices', array( $this, 'billwerk_pay_hpos_check' ) );
+		add_action( 'admin_notices', array( $this, 'debug_plugin_status' ) );
 	}
 
 	/**
@@ -80,5 +81,97 @@ class Admin {
 				__( 'Frisbii works best with High Performance Order Storage. You can activate it in the WooCommerce settings under the "Advanced" tab, "Features" sub-tab.', 'reepay-checkout-gateway' ) .
 				'</p></div>';
 		}
+	}
+
+	/**
+	 * Display a temporary full plugin status debug notice on the plugins page.
+	 * Covers all classes in the Plugin namespace: WoocommerceExists, WoocommerceHPOS,
+	 * LifeCycle, UpdateDB, and Statistics.
+	 * Enable with /wp-admin/plugins.php?reepay_hpos_debug=1
+	 */
+	public function debug_plugin_status() {
+		if ( ! current_user_can( 'activate_plugins' ) ) {
+			return;
+		}
+		if ( ! function_exists( 'get_current_screen' ) || ! function_exists( 'reepay' ) ) {
+			return;
+		}
+		$screen = get_current_screen();
+		if ( ! $screen || 'plugins' !== $screen->id ) {
+			return;
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! isset( $_GET['reepay_hpos_debug'] ) || '1' !== sanitize_text_field( wp_unslash( $_GET['reepay_hpos_debug'] ) ) ) {
+			return;
+		}
+
+		$rows = array();
+
+		// --- Plugin Info ---
+		$plugin_version   = (string) reepay()->get_setting( 'plugin_version' );
+		$plugin_basename  = (string) reepay()->get_setting( 'plugin_basename' );
+		$test_mode        = reepay()->get_setting( 'test_mode' );
+		$private_key      = reepay()->get_setting( 'private_key' );
+		$private_key_test = reepay()->get_setting( 'private_key_test' );
+
+		$rows[] = '<strong>' . esc_html__( 'Plugin Info', 'reepay-checkout-gateway' ) . '</strong>';
+		$rows[] = esc_html( 'version: ' . $plugin_version );
+		$rows[] = esc_html( 'basename: ' . $plugin_basename );
+		$rows[] = esc_html( 'test mode: ' . ( 'yes' === $test_mode ? 'yes' : 'no' ) );
+		$rows[] = esc_html( 'private key (live) configured: ' . ( ! empty( $private_key ) ? 'yes' : 'no' ) );
+		$rows[] = esc_html( 'private key (test) configured: ' . ( ! empty( $private_key_test ) ? 'yes' : 'no' ) );
+
+		// --- WoocommerceExists ---
+		$woo_class_exists   = class_exists( 'WooCommerce', false );
+		$wc_abspath_defined = defined( 'WC_ABSPATH' );
+		$woo_version        = ( $woo_class_exists && function_exists( 'WC' ) && WC() ) ? (string) WC()->version : 'n/a';
+
+		$rows[] = '';
+		$rows[] = '<strong>' . esc_html__( 'WooCommerce (WoocommerceExists)', 'reepay-checkout-gateway' ) . '</strong>';
+		$rows[] = esc_html( 'WooCommerce class exists: ' . ( $woo_class_exists ? 'yes' : 'no' ) );
+		$rows[] = esc_html( 'WC_ABSPATH defined: ' . ( $wc_abspath_defined ? 'yes' : 'no' ) );
+		$rows[] = esc_html( 'WooCommerce activated: ' . ( $woo_class_exists && $wc_abspath_defined ? 'yes' : 'no' ) );
+		$rows[] = esc_html( 'WooCommerce version: ' . $woo_version );
+
+		// --- WoocommerceHPOS ---
+		$hpos_enabled         = 'yes' === get_option( 'woocommerce_custom_orders_table_enabled', 'no' );
+		$features_util_exists = class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' );
+
+		$rows[] = '';
+		$rows[] = '<strong>' . esc_html__( 'HPOS (WoocommerceHPOS)', 'reepay-checkout-gateway' ) . '</strong>';
+		$rows[] = esc_html( 'hpos enabled: ' . ( $hpos_enabled ? 'yes' : 'no' ) );
+		$rows[] = esc_html( 'FeaturesUtil available: ' . ( $features_util_exists ? 'yes' : 'no' ) );
+
+		if ( $features_util_exists ) {
+			$compatibility = \Automattic\WooCommerce\Utilities\FeaturesUtil::get_compatible_features_for_plugin( $plugin_basename );
+			$compatible    = $compatibility['compatible'] ?? array();
+			$incompatible  = $compatibility['incompatible'] ?? array();
+			$uncertain     = $compatibility['uncertain'] ?? array();
+			$rows[]        = esc_html( 'custom_order_tables compatible: ' . ( in_array( 'custom_order_tables', $compatible, true ) ? 'yes' : 'no' ) );
+			$rows[]        = esc_html( 'custom_order_tables incompatible: ' . ( in_array( 'custom_order_tables', $incompatible, true ) ? 'yes' : 'no' ) );
+			$rows[]        = esc_html( 'custom_order_tables uncertain: ' . ( in_array( 'custom_order_tables', $uncertain, true ) ? 'yes' : 'no' ) );
+		}
+
+		// --- UpdateDB / LifeCycle ---
+		$stored_db_version = (string) get_option( 'woocommerce_reepay_version', 'not set' );
+		$latest_db_version = \Reepay\Checkout\Plugin\UpdateDB::DB_VERSION;
+		$db_update_needed  = ( 'not set' !== $stored_db_version && version_compare( $stored_db_version, $latest_db_version, '<' ) ) ? 'yes' : 'no';
+
+		$rows[] = '';
+		$rows[] = '<strong>' . esc_html__( 'Database / LifeCycle (UpdateDB)', 'reepay-checkout-gateway' ) . '</strong>';
+		$rows[] = esc_html( 'stored db version: ' . $stored_db_version );
+		$rows[] = esc_html( 'latest db version: ' . $latest_db_version );
+		$rows[] = esc_html( 'db update needed: ' . $db_update_needed );
+
+		// --- Statistics ---
+		$stats_active = \Reepay\Checkout\Plugin\Statistics::get_instance() instanceof \Reepay\Checkout\Plugin\Statistics;
+
+		$rows[] = '';
+		$rows[] = '<strong>' . esc_html__( 'Statistics', 'reepay-checkout-gateway' ) . '</strong>';
+		$rows[] = esc_html( 'Statistics instance active: ' . ( $stats_active ? 'yes' : 'no' ) );
+
+		echo '<div class="notice notice-info"><p>' .
+			implode( '<br>', $rows ) .
+			'</p></div>';
 	}
 }
