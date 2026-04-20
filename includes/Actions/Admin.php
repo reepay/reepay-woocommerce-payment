@@ -133,14 +133,24 @@ class Admin {
 		$rows[] = esc_html( 'WooCommerce activated: ' . ( $woo_class_exists && $wc_abspath_defined ? 'yes' : 'no' ) );
 		$rows[] = esc_html( 'WooCommerce version: ' . $woo_version );
 
-		// --- WoocommerceHPOS ---
+		// --- WoocommerceHPOS + FeaturesUtil ---
+		$plugin_file          = (string) reepay()->get_setting( 'plugin_file' );
 		$hpos_enabled         = 'yes' === get_option( 'woocommerce_custom_orders_table_enabled', 'no' );
 		$features_util_exists = class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' );
+		$order_util_exists    = class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' );
 
 		$rows[] = '';
-		$rows[] = '<strong>' . esc_html__( 'HPOS (WoocommerceHPOS)', 'reepay-checkout-gateway' ) . '</strong>';
-		$rows[] = esc_html( 'hpos enabled: ' . ( $hpos_enabled ? 'yes' : 'no' ) );
+		$rows[] = '<strong>' . esc_html__( 'HPOS / FeaturesUtil (WoocommerceHPOS + OrderTable + hpos.php)', 'reepay-checkout-gateway' ) . '</strong>';
+		$rows[] = esc_html( 'plugin_file (used in declare_compatibility): ' . $plugin_file );
+		$rows[] = esc_html( 'plugin_basename (used in get_compatible_features): ' . $plugin_basename );
+		$rows[] = esc_html( 'hpos enabled (DB option): ' . ( $hpos_enabled ? 'yes' : 'no' ) );
 		$rows[] = esc_html( 'FeaturesUtil available: ' . ( $features_util_exists ? 'yes' : 'no' ) );
+		$rows[] = esc_html( 'OrderUtil available: ' . ( $order_util_exists ? 'yes' : 'no' ) );
+
+		if ( $order_util_exists ) {
+			$hpos_actually_enabled = \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
+			$rows[]                = esc_html( 'OrderUtil::custom_orders_table_usage_is_enabled(): ' . ( $hpos_actually_enabled ? 'yes' : 'no' ) );
+		}
 
 		if ( $features_util_exists ) {
 			$compatibility = \Automattic\WooCommerce\Utilities\FeaturesUtil::get_compatible_features_for_plugin( $plugin_basename );
@@ -150,6 +160,26 @@ class Admin {
 			$rows[]        = esc_html( 'custom_order_tables compatible: ' . ( in_array( 'custom_order_tables', $compatible, true ) ? 'yes' : 'no' ) );
 			$rows[]        = esc_html( 'custom_order_tables incompatible: ' . ( in_array( 'custom_order_tables', $incompatible, true ) ? 'yes' : 'no' ) );
 			$rows[]        = esc_html( 'custom_order_tables uncertain: ' . ( in_array( 'custom_order_tables', $uncertain, true ) ? 'yes' : 'no' ) );
+		}
+
+		// --- WooCommerce Blocks / cart_checkout_blocks (WooBlocksIntegration) ---
+		// NOTE: The plugin registers payment methods with WooCommerce Blocks but does NOT
+		// call FeaturesUtil::declare_compatibility('cart_checkout_blocks', ...) anywhere.
+		// WooCommerce will therefore flag this plugin as NOT declared for cart_checkout_blocks.
+		$blocks_package_exists   = class_exists( '\Automattic\WooCommerce\Blocks\Package' );
+		$blocks_registry_exists  = class_exists( '\Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry' );
+
+		$rows[] = '';
+		$rows[] = '<strong>' . esc_html__( 'WooCommerce Blocks (WooBlocksIntegration)', 'reepay-checkout-gateway' ) . '</strong>';
+		$rows[] = esc_html( 'Blocks\Package available: ' . ( $blocks_package_exists ? 'yes' : 'no' ) );
+		$rows[] = esc_html( 'Blocks\PaymentMethodRegistry available: ' . ( $blocks_registry_exists ? 'yes' : 'no' ) );
+
+		if ( $features_util_exists ) {
+			// Reuse $compatibility already fetched above.
+			$rows[] = esc_html( 'cart_checkout_blocks compatible: ' . ( in_array( 'cart_checkout_blocks', $compatible, true ) ? 'yes' : 'no' ) );
+			$rows[] = esc_html( 'cart_checkout_blocks incompatible: ' . ( in_array( 'cart_checkout_blocks', $incompatible, true ) ? 'yes' : 'no' ) );
+			$rows[] = esc_html( 'cart_checkout_blocks uncertain: ' . ( in_array( 'cart_checkout_blocks', $uncertain, true ) ? 'yes' : 'no' ) );
+			$rows[] = '<strong style="color:#d63638">' . esc_html__( 'WARNING: cart_checkout_blocks is never declared — plugin uses WooCommerce Blocks but is missing declare_compatibility()', 'reepay-checkout-gateway' ) . '</strong>';
 		}
 
 		// --- UpdateDB / LifeCycle ---
