@@ -223,8 +223,8 @@ class OrderCapture {
 			if ( ! rp_hpos_is_order_page() ) {
 				return;
 			}
-			$order_id      = absint( $_GET['id'] );
-			$nonce_action  = 'update-order_' . $order_id;
+			$order_id     = absint( isset( $_GET['id'] ) ? $_GET['id'] : 0 );
+			$nonce_action = 'update-order_' . $order_id;
 		} elseif ( ! isset( $_POST['post_type'] ) ||
 				'shop_order' !== $_POST['post_type'] ||
 				! isset( $_POST['post_ID'] ) ) {
@@ -270,7 +270,7 @@ class OrderCapture {
 			if ( ! rp_hpos_is_order_page() ) {
 				return;
 			}
-			$order_id     = absint( $_GET['id'] );
+			$order_id     = absint( isset( $_GET['id'] ) ? $_GET['id'] : 0 );
 			$nonce_action = 'update-order_' . $order_id;
 		} elseif ( ! isset( $_POST['post_type'] ) ||
 				'shop_order' !== $_POST['post_type'] ||
