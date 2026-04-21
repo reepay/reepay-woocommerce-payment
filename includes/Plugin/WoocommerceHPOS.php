@@ -26,11 +26,13 @@ class WoocommerceHPOS {
 	}
 
 	/**
-	 * Add notices
+	 * Declare compatibility with WooCommerce features.
 	 */
 	public function add_support() {
 		if ( class_exists( FeaturesUtil::class ) ) {
-			FeaturesUtil::declare_compatibility( 'custom_order_tables', reepay()->get_setting( 'plugin_file' ), true );
+			$plugin_file = reepay()->get_setting( 'plugin_file' );
+			FeaturesUtil::declare_compatibility( 'custom_order_tables', $plugin_file, true );
+			FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', $plugin_file, true );
 		}
 	}
 }
