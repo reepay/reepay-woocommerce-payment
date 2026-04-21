@@ -114,7 +114,7 @@ class Admin {
 		$private_key      = reepay()->get_setting( 'private_key' );
 		$private_key_test = reepay()->get_setting( 'private_key_test' );
 
-		$rows[] = '<strong>' . esc_html__( 'Plugin Info', 'reepay-checkout-gateway' ) . '</strong>';
+		$rows[] = '<strong>' . esc_html__( 'Fribii Pay Plugin Debug Info', 'reepay-checkout-gateway' ) . '</strong>';
 		$rows[] = esc_html( 'version: ' . $plugin_version );
 		$rows[] = esc_html( 'basename: ' . $plugin_basename );
 		$rows[] = esc_html( 'test mode: ' . ( 'yes' === $test_mode ? 'yes' : 'no' ) );
@@ -163,11 +163,8 @@ class Admin {
 		}
 
 		// --- WooCommerce Blocks / cart_checkout_blocks (WooBlocksIntegration) ---
-		// NOTE: The plugin registers payment methods with WooCommerce Blocks but does NOT
-		// call FeaturesUtil::declare_compatibility('cart_checkout_blocks', ...) anywhere.
-		// WooCommerce will therefore flag this plugin as NOT declared for cart_checkout_blocks.
-		$blocks_package_exists   = class_exists( '\Automattic\WooCommerce\Blocks\Package' );
-		$blocks_registry_exists  = class_exists( '\Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry' );
+		$blocks_package_exists  = class_exists( '\Automattic\WooCommerce\Blocks\Package' );
+		$blocks_registry_exists = class_exists( '\Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry' );
 
 		$rows[] = '';
 		$rows[] = '<strong>' . esc_html__( 'WooCommerce Blocks (WooBlocksIntegration)', 'reepay-checkout-gateway' ) . '</strong>';
@@ -179,7 +176,6 @@ class Admin {
 			$rows[] = esc_html( 'cart_checkout_blocks compatible: ' . ( in_array( 'cart_checkout_blocks', $compatible, true ) ? 'yes' : 'no' ) );
 			$rows[] = esc_html( 'cart_checkout_blocks incompatible: ' . ( in_array( 'cart_checkout_blocks', $incompatible, true ) ? 'yes' : 'no' ) );
 			$rows[] = esc_html( 'cart_checkout_blocks uncertain: ' . ( in_array( 'cart_checkout_blocks', $uncertain, true ) ? 'yes' : 'no' ) );
-			$rows[] = '<strong style="color:#d63638">' . esc_html__( 'WARNING: cart_checkout_blocks is never declared — plugin uses WooCommerce Blocks but is missing declare_compatibility()', 'reepay-checkout-gateway' ) . '</strong>';
 		}
 
 		// --- UpdateDB / LifeCycle ---
