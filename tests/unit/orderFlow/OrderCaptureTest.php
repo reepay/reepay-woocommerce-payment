@@ -218,7 +218,7 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 		$_POST['line_item_capture'] = $order_item_id;
 		$_GET['id']                 = $post_id;
 		$_POST['post_ID']           = $post_id;
-		$_POST['_wpnonce']          = wp_create_nonce( 'update-post_' . $post_id );
+		$_POST['_wpnonce']          = wp_create_nonce( ( HPOS_STATE::is_active() ? 'update-order_' : 'update-post_' ) . $post_id );
 
 		if ( HPOS_STATE::is_active() ) {
 			set_current_screen( 'edit-post' );
@@ -302,7 +302,7 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 		$_POST['all_items_capture'] = 'true';
 		$_GET['id']                 = $post_id;
 		$_POST['post_ID']           = $post_id;
-		$_POST['_wpnonce']          = wp_create_nonce( 'update-post_' . $post_id );
+		$_POST['_wpnonce']          = wp_create_nonce( ( HPOS_STATE::is_active() ? 'update-order_' : 'update-post_' ) . $post_id );
 
 		if ( HPOS_STATE::is_active() ) {
 			set_current_screen( 'edit-post' );
