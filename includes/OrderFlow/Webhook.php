@@ -39,6 +39,30 @@ class Webhook {
 	}
 
 	/**
+	 * Filter sensitive data from arrays before logging.
+	 *
+	 * @param array $data Data to filter.
+	 *
+	 * @return array Filtered data.
+	 */
+	private function filter_sensitive_data( array $data ): array {
+		$sensitive_keys = array( 'card_number', 'cvv', 'cvc', 'masked_card', 'card_token', 'pan', 'secret', 'password', 'authorization' );
+		$filtered       = array();
+
+		foreach ( $data as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$filtered[ $key ] = $this->filter_sensitive_data( $value );
+			} elseif ( in_array( strtolower( $key ), $sensitive_keys, true ) ) {
+				$filtered[ $key ] = '***REDACTED***';
+			} else {
+				$filtered[ $key ] = $value;
+			}
+		}
+
+		return $filtered;
+	}
+
+	/**
 	 * WebHook Callback
 	 *
 	 * @return void
@@ -47,8 +71,8 @@ class Webhook {
 		http_response_code( 200 );
 
 		$raw_body = file_get_contents( 'php://input' );
-		$this->log( sprintf( 'WebHook: Initialized %s from %s', $_SERVER['REQUEST_URI'] ?? '', $_SERVER['REMOTE_ADDR'] ?? '' ) );
-		$this->log( sprintf( 'WebHook: Post data: %s', var_export( $raw_body, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
+		$this->log( sprintf( 'WebHook: Initialized %s from %s', sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) ), sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) ) ) );
+		$this->log( sprintf( 'WebHook: Post data: %s', wp_json_encode( $this->filter_sensitive_data( json_decode( $raw_body, true ) ?: array() ) ) ) );
 		$data = json_decode( $raw_body, true );
 		if ( ! $data ) {
 			$this->log( 'WebHook: Error: Missing parameters' );
@@ -67,7 +91,18 @@ class Webhook {
 
 			$secret = $result['secret'];
 
-			set_transient( 'reepay_webhook_settings_secret', $secret, HOUR_IN_SECONDS );
+			/**
+			 * Cache webhook secret for 10 minutes to reduce API calls while limiting exposure window.
+			 * Note: For PCI DSS compliance in high-security environments, consider implementing
+			 * encryption at rest or disabling caching via the filter below.
+			 *
+			 * @param int $ttl Time to live in seconds. Default 600 (10 minutes). Set to 0 to disable caching.
+			 */
+			$cache_ttl = apply_filters( 'reepay_webhook_secret_cache_ttl', 10 * MINUTE_IN_SECONDS );
+
+			if ( $cache_ttl > 0 ) {
+				set_transient( 'reepay_webhook_settings_secret', $secret, $cache_ttl );
+			}
 		}
 
 		$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
@@ -77,7 +112,11 @@ class Webhook {
 			$result = reepay()->api( $this->logging_source )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
 			if ( ! is_wp_error( $result ) && ! empty( $result['secret'] ) ) {
 				$secret = $result['secret'];
-				set_transient( 'reepay_webhook_settings_secret', $secret, HOUR_IN_SECONDS );
+				// Use the same cache TTL as above for consistency.
+				$cache_ttl = apply_filters( 'reepay_webhook_secret_cache_ttl', 10 * MINUTE_IN_SECONDS );
+				if ( $cache_ttl > 0 ) {
+					set_transient( 'reepay_webhook_settings_secret', $secret, $cache_ttl );
+				}
 				$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
 			}
 
@@ -87,7 +126,7 @@ class Webhook {
 						'WebHook: Error: Signature verification failed. Event: %s, ID: %s, Remote IP: %s',
 						$data['event_type'] ?? 'unknown',
 						$data['id'] ?? 'unknown',
-						$_SERVER['REMOTE_ADDR'] ?? 'unknown'
+						sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ) )
 					)
 				);
 
@@ -148,7 +187,7 @@ class Webhook {
 			sprintf(
 				'WebHook %1$s: Data: %2$s',
 				$data['event_type'],
-				var_export( $data, true ) //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
+				wp_json_encode( $this->filter_sensitive_data( $data ) )
 			)
 		);
 
@@ -372,14 +411,6 @@ class Webhook {
 						'',
 						$data['transaction']
 					);
-
-					// Force renewal orders to "completed" regardless of the status_settled setting.
-					if ( isset( $data['subscription'] ) ) {
-						$order = wc_get_order( $order->get_id() );
-						if ( $order && ! $order->has_status( 'completed' ) ) {
-							$order->update_status( 'completed', __( 'Renewal order completed via Frisbii.', 'reepay-checkout-gateway' ) );
-						}
-					}
 				} elseif ( function_exists( 'wc_get_logger' ) ) {
 					// Log to reepay_order_statuses log.
 					wc_get_logger()->debug(

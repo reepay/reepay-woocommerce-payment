@@ -39,6 +39,7 @@ jQuery(function ($) {
 
         var formData = new FormData();
         formData.append('action', 'reepay_migration_upload_csv');
+        formData.append('nonce', migrationData.nonce);
         formData.append('migration_file', $('#migration_file')[0].files[0]);
         $.ajax({
             url: ajaxurl,
@@ -62,6 +63,7 @@ jQuery(function ($) {
             type: 'POST',
             data: {
                 action: 'reepay_migration_process_batch',
+                nonce: migrationData.nonce,
                 offset: offset
             },
             success: function(response) {

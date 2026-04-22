@@ -205,9 +205,16 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		// Allow to pay exist orders by guests.
 		if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) {
-			$order_id = wc_get_order_id_by_order_key( $_GET['key'] );
+			$order_id = wc_get_order_id_by_order_key( wc_clean( $_GET['key'] ) );
 			if ( $order_id ) {
 				$order = wc_get_order( $order_id );
+
+				// Security: Verify user ownership.
+				if ( ! $order || ( $order->get_customer_id() && $order->get_customer_id() !== get_current_user_id() ) ) {
+					wc_add_notice( __( 'Invalid order.', 'reepay-checkout-gateway' ), 'error' );
+					wp_redirect( wc_get_account_endpoint_url( 'orders' ) );
+					exit();
+				}
 
 				// Get customer handle by order.
 				$gateway         = rp_get_payment_method( $order );
@@ -218,6 +225,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		$accept_url = add_query_arg( 'action', 'reepay_card_store_' . $this->id, admin_url( 'admin-ajax.php' ) );
+		$accept_url = add_query_arg( '_wpnonce', wp_create_nonce( 'reepay_add_card' ), $accept_url );
 		$accept_url = apply_filters( 'woocommerce_reepay_payment_accept_url', $accept_url );
 		$cancel_url = wc_get_account_endpoint_url( 'payment-methods' );
 		$cancel_url = apply_filters( 'woocommerce_reepay_payment_cancel_url', $cancel_url );
@@ -315,6 +323,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * Ajax: Add Payment Method
 	 */
 	public function reepay_card_store() {
+		// Security: Verify nonce.
+		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'reepay_add_card' ) ) {
+			wc_add_notice( __( 'Security check failed. Please try again.', 'reepay-checkout-gateway' ), 'error' );
+			wp_redirect( wc_get_account_endpoint_url( 'add-payment-method' ) );
+			exit();
+		}
+
 		$reepay_token    = isset( $_GET['payment_method'] ) ? wc_clean( $_GET['payment_method'] ) : '';
 		$current_user_id = get_current_user_id();
 
@@ -814,7 +829,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			);
 
 			try {
-				$_POST = json_decode( file_get_contents( 'php://input' ), true );
+				$json_data = json_decode( file_get_contents( 'php://input' ), true );
+				if ( is_array( $json_data ) ) {
+					$_POST = $json_data;
+				}
 				foreach ( $_POST['payment_data'] ?? array() as $data ) {
 					if ( empty( $_POST[ $data['key'] ] ) ) {
 						$_POST[ $data['key'] ] = $data['value'];
@@ -1475,8 +1493,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				),
 				'accept_url'      => add_query_arg(
 					array(
-						'action' => 'reepay_finalize',
-						'key'    => $order->get_order_key(),
+						'action'   => 'reepay_finalize',
+						'key'      => $order->get_order_key(),
+						'_wpnonce' => wp_create_nonce( 'reepay_finalize' ),
 					),
 					admin_url( 'admin-ajax.php' )
 				),

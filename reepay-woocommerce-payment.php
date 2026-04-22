@@ -4,7 +4,7 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: Frisbii
  * Author URI: https://frisbii.com
- * Version: 1.8.11
+ * Version: 1.8.12
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -106,14 +106,16 @@ class WC_ReepayCheckout {
 		if ( true === $instance_requested && is_null( self::$instance ) ) {
 			$message = 'Function Frisbii Pay called in time of initialization main plugin class. Recursion prevented';
 
+			// Security: Log stack trace to file instead of displaying to users
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				$message .= '<br>Stack trace for debugging:<br><pre>' . print_r( //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+				error_log( 'Reepay Plugin Initialization Error: ' . print_r( //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 					debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ), //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
 					true
-				) . '</pre>';
+				) );
 			}
 
-			wp_die( wp_kses_post( $message ) );
+			// Security: Display generic error message to users
+			wp_die( esc_html__( 'Plugin initialization error. Please contact support.', 'reepay-checkout-gateway' ) );
 		}
 
 		$instance_requested = true;

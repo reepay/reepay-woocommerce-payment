@@ -55,21 +55,49 @@ class TokenReepay extends WC_Payment_Token_CC {
 		$style = '';
 
 		if ( $this->get_card_type() === 'visa_dk' ) {
-			$style = 'style="width: 46px; height: 24px;"';
+			$style = 'width: 46px; height: 24px;';
 		}
 
-		$type             = $this->get_card_type();
-		$reepay_logo_url  = reepay()->get_setting( 'images_url' ) . $type . '.png';
-		$reepay_logo_path = reepay()->get_setting( 'images_path' ) . $type . '.png';
-		if ( file_exists( $reepay_logo_path ) ) {
+		// Map Reepay card type aliases to their image filenames (mirrors ReepayGateway::get_logo).
+		$card_type_map = array(
+			'visa'             => 'visa',
+			'visa_elec'        => 'visa-electron',
+			'visa-electron'    => 'visa-electron',
+			'mc'               => 'mastercard',
+			'mastercard'       => 'mastercard',
+			'dankort'          => 'dankort',
+			'visa_dk'          => 'dankort',
+			'ffk'              => 'forbrugsforeningen',
+			'maestro'          => 'maestro',
+			'amex'             => 'american-express',
+			'diners'           => 'diners',
+			'discover'         => 'discover',
+			'jcb'              => 'jcb',
+			'china_union_pay'  => 'cup',
+			'mobilepay'        => 'mobilepay',
+			'viabill'          => 'viabill',
+			'paypal'           => 'paypal',
+			'applepay'         => 'applepay',
+			'googlepay'        => 'googlepay',
+			'vipps'            => 'vipps',
+			'anyday'           => 'anyday',
+			'klarna_pay_later' => 'klarna',
+			'klarna_pay_now'   => 'klarna',
+		);
+		$type          = strtolower( $this->get_card_type() );
+		$image_name    = $card_type_map[ $type ] ?? null;
+
+		$reepay_logo_url  = $image_name ? reepay()->get_setting( 'images_url' ) . $image_name . '.png' : '';
+		$reepay_logo_path = $image_name ? reepay()->get_setting( 'images_path' ) . $image_name . '.png' : '';
+		if ( $image_name && file_exists( $reepay_logo_path ) ) {
 			$img   = $reepay_logo_url;
-			$style = 'style="width: 46px; height: 24px;"';
+			$style = 'width: 46px; height: 24px;';
 		}
 
 		ob_start();
 		?>
-		<img <?php echo $style; ?> src="<?php echo $img; ?>"
-									alt="<?php echo wc_get_credit_card_type_label( $this->get_card_type() ); ?>"/>
+		<img style="<?php echo esc_attr( $style ); ?>" src="<?php echo esc_url( $img ); ?>"
+									alt="<?php echo esc_attr( wc_get_credit_card_type_label( $this->get_card_type() ) ); ?>"/>
 		<?php echo esc_html( $this->get_masked_card() ); ?>
 		<?php echo esc_html( $this->get_expiry_month() . '/' . substr( $this->get_expiry_year(), 2 ) ); ?>
 
@@ -215,7 +243,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 		if ( rp_is_reepay_payment_method( $method['method']['gateway'] ) ) {
 			try {
 				$token = new TokenReepay( $method['method']['id'] );
-				echo $token->get_display_name();
+				echo wp_kses_post( $token->get_display_name() );
 			} catch ( Exception $e ) {
 				_e( 'Token not found', 'reepay-checkout-gateway' );
 			}

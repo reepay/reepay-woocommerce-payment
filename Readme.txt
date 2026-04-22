@@ -4,7 +4,7 @@ Tags: Frisbii, billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.8.11
+Stable tag: 1.8.12
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,6 +18,11 @@ The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.8.12
+- [Fix] - Setting "Status: Frisbii Pay Settled" applies to Subscription renewal orders.
+- [Fix] - Adds compatibility declaration for WooCommerce Blocks checkout.
+- [Improvement] - General security patches.
+
 v 1.8.11
 - [Improvement] - Applepay payment option no longer depends on device and  browser type
 

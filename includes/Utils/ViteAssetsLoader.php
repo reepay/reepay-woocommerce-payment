@@ -24,10 +24,15 @@ class ViteAssetsLoader {
 	 * @return void
 	 */
 	public static function output_vite_dev( bool $admin_footer = true ): void {
+		// Security: Only load in development mode.
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG || ! defined( 'SCRIPT_DEBUG' ) || ! SCRIPT_DEBUG ) {
+			return;
+		}
+
 		add_action(
 			$admin_footer ? 'admin_footer' : 'wp_footer',
 			function () {
-				$host = self::HMR_HOST;
+				$host = esc_url( self::HMR_HOST );
 				// phpcs:disable
 				$scripts = <<<HTML
 					<script type="module">
@@ -40,7 +45,14 @@ class ViteAssetsLoader {
 					<script src="{$host}/@vite/client" type="module"></script>
 				HTML;
 				// phpcs:enable
-				echo $scripts;
+
+				$allowed_html = array(
+					'script' => array(
+						'type' => array(),
+						'src'  => array(),
+					),
+				);
+				echo wp_kses( $scripts, $allowed_html );
 			}
 		);
 	}
@@ -54,16 +66,29 @@ class ViteAssetsLoader {
 	 * @return void
 	 */
 	public static function output_vite_dev_entry_point( string $entry_point, bool $admin_footer = true ): void {
+		// Security: Only load in development mode.
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG || ! defined( 'SCRIPT_DEBUG' ) || ! SCRIPT_DEBUG ) {
+			return;
+		}
+
 		add_action(
 			$admin_footer ? 'admin_footer' : 'wp_footer',
 			function () use ( $entry_point ) {
-				$host = self::HMR_HOST;
+				$host        = esc_url( self::HMR_HOST );
+				$entry_point = esc_attr( $entry_point );
 				// phpcs:disable
 				$scripts = <<<HTML
 					<script src="{$host}/{$entry_point}" type="module"></script>
 				HTML;
 				// phpcs:enable
-				echo $scripts;
+
+				$allowed_html = array(
+					'script' => array(
+						'type' => array(),
+						'src'  => array(),
+					),
+				);
+				echo wp_kses( $scripts, $allowed_html );
 			}
 		);
 	}

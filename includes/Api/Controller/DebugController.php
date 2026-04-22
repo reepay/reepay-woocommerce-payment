@@ -48,7 +48,7 @@ class DebugController extends WP_REST_Controller {
 	}
 
 	/**
-	 * Run debug code
+	 * Run debug diagnostics (safe — no arbitrary code execution).
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 *
@@ -59,14 +59,17 @@ class DebugController extends WP_REST_Controller {
 			return new WP_Error( 'rest_forbidden', esc_html__( 'Debug endpoint is only available when WP_DEBUG is enabled.', 'reepay-checkout-gateway' ), array( 'status' => 403 ) );
 		}
 
-		$code = $request['code'];
-		ob_start();
-
-		// @codingStandardsIgnoreStart
-		eval( '?>' . $code );
-		// @codingStandardsIgnoreEnd
-
-		return rest_ensure_response( array( 'message' => ob_get_clean() ) );
+		return rest_ensure_response(
+			array(
+				'php_version'    => PHP_VERSION,
+				'wp_version'     => get_bloginfo( 'version' ),
+				'wc_version'     => defined( 'WC_VERSION' ) ? WC_VERSION : 'N/A',
+				'plugin_version' => defined( 'REEPAY_PLUGIN_VERSION' ) ? REEPAY_PLUGIN_VERSION : 'N/A',
+				'wp_debug'       => defined( 'WP_DEBUG' ) && WP_DEBUG,
+				'php_memory'     => ini_get( 'memory_limit' ),
+				'timestamp'      => current_time( 'mysql' ),
+			)
+		);
 	}
 
 	/**

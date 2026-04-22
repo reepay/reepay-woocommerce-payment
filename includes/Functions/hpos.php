@@ -27,5 +27,17 @@ function rp_hpos_enabled(): bool {
  * @return bool
  */
 function rp_hpos_is_order_page(): bool {
-	return is_admin() && rp_hpos_enabled() && isset( $_GET['id'] ) && wc_get_order( $_GET['id'] );
+	// Security: Validate GET parameter before use.
+	if ( ! is_admin() || ! rp_hpos_enabled() || ! isset( $_GET['id'] ) ) {
+		return false;
+	}
+
+	// Security: Sanitize and validate order ID.
+	$order_id = absint( $_GET['id'] );
+
+	if ( $order_id <= 0 ) {
+		return false;
+	}
+
+	return (bool) wc_get_order( $order_id );
 }

@@ -15,8 +15,8 @@ defined( 'ABSPATH' ) || exit();
 <button
 	type="submit"
 	class="button save_order button-primary capture-item-button"
-	name="<?php echo $name; ?>"
-	value="<?php echo $value; ?>"
+	name="<?php echo esc_attr( $name ); ?>"
+	value="<?php echo esc_attr( $value ); ?>"
 >
-	<?php echo $text; ?>
+	<?php echo wp_kses_post( $text ); ?>
 </button>

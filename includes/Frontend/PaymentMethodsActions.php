@@ -65,29 +65,34 @@ class PaymentMethodsActions {
 
 		wc_nocache_headers();
 
-		// Check nonce and user validation.
+		// Security: Verify nonce first (from GET parameter).
+		if ( ! isset( $_GET['_wpnonce'] ) ||
+			! wp_verify_nonce( wp_unslash( $_GET['_wpnonce'] ), 'delete-payment-method-' . $token_id ) ) {
+			wc_add_notice( __( 'Security check failed.', 'reepay-checkout-gateway' ), 'error' );
+			wp_safe_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
+			exit();
+		}
+
+		// Security: Verify user ownership.
 		$current_user_id = get_current_user_id();
-		$token_user_id   = $token->get_user_id();
-		$nonce_isset     = isset( $_REQUEST['_wpnonce'] );
-		$nonce_value     = $nonce_isset ? $_REQUEST['_wpnonce'] : '';
-		$nonce_valid     = $nonce_isset ? wp_verify_nonce( wp_unslash( $_REQUEST['_wpnonce'] ), 'delete-payment-method-' . $token_id ) : false;
-
-		if ( $current_user_id !== $token_user_id || ! $nonce_isset || false === $nonce_valid ) {
+		if ( $current_user_id !== $token->get_user_id() ) {
 			wc_add_notice( __( 'Invalid payment method.', 'reepay-checkout-gateway' ), 'error' );
+			wp_safe_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
+			exit();
+		}
+
+		// Delete the token.
+		$deleted = false;
+		if ( class_exists( ReepayTokens::class ) ) {
+			$deleted = ReepayTokens::delete_card( $token );
+		} elseif ( method_exists( ReepayGateway::class, 'is_reepay_token' ) ) {
+			$deleted = ReepayGateway::delete_card( $token );
+		}
+
+		if ( $deleted ) {
+			wc_add_notice( __( 'Payment method deleted.', 'reepay-checkout-gateway' ) );
 		} else {
-			$deleted = false;
-
-			if ( class_exists( ReepayTokens::class ) ) {
-				$deleted = ReepayTokens::delete_card( $token );
-			} elseif ( method_exists( ReepayGateway::class, 'is_reepay_token' ) ) {
-				$deleted = ReepayGateway::delete_card( $token );
-			}
-
-			if ( $deleted ) {
-				wc_add_notice( __( 'Payment method deleted.', 'reepay-checkout-gateway' ) );
-			} else {
-				wc_add_notice( __( 'Payment method cannot be deleted.', 'reepay-checkout-gateway' ) );
-			}
+			wc_add_notice( __( 'Payment method cannot be deleted.', 'reepay-checkout-gateway' ), 'error' );
 		}
 
 		wp_safe_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );

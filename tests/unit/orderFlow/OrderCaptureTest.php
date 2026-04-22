@@ -210,9 +210,15 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 
 		$this->order_generator->order()->save();
 
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$post_id = $this->order_generator->order()->get_id();
+
 		$_POST['line_item_capture'] = $order_item_id;
-		$_GET['id']                 = $this->order_generator->order()->get_id();
-		$_POST['post_ID']           = $this->order_generator->order()->get_id();
+		$_GET['id']                 = $post_id;
+		$_POST['post_ID']           = $post_id;
+		$_POST['_wpnonce']          = wp_create_nonce( ( HPOS_STATE::is_active() ? 'update-order_' : 'update-post_' ) . $post_id );
 
 		if ( HPOS_STATE::is_active() ) {
 			set_current_screen( 'edit-post' );
@@ -288,9 +294,15 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 
 		$this->order_generator->order()->save();
 
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$post_id = $this->order_generator->order()->get_id();
+
 		$_POST['all_items_capture'] = 'true';
-		$_GET['id']                 = $this->order_generator->order()->get_id();
-		$_POST['post_ID']           = $this->order_generator->order()->get_id();
+		$_GET['id']                 = $post_id;
+		$_POST['post_ID']           = $post_id;
+		$_POST['_wpnonce']          = wp_create_nonce( ( HPOS_STATE::is_active() ? 'update-order_' : 'update-post_' ) . $post_id );
 
 		if ( HPOS_STATE::is_active() ) {
 			set_current_screen( 'edit-post' );

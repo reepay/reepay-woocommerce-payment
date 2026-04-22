@@ -14,16 +14,16 @@ defined( 'ABSPATH' ) || exit;
 		<?php _e( 'Handle', 'reepay-checkout-gateway' ); ?>
 	</li>
 	<li class="reepay-admin-section-li-small">
-		<?php echo $args['handle']; ?>
+		<?php echo esc_html( $args['handle'] ); ?>
 	</li>
 	<li class="reepay-admin-section-li-header-small">
 		<?php _e( 'Email', 'reepay-checkout-gateway' ); ?>
 	</li>
 	<li class="reepay-admin-section-li-small">
-		<?php echo $args['email']; ?>
+		<?php echo esc_html( $args['email'] ); ?>
 	</li>
 	<li class="reepay-admin-section-li">
-		<a class="button" href="<?php echo $args['link']; ?>" target="_blank">
+		<a class="button" href="<?php echo esc_url( $args['link'] ); ?>" target="_blank">
 			<?php _e( 'See customer', 'reepay-checkout-gateway' ); ?>
 		</a>
 	</li>

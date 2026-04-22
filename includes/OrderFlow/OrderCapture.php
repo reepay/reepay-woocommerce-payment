@@ -71,7 +71,7 @@ class OrderCapture {
 	 */
 	public function unset_specific_order_item_meta_data( array $formatted_meta, WC_Order_Item $item ): array {
 		// Only on emails notifications.
-		if ( is_admin() && isset( $_GET['post'] ) ) {
+		if ( is_admin() && isset( $_GET['post'] ) && current_user_can( 'edit_shop_orders' ) ) {
 			foreach ( $formatted_meta as $i => $meta ) {
 				if ( in_array( $meta->key, array( 'settled' ), true ) ) {
 					$meta->display_key = 'Settled';
@@ -223,18 +223,33 @@ class OrderCapture {
 			if ( ! rp_hpos_is_order_page() ) {
 				return;
 			}
+			$order_id     = absint( isset( $_GET['id'] ) ? $_GET['id'] : 0 );
+			$nonce_action = 'update-order_' . $order_id;
 		} elseif ( ! isset( $_POST['post_type'] ) ||
 				'shop_order' !== $_POST['post_type'] ||
 				! isset( $_POST['post_ID'] ) ) {
 
 				return;
+		} else {
+			$order_id     = absint( $_POST['post_ID'] );
+			$nonce_action = 'update-post_' . $order_id;
+		}
+
+		// Security: Verify nonce.
+		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), $nonce_action ) ) {
+			return;
+		}
+
+		// Security: Check user capability.
+		if ( ! current_user_can( 'edit_shop_orders' ) ) {
+			return;
 		}
 
 		if ( ! isset( $_POST['line_item_capture'] ) && ! isset( $_POST['all_items_capture'] ) ) {
 			return;
 		}
 
-		$order = wc_get_order( $_POST['post_ID'] );
+		$order = wc_get_order( $order_id );
 
 		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
 			return;
@@ -255,11 +270,26 @@ class OrderCapture {
 			if ( ! rp_hpos_is_order_page() ) {
 				return;
 			}
+			$order_id     = absint( isset( $_GET['id'] ) ? $_GET['id'] : 0 );
+			$nonce_action = 'update-order_' . $order_id;
 		} elseif ( ! isset( $_POST['post_type'] ) ||
 				'shop_order' !== $_POST['post_type'] ||
 				! isset( $_POST['post_ID'] ) ) {
 
 				return;
+		} else {
+			$order_id     = absint( $_POST['post_ID'] );
+			$nonce_action = 'update-post_' . $order_id;
+		}
+
+		// Security: Verify nonce for capture amount action.
+		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), $nonce_action ) ) {
+			return;
+		}
+
+		// Security: Check user capability.
+		if ( ! current_user_can( 'edit_shop_orders' ) ) {
+			return;
 		}
 
 		if ( ! isset( $_POST['reepay_capture_amount_button'] ) ) {
@@ -276,7 +306,7 @@ class OrderCapture {
 
 		$reepay_capture_amount_input = wc_format_decimal( $_POST['reepay_capture_amount_input'] );
 
-		$order = wc_get_order( $_POST['post_ID'] );
+		$order = wc_get_order( $order_id );
 
 		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
 			return;

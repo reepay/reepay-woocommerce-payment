@@ -13,8 +13,8 @@ use Reepay\Checkout\Gateways\ReepayGateway;
 defined( 'ABSPATH' ) || exit();
 ?>
 
-<h2><?php esc_html( $gateway->get_method_title() ); ?></h2>
-<?php wp_kses_post( wpautop( $gateway->get_method_description() ) ); ?>
+<h2><?php echo esc_html( $gateway->get_method_title() ); ?></h2>
+<?php echo wp_kses_post( wpautop( $gateway->get_method_description() ) ); ?>
 <p><?php _e( 'Frisbii Pay', 'reepay-checkout-gateway' ); ?></p>
 <?php if ( ! $webhook_installed ) : ?>
 	<p>

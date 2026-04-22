@@ -37,7 +37,7 @@ class TokenReepayVR extends WC_Payment_Token {
 		<img src="<?php echo esc_url( reepay()->get_setting( 'images_url' ) . 'vipps.png' ); ?>" width="46" height="24"/>
 
 		<?php if ( is_checkout() ) : ?>
-			<?php echo esc_html( '&nbsp;' . $this->get_token() ); ?>
+			<?php echo '&nbsp;' . esc_html( $this->get_token() ); ?>
 		<?php else : ?>
 			<?php
 			// translators: %s token.
@@ -93,7 +93,7 @@ class TokenReepayVR extends WC_Payment_Token {
 
 		if ( rp_is_reepay_payment_method( $method['method']['gateway'] ) ) {
 			$token = new TokenReepayVR( $method['method']['id'] );
-			echo esc_html( $token->get_display_name() );
+			echo wp_kses_post( $token->get_display_name() );
 		}
 	}
 }
