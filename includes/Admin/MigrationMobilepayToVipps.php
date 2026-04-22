@@ -442,10 +442,7 @@ class MigrationMobilepayToVipps {
 	}
 
 	/**
-	 * Sanitize CSV value to prevent formula injection
-	 *
-	 * Security: Prevents CSV/Formula injection attacks by escaping values
-	 * that start with formula indicators (=, +, -, @, tab, carriage return)
+	 * Sanitize CSV value for safe processing during import.
 	 *
 	 * @param string $value The CSV value to sanitize.
 	 * @return string Sanitized value.
@@ -453,15 +450,6 @@ class MigrationMobilepayToVipps {
 	private function sanitize_csv_value( $value ) {
 		if ( ! is_string( $value ) ) {
 			return $value;
-		}
-
-		// Security: List of formula indicators that could be exploited.
-		$formula_indicators = array( '=', '+', '-', '@', "\t", "\r" );
-
-		// Check if value starts with a formula indicator.
-		if ( in_array( substr( $value, 0, 1 ), $formula_indicators, true ) ) {
-			// Prefix with single quote to force text interpretation in spreadsheet applications.
-			$value = "'" . $value;
 		}
 
 		return sanitize_text_field( $value );

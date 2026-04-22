@@ -1493,8 +1493,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				),
 				'accept_url'      => add_query_arg(
 					array(
-						'action' => 'reepay_finalize',
-						'key'    => $order->get_order_key(),
+						'action'    => 'reepay_finalize',
+						'key'       => $order->get_order_key(),
+						'_wpnonce'  => wp_create_nonce( 'reepay_finalize' ),
 					),
 					admin_url( 'admin-ajax.php' )
 				),

@@ -58,17 +58,38 @@ class TokenReepay extends WC_Payment_Token_CC {
 			$style = 'width: 46px; height: 24px;';
 		}
 
-		// Security: Whitelist allowed card types to prevent path traversal.
-		$allowed_types = array( 'visa', 'mastercard', 'amex', 'discover', 'jcb', 'maestro', 'dankort', 'diners', 'china_union_pay' );
+		// Map Reepay card type aliases to their image filenames (mirrors ReepayGateway::get_logo).
+		$card_type_map = array(
+			'visa'          => 'visa',
+			'visa_elec'     => 'visa-electron',
+			'visa-electron' => 'visa-electron',
+			'mc'            => 'mastercard',
+			'mastercard'    => 'mastercard',
+			'dankort'       => 'dankort',
+			'visa_dk'       => 'dankort',
+			'ffk'           => 'forbrugsforeningen',
+			'maestro'       => 'maestro',
+			'amex'          => 'american-express',
+			'diners'        => 'diners',
+			'discover'      => 'discover',
+			'jcb'           => 'jcb',
+			'china_union_pay' => 'cup',
+			'mobilepay'     => 'mobilepay',
+			'viabill'       => 'viabill',
+			'paypal'        => 'paypal',
+			'applepay'      => 'applepay',
+			'googlepay'     => 'googlepay',
+			'vipps'         => 'vipps',
+			'anyday'        => 'anyday',
+			'klarna_pay_later' => 'klarna',
+			'klarna_pay_now'   => 'klarna',
+		);
 		$type          = strtolower( $this->get_card_type() );
+		$image_name    = $card_type_map[ $type ] ?? null;
 
-		if ( ! in_array( $type, $allowed_types, true ) ) {
-			$type = 'default';
-		}
-
-		$reepay_logo_url  = reepay()->get_setting( 'images_url' ) . $type . '.png';
-		$reepay_logo_path = reepay()->get_setting( 'images_path' ) . $type . '.png';
-		if ( file_exists( $reepay_logo_path ) ) {
+		$reepay_logo_url  = $image_name ? reepay()->get_setting( 'images_url' ) . $image_name . '.png' : '';
+		$reepay_logo_path = $image_name ? reepay()->get_setting( 'images_path' ) . $image_name . '.png' : '';
+		if ( $image_name && file_exists( $reepay_logo_path ) ) {
 			$img   = $reepay_logo_url;
 			$style = 'width: 46px; height: 24px;';
 		}
