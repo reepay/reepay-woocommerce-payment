@@ -225,6 +225,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		$accept_url = add_query_arg( 'action', 'reepay_card_store_' . $this->id, admin_url( 'admin-ajax.php' ) );
+		$accept_url = add_query_arg( '_wpnonce', wp_create_nonce( 'reepay_add_card' ), $accept_url );
 		$accept_url = apply_filters( 'woocommerce_reepay_payment_accept_url', $accept_url );
 		$cancel_url = wc_get_account_endpoint_url( 'payment-methods' );
 		$cancel_url = apply_filters( 'woocommerce_reepay_payment_cancel_url', $cancel_url );
