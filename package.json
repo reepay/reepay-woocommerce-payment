@@ -4,6 +4,7 @@
   "description": "",
   "main": "gulpfile.js",
   "dependencies": {
+    "archiver": "^7.0.1",
     "gulp-clean-css": "^4.3.0",
     "gulp-postcss": "^10.0.0",
     "gulp-sass": "^5.0.0",
