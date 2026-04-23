@@ -21,6 +21,10 @@ class MetaField {
 	 */
 	private static function log( $message ) {
 		if ( function_exists( 'wc_get_logger' ) ) {
+			if ( is_array( $message ) || is_object( $message ) ) {
+				$message = wp_json_encode( $message, JSON_UNESCAPED_UNICODE );
+			}
+
 			wc_get_logger()->debug(
 				$message,
 				array(
