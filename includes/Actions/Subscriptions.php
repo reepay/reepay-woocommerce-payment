@@ -32,6 +32,7 @@ class Subscriptions {
 		'reepay_checkout',
 		'reepay_mobilepay_subscriptions',
 		'reepay_vipps_recurring',
+		'reepay_applepay',
 	);
 
 	/**
@@ -275,6 +276,10 @@ class Subscriptions {
 	 */
 	public function scheduled_subscription_payment( float $amount_to_charge, WC_Order $renewal_order, $settle = false ) {
 		$gateway = rp_get_payment_method( $renewal_order );
+		if ( ! $gateway ) {
+			$renewal_order->update_status( 'failed', __( 'Reepay: payment gateway not found for renewal.', 'reepay-checkout-gateway' ) );
+			return;
+		}
 		$gateway->log( 'WCS process scheduled payment' );
 		// Lookup token.
 		try {
