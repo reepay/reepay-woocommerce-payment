@@ -1,6 +1,6 @@
 {
   "name": "reepay-woocommerce-payment",
-  "version": "1.8.12",
+  "version": "1.8.13",
   "description": "",
   "main": "gulpfile.js",
   "dependencies": {
@@ -8,7 +8,7 @@
     "gulp-clean-css": "^4.3.0",
     "gulp-postcss": "^10.0.0",
     "gulp-sass": "^5.0.0",
-    "postcss": "^8.4.49",
+    "postcss": "^8.5.10",
     "yargs": "^17.7.1"
   },
   "devDependencies": {

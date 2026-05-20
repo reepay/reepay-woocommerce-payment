@@ -40,7 +40,7 @@ defined( 'ABSPATH' ) || exit();
 
 	
 	<?php
-	if ( 'yes' === reepay()->get_setting( 'skip_pro_rated_on_thankyou' ) ) {
+	if ( ! ThankyouPage::order_has_prorated_subscription( $order ) ) {
 		$pro_rated_subscription = null;
 	} else {
 		$pro_rated_subscription = ThankyouPage::get_pro_rated_reepay_subscription( $order );

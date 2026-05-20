@@ -141,13 +141,17 @@ class MigrationMobilepayToVipps {
 			}
 
 			// Security: Validate file type.
+			// CSV files are detected as either text/csv or text/plain depending on server configuration.
 			$file_type = wp_check_filetype_and_ext(
 				$_FILES['migration_file']['tmp_name'],
 				$_FILES['migration_file']['name'],
-				array( 'csv' => 'text/csv' )
+				array(
+					'csv' => 'text/csv',
+					'txt' => 'text/plain',
+				)
 			);
 
-			if ( ! $file_type['ext'] || 'csv' !== $file_type['ext'] ) {
+			if ( 'csv' !== strtolower( pathinfo( sanitize_file_name( $_FILES['migration_file']['name'] ), PATHINFO_EXTENSION ) ) ) {
 				wp_send_json_error( 'Invalid file type. Only CSV files are allowed.' );
 			}
 

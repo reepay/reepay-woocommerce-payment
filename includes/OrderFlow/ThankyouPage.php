@@ -9,6 +9,7 @@ namespace Reepay\Checkout\OrderFlow;
 
 use Exception;
 use Reepay\Checkout\Utils\LoggingTrait;
+use WC_Order;
 use WC_Order_Item_Product;
 use WC_Reepay_Renewals as WCRR;
 
@@ -361,5 +362,112 @@ class ThankyouPage {
 		$pro_rated_data['next_invoice_preview_amount'] = $next_invoice_preview['amount'];
 
 		return $pro_rated_data;
+	}
+
+	/**
+	 * Check at DB level whether any subscription product in the order uses pro-rated billing.
+	 *
+	 * Reads the partial_period_handling value stored in product meta by the
+	 * reepay-woocommerce-subscriptions plugin. Returns true if any product has
+	 * period = 'bill_prorated' or period = '' (empty = API default of bill_prorated).
+	 *
+	 * Schedule types that store a non-array meta value (e.g. daily, month_startdate)
+	 * or no meta at all (e.g. manual) are skipped automatically — no type denylist needed.
+	 *
+	 * Falls back to true (allow API check) if WC_Reepay_Subscription_Plan_Simple is unavailable.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return bool
+	 */
+	public static function order_has_prorated_subscription( WC_Order $order ): bool {
+		$debug = function_exists( 'wc_get_logger' ) && 'yes' === reepay()->get_setting( 'debug' );
+
+		if ( ! class_exists( 'WC_Reepay_Subscription_Plan_Simple' ) ) {
+			if ( $debug ) {
+				wc_get_logger()->debug(
+					sprintf( 'order_has_prorated_subscription: WC_Reepay_Subscription_Plan_Simple not found — falling back to API check for order %d', $order->get_id() ),
+					array( 'source' => 'reepay-thankyou' )
+				);
+			}
+			return true;
+		}
+
+		$order_ids      = array( $order->get_id() );
+		$another_orders = $order->get_meta( '_reepay_another_orders' );
+		if ( ! empty( $another_orders ) && is_array( $another_orders ) ) {
+			foreach ( $another_orders as $another_order_id ) {
+				$order_ids[] = $another_order_id;
+			}
+		}
+
+		foreach ( $order_ids as $order_id ) {
+			$scan_order = ( $order_id === $order->get_id() ) ? $order : wc_get_order( $order_id );
+			if ( ! $scan_order instanceof \WC_Order ) {
+				continue;
+			}
+
+			foreach ( $scan_order->get_items() as $item ) {
+				if ( ! $item instanceof WC_Order_Item_Product ) {
+					continue;
+				}
+
+				$product_id    = $item->get_product_id();
+				$schedule_type = get_post_meta( $product_id, '_reepay_subscription_schedule_type', true );
+
+				if ( empty( $schedule_type ) ) {
+					if ( $debug ) {
+						wc_get_logger()->debug(
+							sprintf( 'order_has_prorated_subscription: product %d has no _reepay_subscription_schedule_type — not a Frisbii subscription product, skipping', $product_id ),
+							array( 'source' => 'reepay-thankyou' )
+						);
+					}
+					continue;
+				}
+
+				$type_data = get_post_meta( $product_id, '_reepay_subscription_' . $schedule_type, true );
+
+				// Schedule types without a period field (daily, month_startdate) store a plain
+				// integer; manual stores nothing. Skip all non-array meta values.
+				if ( ! is_array( $type_data ) ) {
+					if ( $debug ) {
+						wc_get_logger()->debug(
+							sprintf( 'order_has_prorated_subscription: product %d schedule_type=%s has no period array (meta value: %s) — not pro-ratable, skipping', $product_id, $schedule_type, wp_json_encode( $type_data ) ),
+							array( 'source' => 'reepay-thankyou' )
+						);
+					}
+					continue;
+				}
+
+				$period = isset( $type_data['period'] ) ? $type_data['period'] : '';
+
+				if ( $debug ) {
+					wc_get_logger()->debug(
+						sprintf( 'order_has_prorated_subscription: product %d schedule_type=%s period=%s', $product_id, $schedule_type, ( '' === $period ? '(empty=bill_prorated default)' : $period ) ),
+						array( 'source' => 'reepay-thankyou' )
+					);
+				}
+
+				// 'bill_prorated' is explicitly pro-rated; '' means the field was not set,
+				// which the Frisbii API treats as bill_prorated by default.
+				if ( 'bill_prorated' === $period || '' === $period ) {
+					if ( $debug ) {
+						wc_get_logger()->debug(
+							sprintf( 'order_has_prorated_subscription: order %d — pro-rated product found (product %d, period=%s) — API check will run', $order->get_id(), $product_id, ( '' === $period ? 'empty/default' : $period ) ),
+							array( 'source' => 'reepay-thankyou' )
+						);
+					}
+					return true;
+				}
+			}
+		}
+
+		if ( $debug ) {
+			wc_get_logger()->debug(
+				sprintf( 'order_has_not_prorated_subscription: order %d — no pro-rated products found — skipping API check', $order->get_id() ),
+				array( 'source' => 'reepay-thankyou' )
+			);
+		}
+
+		return false;
 	}
 }

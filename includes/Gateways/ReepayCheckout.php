@@ -320,13 +320,6 @@ class ReepayCheckout extends ReepayGateway {
 				'description' => __( 'Un-check to hinder that orders for mixed product types get automatic settlement for some of the products.', 'reepay-checkout-gateway' ),
 				'default'     => 'yes',
 			),
-			'skip_pro_rated_on_thankyou' => array(
-				'title'       => __( 'Pro-rated information', 'reepay-checkout-gateway' ),
-				'type'        => 'checkbox',
-				'label'       => __( 'Don\'t show pro-rated information on the Thanks for order page', 'reepay-checkout-gateway' ),
-				'description' => __( 'Check this to skip the pro-rated subscription price check on the Thank You page. This improves page load speed for mixed orders when pro-rated pricing is not used.', 'reepay-checkout-gateway' ),
-				'default'     => 'no',
-			),
 			'disable_auto_settle'        => array(
 				'title'       => __( 'Auto-settle', 'reepay-checkout-gateway' ),
 				'description' => __( 'Disable settle orders on status changing to completed', 'reepay-checkout-gateway' ),
