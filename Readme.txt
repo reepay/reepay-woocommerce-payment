@@ -18,6 +18,12 @@ The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.8.13.1
+- [Fix] - Updates WooCommerce supported version.
+- [Fix] - The release of v1.8.13 on WordPress Plugin Directory had 2 old asset filenames.
+- [Improvement] - Only loads Meta-fields and debug-page scripts where relevant and logs references to missing assets.
+- [Improvement] - Backend notice about High Performance Order Storage is dismissible.
+
 v 1.8.13
 - [Fix] - Enables automatic subscription payments for ApplePay.
 - [Fix] - URL to update the database from legacy versions is accessible.
