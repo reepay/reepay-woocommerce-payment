@@ -18,6 +18,7 @@ defined( 'ABSPATH' ) || exit();
  * @package Reepay\Checkout\Admin
  */
 class Main {
+
 	/**
 	 * Main constructor.
 	 */
@@ -41,7 +42,12 @@ class Main {
 	 */
 	public function admin_enqueue_scripts( string $hook ) {
 		$debug = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG;
-		if ( 'post.php' === $hook || rp_hpos_is_order_page() ) {
+
+		$is_order_page = ( 'post.php' === $hook ) || rp_hpos_is_order_page();
+		$is_user_page  = ( 'user-edit.php' === $hook ) || ( 'profile.php' === $hook );
+		$is_debug_page = ( 'toplevel_page_' . DebugPage::SLUG ) === $hook;
+
+		if ( $is_order_page ) {
 			$suffix = $debug ? '' : '.min';
 
 			wp_enqueue_style(
@@ -81,41 +87,70 @@ class Main {
 			);
 		}
 
-		$vite_entry_points = array(
-			array(
-				'nested_path' => '/meta-fields/',
-				'file'        => 'src/admin/meta-fields/main.tsx',
-			),
-			array(
-				'nested_path' => '/debug-page/',
-				'file'        => 'src/admin/debug-page/main.tsx',
-			),
-		);
-		if ( $debug ) {
-			ViteAssetsLoader::dev( $vite_entry_points );
-		} else {
-			ViteAssetsLoader::production(
-				$vite_entry_points,
-				reepay()->get_setting( 'vite_path' ),
-				reepay()->get_setting( 'vite_url' ),
-				reepay()->get_setting( 'plugin_version' )
+		if ( $is_order_page || $is_user_page ) {
+			$meta_fields_entry = array(
+				array(
+					'nested_path' => 'meta-fields/',
+					'file'        => 'src/admin/meta-fields/main.tsx',
+				),
 			);
-			foreach ( $vite_entry_points as $vite_entry_point ) {
+			if ( $debug ) {
+				ViteAssetsLoader::dev( $meta_fields_entry );
+			} else {
+				ViteAssetsLoader::production(
+					$meta_fields_entry,
+					reepay()->get_setting( 'vite_path' ),
+					reepay()->get_setting( 'vite_url' ),
+					reepay()->get_setting( 'plugin_version' )
+				);
 				wp_set_script_translations(
-					$vite_entry_point['file'],
+					'src/admin/meta-fields/main.tsx',
 					'reepay-checkout-gateway',
 					reepay()->get_setting( 'languages_path' )
 				);
 			}
+			wp_localize_script(
+				'jquery',
+				'BILLWERK_SETTINGS',
+				array(
+					'nonce'         => wp_create_nonce( 'wp_rest' ),
+					'metaFieldKeys' => MetaField::BILLWERK_FIELD_KEYS,
+					'urlViteAssets' => $debug ? ViteAssetsLoader::HMR_HOST . '/' : reepay()->get_setting( 'vite_url' ),
+				)
+			);
 		}
-		wp_localize_script(
-			'jquery',
-			'BILLWERK_SETTINGS',
-			array(
-				'nonce'         => wp_create_nonce( 'wp_rest' ),
-				'metaFieldKeys' => MetaField::BILLWERK_FIELD_KEYS,
-				'urlViteAssets' => $debug ? ViteAssetsLoader::HMR_HOST . '/' : reepay()->get_setting( 'vite_url' ),
-			)
-		);
+
+		if ( $is_debug_page ) {
+			$debug_page_entry = array(
+				array(
+					'nested_path' => 'debug-page/',
+					'file'        => 'src/admin/debug-page/main.tsx',
+				),
+			);
+			if ( $debug ) {
+				ViteAssetsLoader::dev( $debug_page_entry );
+			} else {
+				ViteAssetsLoader::production(
+					$debug_page_entry,
+					reepay()->get_setting( 'vite_path' ),
+					reepay()->get_setting( 'vite_url' ),
+					reepay()->get_setting( 'plugin_version' )
+				);
+				wp_set_script_translations(
+					'src/admin/debug-page/main.tsx',
+					'reepay-checkout-gateway',
+					reepay()->get_setting( 'languages_path' )
+				);
+			}
+			wp_localize_script(
+				'jquery',
+				'BILLWERK_SETTINGS',
+				array(
+					'nonce'         => wp_create_nonce( 'wp_rest' ),
+					'metaFieldKeys' => MetaField::BILLWERK_FIELD_KEYS,
+					'urlViteAssets' => $debug ? ViteAssetsLoader::HMR_HOST . '/' : reepay()->get_setting( 'vite_url' ),
+				)
+			);
+		}
 	}
 }

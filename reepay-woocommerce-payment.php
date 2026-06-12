@@ -4,11 +4,11 @@
  * Description: Get a plug-n-play payment solution for WooCommerce, that is easy to use, highly secure and is built to maximize the potential of your e-commerce.
  * Author: Frisbii
  * Author URI: https://frisbii.com
- * Version: 1.8.13
+ * Version: 1.8.13.1
  * Text Domain: reepay-checkout-gateway
  * Domain Path: /languages
  * WC requires at least: 3.0.0
- * WC tested up to: 9.8.1
+ * WC tested up to: 10.8.1
  *
  * @package Reepay\Checkout
  */

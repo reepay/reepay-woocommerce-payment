@@ -14,12 +14,21 @@ namespace Reepay\Checkout\Actions;
  */
 class Admin {
 	/**
+	 * User meta key storing whether the current admin dismissed the HPOS notice.
+	 *
+	 * @var string
+	 */
+	const HPOS_NOTICE_DISMISSED_META = 'reepay_hpos_notice_dismissed';
+
+	/**
 	 * Admin constructor.
 	 */
 	public function __construct() {
 		add_action( 'admin_notices', array( $this, 'admin_notice_api_action' ) );
 		add_action( 'admin_notices', array( $this, 'billwerk_pay_hpos_check' ) );
 		add_action( 'admin_notices', array( $this, 'debug_plugin_status' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_hpos_notice_assets' ) );
+		add_action( 'wp_ajax_reepay_dismiss_hpos_notice', array( $this, 'dismiss_hpos_notice' ) );
 	}
 
 	/**
@@ -76,11 +85,59 @@ class Admin {
 
 		// Check if HPOS is enabled.
 		$hpos_enabled = 'yes' === get_option( 'woocommerce_custom_orders_table_enabled', 'no' );
-		if ( ! $hpos_enabled ) {
-			echo '<div class="notice notice-error"><p>' .
-				__( 'Frisbii works best with High Performance Order Storage. You can activate it in the WooCommerce settings under the "Advanced" tab, "Features" sub-tab.', 'reepay-checkout-gateway' ) .
-				'</p></div>';
+		if ( $hpos_enabled ) {
+			return;
 		}
+
+		// Respect a previous dismissal by this admin.
+		if ( 'yes' === get_user_meta( get_current_user_id(), self::HPOS_NOTICE_DISMISSED_META, true ) ) {
+			return;
+		}
+
+		printf(
+			'<div class="notice notice-error is-dismissible" id="reepay-hpos-notice" data-nonce="%s"><p>%s</p></div>',
+			esc_attr( wp_create_nonce( 'reepay_dismiss_hpos_notice' ) ),
+			esc_html__( 'Frisbii works best with High Performance Order Storage. You can activate it in the WooCommerce settings under the "Advanced" tab, "Features" sub-tab.', 'reepay-checkout-gateway' )
+		);
+	}
+
+	/**
+	 * Enqueue the inline script that persists dismissal of the HPOS notice.
+	 *
+	 * @param string $hook current admin page hook.
+	 */
+	public function enqueue_hpos_notice_assets( string $hook ) {
+		if ( 'woocommerce_page_wc-settings' !== $hook ) {
+			return;
+		}
+
+		wp_enqueue_script( 'jquery' );
+		$script = <<<'JS'
+			jQuery( function ( $ ) {
+				$( document ).on( 'click', '#reepay-hpos-notice .notice-dismiss', function () {
+					$.post( ajaxurl, {
+						action: 'reepay_dismiss_hpos_notice',
+						nonce: $( '#reepay-hpos-notice' ).data( 'nonce' )
+					} );
+				} );
+			} );
+			JS;
+		wp_add_inline_script( 'jquery-core', $script );
+	}
+
+	/**
+	 * AJAX handler: persist the HPOS notice dismissal for the current admin.
+	 */
+	public function dismiss_hpos_notice() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( null, 403 );
+		}
+
+		check_ajax_referer( 'reepay_dismiss_hpos_notice', 'nonce' );
+
+		update_user_meta( get_current_user_id(), self::HPOS_NOTICE_DISMISSED_META, 'yes' );
+
+		wp_send_json_success();
 	}
 
 	/**
