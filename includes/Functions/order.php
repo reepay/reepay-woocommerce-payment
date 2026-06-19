@@ -159,7 +159,7 @@ if ( ! function_exists( 'rp_get_order_by_session' ) ) {
 	 *
 	 * @return false|WC_Order
 	 */
-	function rp_get_order_by_session( string $session_id = null, string $handle = null ) {
+	function rp_get_order_by_session( ?string $session_id = null, ?string $handle = null ) {
 		if ( ! is_null( $session_id ) ) {
 			if ( rp_hpos_enabled() ) {
 				$orders = wc_get_orders(
