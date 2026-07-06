@@ -483,6 +483,11 @@ class OrderStatuses {
 			case 'refunded':
 				break;
 			case self::$status_sync_enabled ? self::$status_settled : 'processing':
+				// BWPM-249: respect the global "Disable auto-settle" setting, mirroring
+				if ( 'yes' === reepay()->get_setting( 'disable_auto_settle' ) ) {
+					break;
+				}
+
 				// skip the processing when instant settle physical products and status settle is processing.
 				$settle_types = reepay()->get_setting( 'settle' ) ?: array();
 

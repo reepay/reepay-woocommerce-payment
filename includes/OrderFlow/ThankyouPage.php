@@ -46,6 +46,121 @@ class ThankyouPage {
 	}
 
 	/**
+	 * Order number shown in the order details table title while customization is active.
+	 *
+	 * @var string
+	 */
+	private static string $details_table_order_number = '';
+
+	/**
+	 * Customize WooCommerce order details table output for mixed orders:
+	 * append the order number to the "Order details" title and suppress the
+	 * per-table customer details (billing/shipping addresses) block.
+	 *
+	 * Must be paired with end_details_table_customization().
+	 *
+	 * @param string $order_number Order number to show in the table title.
+	 *
+	 * @return void
+	 */
+	public static function start_details_table_customization( string $order_number ) {
+		self::$details_table_order_number = $order_number;
+
+		add_filter( 'gettext', array( __CLASS__, 'add_order_number_to_details_title' ), 10, 3 );
+		add_filter( 'wc_get_template', array( __CLASS__, 'suppress_order_details_customer_template' ), 10, 2 );
+		// Priority 20: must run after WC_Reepay_Subscription_Plan_Simple::rework_total() (10).
+		add_filter( 'woocommerce_get_order_item_totals', array( __CLASS__, 'set_details_table_totals' ), 20, 3 );
+	}
+
+	/**
+	 * Remove the filters added by start_details_table_customization().
+	 *
+	 * @return void
+	 */
+	public static function end_details_table_customization() {
+		self::$details_table_order_number = '';
+
+		remove_filter( 'gettext', array( __CLASS__, 'add_order_number_to_details_title' ) );
+		remove_filter( 'wc_get_template', array( __CLASS__, 'suppress_order_details_customer_template' ) );
+		remove_filter( 'woocommerce_get_order_item_totals', array( __CLASS__, 'set_details_table_totals' ), 20 );
+	}
+
+	/**
+	 * Append the order number to WooCommerce's "Order details" title so the
+	 * customer can tell which order each details table belongs to.
+	 *
+	 * @param string $translation Translated text.
+	 * @param string $text        Original text.
+	 * @param string $domain      Text domain.
+	 *
+	 * @return string
+	 */
+	public static function add_order_number_to_details_title( string $translation, string $text, string $domain ): string {
+		if ( 'Order details' === $text && 'woocommerce' === $domain && '' !== self::$details_table_order_number ) {
+			$translation .= ' – #' . self::$details_table_order_number;
+		}
+
+		return $translation;
+	}
+
+	/**
+	 * Replace the customer details template with an empty one so addresses are
+	 * not repeated under every order details table on mixed orders.
+	 *
+	 * Some plugins send variables with the wrong types to this filter, so the types have been removed to avoid errors.
+	 *
+	 * @param string $located       Located template path.
+	 * @param string $template_name Template name.
+	 *
+	 * @return string
+	 */
+	public static function suppress_order_details_customer_template( $located, $template_name ): string {
+		if ( 'order/order-details-customer.php' === $template_name ) {
+			$located = reepay()->get_setting( 'templates_path' ) . 'checkout/empty.php';
+		}
+
+		return $located;
+	}
+
+	/**
+	 * Show each order's own total in its details table on mixed orders.
+	 *
+	 * Subscription orders are stored with a zero WooCommerce total (the real
+	 * amount lives in the _real_total meta because the money is charged via
+	 * Billwerk invoices), and WC_Reepay_Subscription_Plan_Simple::rework_total()
+	 * overwrites the main order's Subtotal/Total rows with a sum of those raw
+	 * zeroed totals, producing "0,00". Now that every order renders its own
+	 * details table, each table shows the per-order effective total instead.
+	 *
+	 * @param array    $total_rows  Order total rows.
+	 * @param WC_Order $order       Order object.
+	 * @param string   $tax_display Tax display mode.
+	 *
+	 * @return array
+	 */
+	public static function set_details_table_totals( $total_rows, $order, $tax_display ): array {
+		$effective_total = (float) $order->get_total();
+
+		if ( 0.0 === $effective_total ) {
+			$effective_total = (float) $order->get_meta( '_real_total' );
+		}
+
+		if ( $effective_total > 0 ) {
+			$price = wc_price( $effective_total, array( 'currency' => $order->get_currency() ) );
+
+			if ( isset( $total_rows['cart_subtotal'] ) ) {
+				$total_rows['cart_subtotal']['value'] = $price;
+			}
+
+			if ( isset( $total_rows['order_total'] ) ) {
+				$total_rows['order_total']['value'] = $price;
+			}
+		}
+
+		return $total_rows;
+	}
+
+	/**
 	 * Override "checkout/thankyou.php" template.
 	 *
 	 * Some plugins send variables with the wrong types to this filter, so the types have been removed to avoid errors.

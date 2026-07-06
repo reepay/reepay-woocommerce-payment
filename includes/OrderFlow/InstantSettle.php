@@ -104,7 +104,19 @@ class InstantSettle {
 				// the merchant has not opted into instant settlement.
 				$settle_types = reepay()->get_setting( 'settle' ) ?: array();
 
-				if ( ! empty( $settle_types ) && empty( $order->get_meta( '_is_instant_settled' ) ) && self::is_order_virtual_only( $order ) ) {
+				// BWPM-249: Only force payment_complete() when EVERY item in the order
+				$all_items_settleable = ! empty( $settle_types ) && self::is_order_virtual_only( $order );
+
+				if ( $all_items_settleable ) {
+					foreach ( $order->get_items() as $order_item ) {
+						if ( ! self::can_product_be_settled_instantly( $order_item->get_product() ) ) {
+							$all_items_settleable = false;
+							break;
+						}
+					}
+				}
+
+				if ( $all_items_settleable && empty( $order->get_meta( '_is_instant_settled' ) ) ) {
 					// Allow payment_complete() to run on "processing" orders since
 					// the webhook handler may have already set the authorized status.
 					$allow_processing = function ( $statuses ) {
