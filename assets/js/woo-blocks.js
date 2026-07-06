@@ -17,8 +17,51 @@ if (window.wc
     const {useSelect, useDispatch} = wp.data;
     const {__} = wp.i18n;
     const {getSetting} = wc.wcSettings;
-    const {PAYMENT_STORE_KEY} = wc.wcBlocksData;
+    const {PAYMENT_STORE_KEY, CHECKOUT_STORE_KEY} = wc.wcBlocksData;
     const {decodeEntities} = wp.htmlEntities;
+
+    if (!window.__reepaySubscriberInit && CHECKOUT_STORE_KEY && PAYMENT_STORE_KEY) {
+        window.__reepaySubscriberInit = true;
+        let wasAfterProcessing = false;
+
+        wp.data.subscribe(() => {
+            const checkoutStore = wp.data.select(CHECKOUT_STORE_KEY);
+            const paymentStore  = wp.data.select(PAYMENT_STORE_KEY);
+            if (!checkoutStore || !paymentStore) return;
+
+            const isAfterProcessing = checkoutStore.isAfterProcessing();
+            const activeMethod      = paymentStore.getActivePaymentMethod();
+
+            if (!isAfterProcessing || wasAfterProcessing) {
+                wasAfterProcessing = isAfterProcessing;
+                return;
+            }
+            wasAfterProcessing = true;
+
+            if (typeof activeMethod !== 'string' || !activeMethod.startsWith('reepay_')) return;
+
+            const activeSavedToken = paymentStore.getActiveSavedToken
+                ? paymentStore.getActiveSavedToken()
+                : null;
+            if (!activeSavedToken) return;
+
+            setTimeout(() => {
+                const paymentResult = paymentStore.getPaymentResult ? paymentStore.getPaymentResult() : null;
+                if (!paymentResult) return;
+
+                const details = {};
+                if (Array.isArray(paymentResult.paymentDetails)) {
+                    paymentResult.paymentDetails.forEach(d => { details[d.key] = d.value; });
+                } else if (paymentResult.paymentDetails && typeof paymentResult.paymentDetails === 'object') {
+                    Object.assign(details, paymentResult.paymentDetails);
+                }
+
+                if (details.reepay_id && details.accept_url && typeof wc_reepay !== 'undefined') {
+                    wc_reepay.buildModalCheckout(details.reepay_id, details.accept_url);
+                }
+            }, 0);
+        });
+    }
 
     const settings = getSetting(PAYMENT_METHOD_NAME + '_data', {});
 

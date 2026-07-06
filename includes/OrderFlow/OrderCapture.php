@@ -194,6 +194,60 @@ class OrderCapture {
 		);
 
 		if ( OrderStatuses::$status_settled === $this_status_transition_to && 'no' === reepay()->get_setting( 'disable_auto_settle' ) && ( '1' === $value || false === $value ) ) {
+			// BWPM-249: Subscription products require 'recurring' in settle_types to auto-settle.
+			if ( function_exists( 'wcs_is_subscription_product' ) ) {
+				$settle_types = reepay()->get_setting( 'settle' ) ?: array();
+				if ( ! in_array( InstantSettle::SETTLE_RECURRING, $settle_types, true ) ) {
+					foreach ( $order->get_items() as $item ) {
+						$product = $item->get_product();
+						if ( $product && wcs_is_subscription_product( $product ) ) {
+							$this->log(
+								array(
+									__METHOD__,
+									__LINE__,
+									'order' => $order_id,
+									'msg'   => 'Skipping auto-settle: order has subscription product(s) but recurring is not in settle_types.',
+								)
+							);
+							return;
+						}
+					}
+				}
+			}
+			// BWPM-249: When status_authorized equals status_settled, the authorization
+			if ( false === $value && OrderStatuses::$status_settled === OrderStatuses::$status_authorized ) { // phpcs:ignore WordPress.PHP.YodaConditions.NotYoda -- both sides are mutable class properties; no valid Yoda order exists
+				$this->log(
+					array(
+						__METHOD__,
+						__LINE__,
+						'order' => $order_id,
+						'msg'   => 'Skipping auto-settle: status_authorized equals status_settled — authorization event, not a settle intent.',
+					)
+				);
+				return;
+			}
+
+			// BWPM-249: When auto-triggered, skip multi_settle() if any item does not qualify
+			if ( false === $value ) {
+				$settle_types = reepay()->get_setting( 'settle' ) ?: array();
+				if ( ! empty( $settle_types ) ) {
+					foreach ( $order->get_items() as $item ) {
+						$product = $item->get_product();
+						if ( $product && ! InstantSettle::can_product_be_settled_instantly( $product ) ) {
+							$this->log(
+								array(
+									__METHOD__,
+									__LINE__,
+									'order' => $order_id,
+									'msg'   => 'Skipping auto-settle: order has item(s) not qualifying under settle_types. Deferring to InstantSettle.',
+								)
+							);
+							return;
+						}
+					}
+				}
+			}
+
 			$this->log(
 				array(
 					__METHOD__,

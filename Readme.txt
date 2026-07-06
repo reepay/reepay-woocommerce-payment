@@ -18,6 +18,12 @@ The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.8.14
+- [Fix] - Instant settle of virtual products with other product types enabled for instant settle.
+- [Fix] - VAT exempt add-ons won't show with VAT added on renewal orders in backend.
+- [Fix] - Corrections for order-received page.
+- [Fix] - Blocks checkout payment for subscription.
+
 v 1.8.13.1
 - [Fix] - Updates WooCommerce supported version.
 - [Fix] - The release of v1.8.13 on WordPress Plugin Directory had 2 old asset filenames.
