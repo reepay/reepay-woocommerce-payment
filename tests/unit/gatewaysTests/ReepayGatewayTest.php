@@ -739,17 +739,21 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 
 		self::$gateway->id = 'reepay_checkout';
 		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
-		$this->order_generator->add_product( 'simple' );
+		// Explicit price ensures order total > 0 so the subscription-only path is skipped.
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
 		$this->order_generator->order()->save();
 
 		$order_id = $this->order_generator->order()->get_id();
 
-		$this->api_mock->method( 'request' )->willReturn(
-			array(
-				'id'  => 'session_xyz',
-				'url' => 'https://checkout.reepay.com/pay/session_xyz',
-			)
+		$session_response = array(
+			'id'  => 'session_xyz',
+			'url' => 'https://checkout.reepay.com/pay/session_xyz',
 		);
+
+		// Mock both the session_charge (request) and the subscription recurring path.
+		$this->api_mock->method( 'request' )->willReturn( $session_response );
+		$this->api_mock->method( 'recurring' )->willReturn( $session_response );
 		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-' . $user_id );
 
 		$result = self::$gateway->process_payment( $order_id );

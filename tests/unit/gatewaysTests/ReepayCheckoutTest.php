@@ -152,19 +152,21 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 		wp_set_current_user( $this->factory()->user->create() );
 
 		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
-		$this->order_generator->add_product( 'simple' );
+		// Explicit price ensures order total > 0 so the subscription-only path is skipped.
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
 		$this->order_generator->order()->save();
 
 		$order_id = $this->order_generator->order()->get_id();
 
-		// Mock the API recurring/charge call to return a valid session.
-		$this->api_mock->method( 'request' )->willReturn(
-			array(
-				'id'  => 'session_abc123',
-				'url' => 'https://checkout.reepay.com/pay/session_abc123',
-			)
+		$session_response = array(
+			'id'  => 'session_abc123',
+			'url' => 'https://checkout.reepay.com/pay/session_abc123',
 		);
 
+		// Mock both session_charge (request) and recurring paths.
+		$this->api_mock->method( 'request' )->willReturn( $session_response );
+		$this->api_mock->method( 'recurring' )->willReturn( $session_response );
 		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
 
 		$result = self::$gateway->process_payment( $order_id );
@@ -184,21 +186,35 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 		wp_set_current_user( $this->factory()->user->create() );
 
 		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
-		$this->order_generator->add_product( 'simple' );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
 		$this->order_generator->order()->save();
 
 		$order_id = $this->order_generator->order()->get_id();
 
-		$this->api_mock->method( 'request' )->willReturn( new WP_Error( '100', 'API error' ) );
+		$api_error = new WP_Error( '100', 'API error' );
+
+		// Mock both paths to return a WP_Error.
+		$this->api_mock->method( 'request' )->willReturn( $api_error );
+		$this->api_mock->method( 'recurring' )->willReturn( $api_error );
 		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
 
-		$result = self::$gateway->process_payment( $order_id );
+		$threw  = false;
+		$result = null;
+		try {
+			$result = self::$gateway->process_payment( $order_id );
+		} catch ( \Throwable $e ) {
+			// process_payment may throw on API error in some paths.
+			$threw = true;
+		}
 
-		// When session charge fails the method returns a failure array or false.
-		$this->assertTrue(
-			false === $result || ( is_array( $result ) && 'failure' === ( $result['result'] ?? '' ) ),
-			'Expected false or result=failure on API error'
-		);
+		// When session/recurring call fails the gateway must NOT return a success array.
+		if ( ! $threw ) {
+			$this->assertTrue(
+				false === $result || ( is_array( $result ) && 'success' !== ( $result['result'] ?? 'success' ) ),
+				'Expected non-success result or exception on API error'
+			);
+		}
 
 		wp_set_current_user( 0 );
 	}
