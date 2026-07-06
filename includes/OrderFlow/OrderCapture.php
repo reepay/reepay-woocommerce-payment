@@ -214,7 +214,7 @@ class OrderCapture {
 					}
 				}
 			}
-			// BWPM-249: When status_authorized equals status_settled, the authorization
+			// BWPM-249: When status_authorized equals status_settled, the authorization.
 			if ( false === $value && OrderStatuses::$status_settled === OrderStatuses::$status_authorized ) { // phpcs:ignore WordPress.PHP.YodaConditions.NotYoda -- both sides are mutable class properties; no valid Yoda order exists
 				$this->log(
 					array(
@@ -227,7 +227,7 @@ class OrderCapture {
 				return;
 			}
 
-			// BWPM-249: When auto-triggered, skip multi_settle() if any item does not qualify
+			// BWPM-249: When auto-triggered, skip multi_settle() if any item does not qualify.
 			if ( false === $value ) {
 				$settle_types = reepay()->get_setting( 'settle' ) ?: array();
 				if ( ! empty( $settle_types ) ) {

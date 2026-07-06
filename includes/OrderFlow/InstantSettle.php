@@ -104,7 +104,7 @@ class InstantSettle {
 				// the merchant has not opted into instant settlement.
 				$settle_types = reepay()->get_setting( 'settle' ) ?: array();
 
-				// BWPM-249: Only force payment_complete() when EVERY item in the order
+				// BWPM-249: Only force payment_complete() when EVERY item in the order.
 				$all_items_settleable = ! empty( $settle_types ) && self::is_order_virtual_only( $order );
 
 				if ( $all_items_settleable ) {
