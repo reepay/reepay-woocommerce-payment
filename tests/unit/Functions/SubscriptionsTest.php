@@ -174,4 +174,36 @@ class SubscriptionsTest extends Reepay_UnitTestCase {
 			$this->assertFalse( wcr_cart_only_reepay_subscriptions(), 'rp_sub, woo_sub' );
 		}
 	}
+
+	// -----------------------------------------------------------------------
+	// rp_get_order_by_subscription_handle()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see rp_get_order_by_subscription_handle returns false when WC_Reepay_Renewals
+	 * is not available or no matching subscription order exists.
+	 */
+	public function test_rp_get_order_by_subscription_handle_not_found() {
+		if ( ! PLUGINS_STATE::rp_subs_activated() ) {
+			$this->markTestSkipped( 'reepay-subscriptions-for-woocommerce not activated.' );
+		}
+
+		// A random handle that has no matching subscription order.
+		$result = rp_get_order_by_subscription_handle( 'sub-handle-nonexistent-xyz' );
+
+		$this->assertFalse( $result );
+	}
+
+	/**
+	 * Test @see rp_get_order_by_subscription_handle returns false when rp_subs not loaded.
+	 */
+	public function test_rp_get_order_by_subscription_handle_no_plugin_returns_false() {
+		if ( PLUGINS_STATE::rp_subs_activated() ) {
+			$this->markTestSkipped( 'rp_subs is active — WC_Reepay_Renewals exists, cannot test absence path.' );
+		}
+
+		$result = rp_get_order_by_subscription_handle( 'sub-any' );
+
+		$this->assertFalse( $result );
+	}
 }

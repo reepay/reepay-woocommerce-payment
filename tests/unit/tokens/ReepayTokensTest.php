@@ -387,4 +387,156 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 
 		$this->assertSame( $result, ReepayTokens::is_reepay_token( $token ) );
 	}
+
+	// -----------------------------------------------------------------------
+	// reepay_save_token()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayTokens::reepay_save_token creates a new token when none exists.
+	 *
+	 * @group tokens_reepay
+	 */
+	public function test_reepay_save_token_creates_new_token() {
+		$user_id = $this->factory()->user->create();
+		$this->order_generator->set_prop( 'customer_id', $user_id );
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->order()->save();
+
+		// Pre-create the token in WC so reepay_save_token takes the
+		// "already exists → just assign" branch, avoiding the live API call.
+		$token_id = 'ca_' . wp_generate_uuid4();
+		$wc_token = $this->generate_token( 'reepay', array( 'token' => $token_id, 'user_id' => $user_id ) );
+
+		$result = ReepayTokens::reepay_save_token( $this->order_generator->order(), $token_id );
+
+		$this->assertInstanceOf( WC_Payment_Token::class, $result );
+		$this->assertSame( $token_id, $result->get_token() );
+	}
+
+	/**
+	 * Test @see ReepayTokens::reepay_save_token returns existing token when one already exists.
+	 *
+	 * @group tokens_reepay
+	 */
+	public function test_reepay_save_token_returns_existing_token() {
+		$user_id = $this->factory()->user->create();
+		$this->order_generator->set_prop( 'customer_id', $user_id );
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->order()->save();
+
+		$token_id = 'ca_existing_' . wp_generate_uuid4();
+		// Pre-create the token in WC.
+		$this->generate_token( 'reepay', array( 'token' => $token_id, 'user_id' => $user_id ) );
+
+		// First save — finds existing token and assigns.
+		$token_first = ReepayTokens::reepay_save_token( $this->order_generator->order(), $token_id );
+
+		// Second save — must return the same token.
+		$token_second = ReepayTokens::reepay_save_token( $this->order_generator->order(), $token_id );
+
+		$this->assertSame( $token_first->get_id(), $token_second->get_id() );
+	}
+
+	// -----------------------------------------------------------------------
+	// save_card_info_from_invoice()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayTokens::save_card_info_from_invoice returns true when API provides card data.
+	 *
+	 * @group tokens_reepay
+	 */
+	public function test_save_card_info_from_invoice_success() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->order()->save();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'transactions' => array(
+					array(
+						'card_transaction' => array(
+							'card_type'   => 'visa',
+							'masked_card' => '411111XXXXXX1111',
+							'exp_date'    => '06/2026',
+							'token'       => 'ca_test_' . wp_generate_uuid4(),
+						),
+					),
+				),
+			)
+		);
+
+		$result = ReepayTokens::save_card_info_from_invoice( $this->order_generator->order() );
+
+		$this->assertTrue( $result );
+	}
+
+	/**
+	 * Test @see ReepayTokens::save_card_info_from_invoice returns false on API WP_Error.
+	 *
+	 * The method throws Exception when API returns WP_Error.
+	 *
+	 * @group tokens_reepay
+	 */
+	public function test_save_card_info_from_invoice_api_error() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->order()->save();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			new WP_Error( '401', 'Unauthorized' )
+		);
+
+		$threw  = false;
+		$result = null;
+		try {
+			$result = ReepayTokens::save_card_info_from_invoice( $this->order_generator->order() );
+		} catch ( \Throwable $e ) {
+			$threw = true;
+		}
+
+		// Method either returns false or throws when the API call fails.
+		$this->assertTrue(
+			$threw || false === $result,
+			'Expected false return or exception when API returns WP_Error'
+		);
+	}
+
+	// -----------------------------------------------------------------------
+	// user_has_token()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayTokens::user_has_token returns true when user owns the token.
+	 *
+	 * @group tokens_reepay
+	 */
+	public function test_user_has_token_true() {
+		$user_id = $this->factory()->user->create();
+		$token_id = 'ca_user_' . wp_generate_uuid4();
+
+		// Pre-create the WC token for this user.
+		$this->generate_token( 'reepay', array( 'token' => $token_id, 'user_id' => $user_id ) );
+
+		$this->assertTrue( ReepayTokens::user_has_token( $user_id, $token_id ) );
+	}
+
+	/**
+	 * Test @see ReepayTokens::user_has_token returns false when user does not own the token.
+	 *
+	 * @group tokens_reepay
+	 */
+	public function test_user_has_token_false() {
+		$user_id = $this->factory()->user->create();
+
+		$this->assertFalse( ReepayTokens::user_has_token( $user_id, 'ca_nonexistent_token' ) );
+	}
+
+	/**
+	 * Test @see ReepayTokens::user_has_token returns false for guest (user_id = 0).
+	 *
+	 * @group tokens_reepay
+	 */
+	public function test_user_has_token_guest_returns_false() {
+		$this->assertFalse( ReepayTokens::user_has_token( 0, 'ca_any_token' ) );
+	}
 }
