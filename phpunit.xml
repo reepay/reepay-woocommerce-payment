@@ -28,6 +28,12 @@
         <testsuite name="Tokens tested">
             <directory suffix="Test.php">./tests/unit/tokens</directory>
         </testsuite>
+        <testsuite name="Utils tested">
+            <directory suffix="Test.php">./tests/unit/utils</directory>
+        </testsuite>
+        <testsuite name="Analytics tested">
+            <directory suffix="Test.php">./tests/unit/analytics</directory>
+        </testsuite>
 	</testsuites>
     <filter>
         <whitelist>
