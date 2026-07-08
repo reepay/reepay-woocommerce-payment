@@ -165,9 +165,11 @@ class OrderTest extends Reepay_UnitTestCase {
 	 * Test @see rp_get_not_subs_order_by_handle returns order when handle matches a non-subscription order.
 	 */
 	public function test_rp_get_not_subs_order_by_handle_found() {
-		// rp_get_not_subs_order_by_handle uses meta_query which triggers a wc_doing_it_wrong
-		// notice in WooCommerce 9.2+ even outside HPOS. Declare it expected.
-		$this->setExpectedIncorrectUsage( 'WC_Order_Data_Store_CPT::query' );
+		// In non-HPOS mode (WC 9.2+), meta_query triggers a _doing_it_wrong notice on WC_Order_Data_Store_CPT::query.
+		// In HPOS mode, the CPT store is not used so the notice never fires — do not declare it expected.
+		if ( ! rp_hpos_enabled() ) {
+			$this->setExpectedIncorrectUsage( 'WC_Order_Data_Store_CPT::query' );
+		}
 
 		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
 		$this->order_generator->order()->save();
@@ -186,7 +188,9 @@ class OrderTest extends Reepay_UnitTestCase {
 	 * Test @see rp_get_not_subs_order_by_handle returns false for unknown handle.
 	 */
 	public function test_rp_get_not_subs_order_by_handle_not_found() {
-		$this->setExpectedIncorrectUsage( 'WC_Order_Data_Store_CPT::query' );
+		if ( ! rp_hpos_enabled() ) {
+			$this->setExpectedIncorrectUsage( 'WC_Order_Data_Store_CPT::query' );
+		}
 
 		$result = rp_get_not_subs_order_by_handle( 'order-handle-that-does-not-exist-xyz' );
 
@@ -197,11 +201,9 @@ class OrderTest extends Reepay_UnitTestCase {
 	 * Test @see rp_get_not_subs_order_by_handle skips orders flagged as subscriptions.
 	 */
 	public function test_rp_get_not_subs_order_by_handle_skips_subscription() {
-		// The function uses meta_query with NOT EXISTS to exclude subscription orders.
-		// In WooCommerce 9.2+, meta_query triggers a wc_doing_it_wrong notice and
-		// the NOT EXISTS filter may not be honoured by the current datastore.
-		// Declare the expected notice and verify the function does not throw.
-		$this->setExpectedIncorrectUsage( 'WC_Order_Data_Store_CPT::query' );
+		if ( ! rp_hpos_enabled() ) {
+			$this->setExpectedIncorrectUsage( 'WC_Order_Data_Store_CPT::query' );
+		}
 
 		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
 		$this->order_generator->order()->save();
