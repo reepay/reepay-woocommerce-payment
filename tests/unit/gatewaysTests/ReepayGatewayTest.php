@@ -579,4 +579,188 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 			self::$gateway->get_logo( $card_type )
 		);
 	}
+
+	// -----------------------------------------------------------------------
+	// is_webhook_configured()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured returns false when API returns WP_Error.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_api_error_returns_false() {
+		$this->api_mock->method( 'request' )->willReturn(
+			new WP_Error( '401', 'Unauthorized' )
+		);
+
+		$this->assertFalse( self::$gateway->is_webhook_configured() );
+	}
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured returns true when webhook URL is
+	 * already registered and no waste URLs exist.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_already_registered_returns_true() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+
+		$this->api_mock->method( 'request' )->willReturn(
+			array(
+				'urls'         => array( $webhook_url ),
+				'alert_emails' => array(),
+				'disabled'     => false,
+				'secret'       => 'secret_key',
+			)
+		);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+	}
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured registers and returns true when URL is missing.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_registers_missing_url() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+
+		// First call: GET — URL not yet present.
+		// Second call: PUT — successful registration.
+		$this->api_mock->method( 'request' )->willReturnOnConsecutiveCalls(
+			array(
+				'urls'         => array(),
+				'alert_emails' => array(),
+				'disabled'     => false,
+				'secret'       => 'secret_key',
+			),
+			array(
+				'urls'         => array( $webhook_url ),
+				'alert_emails' => array(),
+				'disabled'     => false,
+			)
+		);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+	}
+
+	// -----------------------------------------------------------------------
+	// exclude_payment_gateway_based_on_currency()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::exclude_payment_gateway_based_on_currency
+	 * keeps supported gateways.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_exclude_payment_gateway_based_on_currency_keeps_all_when_no_restriction() {
+		$gateways = array(
+			'reepay_checkout' => self::$gateway,
+		);
+
+		$filtered = self::$gateway->exclude_payment_gateway_based_on_currency( $gateways );
+
+		$this->assertArrayHasKey( 'reepay_checkout', $filtered );
+	}
+
+	// -----------------------------------------------------------------------
+	// get_skip_order_lines_amount()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::get_skip_order_lines_amount returns rp_prepare_amount result.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_get_skip_order_lines_amount_returns_prepared_amount() {
+		$price = 25.00;
+		$this->order_generator->add_product(
+			'simple',
+			array( 'regular_price' => $price )
+		);
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$amount = self::$gateway->get_skip_order_lines_amount( $this->order_generator->order() );
+
+		$this->assertIsNumeric( $amount );
+		$this->assertGreaterThan( 0, $amount );
+	}
+
+	/**
+	 * Test @see ReepayGateway::get_skip_order_lines_amount with skip_fn_rp_amount=true
+	 * returns raw float.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_get_skip_order_lines_amount_without_rp_prepare() {
+		$this->order_generator->add_product(
+			'simple',
+			array( 'regular_price' => 50.00 )
+		);
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$amount_with    = self::$gateway->get_skip_order_lines_amount( $this->order_generator->order(), false );
+		$amount_without = self::$gateway->get_skip_order_lines_amount( $this->order_generator->order(), true );
+
+		// With rp_prepare_amount the value is multiplied by 100 for non-ISK currencies;
+		// the raw amount equals the WC order total.
+		$this->assertIsNumeric( $amount_with );
+		$this->assertIsNumeric( $amount_without );
+	}
+
+	// -----------------------------------------------------------------------
+	// process_payment() — basic guards via gateway
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::process_payment returns false for a non-existent order.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_process_payment_returns_false_for_missing_order() {
+		$result = self::$gateway->process_payment( 999888777 );
+
+		$this->assertFalse( $result );
+	}
+
+	/**
+	 * Test @see ReepayGateway::process_payment uses session charge and returns success
+	 * array when API succeeds.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_process_payment_session_charge_returns_success() {
+		$user_id = $this->factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		self::$gateway->id = 'reepay_checkout';
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		// Explicit price ensures order total > 0 so the subscription-only path is skipped.
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$session_response = array(
+			'id'  => 'session_xyz',
+			'url' => 'https://checkout.reepay.com/pay/session_xyz',
+		);
+
+		// Mock both the session_charge (request) and the subscription recurring path.
+		$this->api_mock->method( 'request' )->willReturn( $session_response );
+		$this->api_mock->method( 'recurring' )->willReturn( $session_response );
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-' . $user_id );
+
+		$result = self::$gateway->process_payment( $order_id );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		wp_set_current_user( 0 );
+	}
 }

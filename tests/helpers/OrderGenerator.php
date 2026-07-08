@@ -152,6 +152,7 @@ class OrderGenerator {
 				'status'           => 'pending', // Status should be initially set to pending to match how normal checkout process goes.
 				'billing_period'   => 'Day',
 				'billing_interval' => 1,
+				'date_created'     => gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) ),
 			)
 		);
 

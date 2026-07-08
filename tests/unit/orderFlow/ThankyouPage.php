@@ -53,4 +53,90 @@ class ThankyouPage extends Reepay_UnitTestCase {
 
 		$this->assertTrue( wp_script_is( 'wc-gateway-reepay-thankyou' ) );
 	}
+
+	// -----------------------------------------------------------------------
+	// order_has_prorated_subscription()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ThankyouPage::order_has_prorated_subscription returns true when
+	 * WC_Reepay_Subscription_Plan_Simple is absent (fallback path).
+	 *
+	 * @group orderflow_thankyou
+	 */
+	public function test_order_has_prorated_subscription_fallback_when_no_class() {
+		if ( class_exists( 'WC_Reepay_Subscription_Plan_Simple' ) ) {
+			$this->markTestSkipped( 'WC_Reepay_Subscription_Plan_Simple is loaded — fallback path not active.' );
+		}
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->order()->save();
+
+		$result = \Reepay\Checkout\OrderFlow\ThankyouPage::order_has_prorated_subscription(
+			$this->order_generator->order()
+		);
+
+		$this->assertTrue( $result, 'Should return true when WC_Reepay_Subscription_Plan_Simple is absent' );
+	}
+
+	/**
+	 * Test @see ThankyouPage::order_has_prorated_subscription returns false for a simple
+	 * product with no Reepay subscription schedule meta.
+	 *
+	 * @group orderflow_thankyou
+	 */
+	public function test_order_has_prorated_subscription_false_for_simple_product() {
+		if ( ! class_exists( 'WC_Reepay_Subscription_Plan_Simple' ) ) {
+			$this->markTestSkipped( 'WC_Reepay_Subscription_Plan_Simple not loaded — cannot reach false path.' );
+		}
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple' );
+		$this->order_generator->order()->save();
+
+		// Simple product has no _reepay_subscription_schedule_type meta → returns false.
+		$result = \Reepay\Checkout\OrderFlow\ThankyouPage::order_has_prorated_subscription(
+			$this->order_generator->order()
+		);
+
+		$this->assertFalse( $result, 'Simple product with no Reepay subscription meta should return false' );
+	}
+
+	/**
+	 * Test @see ThankyouPage::order_has_prorated_subscription returns true when product
+	 * has bill_prorated schedule meta.
+	 *
+	 * @group orderflow_thankyou
+	 */
+	public function test_order_has_prorated_subscription_true_with_prorated_meta() {
+		if ( ! class_exists( 'WC_Reepay_Subscription_Plan_Simple' ) ) {
+			$this->markTestSkipped( 'WC_Reepay_Subscription_Plan_Simple not loaded — cannot test meta path.' );
+		}
+
+		// Create a simple product and add subscription schedule meta directly.
+		$product_id = self::$product_generator->create( 'simple' )->get_id();
+		update_post_meta( $product_id, '_reepay_subscription_schedule_type', 'interval' );
+		update_post_meta( $product_id, '_reepay_subscription_interval', array( 'period' => 'bill_prorated' ) );
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple', array(), $product_id );
+		$this->order_generator->order()->save();
+
+		$result = \Reepay\Checkout\OrderFlow\ThankyouPage::order_has_prorated_subscription(
+			$this->order_generator->order()
+		);
+
+		$this->assertTrue( $result );
+	}
+
+	/**
+	 * Test @see ThankyouPage::ajax_order_descriptions — AJAX handler test.
+	 *
+	 * @group orderflow_thankyou
+	 */
+	public function test_ajax_order_descriptions() {
+		// ajax_order_descriptions() calls check_ajax_referer() and wp_send_json_*.
+		// Full testing requires Reepay_Ajax_UnitTestCase infrastructure.
+		$this->markTestIncomplete( 'ajax_order_descriptions() requires AJAX test infrastructure.' );
+	}
 }
