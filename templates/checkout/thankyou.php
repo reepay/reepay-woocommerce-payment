@@ -16,7 +16,7 @@
  * @global WC_Order $order
  */
 
-use WC_Reepay_Renewals as WCRR;
+use Reepay\Checkout\OrderFlow\ThankyouPage;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -107,18 +107,32 @@ $show_customer_details = is_user_logged_in() && $order->get_user_id() === get_cu
 
 		<?php do_action( 'woocommerce_thankyou_' . $order->get_payment_method(), $order->get_id() ); ?>
 		<?php
-		$order_rp_subscription = false;
-		if ( class_exists( WCRR::class ) && ( WCRR::is_order_contain_subscription( $order ) || $another_orders ) ) {
-			$order_rp_subscription = true;
-		}
+		if ( empty( $another_orders ) ) {
+			do_action( 'woocommerce_thankyou', $order->get_id() );
+		} else {
+			ThankyouPage::start_details_table_customization( $order->get_order_number() );
+			do_action( 'woocommerce_thankyou', $order->get_id() );
+			ThankyouPage::end_details_table_customization();
 
-		if ( true === $order_rp_subscription ) {
+			foreach ( $another_orders as $another_order_id ) {
+				if ( $order->get_id() === $another_order_id ) {
+					continue; // Backward compatibility.
+				}
+
+				$another_order = wc_get_order( $another_order_id );
+				if ( empty( $another_order ) ) {
+					continue;
+				}
+
+				ThankyouPage::start_details_table_customization( $another_order->get_order_number() );
+				woocommerce_order_details_table( $another_order_id );
+				ThankyouPage::end_details_table_customization();
+			}
+
 			if ( $show_customer_details ) {
 				wc_get_template( 'order/order-details-customer.php', array( 'order' => $order ) );
 			}
 		}
-
-		do_action( 'woocommerce_thankyou', $order->get_id() );
 		?>
 
 	<?php else : ?>

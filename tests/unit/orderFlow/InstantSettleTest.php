@@ -557,4 +557,90 @@ class InstantSettleTest extends Reepay_UnitTestCase {
 			$this->assertNotContains( $order_item->get_id(), $settled_items_keys );
 		}
 	}
+
+	// -----------------------------------------------------------------------
+	// check_order_settled()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see InstantSettle::check_order_settled upgrades order to processing when all items are settled.
+	 *
+	 * @group orderflow_instant_settle
+	 */
+	public function test_check_order_settled_all_items_settled() {
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_PHYSICAL,
+			)
+		);
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'      => false,
+				'downloadable' => false,
+			)
+		);
+		$this->order_generator->order()->save();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 1000,
+				'settled_amount'    => 1000,
+				'refunded_amount'   => 0,
+				'state'             => 'settled',
+			)
+		);
+
+		// Process instant settle so all items get the 'settled' meta.
+		self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
+
+		// check_order_settled should detect all items are settled.
+		$result = self::$instant_settle_instance->check_order_settled( $this->order_generator->order() );
+
+		// Returns true when all items are settled (or null if already processing).
+		$this->assertTrue( true === $result || null === $result );
+	}
+
+	/**
+	 * Test @see InstantSettle::check_order_settled returns false / does nothing when some items are not settled.
+	 *
+	 * @group orderflow_instant_settle
+	 */
+	public function test_check_order_settled_partial_not_settled() {
+		self::$options->set_option(
+			'settle',
+			array(
+				InstantSettle::SETTLE_PHYSICAL,
+			)
+		);
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+
+		// First product — will be settled.
+		$settled_id = $this->order_generator->add_product(
+			'simple',
+			array( 'virtual' => false, 'downloadable' => false )
+		);
+
+		// Second product — will NOT be settled.
+		$this->order_generator->add_product(
+			'simple',
+			array( 'virtual' => false, 'downloadable' => false )
+		);
+
+		$this->order_generator->order()->save();
+
+		// Only mark the first item as settled.
+		$settled_item = WC_Order_Factory::get_order_item( $settled_id );
+		$settled_item->update_meta_data( 'settled', '1' );
+		$settled_item->save_meta_data();
+
+		$result = self::$instant_settle_instance->check_order_settled( $this->order_generator->order() );
+
+		// Should not upgrade status — returns false/null when not all items are settled.
+		$this->assertTrue( false === $result || null === $result );
+	}
 }

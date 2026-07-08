@@ -617,4 +617,54 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 			var_export( func_get_args(), true )
 		);
 	}
+
+	// -----------------------------------------------------------------------
+	// payment_complete_order_status()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see OrderStatuses::payment_complete_order_status returns configured settled status
+	 * when sync is enabled and order is paid via Reepay.
+	 *
+	 * @group orderflow_statuses
+	 */
+	public function test_payment_complete_order_status_returns_configured_status() {
+		self::$options->set_options(
+			array(
+				'enable_sync'    => 'yes',
+				'status_settled' => 'processing',
+			)
+		);
+		OrderStatuses::init_statuses();
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->order()->save();
+
+		$result = $this->order_statuses->payment_complete_order_status(
+			'on-hold',
+			$this->order_generator->order()->get_id(),
+			$this->order_generator->order()
+		);
+
+		$this->assertSame( OrderStatuses::$status_settled, $result );
+	}
+
+	/**
+	 * Test @see OrderStatuses::payment_complete_order_status returns the passed status unchanged
+	 * for non-Reepay orders.
+	 *
+	 * @group orderflow_statuses
+	 */
+	public function test_payment_complete_order_status_unchanged_for_non_reepay() {
+		$this->order_generator->set_prop( 'payment_method', 'cod' );
+		$this->order_generator->order()->save();
+
+		$result = $this->order_statuses->payment_complete_order_status(
+			'on-hold',
+			$this->order_generator->order()->get_id(),
+			$this->order_generator->order()
+		);
+
+		$this->assertSame( 'on-hold', $result );
+	}
 }

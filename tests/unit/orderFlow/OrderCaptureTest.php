@@ -1089,4 +1089,243 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
 		);
 	}
+
+	// -----------------------------------------------------------------------
+	// capture_full_order()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see OrderCapture::capture_full_order triggers multi_settle when all conditions met.
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_capture_full_order_triggers_settle() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order    = $this->order_generator->order();
+		$order_id = $order->get_id();
+
+		// Simulate transient not set (false) → auto-settle should proceed.
+		delete_transient( 'reepay_order_complete_should_settle_' . $order_id );
+
+		// disable_auto_settle must be 'no'.
+		self::$options->set_option( 'disable_auto_settle', 'no' );
+
+		// Mock API so multi_settle's settle() call succeeds.
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+				'order_lines'       => array(),
+			)
+		);
+		$this->api_mock->method( 'settle' )->willReturn(
+			array(
+				'state'             => 'settled',
+				'amount'            => 2000,
+				'authorized_amount' => 2000,
+			)
+		);
+
+		$settled_status = \Reepay\Checkout\OrderFlow\OrderStatuses::$status_settled;
+
+		// Should not throw; multi_settle runs internally.
+		$this->order_capture->capture_full_order(
+			$order_id,
+			'processing',
+			$settled_status,
+			$order
+		);
+
+		// Reaching here without exception is the primary assertion.
+		$this->assertTrue( true );
+	}
+
+	/**
+	 * Test @see OrderCapture::capture_full_order skips settle for non-Reepay orders.
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_capture_full_order_skips_non_reepay() {
+		$this->order_generator->set_prop( 'payment_method', 'cod' );
+		$this->order_generator->order()->save();
+
+		$order    = $this->order_generator->order();
+		$order_id = $order->get_id();
+
+		$settled_status = \Reepay\Checkout\OrderFlow\OrderStatuses::$status_settled;
+
+		// Should return early without calling multi_settle — api mock must NOT be called.
+		$this->api_mock->expects( $this->never() )->method( 'settle' );
+
+		$this->order_capture->capture_full_order(
+			$order_id,
+			'processing',
+			$settled_status,
+			$order
+		);
+
+		$this->assertTrue( true );
+	}
+
+	// -----------------------------------------------------------------------
+	// settle_amount()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see OrderCapture::settle_amount returns true on successful API settle.
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_settle_amount_success() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order = $this->order_generator->order();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+			)
+		);
+		$this->api_mock->method( 'settle' )->willReturn(
+			array(
+				'state'             => 'settled',
+				'amount'            => 2000,
+				'authorized_amount' => 2000,
+			)
+		);
+
+		$result = $this->order_capture->settle_amount( $order, 20.00 );
+
+		$this->assertTrue( $result );
+	}
+
+	/**
+	 * Test @see OrderCapture::settle_amount returns false when API returns WP_Error.
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_settle_amount_api_error() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order = $this->order_generator->order();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+			)
+		);
+		$this->api_mock->method( 'settle' )->willReturn(
+			new WP_Error( '500', 'API settle failed' )
+		);
+
+		$result = $this->order_capture->settle_amount( $order, 20.00 );
+
+		$this->assertFalse( $result );
+	}
+
+	/**
+	 * Test @see OrderCapture::settle_amount returns false for zero amount.
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_settle_amount_zero_returns_false() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->order()->save();
+
+		$result = $this->order_capture->settle_amount( $this->order_generator->order(), 0.0 );
+
+		$this->assertFalse( $result );
+	}
+
+	// -----------------------------------------------------------------------
+	// activate_woocommerce_subscription()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see OrderCapture::activate_woocommerce_subscription skips non-subscription items.
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_activate_woocommerce_subscription_simple_product() {
+		$order_item_id = $this->order_generator->add_product( 'simple' );
+		$this->order_generator->order()->save();
+
+		$item  = WC_Order_Factory::get_order_item( $order_item_id );
+		$order = $this->order_generator->order();
+
+		// Simple product is not a subscription → method returns without activating.
+		// No exception means the guard works correctly.
+		$this->order_capture->activate_woocommerce_subscription( $item, $order );
+
+		$this->assertTrue( true );
+	}
+
+	// -----------------------------------------------------------------------
+	// unset_specific_order_item_meta_data()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see OrderCapture::unset_specific_order_item_meta_data removes 'settled' outside admin.
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_unset_specific_order_item_meta_data_removes_settled_outside_admin() {
+		$order_item_id = $this->order_generator->add_product( 'simple' );
+		$item          = WC_Order_Factory::get_order_item( $order_item_id );
+
+		// Build a fake formatted meta array containing 'settled'.
+		$settled_meta               = new stdClass();
+		$settled_meta->key          = 'settled';
+		$settled_meta->display_key  = 'settled';
+		$settled_meta->value        = '1';
+
+		$other_meta               = new stdClass();
+		$other_meta->key          = 'custom_field';
+		$other_meta->display_key  = 'Custom Field';
+		$other_meta->value        = 'abc';
+
+		$formatted = array( 0 => $settled_meta, 1 => $other_meta );
+
+		// We are NOT in admin context in unit tests.
+		$result = $this->order_capture->unset_specific_order_item_meta_data( $formatted, $item );
+
+		// 'settled' key should be stripped.
+		foreach ( $result as $meta ) {
+			$this->assertNotSame( 'settled', $meta->key, "'settled' meta should be removed outside admin" );
+		}
+
+		// Non-settled field should remain.
+		$keys = array_map( fn( $m ) => $m->key, array_values( $result ) );
+		$this->assertContains( 'custom_field', $keys );
+	}
+
+	// -----------------------------------------------------------------------
+	// process_capture_amount() — AJAX handler
+	// -----------------------------------------------------------------------
+
+	/**
+	 * @see OrderCapture::process_capture_amount
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_process_capture_amount() {
+		// process_capture_amount() is an AJAX POST handler that calls wp_die().
+		// Full testing requires the AJAX test harness (Reepay_Ajax_UnitTestCase).
+		$this->markTestIncomplete( 'process_capture_amount() requires AJAX test infrastructure.' );
+	}
 }

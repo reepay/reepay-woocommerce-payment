@@ -744,7 +744,12 @@ class ReepayCheckout extends ReepayGateway {
 
 			if ( 'yes' === $this->save_cc ) {
 				// Don't show saved cards if there are age restricted products in the cart.
-				if ( ! $this->has_age_restricted_products_in_cart() ) {
+				// Don't show saved cards for zero-total subscription orders (API Error 604: card-on-file not allowed for session storing credentials).
+				$is_zero_total_subscription = wcs_cart_have_subscription()
+					&& ! empty( WC()->cart )
+					&& abs( WC()->cart->get_total( '' ) ) < 0.01;
+
+				if ( ! $this->has_age_restricted_products_in_cart() && ! $is_zero_total_subscription ) {
 					$this->saved_payment_methods();
 				}
 			}
