@@ -10,6 +10,7 @@ namespace Reepay\Checkout\OrderFlow;
 use Exception;
 use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Tokens\ReepayTokens;
+use WC_Order;
 use WC_Order_Item_Fee;
 use WC_Subscriptions_Manager;
 use WP_Error;
@@ -36,6 +37,54 @@ class Webhook {
 	 */
 	public function __construct() {
 		add_action( 'woocommerce_api_' . strtolower( 'WC_Gateway_Reepay' ), array( $this, 'return_handler' ) );
+	}
+
+	/**
+	 * Fetch the checkout session's event log and persist the age verification
+	 * result, if any, as order meta.
+	 *
+	 * Both a failed API call and a missing EXTERNAL_AGE_VERIFICATION_RESULT
+	 * event are treated the same way: logged, no meta stored, webhook
+	 * processing continues unaffected. If the event appears more than once,
+	 * the last (most recent) occurrence wins.
+	 *
+	 * @param WC_Order $order order to update.
+	 *
+	 * @return void
+	 */
+	private function save_age_verification_result( WC_Order $order ) {
+		$session_id = $order->get_meta( 'reepay_session_id' );
+		if ( empty( $session_id ) ) {
+			return;
+		}
+
+		$events = reepay()->api( $order )->get_session_events( $session_id );
+		if ( is_wp_error( $events ) ) {
+			$this->log(
+				sprintf(
+					'WebHook: Failed to fetch session events for age verification. Order: %d, Session: %s, Error: %s',
+					$order->get_id(),
+					$session_id,
+					$events->get_error_message()
+				)
+			);
+
+			return;
+		}
+
+		$result = null;
+		foreach ( (array) $events as $event ) {
+			if ( isset( $event['name'] ) && 'EXTERNAL_AGE_VERIFICATION_RESULT' === $event['name'] ) {
+				$result = $event['data'] ?? array();
+			}
+		}
+
+		if ( null === $result ) {
+			return;
+		}
+
+		$order->update_meta_data( '_reepay_age_verification_result', $result );
+		$order->save_meta_data();
 	}
 
 	/**
@@ -280,6 +329,8 @@ class Webhook {
 						)
 					);
 				}
+
+				$this->save_age_verification_result( $order );
 
 				self::unlock_order( $order->get_id() );
 

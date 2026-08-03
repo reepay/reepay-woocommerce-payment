@@ -388,6 +388,17 @@ class Api {
 	}
 
 	/**
+	 * Get the checkout session's event log.
+	 *
+	 * @param string $session_id checkout session id.
+	 *
+	 * @return array|WP_Error
+	 */
+	public function get_session_events( string $session_id ) {
+		return $this->request( 'GET', 'https://checkout-api.reepay.com/v1/event/' . $session_id );
+	}
+
+	/**
 	 * Get Invoice data of Order.
 	 *
 	 * @param mixed $order order to get data.

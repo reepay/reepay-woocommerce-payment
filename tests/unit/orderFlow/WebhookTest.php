@@ -176,6 +176,235 @@ class WebhookTest extends Reepay_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
+	// process() — invoice_authorized: age verification result (BWPM-264)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see Webhook::process stores the EXTERNAL_AGE_VERIFICATION_RESULT
+	 * event's data as order meta when the session log contains it.
+	 *
+	 * @group orderflow_webhook
+	 */
+	public function test_process_invoice_authorized_stores_age_verification_result() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->order()->update_meta_data( 'reepay_session_id', 'cs_test_001' );
+		$this->order_generator->order()->save();
+
+		$handle = rp_get_order_handle( $this->order_generator->order() );
+
+		$this->api_mock->method( 'get_invoice_by_handle' )->willReturn(
+			array(
+				'amount'      => 1000,
+				'state'       => 'authorized',
+				'handle'      => $handle,
+				'order_lines' => array(),
+			)
+		);
+
+		$this->api_mock->method( 'get_session_events' )->willReturn(
+			array(
+				array(
+					'name' => 'GET',
+					'type' => 'SUCCESS',
+					'data' => array( 'ip' => '127.0.0.1' ),
+				),
+				array(
+					'name' => 'EXTERNAL_AGE_VERIFICATION_RESULT',
+					'type' => 'SUCCESS',
+					'data' => array(
+						'result'  => '18',
+						'message' => 'Age verification result: 18',
+					),
+				),
+			)
+		);
+
+		$payload = $this->build_payload(
+			'invoice_authorized',
+			array( 'invoice' => $handle )
+		);
+
+		$this->webhook->process( $payload );
+
+		$order  = wc_get_order( $this->order_generator->order()->get_id() );
+		$result = $order->get_meta( '_reepay_age_verification_result' );
+
+		$this->assertSame( '18', $result['result'] ?? null );
+	}
+
+	/**
+	 * Test @see Webhook::process AC3: no matching event in the session log
+	 * results in no meta stored and no exception.
+	 *
+	 * @group orderflow_webhook
+	 */
+	public function test_process_invoice_authorized_age_verification_missing_event() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->order()->update_meta_data( 'reepay_session_id', 'cs_test_002' );
+		$this->order_generator->order()->save();
+
+		$handle = rp_get_order_handle( $this->order_generator->order() );
+
+		$this->api_mock->method( 'get_invoice_by_handle' )->willReturn(
+			array(
+				'amount'      => 1000,
+				'state'       => 'authorized',
+				'handle'      => $handle,
+				'order_lines' => array(),
+			)
+		);
+
+		$this->api_mock->method( 'get_session_events' )->willReturn(
+			array(
+				array(
+					'name' => 'GET',
+					'type' => 'SUCCESS',
+					'data' => array( 'ip' => '127.0.0.1' ),
+				),
+			)
+		);
+
+		$payload = $this->build_payload(
+			'invoice_authorized',
+			array( 'invoice' => $handle )
+		);
+
+		$this->webhook->process( $payload );
+
+		$order = wc_get_order( $this->order_generator->order()->get_id() );
+
+		$this->assertSame( '', $order->get_meta( '_reepay_age_verification_result' ) );
+	}
+
+	/**
+	 * Test @see Webhook::process AC3: a failed session-events API call results
+	 * in no meta stored and no exception, webhook processing still succeeds.
+	 *
+	 * @group orderflow_webhook
+	 */
+	public function test_process_invoice_authorized_age_verification_api_error() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->order()->update_meta_data( 'reepay_session_id', 'cs_test_003' );
+		$this->order_generator->order()->save();
+
+		$handle = rp_get_order_handle( $this->order_generator->order() );
+
+		$this->api_mock->method( 'get_invoice_by_handle' )->willReturn(
+			array(
+				'amount'      => 1000,
+				'state'       => 'authorized',
+				'handle'      => $handle,
+				'order_lines' => array(),
+			)
+		);
+
+		$this->api_mock->method( 'get_session_events' )->willReturn(
+			new WP_Error( 0, 'Frisbii Pay: Request timed out' )
+		);
+
+		$payload = $this->build_payload(
+			'invoice_authorized',
+			array( 'invoice' => $handle )
+		);
+
+		$this->webhook->process( $payload );
+
+		$order = wc_get_order( $this->order_generator->order()->get_id() );
+
+		$this->assertSame( '', $order->get_meta( '_reepay_age_verification_result' ) );
+		$this->assertContains(
+			$order->get_status(),
+			array( OrderStatuses::$status_authorized, 'on-hold' ),
+			'Webhook processing must still succeed even if the age verification lookup fails'
+		);
+	}
+
+	/**
+	 * Test @see Webhook::process AC4: when the session log contains multiple
+	 * EXTERNAL_AGE_VERIFICATION_RESULT events, only the last occurrence is stored.
+	 *
+	 * @group orderflow_webhook
+	 */
+	public function test_process_invoice_authorized_age_verification_multiple_events_uses_last() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->order()->update_meta_data( 'reepay_session_id', 'cs_test_004' );
+		$this->order_generator->order()->save();
+
+		$handle = rp_get_order_handle( $this->order_generator->order() );
+
+		$this->api_mock->method( 'get_invoice_by_handle' )->willReturn(
+			array(
+				'amount'      => 1000,
+				'state'       => 'authorized',
+				'handle'      => $handle,
+				'order_lines' => array(),
+			)
+		);
+
+		$this->api_mock->method( 'get_session_events' )->willReturn(
+			array(
+				array(
+					'name' => 'EXTERNAL_AGE_VERIFICATION_RESULT',
+					'type' => 'SUCCESS',
+					'data' => array( 'result' => 'first-attempt' ),
+				),
+				array(
+					'name' => 'EXTERNAL_AGE_VERIFICATION_RESULT',
+					'type' => 'SUCCESS',
+					'data' => array( 'result' => 'second-attempt' ),
+				),
+			)
+		);
+
+		$payload = $this->build_payload(
+			'invoice_authorized',
+			array( 'invoice' => $handle )
+		);
+
+		$this->webhook->process( $payload );
+
+		$order  = wc_get_order( $this->order_generator->order()->get_id() );
+		$result = $order->get_meta( '_reepay_age_verification_result' );
+
+		$this->assertSame( 'second-attempt', $result['result'] ?? null );
+	}
+
+	/**
+	 * Test @see Webhook::process skips the age-verification lookup entirely
+	 * when the order has no reepay_session_id meta.
+	 *
+	 * @group orderflow_webhook
+	 */
+	public function test_process_invoice_authorized_no_session_id_skips_age_verification_lookup() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->order()->save();
+
+		$handle = rp_get_order_handle( $this->order_generator->order() );
+
+		$this->api_mock->method( 'get_invoice_by_handle' )->willReturn(
+			array(
+				'amount'      => 1000,
+				'state'       => 'authorized',
+				'handle'      => $handle,
+				'order_lines' => array(),
+			)
+		);
+
+		$this->api_mock->expects( $this->never() )->method( 'get_session_events' );
+
+		$payload = $this->build_payload(
+			'invoice_authorized',
+			array( 'invoice' => $handle )
+		);
+
+		$this->webhook->process( $payload );
+
+		$order = wc_get_order( $this->order_generator->order()->get_id() );
+
+		$this->assertSame( '', $order->get_meta( '_reepay_age_verification_result' ) );
+	}
+
+	// -----------------------------------------------------------------------
 	// process() — invoice_settled
 	// -----------------------------------------------------------------------
 

@@ -76,6 +76,8 @@ class MetaField {
 		// product fields - age verification.
 		'_reepay_enable_age_verification',
 		'_reepay_minimum_age',
+		// order fields - age verification.
+		'_reepay_age_verification_result',
 	);
 
 	/**
