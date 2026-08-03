@@ -227,7 +227,7 @@ class WebhookTest extends Reepay_UnitTestCase {
 		$this->webhook->process( $payload );
 
 		$order  = wc_get_order( $this->order_generator->order()->get_id() );
-		$result = $order->get_meta( '_reepay_age_verification_result' );
+		$result = json_decode( $order->get_meta( '_reepay_age_verification_result' ), true );
 
 		$this->assertSame( '18', $result['result'] ?? null );
 	}
@@ -364,7 +364,7 @@ class WebhookTest extends Reepay_UnitTestCase {
 		$this->webhook->process( $payload );
 
 		$order  = wc_get_order( $this->order_generator->order()->get_id() );
-		$result = $order->get_meta( '_reepay_age_verification_result' );
+		$result = json_decode( $order->get_meta( '_reepay_age_verification_result' ), true );
 
 		$this->assertSame( 'second-attempt', $result['result'] ?? null );
 	}

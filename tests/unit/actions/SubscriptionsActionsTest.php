@@ -23,9 +23,11 @@ class SubscriptionsActionsTest extends Reepay_UnitTestCase {
 		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
 		$this->order_generator->order()->update_meta_data(
 			'_reepay_age_verification_result',
-			array(
-				'result'  => '18',
-				'message' => 'Age verification result: 18',
+			wp_json_encode(
+				array(
+					'result'  => '18',
+					'message' => 'Age verification result: 18',
+				)
 			)
 		);
 		$this->order_generator->order()->save();
@@ -43,9 +45,11 @@ class SubscriptionsActionsTest extends Reepay_UnitTestCase {
 		$renewal_order = wc_get_order( $renewal_order->get_id() );
 
 		$this->assertSame(
-			array(
-				'result'  => '18',
-				'message' => 'Age verification result: 18',
+			wp_json_encode(
+				array(
+					'result'  => '18',
+					'message' => 'Age verification result: 18',
+				)
 			),
 			$renewal_order->get_meta( '_reepay_age_verification_result' )
 		);
@@ -81,7 +85,7 @@ class SubscriptionsActionsTest extends Reepay_UnitTestCase {
 	public function test_renewal_order_created_skips_for_non_reepay_payment_method() {
 		$this->order_generator->order()->update_meta_data(
 			'_reepay_age_verification_result',
-			array( 'result' => '18' )
+			wp_json_encode( array( 'result' => '18' ) )
 		);
 		$this->order_generator->order()->save();
 

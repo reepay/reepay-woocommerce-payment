@@ -83,7 +83,7 @@ class Webhook {
 			return;
 		}
 
-		$order->update_meta_data( '_reepay_age_verification_result', $result );
+		$order->update_meta_data( '_reepay_age_verification_result', wp_json_encode( $result ) );
 		$order->save_meta_data();
 	}
 
