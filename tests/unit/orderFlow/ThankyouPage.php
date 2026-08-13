@@ -128,15 +128,4 @@ class ThankyouPage extends Reepay_UnitTestCase {
 
 		$this->assertTrue( $result );
 	}
-
-	/**
-	 * Test @see ThankyouPage::ajax_order_descriptions — AJAX handler test.
-	 *
-	 * @group orderflow_thankyou
-	 */
-	public function test_ajax_order_descriptions() {
-		// ajax_order_descriptions() calls check_ajax_referer() and wp_send_json_*.
-		// Full testing requires Reepay_Ajax_UnitTestCase infrastructure.
-		$this->markTestIncomplete( 'ajax_order_descriptions() requires AJAX test infrastructure.' );
-	}
 }

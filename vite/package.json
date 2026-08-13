@@ -9,7 +9,7 @@
         "dev:debug-page": "vite -c vite.config.debug-page.ts",
         "build:debug-page": "tsc && vite build -c vite.config.debug-page.ts",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
-    },
+    }, 
     "dependencies": {
         "-": "^0.0.1",
         "@babel/runtime": "^7.27.0",
