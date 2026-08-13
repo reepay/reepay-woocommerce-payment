@@ -2,19 +2,23 @@ jQuery(function ($) {
     'use strict'
 
     let attempts = 0;
-    const maxAttempts = 10;
+    let maxAttempts = 10;
+    const extendedMaxAttempts = 65;
     const delayBetweenRequests = 2000;
 
     var status_elm = $('#order-status-checking'),
         success_elm = $('#order-success'),
-        failed_elm = $('#order-failed')
+        failed_elm = $('#order-failed'),
+        order_actions_elm = $('tr:has(.order-actions-button)')
 
     function checkOrderStatus() {
         if (attempts >= maxAttempts) {
             $('.woocommerce-order').unblock();
+            status_elm.hide()
+            success_elm.show()
             return;
         }
-        
+
         $.ajax({
             type: 'POST',
             url: WC_Reepay_Thankyou.ajax_url,
@@ -31,6 +35,9 @@ jQuery(function ($) {
                     success_elm.show()
                     success_elm.find('#reepay-order-details').html(response.data);
                 } else {
+                    if (response.data && response.data.reason === 'prorated_split_pending') {
+                        maxAttempts = extendedMaxAttempts;
+                    }
                     attempts++;
                     setTimeout(checkOrderStatus, delayBetweenRequests);
                 }
@@ -50,6 +57,7 @@ jQuery(function ($) {
          * Initialize the checking
          */
         init: function () {
+            order_actions_elm.hide();
             this.checkPayment(function (err, data) {
                 switch (data.state) {
                     case 'paid':
@@ -61,9 +69,7 @@ jQuery(function ($) {
                             success_elm.show()
                         }
                         */
-                        setTimeout(function() {
-                            checkOrderStatus();
-                        }, 4000);
+                        checkOrderStatus();
                         break
                     case 'reload':
                         setTimeout(function () {
@@ -73,6 +79,7 @@ jQuery(function ($) {
                         break
                     case 'failed':
                     case 'aborted':
+                        order_actions_elm.show();
                         status_elm.hide()
                         failed_elm.append('<p class="transaction-error">' + data.message + "</p>")
                         failed_elm.show()

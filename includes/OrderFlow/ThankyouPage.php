@@ -348,38 +348,52 @@ class ThankyouPage {
 			wp_send_json_error( 'Invalid order' );
 		}
 
-		$another_orders = $order->get_meta( '_reepay_another_orders' ) ?: array();
+		$another_orders = $order->get_meta( '_reepay_another_orders' );
+		$another_orders = is_array( $another_orders ) ? $another_orders : array();
 
-		if ( is_array( $another_orders ) ) {
-			ob_start();
+		if ( empty( $another_orders ) && self::order_has_prorated_subscription( $order ) ) {
+			wp_send_json_error( array( 'reason' => 'prorated_split_pending' ) );
+		}
+
+		$order_group = array_unique( array_merge( array( $order->get_id() ), $another_orders ) );
+
+		foreach ( $order_group as $group_order_id ) {
+			$group_order = ( (int) $group_order_id === $order->get_id() ) ? $order : wc_get_order( $group_order_id );
+
+			if ( ! $group_order instanceof WC_Order ) {
+				continue;
+			}
+
+			if ( self::order_own_items_have_prorated_subscription( $group_order ) && false === self::get_pro_rated_reepay_subscription( $group_order ) ) {
+				wp_send_json_error( array( 'reason' => 'prorated_split_pending' ) );
+			}
+		}
+
+		ob_start();
+
+		reepay()->get_template(
+			'checkout/order-details.php',
+			array(
+				'order' => $order,
+			)
+		);
+
+		foreach ( $another_orders as $another_order_id ) {
+			if ( $order->get_id() === $another_order_id ) {
+				continue;
+			}
 
 			reepay()->get_template(
 				'checkout/order-details.php',
 				array(
-					'order' => $order,
+					'order' => wc_get_order( $another_order_id ),
 				)
 			);
-
-			if ( ! empty( $another_orders ) ) {
-				foreach ( $another_orders as $order_id ) {
-					if ( $order->get_id() === $order_id ) {
-						continue;
-					}
-
-					reepay()->get_template(
-						'checkout/order-details.php',
-						array(
-							'order' => wc_get_order( $order_id ),
-						)
-					);
-				}
-			}
-			$order_details = ob_get_clean();
-			wp_send_json_success( $order_details );
-			wp_die();
-		} else {
-			wp_send_json_error( 'Order data not ready yet' );
 		}
+
+		$order_details = ob_get_clean();
+		wp_send_json_success( $order_details );
+		wp_die();
 	}
 
 	/**
@@ -387,9 +401,13 @@ class ThankyouPage {
 	 *
 	 * @param WC_Order $order Order object.
 	 *
-	 * @return array|null Pro-rated data or null if not applicable.
+	 * @return array|null|false Pro-rated data; null if permanently not applicable
+	 *                          (trial, manual schedule, non-prorating plan); false
+	 *                          if the Reepay-side data isn't ready yet and the
+	 *                          caller should retry.
 	 */
 	public static function get_pro_rated_reepay_subscription( $order ) {
+		$debug = function_exists( 'wc_get_logger' ) && 'yes' === reepay()->get_setting( 'debug' );
 
 		if ( ! $order || ! rp_is_order_paid_via_reepay( $order ) ) {
 			return null;
@@ -402,6 +420,12 @@ class ThankyouPage {
 		}
 
 		if ( ! WCRR::is_order_contain_subscription( $order ) && empty( $another_orders ) ) {
+			if ( $debug ) {
+				wc_get_logger()->debug(
+					sprintf( 'get_pro_rated_reepay_subscription: order %d — not a subscription order and no linked orders — skipping', $order->get_id() ),
+					array( 'source' => 'reepay-thankyou' )
+				);
+			}
 			return null;
 		}
 
@@ -422,51 +446,83 @@ class ThankyouPage {
 
 				// Check if the plan includes a trial period.
 				if ( isset( $plan_data['trial_interval_length'] ) ) {
+					if ( $debug ) {
+						wc_get_logger()->debug(
+							sprintf( 'get_pro_rated_reepay_subscription: order %d — plan %s has trial_interval_length — skipping', $order->get_id(), $subscription_plan ),
+							array( 'source' => 'reepay-thankyou' )
+						);
+					}
 					return null;
 				} elseif ( isset( $plan_data['schedule_type'] ) && 'manual' === $plan_data['schedule_type'] ) { // Check if the plan's schedule type is set to 'manual' (manual on-demand).
+					if ( $debug ) {
+						wc_get_logger()->debug(
+							sprintf( 'get_pro_rated_reepay_subscription: order %d — plan %s schedule_type=manual — skipping', $order->get_id(), $subscription_plan ),
+							array( 'source' => 'reepay-thankyou' )
+						);
+					}
 					return null; // Exit if the schedule type is manual.
 				}
+			} elseif ( $debug ) {
+				wc_get_logger()->debug(
+					sprintf( 'get_pro_rated_reepay_subscription: order %d — subscription/%s request returned no plan: %s', $order->get_id(), $_reepay_subscription_handle, wp_json_encode( $subscription_handle ) ),
+					array( 'source' => 'reepay-thankyou' )
+				);
 			}
 		}
 
-		// Add retry logic.
-		$max_attempts = 10; // Maximum number of attempts to get invoice data.
-		$attempts     = 0;
-		$invoice_data = null;
+		$_reepay_order = $order->get_meta( '_reepay_order', true );
 
-		while ( $attempts < $max_attempts ) {
-			$_reepay_order = $order->get_meta( '_reepay_order', true );
-			if ( ! empty( $_reepay_order ) ) {
-				$invoice_data = reepay_s()->api()->request( "invoice/$_reepay_order" );
+		if ( empty( $_reepay_order ) ) {
+			if ( $debug ) {
+				wc_get_logger()->debug(
+					sprintf( 'get_pro_rated_reepay_subscription: order %d — _reepay_order handle not set yet — not ready', $order->get_id() ),
+					array( 'source' => 'reepay-thankyou' )
+				);
 			}
-
-			if ( ! is_wp_error( $invoice_data ) ) {
-				break;
-			}
-
-			++$attempts;
-			if ( $attempts < $max_attempts ) {
-				sleep( 2 ); // Wait 2 seconds before next attempt.
-			}
+			return false;
 		}
+
+		$invoice_data = reepay_s()->api()->request( "invoice/$_reepay_order" );
 
 		if ( is_wp_error( $invoice_data ) ||
 		! isset( $invoice_data['plan'] ) ||
 		! isset( $invoice_data['subscription'] ) ) {
-			return null; // Exit if invoice data is invalid or missing.
+			if ( $debug ) {
+				wc_get_logger()->debug(
+					sprintf(
+						'get_pro_rated_reepay_subscription: order %d — invoice data invalid/missing: %s',
+						$order->get_id(),
+						is_wp_error( $invoice_data ) ? $invoice_data->get_error_message() : wp_json_encode( $invoice_data )
+					),
+					array( 'source' => 'reepay-thankyou' )
+				);
+			}
+			return false;
 		}
 
 		$subscription_plan = $invoice_data['plan'];
 		$handle            = $invoice_data['subscription'];
 
 		if ( empty( $subscription_plan ) || empty( $handle ) ) {
-			return null;
+			if ( $debug ) {
+				wc_get_logger()->debug(
+					sprintf( 'get_pro_rated_reepay_subscription: order %d — invoice missing plan/subscription handle', $order->get_id() ),
+					array( 'source' => 'reepay-thankyou' )
+				);
+			}
+			return false;
 		}
 
 		$plan_data = reepay_s()->api()->request( "plan/$subscription_plan/current" );
 
 		if ( false !== $plan_data['partial_proration_days'] ) {
-			return null;
+			if ( $debug ) {
+				wc_get_logger()->debug(
+					sprintf( 'get_pro_rated_reepay_subscription: order %d — plan %s partial_proration_days=%s (not false) — skipping', $order->get_id(), $subscription_plan, wp_json_encode( $plan_data['partial_proration_days'] ) ),
+					array( 'source' => 'reepay-thankyou' )
+				);
+			}
+			return null; // Permanent: this plan never pro-rates.
 		}
 
 		$pro_rated_data = array();
@@ -476,7 +532,54 @@ class ThankyouPage {
 		$pro_rated_data['invoice_amount']              = $invoice_data['amount'];
 		$pro_rated_data['next_invoice_preview_amount'] = $next_invoice_preview['amount'];
 
+		if ( $debug ) {
+			wc_get_logger()->debug(
+				sprintf( 'get_pro_rated_reepay_subscription: order %d — pro-rated data resolved: %s', $order->get_id(), wp_json_encode( $pro_rated_data ) ),
+				array( 'source' => 'reepay-thankyou' )
+			);
+		}
+
 		return $pro_rated_data;
+	}
+
+	/**
+	 * Check whether an order's OWN line items (no sibling/`_reepay_another_orders`
+	 * scan) contain a pro-rated Frisbii subscription product.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return bool
+	 */
+	private static function order_own_items_have_prorated_subscription( WC_Order $order ): bool {
+		if ( ! class_exists( 'WC_Reepay_Subscription_Plan_Simple' ) ) {
+			return true;
+		}
+
+		foreach ( $order->get_items() as $item ) {
+			if ( ! $item instanceof WC_Order_Item_Product ) {
+				continue;
+			}
+
+			$product_id    = $item->get_product_id();
+			$schedule_type = get_post_meta( $product_id, '_reepay_subscription_schedule_type', true );
+
+			if ( empty( $schedule_type ) ) {
+				continue;
+			}
+
+			$type_data = get_post_meta( $product_id, '_reepay_subscription_' . $schedule_type, true );
+
+			if ( ! is_array( $type_data ) ) {
+				continue;
+			}
+
+			$period = isset( $type_data['period'] ) ? $type_data['period'] : '';
+
+			if ( 'bill_prorated' === $period || '' === $period ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

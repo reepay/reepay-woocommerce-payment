@@ -1172,6 +1172,233 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 		$this->assertTrue( true );
 	}
 
+	/**
+	 * Test @see OrderCapture::capture_full_order settles a manual/bulk transition to
+	 * "completed" even when "Status: Frisbii Pay Settled" is configured to a different
+	 * status (e.g. "processing"). Regression test for BWPM-265.
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_capture_full_order_settles_on_manual_completion_when_settled_is_processing() {
+		self::$options->set_options(
+			array(
+				'status_authorized'   => 'processing',
+				'status_settled'      => 'processing',
+				'disable_auto_settle' => 'no',
+			)
+		);
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order    = $this->order_generator->order();
+		$order_id = $order->get_id();
+
+		delete_transient( 'reepay_order_complete_should_settle_' . $order_id );
+
+		$this->api_mock->method( 'get_invoice_by_handle' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+				'state'             => 'authorized',
+			)
+		);
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+				'order_lines'       => array(),
+			)
+		);
+
+		// The bug: today, a manual transition to "completed" never reaches settle()
+		// when Settled is configured as "processing". This assertion should fail
+		// before the fix and pass after it.
+		$this->api_mock->expects( $this->once() )->method( 'settle' )->willReturn(
+			array(
+				'state'             => 'settled',
+				'amount'            => 2000,
+				'authorized_amount' => 2000,
+			)
+		);
+
+		// Simulate an admin manually moving the order Processing -> Completed.
+		$this->order_capture->capture_full_order(
+			$order_id,
+			'processing',
+			'completed',
+			$order
+		);
+	}
+
+	/**
+	 * Test @see OrderCapture::capture_full_order still skips settlement for a genuine
+	 * authorization event (pending -> processing) when Authorized and Settled are
+	 * configured to the same status. Guards against a regression of the BWPM-249
+	 * protection while fixing BWPM-265.
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_capture_full_order_skips_genuine_authorization_event_when_settled_equals_authorized() {
+		self::$options->set_options(
+			array(
+				'status_authorized'   => 'processing',
+				'status_settled'      => 'processing',
+				'disable_auto_settle' => 'no',
+			)
+		);
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order    = $this->order_generator->order();
+		$order_id = $order->get_id();
+
+		delete_transient( 'reepay_order_complete_should_settle_' . $order_id );
+
+		$this->api_mock->expects( $this->never() )->method( 'settle' );
+
+		// Simulate the real authorization event: pending -> processing.
+		$this->order_capture->capture_full_order(
+			$order_id,
+			'pending',
+			'processing',
+			$order
+		);
+	}
+
+	// -----------------------------------------------------------------------
+	// mark_bulk_complete_should_settle()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see OrderCapture::mark_bulk_complete_should_settle sets the settle-intent
+	 * transient for every order id when the bulk action is "mark_completed".
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_mark_bulk_complete_should_settle_sets_transient_for_mark_completed() {
+		$order_id_1 = 111111;
+		$order_id_2 = 222222;
+
+		delete_transient( 'reepay_order_complete_should_settle_' . $order_id_1 );
+		delete_transient( 'reepay_order_complete_should_settle_' . $order_id_2 );
+
+		$result = $this->order_capture->mark_bulk_complete_should_settle(
+			array( $order_id_1, $order_id_2 ),
+			'mark_completed',
+			'order'
+		);
+
+		$this->assertSame( array( $order_id_1, $order_id_2 ), $result );
+		$this->assertSame( '1', get_transient( 'reepay_order_complete_should_settle_' . $order_id_1 ) );
+		$this->assertSame( '1', get_transient( 'reepay_order_complete_should_settle_' . $order_id_2 ) );
+	}
+
+	/**
+	 * Test @see OrderCapture::mark_bulk_complete_should_settle does not set the transient
+	 * for bulk actions other than "mark_completed".
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_mark_bulk_complete_should_settle_ignores_other_actions() {
+		$order_id = 333333;
+
+		delete_transient( 'reepay_order_complete_should_settle_' . $order_id );
+
+		$this->order_capture->mark_bulk_complete_should_settle(
+			array( $order_id ),
+			'mark_processing',
+			'order'
+		);
+
+		$this->assertFalse( get_transient( 'reepay_order_complete_should_settle_' . $order_id ) );
+	}
+
+	/**
+	 * Test @see OrderCapture::mark_bulk_complete_should_settle does not set the transient
+	 * for non-order object types.
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_mark_bulk_complete_should_settle_ignores_non_order_object_type() {
+		$id = 444444;
+
+		delete_transient( 'reepay_order_complete_should_settle_' . $id );
+
+		$this->order_capture->mark_bulk_complete_should_settle(
+			array( $id ),
+			'mark_completed',
+			'product'
+		);
+
+		$this->assertFalse( get_transient( 'reepay_order_complete_should_settle_' . $id ) );
+	}
+
+	/**
+	 * Integration test: a bulk "Change status to completed" now bypasses the settle_types
+	 * restriction the same way a single-order "yes, settle" does, so an order with a
+	 * physical item (excluded because "physical" is not in settle_types) still settles
+	 * when driven through the bulk-action transient.
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_bulk_completed_order_settles_despite_non_qualifying_settle_types() {
+		self::$options->set_options(
+			array(
+				'status_authorized'   => 'processing',
+				'status_settled'      => 'processing',
+				'disable_auto_settle' => 'no',
+				'settle'              => array( 'online_virtual' ), // physical intentionally excluded.
+			)
+		);
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order    = $this->order_generator->order();
+		$order_id = $order->get_id();
+
+		// Make sure the item is physical (needs shipping, not virtual/downloadable) so it
+		// would normally be excluded by the settle_types check.
+		foreach ( $order->get_items() as $item ) {
+			$product = $item->get_product();
+			$product->set_virtual( false );
+			$product->set_downloadable( false );
+			$product->save();
+		}
+
+		delete_transient( 'reepay_order_complete_should_settle_' . $order_id );
+
+		// Simulate the bulk action's filter running before the order status changes.
+		$this->order_capture->mark_bulk_complete_should_settle( array( $order_id ), 'mark_completed', 'order' );
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+				'order_lines'       => array(),
+			)
+		);
+		$this->api_mock->expects( $this->once() )->method( 'settle' )->willReturn(
+			array(
+				'state'             => 'settled',
+				'amount'            => 2000,
+				'authorized_amount' => 2000,
+			)
+		);
+
+		$this->order_capture->capture_full_order( $order_id, 'processing', 'completed', $order );
+	}
+
 	// -----------------------------------------------------------------------
 	// settle_amount()
 	// -----------------------------------------------------------------------

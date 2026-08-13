@@ -1,6 +1,6 @@
 {
   "name": "reepay-woocommerce-payment",
-  "version": "1.8.14",
+  "version": "1.8.15.1",
   "description": "",
   "main": "gulpfile.js",
   "dependencies": {
@@ -8,11 +8,11 @@
     "gulp-clean-css": "^4.3.0",
     "gulp-postcss": "^10.0.0",
     "gulp-sass": "^5.0.0",
-    "postcss": "^8.5.10",
+    "postcss": "^8.5.18",
     "yargs": "^17.7.1"
   },
   "devDependencies": {
-    "brace-expansion": "^1.1.12",
+    "brace-expansion": "^5.0.8",
     "fs-extra": "^11.1.0",
     "gulp": "^5.0.0",
     "gulp-clean-css": "^4.3.0",
@@ -43,5 +43,10 @@
   },
   "author": "AAIT",
   "license": "SEE LICENSE IN License.txt",
-  "homepage": "https://github.com/reepay/reepay-woocommerce-payment/"
+  "homepage": "https://github.com/reepay/reepay-woocommerce-payment/",
+  "overrides": {
+    "brace-expansion": "^5.0.8",
+    "immutable": "^5.1.8",
+    "postcss": "^8.5.18"
+  }
 }

@@ -45,7 +45,7 @@ defined( 'ABSPATH' ) || exit();
 	} else {
 		$pro_rated_subscription = ThankyouPage::get_pro_rated_reepay_subscription( $order );
 	}
-	if ( null !== $pro_rated_subscription ) {
+	if ( is_array( $pro_rated_subscription ) ) {
 		?>
 		<li class="woocommerce-order-overview__total reepay-pro-rated total">
 			<div class="reepay-pro-rated-subscription">

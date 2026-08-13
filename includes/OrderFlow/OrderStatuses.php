@@ -343,10 +343,14 @@ class OrderStatuses {
 			// Use the authorized status if order has been settled partially.
 			self::set_authorized_status( $order, $note, $transaction_id );
 		} else {
+			// BWPM-265 Capture this before payment_complete().
+			$was_already_completed = $order->has_status( 'completed' );
+
 			$order->payment_complete( $transaction_id );
 
 			// Apply the custom settled status if sync is enabled and differs from default.
-			if ( self::$status_sync_enabled && 'completed' !== self::$status_settled ) {
+			// Don't downgrade from "completed" if it was already completed beforehand.
+			if ( self::$status_sync_enabled && 'completed' !== self::$status_settled && ! $was_already_completed ) {
 				$order->set_status( self::$status_settled );
 				$order->save();
 			}
