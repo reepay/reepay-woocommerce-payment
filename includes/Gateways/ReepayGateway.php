@@ -2226,7 +2226,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @return array
 	 */
 	public function exclude_payment_gateway_based_on_currency( array $available_gateways ): array {
-		if ( is_null( WC()->cart ) ) {
+		if ( is_null( WC()->cart ) || ! did_action( 'wp_loaded' ) ) {
 			return $available_gateways;
 		}
 		$current_currencies = array();

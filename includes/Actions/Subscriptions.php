@@ -144,6 +144,18 @@ class Subscriptions {
 			$renewal_order->save();
 
 			rp_get_order_handle( $renewal_order );
+
+			// Renewal charges have no new checkout session, so there is no new
+			// age verification event to fetch — carry over the result from the
+			// original order that was actually verified, if any.
+			$parent_order = $subscription->get_parent();
+			if ( $parent_order ) {
+				$age_verification_result = $parent_order->get_meta( '_reepay_age_verification_result' );
+				if ( ! empty( $age_verification_result ) ) {
+					$renewal_order->update_meta_data( '_reepay_age_verification_result', $age_verification_result );
+					$renewal_order->save_meta_data();
+				}
+			}
 		}
 
 		return $renewal_order;

@@ -51,6 +51,8 @@ class OrderCapture {
 
 		add_action( 'woocommerce_order_status_changed', array( $this, 'capture_full_order' ), 10, 4 );
 
+		add_filter( 'woocommerce_bulk_action_ids', array( $this, 'mark_bulk_complete_should_settle' ), 10, 3 );
+
 		add_action( 'admin_init', array( $this, 'process_item_capture' ) );
 
 		add_action( 'admin_init', array( $this, 'process_capture_amount' ) );
@@ -193,7 +195,8 @@ class OrderCapture {
 			)
 		);
 
-		if ( OrderStatuses::$status_settled === $this_status_transition_to && 'no' === reepay()->get_setting( 'disable_auto_settle' ) && ( '1' === $value || false === $value ) ) {
+		// BWPM-265: also treat a literal transition to "completed" as a settle trigger,independent of what "Status: Frisbii Pay Settled" is configured to.
+		if ( ( OrderStatuses::$status_settled === $this_status_transition_to || 'completed' === $this_status_transition_to ) && 'no' === reepay()->get_setting( 'disable_auto_settle' ) && ( '1' === $value || false === $value ) ) {
 			// BWPM-249: Subscription products require 'recurring' in settle_types to auto-settle.
 			if ( function_exists( 'wcs_is_subscription_product' ) ) {
 				$settle_types = reepay()->get_setting( 'settle' ) ?: array();
@@ -214,8 +217,8 @@ class OrderCapture {
 					}
 				}
 			}
-			// BWPM-249: When status_authorized equals status_settled, the authorization.
-			if ( false === $value && OrderStatuses::$status_settled === OrderStatuses::$status_authorized ) { // phpcs:ignore WordPress.PHP.YodaConditions.NotYoda -- both sides are mutable class properties; no valid Yoda order exists
+			// BWPM-249/BWPM-265: skip only when this transition is genuinely the authorization.
+			if ( false === $value && OrderStatuses::$status_authorized === $this_status_transition_to ) {
 				$this->log(
 					array(
 						__METHOD__,
@@ -267,6 +270,29 @@ class OrderCapture {
 				)
 			);
 		}
+	}
+
+	/**
+	 * Hooked to woocommerce_bulk_action_ids. Treat a bulk "Change status to completed" the
+	 * same as an explicit "yes, settle" from the single-order completion dialog (see
+	 * capture_full_order() and Admin\Ajax::set_complete_settle_transient()) - otherwise
+	 * bulk-completed orders always hit the settle_types restriction with no way to bypass it,
+	 * unlike single-order edits.
+	 *
+	 * @param int[]  $ids         order ids affected by the bulk action.
+	 * @param string $action      bulk action being performed.
+	 * @param string $object_type object type - 'order' for the orders list.
+	 *
+	 * @return int[]
+	 */
+	public function mark_bulk_complete_should_settle( array $ids, string $action, string $object_type ): array {
+		if ( 'order' === $object_type && 'mark_completed' === $action ) {
+			foreach ( $ids as $id ) {
+				set_transient( 'reepay_order_complete_should_settle_' . $id, '1', 60 );
+			}
+		}
+
+		return $ids;
 	}
 
 	/**

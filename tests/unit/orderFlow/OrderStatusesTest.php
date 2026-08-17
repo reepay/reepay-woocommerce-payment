@@ -452,6 +452,49 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * Test @see OrderStatuses::set_settled_status does not revert an order that is already
+	 * "completed" back to the configured "Status: Frisbii Pay Settled" status. Regression
+	 * test for the settled-status-completed-guard fix.
+	 *
+	 * @group orderflow_statuses
+	 */
+	public function test_set_settled_status_does_not_downgrade_completed_order() {
+		$order_note           = 'Test note';
+		$order_transaction_id = 'test_2077';
+
+		$configured_settled_status = 'processing';
+
+		$this->order_generator->set_props(
+			array(
+				'status'         => 'completed',
+				'payment_method' => reepay()->gateways()->checkout(),
+			)
+		);
+
+		self::$options->set_options(
+			array(
+				'enable_sync'    => 'yes',
+				'status_settled' => $configured_settled_status,
+			)
+		);
+
+		$api_mock = $this->getMockBuilder( Api::class )->getMock();
+		$api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 100,
+			)
+		);
+		reepay()->di()->set( Api::class, $api_mock );
+
+		$this->assertTrue( OrderStatuses::set_settled_status( $this->order_generator->order(), $order_note, $order_transaction_id ), 'Status not settled' );
+		$this->assertSame( 'completed', $this->order_generator->order()->get_status(), 'Order was downgraded away from completed' );
+		$this->assertSame( $order_transaction_id, $this->order_generator->order()->get_transaction_id(), 'Wrong transaction id' );
+		$this->assertTrue( $this->order_generator->note_exists( $order_note ), 'Order note not added' );
+		$this->assertSame( 1, $this->order_generator->get_meta( '_reepay_state_settled' ), '_reepay_state_settled meta not settled' );
+	}
+
+	/**
 	 * Test @see OrderStatuses::update_order_status
 	 */
 	public function test_update_order_status() {
