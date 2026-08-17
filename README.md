@@ -9,7 +9,7 @@ Use the reepay plugin for:
 
 # Supported versions
 * WordPress Version: 4.0 or higher
-* Tested up to: 6.8
+* Tested up to: 7.1
 
 # Download and installation
 * Official download page https://wordpress.org/plugins/reepay-checkout-gateway/

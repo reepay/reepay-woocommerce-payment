@@ -2,7 +2,7 @@
 Contributors: reepaydenmark,aaitse
 Tags: Frisbii, billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
-Tested up to: 6.8
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 1.8.15.1
 License: GPL
