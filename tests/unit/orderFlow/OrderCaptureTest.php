@@ -1399,6 +1399,68 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 		$this->order_capture->capture_full_order( $order_id, 'processing', 'completed', $order );
 	}
 
+	/**
+	 * Regression test for BWPM-270: a genuinely programmatic transition to "completed"
+	 * (e.g. REST API, WP-CLI, another plugin calling $order->update_status('completed')
+	 * directly — no admin dialog, no bulk action, so the settle-intent transient is
+	 * never set) must still auto-settle when Auto-settle is enabled, even if the order
+	 * contains an item whose type is not selected in the Instant Settle "settle_types"
+	 * setting. settle_types governs what gets settled instantly at authorization time;
+	 * it must not gate Auto-settle-on-completed.
+	 *
+	 * @group orderflow_capture
+	 */
+	public function test_capture_full_order_settles_physical_item_on_programmatic_completion_despite_non_qualifying_settle_types() {
+		self::$options->set_options(
+			array(
+				'status_authorized'   => 'processing',
+				'status_settled'      => 'processing',
+				'disable_auto_settle' => 'no',
+				'settle'              => array( 'online_virtual' ), // physical intentionally excluded.
+			)
+		);
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order    = $this->order_generator->order();
+		$order_id = $order->get_id();
+
+		// Make sure the item is physical (needs shipping, not virtual/downloadable) so it
+		// would normally be excluded by the settle_types check.
+		foreach ( $order->get_items() as $item ) {
+			$product = $item->get_product();
+			$product->set_virtual( false );
+			$product->set_downloadable( false );
+			$product->save();
+		}
+
+		// No dialog, no bulk action — the transient was never set.
+		delete_transient( 'reepay_order_complete_should_settle_' . $order_id );
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+				'order_lines'       => array(),
+			)
+		);
+		$this->api_mock->expects( $this->once() )->method( 'settle' )->willReturn(
+			array(
+				'state'             => 'settled',
+				'amount'            => 2000,
+				'authorized_amount' => 2000,
+			)
+		);
+
+		// Simulate a purely programmatic transition, e.g. an external system calling
+		// $order->update_status( 'completed' ) directly.
+		$this->order_capture->capture_full_order( $order_id, 'processing', 'completed', $order );
+	}
+
 	// -----------------------------------------------------------------------
 	// settle_amount()
 	// -----------------------------------------------------------------------

@@ -4,7 +4,7 @@ Tags: Frisbii, billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.8.15.1
+Stable tag: 1.8.15.2
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,6 +18,9 @@ The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.8.15.2
+- [Fix] – Instant settle setting does not interfere with Auto-settle.
+
 v 1.8.15.1
 - [Fix] – Auto-settle works with "Processing" as status of settled orders.
 - [Feature] – Age verification result data is added to order meta data.
