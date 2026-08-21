@@ -230,26 +230,8 @@ class OrderCapture {
 				return;
 			}
 
-			// BWPM-249: When auto-triggered, skip multi_settle() if any item does not qualify.
-			if ( false === $value ) {
-				$settle_types = reepay()->get_setting( 'settle' ) ?: array();
-				if ( ! empty( $settle_types ) ) {
-					foreach ( $order->get_items() as $item ) {
-						$product = $item->get_product();
-						if ( $product && ! InstantSettle::can_product_be_settled_instantly( $product ) ) {
-							$this->log(
-								array(
-									__METHOD__,
-									__LINE__,
-									'order' => $order_id,
-									'msg'   => 'Skipping auto-settle: order has item(s) not qualifying under settle_types. Deferring to InstantSettle.',
-								)
-							);
-							return;
-						}
-					}
-				}
-			}
+			// BWPM-270: Instant Settle controls settlement at authorization.
+			// Auto-settle on Completed is separate and must capture the order regardless of settle_types.
 
 			$this->log(
 				array(

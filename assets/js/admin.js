@@ -187,6 +187,10 @@ jQuery(document).ready(function ($) {
         if (amount > 0 && settled < authorized && $("#order_status option:selected").val() === 'wc-completed') {
             e.preventDefault();
             const settle = window.confirm(`'You are about to change the order status. Do you want to capture the remaining amount of ${formatted_amount} ${currency} at the same time? Click OK to continue with settle. Click Cancel to continue without settle.'`)
+            // Cancel must abort the whole action - no status change, no settle.
+            if (!settle) {
+                return;
+            }
 
             $.ajax({
                 url: Reepay_Admin.ajax_url,
@@ -195,7 +199,7 @@ jQuery(document).ready(function ($) {
                     action: 'reepay_set_complete_settle_transient',
                     nonce: Reepay_Admin.nonce,
                     order_id: orderId,
-                    settle_order: Number(settle)
+                    settle_order: 1
                 },
                 beforeSend: function () {
                 },

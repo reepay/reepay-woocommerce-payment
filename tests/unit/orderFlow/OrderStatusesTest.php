@@ -710,4 +710,107 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 
 		$this->assertSame( 'on-hold', $result );
 	}
+
+	// -----------------------------------------------------------------------
+	// order_status_changed()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Regression test for BWPM-270: the "Status: Frisbii Pay Settled" capture path in
+	 * OrderStatuses::order_status_changed() must capture the full remaining amount when
+	 * Auto-settle is enabled and the order transitions to the configured settled status,
+	 * even if the order's item type (e.g. physical) isn't selected in the Instant Settle
+	 * "settle_types" setting. settle_types governs instant settlement at authorization
+	 * time, not this capture-on-completion path.
+	 *
+	 * @group orderflow_statuses
+	 */
+	public function test_order_status_changed_captures_physical_item_despite_non_qualifying_settle_types() {
+		self::$options->set_options(
+			array(
+				'enable_sync'          => 'yes',
+				'status_settled'       => 'completed',
+				'disable_auto_settle'  => 'no',
+				'settle'               => array( 'online_virtual' ), // physical intentionally excluded.
+			)
+		);
+		OrderStatuses::init_statuses();
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order = $this->order_generator->order();
+
+		// Make sure the item is physical (needs shipping, not virtual/downloadable) so it
+		// would normally be excluded by InstantSettle::calculate_instant_settle().
+		foreach ( $order->get_items() as $item ) {
+			$product = $item->get_product();
+			$product->set_virtual( false );
+			$product->set_downloadable( false );
+			$product->save();
+		}
+
+		delete_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
+
+		$this->api_mock->method( 'can_capture' )->willReturn( true );
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+			)
+		);
+		$this->api_mock->expects( $this->once() )->method( 'capture_payment' );
+
+		$this->order_statuses->order_status_changed( $order->get_id(), 'processing', 'completed', $order );
+	}
+
+	/**
+	 * Regression test: when "Status: Frisbii Pay Authorized" and "Status: Frisbii Pay
+	 * Settled" are configured to the SAME WooCommerce status (e.g. both "Processing"),
+	 * the very first pending -> processing transition is the AUTHORIZATION event, not a
+	 * genuine settle intent. OrderCapture::capture_full_order() already guards against
+	 * mistaking this for a settle trigger (BWPM-249/BWPM-265); order_status_changed() must
+	 * have the same guard, otherwise the order gets captured prematurely at authorization
+	 * instead of waiting for the admin to actually complete the order — contradicting the
+	 * client's own BWPM-265 expectation ("I expected the orders to get settled when their
+	 * status change to completed").
+	 *
+	 * @group orderflow_statuses
+	 */
+	public function test_order_status_changed_skips_genuine_authorization_event_when_settled_equals_authorized() {
+		self::$options->set_options(
+			array(
+				'enable_sync'         => 'yes',
+				'status_authorized'   => 'processing',
+				'status_settled'      => 'processing',
+				'disable_auto_settle' => 'no',
+			)
+		);
+		OrderStatuses::init_statuses();
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order = $this->order_generator->order();
+
+		delete_transient( 'reepay_order_complete_should_settle_' . $order->get_id() );
+
+		$this->api_mock->method( 'can_capture' )->willReturn( true );
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+			)
+		);
+		$this->api_mock->expects( $this->never() )->method( 'capture_payment' );
+
+		// Simulate the real authorization event: pending -> processing.
+		$this->order_statuses->order_status_changed( $order->get_id(), 'pending', 'processing', $order );
+	}
 }

@@ -510,6 +510,19 @@ class OrderStatuses {
 					)
 				);
 
+				// BWPM-270/BWPM-265: Skip only for the real authorization event, not when
+				// the order should be settled. Otherwise, if Authorized and Settled use the
+				// same WC status (e.g. Processing), the order may be captured too early.
+				if ( false === $value && self::$status_authorized === $to ) {
+					$this->log(
+						sprintf(
+							'Order ID %d - skipping auto-settle: status_authorized equals status_settled — authorization event, not a settle intent.',
+							$order_id
+						)
+					);
+					break;
+				}
+
 				if ( ( '1' === $value || false === $value ) && $gateway->can_capture( $order ) ) {
 					try {
 						$order_data = reepay()->api( $gateway )->get_invoice_data( $order );
@@ -518,8 +531,10 @@ class OrderStatuses {
 						}
 
 						$amount_to_capture = rp_make_initial_amount( $order_data['authorized_amount'] - $order_data['settled_amount'], $order->get_currency() );
-						$items_to_capture  = InstantSettle::calculate_instant_settle( $order )['items'];
-						if ( ! empty( $items_to_capture ) && $amount_to_capture > 0 ) {
+						// BWPM-270: Instant Settle only controls settlement at authorization.
+						// Auto-settle on Completed must capture the full remaining amount when enabled,
+						// regardless of the product type selected for Instant Settle.
+						if ( $amount_to_capture > 0 ) {
 							$amount_to_capture = rp_prepare_amount( $amount_to_capture, $order->get_currency() );
 							$gateway->capture_payment( $order, $amount_to_capture );
 						}
