@@ -27,5 +27,7 @@ class Main {
 
 		new ThankyouPage();
 		new Webhook();
+		new UnsettledOrdersMonitor();
+		new UnsettledOrdersRealtimeCorrection();
 	}
 }
