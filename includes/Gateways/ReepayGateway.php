@@ -1908,7 +1908,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'ordertext'       => rp_clear_ordertext( $order_item->get_name() ),
 				'quantity'        => $order_item->get_quantity(),
 				'amount'          => rp_prepare_amount( $unit_price, $order->get_currency() ),
-				'vat'             => round( $tax_percent / 100, 2 ),
+				'vat'             => round( $tax_percent / 100, 4 ),
 				'amount_incl_vat' => $prices_incl_tax,
 			);
 		}
@@ -1941,7 +1941,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'ordertext'       => rp_clear_ordertext( $item_shipping->get_name() ),
 					'quantity'        => $item_shipping->get_quantity(),
 					'amount'          => rp_prepare_amount( $unit_price, $order->get_currency() ),
-					'vat'             => round( $tax_percent / 100, 2 ),
+					'vat'             => round( $tax_percent / 100, 4 ),
 					'amount_incl_vat' => $prices_incl_tax,
 				);
 			}
@@ -1956,7 +1956,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$fee          = (float) $order_fee->get_total();
 			$tax          = (float) $order_fee->get_total_tax();
 			$fee_with_tax = $fee + $tax;
-			$tax_percent  = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
+			$tax_percent  = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ), 2 ) : 0;
 
 			if ( $only_not_settled && ! empty( $order_fee->get_meta( 'settled' ) ) ) {
 				continue;
@@ -1966,7 +1966,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'ordertext'       => rp_clear_ordertext( $order_fee->get_name() ),
 				'quantity'        => 1,
 				'amount'          => rp_prepare_amount( $prices_incl_tax ? $fee_with_tax : $fee, $order->get_currency() ),
-				'vat'             => round( $tax_percent / 100, 2 ),
+				'vat'             => round( $tax_percent / 100, 4 ),
 				'amount_incl_vat' => $prices_incl_tax,
 			);
 		}
@@ -1976,7 +1976,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$discount          = $order->get_total_discount();
 			$discount_with_tax = $order->get_total_discount( false );
 			$tax               = $discount_with_tax - $discount;
-			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
+			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ), 2 ) : 0;
 
 			if ( abs( floatval( $sub_amount_discount ) ) > 0.001 && abs( floatval( $discount ) ) > 0.001 ) {
 				/**
@@ -2003,7 +2003,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
 					'quantity'        => 1,
 					'amount'          => round( $discount_amount, 2 ),
-					'vat'             => round( $tax_percent / 100, 2 ),
+					'vat'             => round( $tax_percent / 100, 4 ),
 					'amount_incl_vat' => $prices_incl_tax,
 				);
 			}
