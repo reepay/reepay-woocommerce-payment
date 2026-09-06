@@ -779,6 +779,39 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Immediately place a Frisbii Pay - Bank Transfer order on-hold after a
+	 * successful checkout, instead of waiting for the invoice_authorized webhook.
+	 *
+	 * Real bank transfers take days to clear, so that webhook won't arrive quickly
+	 * (if at all, automatically) — leaving the order in "pending" otherwise, which
+	 * risks it being auto-cancelled by the "Enable Order Auto-cancel" setting.
+	 *
+	 * Also flags the order as authorized so that if the invoice_authorized webhook
+	 * does eventually arrive, Webhook::process()'s own idempotency guard
+	 * (`if ($order->has_status(...)) return;`) short-circuits cleanly instead of
+	 * leaving _reepay_state_authorized unset.
+	 *
+	 * @param WC_Order $order order to update.
+	 */
+	private function maybe_place_bank_transfer_on_hold( WC_Order $order ): void {
+		if ( 'reepay_offline_bank_transfer' !== $this->id ) {
+			return;
+		}
+
+		if ( ! $order->has_status( 'on-hold' ) ) {
+			$order->update_status(
+				'on-hold',
+				__( 'Awaiting bank transfer. Order placed via Frisbii Pay - Bank Transfer.', 'reepay-checkout-gateway' )
+			);
+		}
+
+		if ( empty( $order->get_meta( '_reepay_state_authorized' ) ) ) {
+			$order->update_meta_data( '_reepay_state_authorized', 1 );
+			$order->save_meta_data();
+		}
+	}
+
+	/**
 	 * Process Payment
 	 *
 	 * @param int $order_id Order ID.
@@ -1222,7 +1255,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 							'payment_method' => $order->get_payment_method(),
 						)
 					);
-					return $this->process_session_charge( $params, $order );
+
+					$result = $this->process_session_charge( $params, $order );
+
+					if ( is_array( $result ) && 'success' === ( $result['result'] ?? '' ) ) {
+						$this->maybe_place_bank_transfer_on_hold( $order );
+					}
+
+					return $result;
 				} else {
 					$order_lines = 'no' === $this->skip_order_lines ? $this->get_order_items( $order ) : null;
 					$amount      = 'yes' === $this->skip_order_lines ? $this->get_skip_order_lines_amount( $order, true ) : null;
@@ -1286,6 +1326,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 				do_action( 'reepay_instant_settle', $order );
 			}
+
+			$this->maybe_place_bank_transfer_on_hold( $order );
 
 			$this->log(
 				array(
@@ -1382,6 +1424,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			do_action( 'reepay_instant_settle', $order );
 
+			$this->maybe_place_bank_transfer_on_hold( $order );
+
 			$redirect = '#!reepay-checkout';
 
 			if ( ! empty( $result['url'] ) ) {
@@ -1415,7 +1459,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			)
 		);
 
-		return $this->process_session_charge( $params, $order );
+		$result = $this->process_session_charge( $params, $order );
+
+		if ( is_array( $result ) && 'success' === ( $result['result'] ?? '' ) ) {
+			$this->maybe_place_bank_transfer_on_hold( $order );
+		}
+
+		return $result;
 	}
 
 	/**

@@ -244,6 +244,7 @@ class ThankyouPage {
 					'Please wait. We\'re checking the payment status.',
 					'reepay-checkout-gateway'
 				),
+				'skip_status_check'             => ( 'reepay_offline_bank_transfer' === $order->get_payment_method() ),
 			)
 		);
 	}

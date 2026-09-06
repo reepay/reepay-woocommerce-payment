@@ -131,7 +131,13 @@ jQuery(function ($) {
 
     $(document).ready(function () {
         if($('.woocommerce-order--thankyou').length) {
-            window.wc_reepay_thankyou.init()
+            if (WC_Reepay_Thankyou.skip_status_check) {
+                status_elm.hide()
+                success_elm.show()
+                checkOrderStatus()
+            } else {
+                window.wc_reepay_thankyou.init()
+            }
         }
     })
 })
