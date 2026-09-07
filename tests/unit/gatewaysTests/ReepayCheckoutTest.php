@@ -242,4 +242,59 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 		$this->assertContains( 'refunds', self::$gateway->supports );
 		$this->assertContains( 'tokenization', self::$gateway->supports );
 	}
+
+	// -----------------------------------------------------------------------
+	// Settings ingestion — handle_failover / enable_order_autocancel
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayCheckout::__construct keeps handle_failover as the literal
+	 * saved setting string, not a boolean-derived "1"/"" (BWPM-275).
+	 *
+	 * @group gateways_checkout
+	 */
+	public function test_handle_failover_reflects_saved_yes_setting() {
+		update_option(
+			'woocommerce_reepay_checkout_settings',
+			array_merge( self::$gateway->settings, array( 'handle_failover' => 'yes' ) )
+		);
+
+		$gateway = new ReepayCheckout();
+
+		$this->assertSame( 'yes', $gateway->handle_failover );
+	}
+
+	/**
+	 * Test @see ReepayCheckout::__construct keeps handle_failover as the literal
+	 * saved setting string when explicitly disabled (BWPM-275).
+	 *
+	 * @group gateways_checkout
+	 */
+	public function test_handle_failover_reflects_saved_no_setting() {
+		update_option(
+			'woocommerce_reepay_checkout_settings',
+			array_merge( self::$gateway->settings, array( 'handle_failover' => 'no' ) )
+		);
+
+		$gateway = new ReepayCheckout();
+
+		$this->assertSame( 'no', $gateway->handle_failover );
+	}
+
+	/**
+	 * Test @see ReepayCheckout::__construct keeps enable_order_autocancel as the
+	 * literal saved setting string, not a boolean-derived "1"/"" (BWPM-275).
+	 *
+	 * @group gateways_checkout
+	 */
+	public function test_enable_order_autocancel_reflects_saved_yes_setting() {
+		update_option(
+			'woocommerce_reepay_checkout_settings',
+			array_merge( self::$gateway->settings, array( 'enable_order_autocancel' => 'yes' ) )
+		);
+
+		$gateway = new ReepayCheckout();
+
+		$this->assertSame( 'yes', $gateway->enable_order_autocancel );
+	}
 }
