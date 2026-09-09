@@ -249,7 +249,7 @@ class Ajax {
 	public function set_complete_settle_transient() {
 		$this->verify_nonce( 'reepay' );
 
-		if ( empty( $_POST['order_id'] ) || empty( $_POST['settle_order'] ) ) {
+		if ( empty( $_POST['order_id'] ) || ! isset( $_POST['settle_order'] ) ) {
 			wp_send_json_error( __( 'Order id or settle order not specified', 'reepay-checkout-gateway' ) );
 		}
 
