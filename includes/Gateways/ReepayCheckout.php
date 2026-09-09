@@ -78,8 +78,8 @@ class ReepayCheckout extends ReepayGateway {
 		$this->payment_methods         = $this->settings['payment_methods'] ?: $this->payment_methods;
 		$this->skip_order_lines        = $this->settings['skip_order_lines'] ?: $this->skip_order_lines;
 		$this->failed_webhooks_email   = $this->settings['failed_webhooks_email'] ?: $this->failed_webhooks_email;
-		$this->handle_failover         = ! empty( $this->settings['handle_failover'] ) ?: $this->handle_failover;
-		$this->enable_order_autocancel = ! empty( $this->settings['enable_order_autocancel'] ) ?: $this->enable_order_autocancel;
+		$this->handle_failover         = $this->settings['handle_failover'] ?: $this->handle_failover;
+		$this->enable_order_autocancel = $this->settings['enable_order_autocancel'] ?: $this->enable_order_autocancel;
 
 		if ( ! empty( $this->settings['settle'] ) && is_array( $this->settings['settle'] ) ) {
 			$this->settle = $this->settings['settle'];
