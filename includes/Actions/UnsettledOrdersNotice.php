@@ -18,7 +18,8 @@ defined( 'ABSPATH' ) || exit();
  */
 class UnsettledOrdersNotice {
 	/**
-	 * User meta key storing the hash of the affected-order set the current admin dismissed.
+	 * User meta key storing the UnsettledOrdersMonitor::GENERATION_OPTION value that was current
+	 * the last time this admin dismissed the notice.
 	 *
 	 * @var string
 	 */
@@ -35,9 +36,8 @@ class UnsettledOrdersNotice {
 
 	/**
 	 * Render the dismissible notice on all wp-admin pages. Lists every order in the current
-	 * result the only cap is the underlying
-	 * UnsettledOrdersFinder::MAX_RESULTS (500) safety limit reflected in $result['capped'], not a
-	 * separate display truncation.
+	 * result — the only cap is the underlying UnsettledOrdersFinder::MAX_RESULTS (500) safety
+	 * limit reflected in $result['capped'], not a separate display truncation.
 	 */
 	public function render() {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
@@ -50,17 +50,14 @@ class UnsettledOrdersNotice {
 			return;
 		}
 
-		$hash = $this->hash( $result['order_ids'] );
-
-		if ( $this->is_dismissed( $hash ) ) {
+		if ( $this->is_dismissed() ) {
 			return;
 		}
 
 		printf(
-			'<div class="notice notice-error is-dismissible" id="reepay-unsettled-orders-notice" data-nonce="%1$s" data-hash="%2$s"><p>%3$s</p><ul>%4$s</ul>%5$s</div>',
+			'<div class="notice notice-error is-dismissible" id="reepay-unsettled-orders-notice" data-nonce="%1$s"><p>%2$s</p><ul>%3$s</ul>%4$s</div>',
 			esc_attr( wp_create_nonce( 'reepay_dismiss_unsettled_orders_notice' ) ),
-			esc_attr( $hash ),
-			esc_html__( 'The following orders have status as Completed but have no payment registered:', 'reepay-checkout-gateway' ),
+			esc_html__( 'The following orders for payment via the Frisbii gateway have status as Completed but have no payment registered:', 'reepay-checkout-gateway' ),
 			$this->order_list_items( $result['order_ids'] ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_url()/esc_html() in order_list_items().
 			$result['capped'] ? '<p>' . esc_html__( 'and 500+ more.', 'reepay-checkout-gateway' ) . '</p>' : ''
 		);
@@ -94,29 +91,23 @@ class UnsettledOrdersNotice {
 	}
 
 	/**
-	 * Hash an order-ID set for dismissal comparison.
-	 *
-	 * @param int[] $order_ids order ids.
-	 *
-	 * @return string
-	 */
-	private function hash( array $order_ids ): string {
-		sort( $order_ids );
-
-		return md5( (string) wp_json_encode( $order_ids ) );
-	}
-
-	/**
-	 * Whether the current user already dismissed this exact affected-order set.
-	 *
-	 * @param string $hash hash of the current affected-order set.
+	 * Whether the current user already dismissed the notice as of the current generation (i.e.
+	 * no genuinely new order has appeared since they last dismissed it).
 	 *
 	 * @return bool
 	 */
-	private function is_dismissed( string $hash ): bool {
-		$dismissed_hash = get_user_meta( get_current_user_id(), self::DISMISSED_META, true );
+	private function is_dismissed(): bool {
+		$dismissed_generation = get_user_meta( get_current_user_id(), self::DISMISSED_META, true );
 
-		return $hash === $dismissed_hash;
+		// Reject anything that isn't a plain non-negative integer string — this covers both a
+		// user who never dismissed (empty string) and, importantly, any site that already had a
+		// leftover value from the old hash-based dismissal design (a hex string, e.g.
+		// "5d41402abc4b...").
+		if ( ! ctype_digit( (string) $dismissed_generation ) ) {
+			return false;
+		}
+
+		return (int) get_option( UnsettledOrdersMonitor::GENERATION_OPTION, 0 ) === (int) $dismissed_generation;
 	}
 
 	/**
@@ -131,8 +122,7 @@ class UnsettledOrdersNotice {
 					var $notice = $( '#reepay-unsettled-orders-notice' );
 					$.post( ajaxurl, {
 						action: 'reepay_dismiss_unsettled_orders_notice',
-						nonce: $notice.data( 'nonce' ),
-						hash: $notice.data( 'hash' )
+						nonce: $notice.data( 'nonce' )
 					} );
 				} );
 			} );
@@ -142,7 +132,7 @@ JS;
 	}
 
 	/**
-	 * AJAX handler: persist dismissal of the current affected-order set for the current admin.
+	 * AJAX handler: persist dismissal of the current generation for the current admin.
 	 */
 	public function dismiss() {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
@@ -151,9 +141,7 @@ JS;
 
 		check_ajax_referer( 'reepay_dismiss_unsettled_orders_notice', 'nonce' );
 
-		$hash = isset( $_POST['hash'] ) ? sanitize_text_field( wp_unslash( $_POST['hash'] ) ) : '';
-
-		update_user_meta( get_current_user_id(), self::DISMISSED_META, $hash );
+		update_user_meta( get_current_user_id(), self::DISMISSED_META, (int) get_option( UnsettledOrdersMonitor::GENERATION_OPTION, 0 ) );
 
 		wp_send_json_success();
 	}

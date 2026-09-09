@@ -54,7 +54,7 @@ class UnsettledOrdersMailer {
 	private function build_body( array $result ): string {
 		$intro = sprintf(
 			/* translators: %s: webshop (site) name. */
-			__( 'The following orders on %s have status as Completed but have no payment registered:', 'reepay-checkout-gateway' ),
+			__( 'The following orders on %s for payment via the Frisbii gateway have status as Completed but have no payment registered:', 'reepay-checkout-gateway' ),
 			get_bloginfo( 'name' )
 		);
 

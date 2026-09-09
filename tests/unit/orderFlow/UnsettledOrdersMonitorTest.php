@@ -204,8 +204,7 @@ class UnsettledOrdersMonitorTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * Test @see UnsettledOrdersMonitor::CRON_HOOK firing runs the same check as admin_init does
-	 * (both share maybe_check(), so whichever trigger fires first each day does the real work).
+	 * Test @see UnsettledOrdersMonitor::CRON_HOOK firing runs run_check() directly.
 	 */
 	public function test_cron_hook_triggers_the_daily_check() {
 		$order = $this->create_matching_order();
@@ -218,10 +217,12 @@ class UnsettledOrdersMonitorTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * Test @see UnsettledOrdersMonitor::FORCE_CHECK_HOOK bypasses the once-per-day throttle
-	 * entirely, unlike CRON_HOOK — it must run even when a check already happened today.
+	 * Test @see UnsettledOrdersMonitor::CRON_HOOK bypasses the once-per-day throttle entirely,
+	 * unlike admin_init's maybe_check() — a manual "Run now" in WP Crontrol on this exact event
+	 * must always force a real check, per Christian's 2026-09-07 request ("There should not be
+	 * additional code that blocks it from running manually").
 	 */
-	public function test_force_check_hook_runs_even_when_already_checked_today() {
+	public function test_cron_hook_runs_even_when_already_checked_today() {
 		update_option(
 			UnsettledOrdersMonitor::CHECK_DATE_OPTION,
 			wp_date( 'Y-m-d', null, new DateTimeZone( 'Europe/Copenhagen' ) ),
@@ -232,40 +233,59 @@ class UnsettledOrdersMonitorTest extends Reepay_UnitTestCase {
 
 		new UnsettledOrdersMonitor();
 
-		do_action( UnsettledOrdersMonitor::FORCE_CHECK_HOOK );
+		do_action( UnsettledOrdersMonitor::CRON_HOOK );
 
 		$this->assertContains( $order->get_id(), UnsettledOrdersMonitor::get_last_result()['order_ids'] );
 	}
 
 	/**
-	 * Test @see UnsettledOrdersMonitor::maybe_schedule_cron() schedules FORCE_CHECK_HOOK as a
-	 * far-future single event when nothing is scheduled yet, so it appears in WP Crontrol as a
-	 * "Run now" target without ever auto-firing on its own.
+	 * Test @see UnsettledOrdersMonitor::run_check() bumps GENERATION_OPTION when a genuinely new
+	 * order is detected — the same condition that triggers the email. UnsettledOrdersNotice reads
+	 * this to decide whether a dismissed notice should reappear.
 	 */
-	public function test_maybe_schedule_cron_schedules_force_check_hook() {
-		$this->assertFalse( wp_next_scheduled( UnsettledOrdersMonitor::FORCE_CHECK_HOOK ) );
+	public function test_run_check_increments_generation_for_newly_detected_order() {
+		$this->assertSame( 0, (int) get_option( UnsettledOrdersMonitor::GENERATION_OPTION, 0 ) );
 
-		( new UnsettledOrdersMonitor() )->maybe_schedule_cron();
+		$this->create_matching_order();
 
-		$next_run = wp_next_scheduled( UnsettledOrdersMonitor::FORCE_CHECK_HOOK );
-		$this->assertNotFalse( $next_run );
-		$this->assertGreaterThan( time() + YEAR_IN_SECONDS - MINUTE_IN_SECONDS, $next_run );
+		( new UnsettledOrdersMonitor() )->run_check();
+
+		$this->assertSame( 1, (int) get_option( UnsettledOrdersMonitor::GENERATION_OPTION, 0 ) );
 	}
 
 	/**
-	 * Test @see UnsettledOrdersMonitor::maybe_schedule_cron() re-creates FORCE_CHECK_HOOK's event
-	 * once it's gone (e.g. after firing via "Run now", which removes a single event the same way
-	 * a natural firing would) instead of leaving it permanently missing from WP Crontrol.
+	 * Test @see UnsettledOrdersMonitor::run_check() does not bump GENERATION_OPTION when the list
+	 * is unchanged from the last check (mirrors the no-email case, AC16).
 	 */
-	public function test_maybe_schedule_cron_reschedules_force_check_hook_after_it_fires() {
-		( new UnsettledOrdersMonitor() )->maybe_schedule_cron();
+	public function test_run_check_does_not_increment_generation_when_list_unchanged() {
+		$this->create_matching_order();
 
-		// Simulate the single event having fired and been removed by WP-Cron.
-		wp_unschedule_event( wp_next_scheduled( UnsettledOrdersMonitor::FORCE_CHECK_HOOK ), UnsettledOrdersMonitor::FORCE_CHECK_HOOK );
-		$this->assertFalse( wp_next_scheduled( UnsettledOrdersMonitor::FORCE_CHECK_HOOK ) );
+		$monitor = new UnsettledOrdersMonitor();
+		$monitor->run_check();
 
-		( new UnsettledOrdersMonitor() )->maybe_schedule_cron();
+		$generation_after_first_run = (int) get_option( UnsettledOrdersMonitor::GENERATION_OPTION, 0 );
 
-		$this->assertNotFalse( wp_next_scheduled( UnsettledOrdersMonitor::FORCE_CHECK_HOOK ) );
+		$monitor->run_check();
+
+		$this->assertSame( $generation_after_first_run, (int) get_option( UnsettledOrdersMonitor::GENERATION_OPTION, 0 ) );
+	}
+
+	/**
+	 * Test @see UnsettledOrdersMonitor::run_check() does not bump GENERATION_OPTION when the list
+	 * only shrinks (a real-time removal) — only genuinely new orders should advance it, per
+	 * Christian's 2026-09-07 request that removals must never affect notice dismissal.
+	 */
+	public function test_run_check_does_not_increment_generation_when_list_only_shrinks() {
+		$order = $this->create_matching_order();
+
+		$monitor = new UnsettledOrdersMonitor();
+		$monitor->run_check();
+
+		$generation_after_first_run = (int) get_option( UnsettledOrdersMonitor::GENERATION_OPTION, 0 );
+
+		$monitor->remove_resolved_order( $order->get_id() );
+		$monitor->run_check();
+
+		$this->assertSame( $generation_after_first_run, (int) get_option( UnsettledOrdersMonitor::GENERATION_OPTION, 0 ) );
 	}
 }

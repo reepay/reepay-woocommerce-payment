@@ -65,6 +65,19 @@ class UnsettledOrdersMonitor {
 	public const LAST_CHECKED_OPTION = 'reepay_unsettled_orders_last_checked';
 
 	/**
+	 * Option storing an integer that increments every time run_check() finds at least one
+	 * genuinely new order (the same condition that triggers the email — see run_check()).
+	 * UnsettledOrdersNotice compares each user's last-dismissed generation against this value
+	 * instead of hashing the current order-ID set, so a notice a user dismissed only reappears
+	 * for that same reason (a new order showing up) — never merely because real-time removals
+	 * happened to shrink the list back down to a shape that coincidentally matches an earlier
+	 * dismissed set.
+	 *
+	 * @var string
+	 */
+	public const GENERATION_OPTION = 'reepay_unsettled_orders_generation';
+
+	/**
 	 * WP-Cron hook name for the daily check. `admin_init` alone only fires the check once
 	 * someone visits wp-admin, which could be days after new orders actually broke. WP-Cron's
 	 * default "pseudo-cron" still needs *some* page load (front-end or back-end) to fire — it does
@@ -72,49 +85,38 @@ class UnsettledOrdersMonitor {
 	 * cron against `wp-cron.php` (outside this plugin's control) — but it removes the "must
 	 * specifically be an admin" requirement, since WP-Cron's own dispatch happens on any request.
 	 * `admin_init` is deliberately kept as-is: if WP-Cron is disabled or broken on a given host
-	 *the admin-visit path still works as a fallback.
+	 * the admin-visit path still works as a fallback.
+	 *
+	 * This hook's callback is run_check() directly, unconditionally — not the throttled
+	 * maybe_check().
 	 *
 	 * @var string
 	 */
 	public const CRON_HOOK = 'reepay_unsettled_orders_cron_check';
 
 	/**
-	 * WP-Cron hook for forcing an out-of-schedule check on demand — deliberately separate from
-	 * CRON_HOOK. 
-	 *
-	 * @var string
-	 */
-	public const FORCE_CHECK_HOOK = 'reepay_unsettled_orders_force_check';
-
-	/**
 	 * Monitor constructor.
 	 */
 	public function __construct() {
 		add_action( 'admin_init', array( $this, 'maybe_check' ) );
-		add_action( self::CRON_HOOK, array( $this, 'maybe_check' ) );
-		add_action( self::FORCE_CHECK_HOOK, array( $this, 'run_check' ) );
+		add_action( self::CRON_HOOK, array( $this, 'run_check' ) );
 		add_action( 'init', array( $this, 'maybe_schedule_cron' ) );
 	}
 
 	/**
-	 * Schedule the daily WP-Cron event if it isn't already scheduled, and keep a single
-	 * far-future FORCE_CHECK_HOOK event registered so it always appears in WP Crontrol's event
-	 * list as a "Run now" target.
+	 * Schedule the daily WP-Cron event if it isn't already scheduled.
 	 */
 	public function maybe_schedule_cron() {
 		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
 			wp_schedule_event( time(), 'daily', self::CRON_HOOK );
 		}
-
-		if ( ! wp_next_scheduled( self::FORCE_CHECK_HOOK ) ) {
-			wp_schedule_single_event( time() + YEAR_IN_SECONDS, self::FORCE_CHECK_HOOK );
-		}
 	}
 
 	/**
-	 * Run the detection check at most once per Europe/Copenhagen calendar day. Shared by both
-	 * triggers (admin_init and the WP-Cron event) so whichever fires first each day does the real
-	 * work, and the other is a cheap no-op — no risk of a duplicate check or duplicate email.
+	 * Run the detection check at most once per Europe/Copenhagen calendar day. Only guards
+	 * admin_init (uncontrolled frequency — fires on every page load); CRON_HOOK calls run_check()
+	 * directly and isn't routed through this method at all, since WP-Cron's own "daily" schedule
+	 * already limits its automatic frequency, and a manual "Run now" click should always work.
 	 */
 	public function maybe_check() {
 		$today = wp_date( 'Y-m-d', null, new DateTimeZone( self::TIMEZONE ) );
@@ -123,18 +125,17 @@ class UnsettledOrdersMonitor {
 			return;
 		}
 
-		update_option( self::CHECK_DATE_OPTION, $today, false );
-
 		$this->run_check();
 	}
 
 	/**
-	 * Run the detection check unconditionally, cache the result, and email only if the result
-	 * contains at least one order that wasn't part of the last checked list (AC15/AC16).
+	 * Run the detection check unconditionally, cache the result, and email 
 	 *
 	 * @return array{order_ids: int[], capped: bool}
 	 */
 	public function run_check(): array {
+		update_option( self::CHECK_DATE_OPTION, wp_date( 'Y-m-d', null, new DateTimeZone( self::TIMEZONE ) ), false );
+
 		$result = ( new UnsettledOrdersFinder() )->find();
 
 		update_option( self::RESULT_OPTION, $result, false );
@@ -152,6 +153,7 @@ class UnsettledOrdersMonitor {
 
 		if ( ! empty( $newly_detected ) ) {
 			( new UnsettledOrdersMailer() )->send( $result );
+			update_option( self::GENERATION_OPTION, (int) get_option( self::GENERATION_OPTION, 0 ) + 1, false );
 		}
 
 		update_option( self::LAST_CHECKED_OPTION, $result['order_ids'], false );
