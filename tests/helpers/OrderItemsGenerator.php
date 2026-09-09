@@ -7,6 +7,8 @@
 
 namespace Reepay\Checkout\Tests\Helpers;
 
+use Reepay\Checkout\OrderFlow\OrderCapture;
+
 /**
  * Class OrderItemsGenerator
  */
@@ -87,6 +89,14 @@ class OrderItemsGenerator {
 		if ( 'rp_sub' !== $options['type'] &&
 			 ( ! $this->only_not_settled || empty( $order_item->get_meta( 'settled' ) ) )
 		) {
+			// Mirrors ReepayGateway::get_order_items() exactly: it reads tax_percent from
+			// OrderCapture::get_item_price(), which back-derives the rate from WC's own
+			// already-cents-rounded line totals rather than from the raw input tax figure —
+			// reimplementing that formula independently here previously drifted out of sync
+			// with production and caused spurious test failures after BWPM-269/BWPM-277
+			// intentionally started preserving that decimal precision instead of rounding it off.
+			$tax_percent = OrderCapture::get_item_price( $order_item, $this->order_generator->order() )['tax_percent'];
+
 			$this->order_items[] = array(
 				'ordertext'       => $options['name'],
 				'quantity'        => $options['quantity'],
@@ -94,7 +104,7 @@ class OrderItemsGenerator {
 					$options['price'] + $options['tax'],
 					$this->order_generator->order()->get_currency()
 				),
-				'vat'             => round( $options['tax'] / $options['price'], 2 ),
+				'vat'             => round( $tax_percent / 100, 4 ),
 				'amount_incl_vat' => $this->include_tax
 			);
 		}
@@ -158,6 +168,10 @@ class OrderItemsGenerator {
 		$order_item = $this->order_generator->order()->get_item( $order_item_id, false );
 
 		if ( ! $this->only_not_settled || empty( $order_item->get_meta( 'settled' ) ) ) {
+			// Mirrors ReepayGateway::get_order_items()'s fee-line formula exactly:
+			// $tax_percent = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ), 2 ) : 0.
+			$tax_percent = ( $options['tax'] > 0 ) ? round( 100 / ( $options['price'] / $options['tax'] ), 2 ) : 0;
+
 			$this->order_items[] = array(
 				'ordertext'       => $options['name'],
 				'quantity'        => 1,
@@ -165,7 +179,7 @@ class OrderItemsGenerator {
 					$options['price'] + $options['tax'],
 					$this->order_generator->order()->get_currency()
 				),
-				'vat'             => round( $options['tax'] / $options['price'], 2 ),
+				'vat'             => round( $tax_percent / 100, 4 ),
 				'amount_incl_vat' => $this->include_tax
 			);
 		}
@@ -184,6 +198,10 @@ class OrderItemsGenerator {
 		$this->order_generator->order()->set_discount_total( $options['amount'] );
 		$this->order_generator->order()->set_discount_tax( $options['tax'] );
 
+		// Mirrors ReepayGateway::get_order_items()'s discount-line formula exactly:
+		// $tax_percent = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ), 2 ) : 0.
+		$tax_percent = ( $options['tax'] > 0 ) ? round( 100 / ( $options['amount'] / $options['tax'] ), 2 ) : 0;
+
 		$this->order_items[] = array(
 			'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
 			'quantity'        => 1,
@@ -191,7 +209,7 @@ class OrderItemsGenerator {
 				$options['amount'] + $options['tax'],
 				$this->order_generator->order()->get_currency()
 			),
-			'vat'             => round( $options['tax'] / $options['amount'], 2 ),
+			'vat'             => round( $tax_percent / 100, 4 ),
 			'amount_incl_vat' => $this->include_tax
 		);
 	}

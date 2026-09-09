@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit();
  */
 class UnsettledOrdersMailer {
 	/**
-	 * Send the unsettled-orders notification email. 
+	 * Send the unsettled-orders notification email.
 	 * Lists every order in $result['order_ids']
 	 *
 	 * @param array{order_ids: int[], capped: bool} $result detection result.

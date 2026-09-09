@@ -129,7 +129,11 @@ class UnsettledOrdersMonitor {
 	}
 
 	/**
-	 * Run the detection check unconditionally, cache the result, and email 
+	 * Run the detection check unconditionally, cache the result, and email — and bump
+	 * GENERATION_OPTION — only if the result contains at least one order that wasn't part of the
+	 * last checked list. Also records today's date as the last-checked date, so a
+	 * later admin_init the same day (via maybe_check()) correctly treats today as already done,
+	 * regardless of whether this particular run happened via admin_init or CRON_HOOK.
 	 *
 	 * @return array{order_ids: int[], capped: bool}
 	 */

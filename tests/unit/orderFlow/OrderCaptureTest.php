@@ -1024,11 +1024,16 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 
 		$this->order_generator->add_tax( $tax_rate );
 
+		// tax_percent is back-derived from WC's already-cents-rounded line totals (original 2.46,
+		// with_tax 2.71), not from the raw $tax_rate input — round(100 / (2.46 / 0.25), 2) = 10.16,
+		// not a clean 10. Since BWPM-269/BWPM-277, that decimal is intentionally preserved rather
+		// than rounded off (see test_get_item_price_product_with_decimal_tax_rate below), so this
+		// expectation must match the real cascaded rounding, not the input tax rate.
 		$this->assertEqualsCanonicalizing(
 			array(
 				'original' => $sale_price * $qty,
 				'with_tax' => round(( $sale_price * $qty ) * ( 1 + $tax_rate / 100 ), 2),
-				'tax_percent' => round($tax_rate),
+				'tax_percent' => 10.16,
 				'original_with_discount' => $sale_price * $qty,
 				'with_tax_and_discount' => round(( $sale_price * $qty ) * ( 1 + $tax_rate / 100 ), 2),
 				'subtotal' => $sale_price * $qty,
