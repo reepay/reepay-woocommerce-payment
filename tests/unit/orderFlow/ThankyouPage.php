@@ -112,24 +112,29 @@ class ThankyouPage extends Reepay_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test @see ThankyouPage::order_has_prorated_subscription returns true when
-	 * WC_Reepay_Subscription_Plan_Simple is absent (fallback path).
+	 * Test @see ThankyouPage::order_has_prorated_subscription returns false for a plain
+	 * order with no subscription products, regardless of whether the separate
+	 * reepay-woocommerce-subscriptions plugin (which provides
+	 * WC_Reepay_Subscription_Plan_Simple) is active. Detection is driven entirely by
+	 * product meta, so a merchant without that companion plugin must not have every
+	 * thank-you page stuck polling for a subscription split that will never happen.
 	 *
 	 * @group orderflow_thankyou
 	 */
-	public function test_order_has_prorated_subscription_fallback_when_no_class() {
+	public function test_order_has_prorated_subscription_false_when_no_class() {
 		if ( class_exists( 'WC_Reepay_Subscription_Plan_Simple' ) ) {
-			$this->markTestSkipped( 'WC_Reepay_Subscription_Plan_Simple is loaded — fallback path not active.' );
+			$this->markTestSkipped( 'WC_Reepay_Subscription_Plan_Simple is loaded — this scenario is covered by test_order_has_prorated_subscription_false_for_simple_product.' );
 		}
 
 		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple' );
 		$this->order_generator->order()->save();
 
 		$result = \Reepay\Checkout\OrderFlow\ThankyouPage::order_has_prorated_subscription(
 			$this->order_generator->order()
 		);
 
-		$this->assertTrue( $result, 'Should return true when WC_Reepay_Subscription_Plan_Simple is absent' );
+		$this->assertFalse( $result, 'Plain order with no subscription products must not be treated as prorated just because the class is absent' );
 	}
 
 	/**
@@ -139,10 +144,6 @@ class ThankyouPage extends Reepay_UnitTestCase {
 	 * @group orderflow_thankyou
 	 */
 	public function test_order_has_prorated_subscription_false_for_simple_product() {
-		if ( ! class_exists( 'WC_Reepay_Subscription_Plan_Simple' ) ) {
-			$this->markTestSkipped( 'WC_Reepay_Subscription_Plan_Simple not loaded — cannot reach false path.' );
-		}
-
 		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
 		$this->order_generator->add_product( 'simple' );
 		$this->order_generator->order()->save();
@@ -157,22 +158,20 @@ class ThankyouPage extends Reepay_UnitTestCase {
 
 	/**
 	 * Test @see ThankyouPage::order_has_prorated_subscription returns true when product
-	 * has bill_prorated schedule meta.
+	 * has bill_prorated schedule meta, even if WC_Reepay_Subscription_Plan_Simple isn't
+	 * loaded — detection reads product meta directly and never calls that class.
 	 *
 	 * @group orderflow_thankyou
 	 */
 	public function test_order_has_prorated_subscription_true_with_prorated_meta() {
-		if ( ! class_exists( 'WC_Reepay_Subscription_Plan_Simple' ) ) {
-			$this->markTestSkipped( 'WC_Reepay_Subscription_Plan_Simple not loaded — cannot test meta path.' );
-		}
-
-		// Create a simple product and add subscription schedule meta directly.
-		$product_id = self::$product_generator->create( 'simple' )->get_id();
-		update_post_meta( $product_id, '_reepay_subscription_schedule_type', 'interval' );
-		update_post_meta( $product_id, '_reepay_subscription_interval', array( 'period' => 'bill_prorated' ) );
-
 		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
-		$this->order_generator->add_product( 'simple', array(), $product_id );
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'_reepay_subscription_schedule_type' => 'interval',
+				'_reepay_subscription_interval'      => array( 'period' => 'bill_prorated' ),
+			)
+		);
 		$this->order_generator->order()->save();
 
 		$result = \Reepay\Checkout\OrderFlow\ThankyouPage::order_has_prorated_subscription(

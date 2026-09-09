@@ -68,10 +68,6 @@ class ThankyouPage_AJAX extends Reepay_Ajax_UnitTestCase {
 	 * @group orderflow_thankyou
 	 */
 	public function test_ajax_order_descriptions_waits_when_prorated_subscription_not_yet_split() {
-		if ( ! class_exists( 'WC_Reepay_Subscription_Plan_Simple' ) ) {
-			$this->markTestSkipped( 'WC_Reepay_Subscription_Plan_Simple not loaded — cannot test prorated path.' );
-		}
-
 		$this->order_generator->add_product(
 			'simple',
 			array(
@@ -103,10 +99,6 @@ class ThankyouPage_AJAX extends Reepay_Ajax_UnitTestCase {
 	 * @group orderflow_thankyou
 	 */
 	public function test_ajax_order_descriptions_renders_once_sibling_order_is_linked() {
-		if ( ! class_exists( 'WC_Reepay_Subscription_Plan_Simple' ) ) {
-			$this->markTestSkipped( 'WC_Reepay_Subscription_Plan_Simple not loaded — cannot test prorated path.' );
-		}
-
 		$this->order_generator->add_product(
 			'simple',
 			array(

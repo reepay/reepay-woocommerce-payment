@@ -88,6 +88,9 @@ jQuery(function ($) {
                         window.wc_reepay_thankyou.attempts++
 
                         if (window.wc_reepay_thankyou.attempts > 6) {
+                            $('.woocommerce-order').unblock()
+                            status_elm.hide()
+                            order_actions_elm.show()
                             return
                         }
 
