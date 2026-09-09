@@ -221,7 +221,7 @@ class InstantSettle {
 				$discount          = $order->get_total_discount();
 				$discount_with_tax = $order->get_total_discount( false );
 				$tax               = $discount_with_tax - $discount;
-				$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
+				$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ), 2 ) : 0;
 
 				if ( $prices_incl_tax ) {
 					/**
@@ -239,7 +239,7 @@ class InstantSettle {
 						'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
 						'quantity'        => 1,
 						'amount'          => round( $discount_amount, 2 ),
-						'vat'             => round( $tax_percent / 100, 2 ),
+						'vat'             => round( $tax_percent / 100, 4 ),
 						'amount_incl_vat' => $prices_incl_tax,
 					);
 					$items_data[]   = $items_discount;

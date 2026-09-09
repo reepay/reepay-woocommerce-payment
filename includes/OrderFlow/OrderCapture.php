@@ -641,7 +641,7 @@ class OrderCapture {
 
 			if ( $remaining_discount > 0 ) {
 				$tax         = $remaining_discount_with_tax - $remaining_discount;
-				$tax_percent = ( $tax > 0 && $remaining_discount > 0 ) ? round( 100 / ( $remaining_discount / $tax ) ) : 0;
+				$tax_percent = ( $tax > 0 && $remaining_discount > 0 ) ? round( 100 / ( $remaining_discount / $tax ), 2 ) : 0;
 
 				if ( $prices_incl_tax ) {
 					$simple_discount_amount = $remaining_discount_with_tax;
@@ -656,7 +656,7 @@ class OrderCapture {
 						'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
 						'quantity'        => 1,
 						'amount'          => round( $discount_amount, 2 ),
-						'vat'             => round( $tax_percent / 100, 2 ),
+						'vat'             => round( $tax_percent / 100, 4 ),
 						'amount_incl_vat' => $prices_incl_tax,
 					);
 					$items_data[]   = $items_discount;
@@ -918,7 +918,7 @@ class OrderCapture {
 				'ordertext'       => $item_data['ordertext'],
 				'quantity'        => $item->get_quantity(),
 				'amount'          => rp_prepare_amount( $unit_price_pre_discount, $order->get_currency() ),
-				'vat'             => round( $tax_rate, 2 ),
+				'vat'             => round( $tax_rate, 4 ),
 				'amount_incl_vat' => $prices_incl_tax,
 			);
 
@@ -933,7 +933,7 @@ class OrderCapture {
 					'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
 					'quantity'        => 1,
 					'amount'          => -rp_prepare_amount( $discount_amount, $order->get_currency() ),
-					'vat'             => round( $tax_rate, 2 ),
+					'vat'             => round( $tax_rate, 4 ),
 					'amount_incl_vat' => $prices_incl_tax,
 				);
 				$order_lines[] = $discount_line;
@@ -1190,7 +1190,7 @@ class OrderCapture {
 			'ordertext'       => $ordertext,
 			'quantity'        => $order_item->get_quantity(),
 			'amount'          => rp_prepare_amount( $unit_price, $order->get_currency() ),
-			'vat'             => round( $tax_percent / 100, 2 ),
+			'vat'             => round( $tax_percent / 100, 4 ),
 			'amount_incl_vat' => $prices_incl_tax,
 		);
 	}
@@ -1250,12 +1250,12 @@ class OrderCapture {
 				$subtotal_with_tax = round( $price['subtotal_with_tax'] / $order_item->get_quantity(), 2 );
 				$tax               = $subtotal_with_tax - $subtotal;
 				if ( abs( floatval( $tax ) ) > 0.001 ) {
-					$price_tax_percent = round( 100 / ( $subtotal / $tax ) );
+					$price_tax_percent = round( 100 / ( $subtotal / $tax ), 2 );
 				} else {
 					$price_tax_percent = 0;
 				}
 			} else {
-				$price_tax_percent = ( $tax > 0 && $price['original'] > 0 ) ? round( 100 / ( $price['original'] / $tax ) ) : 0;
+				$price_tax_percent = ( $tax > 0 && $price['original'] > 0 ) ? round( 100 / ( $price['original'] / $tax ), 2 ) : 0;
 			}
 			$price['tax_percent'] = round( $price_tax_percent, 2 );
 		}
