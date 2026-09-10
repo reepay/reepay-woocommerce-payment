@@ -69,6 +69,82 @@ class InstantSettleTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * Test @see InstantSettle::maybe_settle_instantly skips settling when the invoice
+	 * is not yet authorized (e.g. a Bank Transfer invoice still in "created" state
+	 * even though Frisbii already reports a non-zero authorized_amount).
+	 *
+	 * @group orderflow_instant_settle
+	 */
+	public function test_maybe_settle_instantly_skips_when_invoice_not_authorized() {
+		self::$options->set_option(
+			'settle',
+			array( InstantSettle::SETTLE_PHYSICAL )
+		);
+
+		$this->order_generator->set_prop( 'payment_method', 'reepay_offline_bank_transfer' );
+		$order_item_id = $this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'      => false,
+				'downloadable' => false,
+			)
+		);
+		$this->order_generator->order()->save();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+				'state'             => 'created',
+			)
+		);
+
+		self::$instant_settle_instance->maybe_settle_instantly( $this->order_generator->order() );
+
+		$this->assertFalse(
+			WC_Order_Factory::get_order_item( $order_item_id )->meta_exists( 'settled' )
+		);
+	}
+
+	/**
+	 * Test @see InstantSettle::maybe_settle_instantly still settles normally once the
+	 * invoice genuinely reports an "authorized" state — this is a regression guard so
+	 * the new state check doesn't accidentally block every gateway's normal flow.
+	 *
+	 * @group orderflow_instant_settle
+	 */
+	public function test_maybe_settle_instantly_settles_when_invoice_authorized() {
+		self::$options->set_option(
+			'settle',
+			array( InstantSettle::SETTLE_PHYSICAL )
+		);
+
+		$this->order_generator->set_prop( 'payment_method', 'reepay_offline_bank_transfer' );
+		$order_item_id = $this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'      => false,
+				'downloadable' => false,
+			)
+		);
+		$this->order_generator->order()->save();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+				'state'             => 'authorized',
+			)
+		);
+
+		self::$instant_settle_instance->maybe_settle_instantly( $this->order_generator->order() );
+
+		$this->assertTrue(
+			WC_Order_Factory::get_order_item( $order_item_id )->meta_exists( 'settled' )
+		);
+	}
+
+	/**
 	 * Test @see InstantSettle::process_instant_settle and make sure instant settlement can be processed just once
 	 */
 	public function test_process_instant_settle_already_settled() {

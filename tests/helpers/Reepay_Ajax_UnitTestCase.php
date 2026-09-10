@@ -17,4 +17,22 @@ class Reepay_Ajax_UnitTestCase extends WP_Ajax_UnitTestCase {
 
 	protected $preserveGlobalState = false;
 	protected $runTestInSeparateProcess = true;
+
+	/**
+	 * Runs the routine before setting up all tests.
+	 */
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
+
+		self::set_up_data_before_class();
+	}
+
+	/**
+	 * Runs the routine before each test is executed.
+	 */
+	public function set_up() {
+		parent::set_up();
+
+		$this->set_up_data();
+	}
 }

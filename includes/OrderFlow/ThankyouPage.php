@@ -244,6 +244,7 @@ class ThankyouPage {
 					'Please wait. We\'re checking the payment status.',
 					'reepay-checkout-gateway'
 				),
+				'skip_status_check'             => ( 'reepay_offline_bank_transfer' === $order->get_payment_method() ),
 			)
 		);
 	}
@@ -350,10 +351,6 @@ class ThankyouPage {
 
 		$another_orders = $order->get_meta( '_reepay_another_orders' );
 		$another_orders = is_array( $another_orders ) ? $another_orders : array();
-
-		if ( empty( $another_orders ) && self::order_has_prorated_subscription( $order ) ) {
-			wp_send_json_error( array( 'reason' => 'prorated_split_pending' ) );
-		}
 
 		$order_group = array_unique( array_merge( array( $order->get_id() ), $another_orders ) );
 
@@ -550,10 +547,6 @@ class ThankyouPage {
 	 * @return bool
 	 */
 	private static function order_own_items_have_prorated_subscription( WC_Order $order ): bool {
-		if ( ! class_exists( 'WC_Reepay_Subscription_Plan_Simple' ) ) {
-			return true;
-		}
-
 		foreach ( $order->get_items() as $item ) {
 			if ( ! $item instanceof WC_Order_Item_Product ) {
 				continue;
@@ -592,23 +585,17 @@ class ThankyouPage {
 	 * Schedule types that store a non-array meta value (e.g. daily, month_startdate)
 	 * or no meta at all (e.g. manual) are skipped automatically — no type denylist needed.
 	 *
-	 * Falls back to true (allow API check) if WC_Reepay_Subscription_Plan_Simple is unavailable.
+	 * Reads product meta directly and never calls WC_Reepay_Subscription_Plan_Simple, so
+	 * detection works correctly whether or not the reepay-woocommerce-subscriptions plugin
+	 * is active. It must not fall back to assuming "true" when that plugin is absent — doing
+	 * so previously made every order on a merchant without that plugin appear pro-rated,
+	 * leaving the thank-you page stuck polling for a subscription split that would never come.
 	 *
 	 * @param WC_Order $order Order object.
 	 * @return bool
 	 */
 	public static function order_has_prorated_subscription( WC_Order $order ): bool {
 		$debug = function_exists( 'wc_get_logger' ) && 'yes' === reepay()->get_setting( 'debug' );
-
-		if ( ! class_exists( 'WC_Reepay_Subscription_Plan_Simple' ) ) {
-			if ( $debug ) {
-				wc_get_logger()->debug(
-					sprintf( 'order_has_prorated_subscription: WC_Reepay_Subscription_Plan_Simple not found — falling back to API check for order %d', $order->get_id() ),
-					array( 'source' => 'reepay-thankyou' )
-				);
-			}
-			return true;
-		}
 
 		$order_ids      = array( $order->get_id() );
 		$another_orders = $order->get_meta( '_reepay_another_orders' );

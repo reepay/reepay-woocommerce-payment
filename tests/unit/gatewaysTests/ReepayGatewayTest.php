@@ -763,4 +763,88 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 
 		wp_set_current_user( 0 );
 	}
+
+	/**
+	 * Test @see ReepayGateway::process_payment places a Bank Transfer order on-hold
+	 * immediately after a successful session charge, instead of waiting for the
+	 * invoice_authorized webhook (which won't arrive quickly for a real bank transfer).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_process_payment_bank_transfer_sets_on_hold() {
+		$user_id = $this->factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		self::$gateway->id = 'reepay_offline_bank_transfer';
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$session_response = array(
+			'id'  => 'session_xyz',
+			'url' => 'https://checkout.reepay.com/pay/session_xyz',
+		);
+
+		$this->api_mock->method( 'request' )->willReturn( $session_response );
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-' . $user_id );
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+				'state'             => 'created',
+			)
+		);
+
+		$result = self::$gateway->process_payment( $order_id );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		$order = wc_get_order( $order_id );
+		$this->assertSame( 'on-hold', $order->get_status() );
+		$this->assertSame( '1', $order->get_meta( '_reepay_state_authorized' ) );
+
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Regression guard: process_payment() must NOT force other gateways on-hold.
+	 * Only reepay_offline_bank_transfer gets the early on-hold transition.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_process_payment_non_bank_transfer_does_not_force_on_hold() {
+		$user_id = $this->factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		self::$gateway->id = 'reepay_checkout';
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$session_response = array(
+			'id'  => 'session_xyz',
+			'url' => 'https://checkout.reepay.com/pay/session_xyz',
+		);
+
+		$this->api_mock->method( 'request' )->willReturn( $session_response );
+		$this->api_mock->method( 'recurring' )->willReturn( $session_response );
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-' . $user_id );
+
+		$result = self::$gateway->process_payment( $order_id );
+
+		$this->assertSame( 'success', $result['result'] );
+
+		$order = wc_get_order( $order_id );
+		$this->assertNotSame( 'on-hold', $order->get_status() );
+		$this->assertEmpty( $order->get_meta( '_reepay_state_authorized' ) );
+
+		wp_set_current_user( 0 );
+	}
 }

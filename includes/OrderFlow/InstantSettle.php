@@ -94,7 +94,42 @@ class InstantSettle {
 				if ( is_array( $invoice ) && array_key_exists( 'authorized_amount', $invoice ) && array_key_exists( 'settled_amount', $invoice ) && $invoice['authorized_amount'] - $invoice['settled_amount'] <= 0 ) {
 					return;
 				}
-				$this->process_instant_settle( $order );
+
+				// Some payment methods (e.g. Frisbii Pay - Bank Transfer) can report a
+				// non-zero authorized_amount before the invoice is genuinely
+				// authorized/settleable — only proceed once the invoice's own state
+				// confirms it, to avoid a doomed settle API call.
+				if ( is_array( $invoice ) && array_key_exists( 'state', $invoice ) && ! in_array( $invoice['state'], array( 'authorized', 'settled' ), true ) ) {
+					if ( function_exists( 'wc_get_logger' ) ) {
+						wc_get_logger()->debug(
+							sprintf(
+								'maybe_settle_instantly: skipping settle for order %d — invoice state is "%s", not authorized/settled yet.',
+								$order->get_id(),
+								$invoice['state']
+							),
+							array( 'source' => 'reepay-instant-settle' )
+						);
+					}
+
+					return;
+				}
+
+				try {
+					$this->process_instant_settle( $order );
+				} catch ( \Throwable $e ) {
+					if ( function_exists( 'wc_get_logger' ) ) {
+						wc_get_logger()->debug(
+							sprintf(
+								'maybe_settle_instantly: process_instant_settle threw for order %d: %s',
+								$order->get_id(),
+								$e->getMessage()
+							),
+							array( 'source' => 'reepay-instant-settle' )
+						);
+					}
+
+					return;
+				}
 
 				// If instant settle didn't settle any items and the order contains
 				// only virtual products, call payment_complete() so WooCommerce and
@@ -186,7 +221,7 @@ class InstantSettle {
 				$discount          = $order->get_total_discount();
 				$discount_with_tax = $order->get_total_discount( false );
 				$tax               = $discount_with_tax - $discount;
-				$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
+				$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ), 2 ) : 0;
 
 				if ( $prices_incl_tax ) {
 					/**
@@ -204,7 +239,7 @@ class InstantSettle {
 						'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
 						'quantity'        => 1,
 						'amount'          => round( $discount_amount, 2 ),
-						'vat'             => round( $tax_percent / 100, 2 ),
+						'vat'             => round( $tax_percent / 100, 4 ),
 						'amount_incl_vat' => $prices_incl_tax,
 					);
 					$items_data[]   = $items_discount;

@@ -4,7 +4,7 @@ Tags: Frisbii, billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.8.16
+Stable tag: 1.8.16.1
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,6 +18,14 @@ The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.8.16.1
+- [Fix] – Order confirmation page pacifier animation stalled if the Billing module wasn't installed.
+- [Fix] – Order confirmation page pacifier animation stalled for Frisbii Bank Transfer payment method.
+- [Fix] – Clinking Cancel to auto-settle also canceled the status change.
+- [Fix] – Order handle failover.
+- [Fix] – VAT rate with decimals got rounded off with prices entered exclusive VAT.
+- [Feature] – Reminder of completed but unsettled orders in backend and by mail.
+
 v 1.8.16
 - [Fix] – Auto-settle compatibility with modified order numbers restored.
 

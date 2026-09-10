@@ -24,6 +24,7 @@ class Main {
 			new Checkout();
 			new ReepayCustomer();
 			new Subscriptions();
+			new UnsettledOrdersNotice();
 
 			add_filter( 'allowed_redirect_hosts', array( $this, 'add_allowed_redirect_hosts' ) );
 		}

@@ -1024,17 +1024,90 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 
 		$this->order_generator->add_tax( $tax_rate );
 
+		// tax_percent is back-derived from WC's already-cents-rounded line totals (original 2.46,
+		// with_tax 2.71), not from the raw $tax_rate input — round(100 / (2.46 / 0.25), 2) = 10.16,
+		// not a clean 10. Since BWPM-269/BWPM-277, that decimal is intentionally preserved rather
+		// than rounded off (see test_get_item_price_product_with_decimal_tax_rate below), so this
+		// expectation must match the real cascaded rounding, not the input tax rate.
 		$this->assertEqualsCanonicalizing(
 			array(
 				'original' => $sale_price * $qty,
 				'with_tax' => round(( $sale_price * $qty ) * ( 1 + $tax_rate / 100 ), 2),
-				'tax_percent' => round($tax_rate),
+				'tax_percent' => 10.16,
 				'original_with_discount' => $sale_price * $qty,
 				'with_tax_and_discount' => round(( $sale_price * $qty ) * ( 1 + $tax_rate / 100 ), 2),
 				'subtotal' => $sale_price * $qty,
 				'subtotal_with_tax' => round(( $sale_price * $qty ) * ( 1 + $tax_rate / 100 ), 2)
 			),
 			OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() )
+		);
+	}
+
+	/**
+	 * Regression test for BWPM-269: a VAT rate with a decimal (e.g. 25.5%) must not be
+	 * rounded off to a whole number (26%) when computed back from order item totals.
+	 *
+	 * Mirrors production order #2981: 60.00 excl. tax, 25.5% VAT => 15.30 tax, 75.30 total.
+	 * Before the fix, tax_percent was rounded to 26, producing a 75.60 charge instead.
+	 *
+	 * @see OrderCapture::get_item_price
+	 */
+	public function test_get_item_price_product_with_decimal_tax_rate() {
+		$price    = 60.00;
+		$qty      = 1;
+		$tax_rate = 25.5;
+
+		add_filter( 'wc_tax_enabled', '__return_true' );
+
+		$order_item_id = $this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => $price,
+			),
+			array(
+				'quantity' => $qty,
+			)
+		);
+
+		$this->order_generator->add_tax( $tax_rate );
+
+		$item_price = OrderCapture::get_item_price( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() );
+
+		$this->assertSame( 25.5, $item_price['tax_percent'], 'VAT rate decimal was rounded off' );
+		$this->assertEqualsWithDelta( 75.3, $item_price['with_tax'], 0.001 );
+	}
+
+	/**
+	 * Regression test for BWPM-269: the 'vat' fraction sent to Frisbii for order lines
+	 * must preserve a decimal VAT rate (25.5% => 0.255) instead of losing precision to 0.26.
+	 *
+	 * @see OrderCapture::get_item_data
+	 */
+	public function test_get_item_data_vat_field_preserves_decimal_tax_rate() {
+		$price    = 60.00;
+		$qty      = 1;
+		$tax_rate = 25.5;
+
+		add_filter( 'wc_tax_enabled', '__return_true' );
+
+		$order_item_id = $this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => $price,
+			),
+			array(
+				'quantity' => $qty,
+			)
+		);
+
+		$this->order_generator->add_tax( $tax_rate );
+
+		$item_data = $this->order_capture->get_item_data( WC_Order_Factory::get_order_item( $order_item_id ), $this->order_generator->order() );
+
+		$this->assertSame( 0.255, $item_data['vat'] );
+		$this->assertSame(
+			rp_prepare_amount( $price, $this->order_generator->order()->get_currency() ),
+			$item_data['amount']
 		);
 	}
 

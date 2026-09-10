@@ -779,6 +779,39 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Immediately place a Frisbii Pay - Bank Transfer order on-hold after a
+	 * successful checkout, instead of waiting for the invoice_authorized webhook.
+	 *
+	 * Real bank transfers take days to clear, so that webhook won't arrive quickly
+	 * (if at all, automatically) — leaving the order in "pending" otherwise, which
+	 * risks it being auto-cancelled by the "Enable Order Auto-cancel" setting.
+	 *
+	 * Also flags the order as authorized so that if the invoice_authorized webhook
+	 * does eventually arrive, Webhook::process()'s own idempotency guard
+	 * (`if ($order->has_status(...)) return;`) short-circuits cleanly instead of
+	 * leaving _reepay_state_authorized unset.
+	 *
+	 * @param WC_Order $order order to update.
+	 */
+	private function maybe_place_bank_transfer_on_hold( WC_Order $order ): void {
+		if ( 'reepay_offline_bank_transfer' !== $this->id ) {
+			return;
+		}
+
+		if ( ! $order->has_status( 'on-hold' ) ) {
+			$order->update_status(
+				'on-hold',
+				__( 'Awaiting bank transfer. Order placed via Frisbii Pay - Bank Transfer.', 'reepay-checkout-gateway' )
+			);
+		}
+
+		if ( empty( $order->get_meta( '_reepay_state_authorized' ) ) ) {
+			$order->update_meta_data( '_reepay_state_authorized', 1 );
+			$order->save_meta_data();
+		}
+	}
+
+	/**
 	 * Process Payment
 	 *
 	 * @param int $order_id Order ID.
@@ -1222,7 +1255,15 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 							'payment_method' => $order->get_payment_method(),
 						)
 					);
-					return $this->process_session_charge( $params, $order );
+
+					$result = $this->process_session_charge( $params, $order );
+
+					// Saved payment method + subscription in cart path.
+					if ( is_array( $result ) && 'success' === ( $result['result'] ?? '' ) ) {
+						$this->maybe_place_bank_transfer_on_hold( $order );
+					}
+
+					return $result;
 				} else {
 					$order_lines = 'no' === $this->skip_order_lines ? $this->get_order_items( $order ) : null;
 					$amount      = 'yes' === $this->skip_order_lines ? $this->get_skip_order_lines_amount( $order, true ) : null;
@@ -1286,6 +1327,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 				do_action( 'reepay_instant_settle', $order );
 			}
+
+			// Saved payment method, charged directly (returning customer) path.
+			$this->maybe_place_bank_transfer_on_hold( $order );
 
 			$this->log(
 				array(
@@ -1382,6 +1426,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			do_action( 'reepay_instant_settle', $order );
 
+			// Zero-amount / pure subscription setup path.
+			$this->maybe_place_bank_transfer_on_hold( $order );
+
 			$redirect = '#!reepay-checkout';
 
 			if ( ! empty( $result['url'] ) ) {
@@ -1415,7 +1462,14 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			)
 		);
 
-		return $this->process_session_charge( $params, $order );
+		$result = $this->process_session_charge( $params, $order );
+
+		// Normal new checkout path (e.g. a regular product, no saved payment method).
+		if ( is_array( $result ) && 'success' === ( $result['result'] ?? '' ) ) {
+			$this->maybe_place_bank_transfer_on_hold( $order );
+		}
+
+		return $result;
 	}
 
 	/**
@@ -1908,7 +1962,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'ordertext'       => rp_clear_ordertext( $order_item->get_name() ),
 				'quantity'        => $order_item->get_quantity(),
 				'amount'          => rp_prepare_amount( $unit_price, $order->get_currency() ),
-				'vat'             => round( $tax_percent / 100, 2 ),
+				'vat'             => round( $tax_percent / 100, 4 ),
 				'amount_incl_vat' => $prices_incl_tax,
 			);
 		}
@@ -1941,7 +1995,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'ordertext'       => rp_clear_ordertext( $item_shipping->get_name() ),
 					'quantity'        => $item_shipping->get_quantity(),
 					'amount'          => rp_prepare_amount( $unit_price, $order->get_currency() ),
-					'vat'             => round( $tax_percent / 100, 2 ),
+					'vat'             => round( $tax_percent / 100, 4 ),
 					'amount_incl_vat' => $prices_incl_tax,
 				);
 			}
@@ -1956,7 +2010,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$fee          = (float) $order_fee->get_total();
 			$tax          = (float) $order_fee->get_total_tax();
 			$fee_with_tax = $fee + $tax;
-			$tax_percent  = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
+			$tax_percent  = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ), 2 ) : 0;
 
 			if ( $only_not_settled && ! empty( $order_fee->get_meta( 'settled' ) ) ) {
 				continue;
@@ -1966,7 +2020,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'ordertext'       => rp_clear_ordertext( $order_fee->get_name() ),
 				'quantity'        => 1,
 				'amount'          => rp_prepare_amount( $prices_incl_tax ? $fee_with_tax : $fee, $order->get_currency() ),
-				'vat'             => round( $tax_percent / 100, 2 ),
+				'vat'             => round( $tax_percent / 100, 4 ),
 				'amount_incl_vat' => $prices_incl_tax,
 			);
 		}
@@ -1976,7 +2030,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$discount          = $order->get_total_discount();
 			$discount_with_tax = $order->get_total_discount( false );
 			$tax               = $discount_with_tax - $discount;
-			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
+			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ), 2 ) : 0;
 
 			if ( abs( floatval( $sub_amount_discount ) ) > 0.001 && abs( floatval( $discount ) ) > 0.001 ) {
 				/**
@@ -2003,7 +2057,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'ordertext'       => __( 'Discount', 'reepay-checkout-gateway' ),
 					'quantity'        => 1,
 					'amount'          => round( $discount_amount, 2 ),
-					'vat'             => round( $tax_percent / 100, 2 ),
+					'vat'             => round( $tax_percent / 100, 4 ),
 					'amount_incl_vat' => $prices_incl_tax,
 				);
 			}

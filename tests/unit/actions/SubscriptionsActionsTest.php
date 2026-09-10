@@ -16,6 +16,57 @@ use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 class SubscriptionsActionsTest extends Reepay_UnitTestCase {
 
 	/**
+	 * Build a minimal subscription stub for @see Subscriptions::renewal_order_created(), which
+	 * only ever calls get_payment_method() and get_parent() on its $subscription argument (it
+	 * has no WC_Subscription type hint — see the method's own signature). Using a plain object
+	 * instead of mocking the real WC_Subscription class means these tests run in every plugin
+	 * combination, including when WooCommerce Subscriptions itself isn't loaded — mocking the
+	 * real class would fail there, since PHPUnit's mock builder requires the target class to
+	 * actually be loadable.
+	 *
+	 * @param string   $payment_method value get_payment_method() should return.
+	 * @param WC_Order $parent         value get_parent() should return.
+	 *
+	 * @return object
+	 */
+	private function create_subscription_stub( string $payment_method, WC_Order $parent ) {
+		return new class( $payment_method, $parent ) {
+			/**
+			 * @var string
+			 */
+			private string $payment_method;
+
+			/**
+			 * @var WC_Order
+			 */
+			private WC_Order $parent;
+
+			/**
+			 * @param string   $payment_method value get_payment_method() should return.
+			 * @param WC_Order $parent         value get_parent() should return.
+			 */
+			public function __construct( string $payment_method, WC_Order $parent ) {
+				$this->payment_method = $payment_method;
+				$this->parent         = $parent;
+			}
+
+			/**
+			 * @return string
+			 */
+			public function get_payment_method(): string {
+				return $this->payment_method;
+			}
+
+			/**
+			 * @return WC_Order
+			 */
+			public function get_parent(): WC_Order {
+				return $this->parent;
+			}
+		};
+	}
+
+	/**
 	 * Test @see Subscriptions::renewal_order_created copies the age verification
 	 * result from the parent order to the renewal order (BWPM-264).
 	 */
@@ -36,9 +87,7 @@ class SubscriptionsActionsTest extends Reepay_UnitTestCase {
 		$renewal_order = wc_create_order();
 		$renewal_order->save();
 
-		$subscription = $this->createMock( WC_Subscription::class );
-		$subscription->method( 'get_payment_method' )->willReturn( reepay()->gateways()->checkout()->id );
-		$subscription->method( 'get_parent' )->willReturn( $parent_order );
+		$subscription = $this->create_subscription_stub( reepay()->gateways()->checkout()->id, $parent_order );
 
 		( new Subscriptions() )->renewal_order_created( $renewal_order, $subscription );
 
@@ -67,9 +116,7 @@ class SubscriptionsActionsTest extends Reepay_UnitTestCase {
 		$renewal_order = wc_create_order();
 		$renewal_order->save();
 
-		$subscription = $this->createMock( WC_Subscription::class );
-		$subscription->method( 'get_payment_method' )->willReturn( reepay()->gateways()->checkout()->id );
-		$subscription->method( 'get_parent' )->willReturn( $parent_order );
+		$subscription = $this->create_subscription_stub( reepay()->gateways()->checkout()->id, $parent_order );
 
 		( new Subscriptions() )->renewal_order_created( $renewal_order, $subscription );
 
@@ -93,9 +140,7 @@ class SubscriptionsActionsTest extends Reepay_UnitTestCase {
 		$renewal_order = wc_create_order();
 		$renewal_order->save();
 
-		$subscription = $this->createMock( WC_Subscription::class );
-		$subscription->method( 'get_payment_method' )->willReturn( 'bacs' );
-		$subscription->method( 'get_parent' )->willReturn( $parent_order );
+		$subscription = $this->create_subscription_stub( 'bacs', $parent_order );
 
 		( new Subscriptions() )->renewal_order_created( $renewal_order, $subscription );
 

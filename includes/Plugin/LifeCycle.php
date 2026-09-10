@@ -8,6 +8,8 @@
 
 namespace Reepay\Checkout\Plugin;
 
+use Reepay\Checkout\OrderFlow\UnsettledOrdersMonitor;
+
 defined( 'ABSPATH' ) || exit();
 
 /**
@@ -39,5 +41,6 @@ class LifeCycle {
 	 * Plugin deactivated hook
 	 */
 	public static function deactivation_hook() {
+		wp_clear_scheduled_hook( UnsettledOrdersMonitor::CRON_HOOK );
 	}
 }

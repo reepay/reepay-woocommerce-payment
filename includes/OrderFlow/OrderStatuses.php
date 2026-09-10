@@ -361,6 +361,13 @@ class OrderStatuses {
 
 			$order->update_meta_data( '_reepay_state_settled', 1 );
 			$order->save_meta_data();
+
+			/**
+			 * Fires once an order has genuinely been marked settled.
+			 *
+			 * @param WC_Order $order the settled order.
+			 */
+			do_action( 'reepay_order_settled', $order );
 		}
 
 		// Trigger order save to ensure analytics are updated.
