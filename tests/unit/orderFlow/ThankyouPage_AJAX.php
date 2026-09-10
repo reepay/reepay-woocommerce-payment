@@ -58,16 +58,17 @@ class ThankyouPage_AJAX extends Reepay_Ajax_UnitTestCase {
 	}
 
 	/**
-	 * The linked subscription/renewal order is created asynchronously by the
-	 * reepay-woocommerce-subscriptions plugin (on the invoice_authorized/settled
-	 * webhook), which can take well over a minute. While a prorated subscription
-	 * is expected but its sibling order hasn't been linked yet via
-	 * `_reepay_another_orders`, the endpoint must tell the client to keep polling
-	 * instead of rendering an incomplete page.
+	 * `_reepay_another_orders` is populated synchronously at checkout by
+	 * reepay-woocommerce-subscriptions only when a cart splits across multiple orders —
+	 * it stays permanently empty for a single-product pro-rated subscription order (no
+	 * webhook ever fills it in). Readiness must therefore be decided purely by whether
+	 * pro-rated pricing data is available (get_pro_rated_reepay_subscription()), even
+	 * when a sibling order is already linked and pricing data genuinely isn't ready yet.
 	 *
 	 * @group orderflow_thankyou
 	 */
-	public function test_ajax_order_descriptions_waits_when_prorated_subscription_not_yet_split() {
+	public function test_ajax_order_descriptions_waits_for_pricing_data_even_with_sibling_linked() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
 		$this->order_generator->add_product(
 			'simple',
 			array(
@@ -75,6 +76,10 @@ class ThankyouPage_AJAX extends Reepay_Ajax_UnitTestCase {
 				'_reepay_subscription_interval'      => array( 'period' => 'bill_prorated' ),
 			)
 		);
+
+		$sibling_order = ( new OrderGenerator() )->order();
+		$this->order_generator->set_meta( '_reepay_another_orders', array( $sibling_order->get_id() ) );
+		// No `_reepay_order` invoice handle set yet, so pricing data isn't ready.
 
 		$_POST['nonce']     = wp_create_nonce( 'reepay' );
 		$_POST['order_id']  = $this->order_generator->order()->get_id();
@@ -93,12 +98,17 @@ class ThankyouPage_AJAX extends Reepay_Ajax_UnitTestCase {
 	}
 
 	/**
-	 * Once the sibling order is linked via `_reepay_another_orders`, the endpoint
-	 * must render successfully even though the order has a prorated subscription.
+	 * Regression test for the case reported on order #31181 (BWPM-277 follow-up): a
+	 * single-product pro-rated subscription order must not be blocked forever just
+	 * because `_reepay_another_orders` is empty — that meta was never going to be
+	 * populated for this order in the first place (no cart split was ever needed), so
+	 * gating on it here previously left the thank-you page waiting indefinitely and
+	 * rendering without its pro-rated breakdown, no matter how long the customer waited.
 	 *
 	 * @group orderflow_thankyou
 	 */
-	public function test_ajax_order_descriptions_renders_once_sibling_order_is_linked() {
+	public function test_ajax_order_descriptions_renders_even_when_another_orders_stays_permanently_empty() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
 		$this->order_generator->add_product(
 			'simple',
 			array(
@@ -106,9 +116,7 @@ class ThankyouPage_AJAX extends Reepay_Ajax_UnitTestCase {
 				'_reepay_subscription_interval'      => array( 'period' => 'bill_prorated' ),
 			)
 		);
-
-		$sibling_order = ( new OrderGenerator() )->order();
-		$this->order_generator->set_meta( '_reepay_another_orders', array( $sibling_order->get_id() ) );
+		// No sibling order, and never will be one — must not wait on that basis alone.
 
 		$_POST['nonce']     = wp_create_nonce( 'reepay' );
 		$_POST['order_id']  = $this->order_generator->order()->get_id();

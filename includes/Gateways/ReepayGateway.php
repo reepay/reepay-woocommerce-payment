@@ -1258,6 +1258,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 					$result = $this->process_session_charge( $params, $order );
 
+					// Saved payment method + subscription in cart path.
 					if ( is_array( $result ) && 'success' === ( $result['result'] ?? '' ) ) {
 						$this->maybe_place_bank_transfer_on_hold( $order );
 					}
@@ -1327,6 +1328,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				do_action( 'reepay_instant_settle', $order );
 			}
 
+			// Saved payment method, charged directly (returning customer) path.
 			$this->maybe_place_bank_transfer_on_hold( $order );
 
 			$this->log(
@@ -1424,6 +1426,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			do_action( 'reepay_instant_settle', $order );
 
+			// Zero-amount / pure subscription setup path.
 			$this->maybe_place_bank_transfer_on_hold( $order );
 
 			$redirect = '#!reepay-checkout';
@@ -1461,6 +1464,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$result = $this->process_session_charge( $params, $order );
 
+		// Normal new checkout path (e.g. a regular product, no saved payment method).
 		if ( is_array( $result ) && 'success' === ( $result['result'] ?? '' ) ) {
 			$this->maybe_place_bank_transfer_on_hold( $order );
 		}

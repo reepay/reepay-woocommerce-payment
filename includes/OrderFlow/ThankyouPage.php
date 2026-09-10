@@ -352,10 +352,6 @@ class ThankyouPage {
 		$another_orders = $order->get_meta( '_reepay_another_orders' );
 		$another_orders = is_array( $another_orders ) ? $another_orders : array();
 
-		if ( empty( $another_orders ) && self::order_has_prorated_subscription( $order ) ) {
-			wp_send_json_error( array( 'reason' => 'prorated_split_pending' ) );
-		}
-
 		$order_group = array_unique( array_merge( array( $order->get_id() ), $another_orders ) );
 
 		foreach ( $order_group as $group_order_id ) {
