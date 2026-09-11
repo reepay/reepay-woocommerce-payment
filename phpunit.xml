@@ -25,6 +25,9 @@
         <testsuite name="Gateways tested">
             <directory suffix="Test.php">./tests/unit/gatewaysTests</directory>
         </testsuite>
+        <testsuite name="Api tested">
+            <directory suffix="Test.php">./tests/unit/api</directory>
+        </testsuite>
         <testsuite name="Tokens tested">
             <directory suffix="Test.php">./tests/unit/tokens</directory>
         </testsuite>

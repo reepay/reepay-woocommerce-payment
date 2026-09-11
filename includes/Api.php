@@ -399,6 +399,15 @@ class Api {
 	}
 
 	/**
+	 * Get the list of available payment window configurations.
+	 *
+	 * @return array|WP_Error
+	 */
+	public function get_configurations() {
+		return $this->request( 'GET', 'https://checkout-api.reepay.com/v1/configuration' );
+	}
+
+	/**
 	 * Get Invoice data of Order.
 	 *
 	 * @param mixed $order order to get data.
@@ -731,6 +740,21 @@ class Api {
 
 		// Add age verification data if needed.
 		$this->add_age_verification_to_session_data( $params, $order );
+
+		$configuration = reepay()->get_setting( 'payment_window_configuration' );
+		if ( ! empty( $configuration ) ) {
+			$params['configuration'] = $configuration;
+		} else {
+			$params['configuration'] = 'default';
+		}
+
+		$this->log(
+			array(
+				'source'   => 'session_recurring_request',
+				'order_id' => $order->get_id(),
+				'params'   => $params,
+			)
+		);
 
 		return $this->request(
 			'POST',
