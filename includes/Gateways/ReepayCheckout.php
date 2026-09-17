@@ -97,47 +97,90 @@ class ReepayCheckout extends ReepayGateway {
 	}
 
 	/**
+	 * Build the "Payment window configuration" dropdown options.
+	 *
+	 * Only fetches from the API when rendering the gateway settings page,
+	 * to avoid an extra HTTP call on every checkout/cart page load.
+	 *
+	 * @return array
+	 */
+	protected function get_payment_window_configuration_options(): array {
+		$options = array();
+
+		if ( $this->is_gateway_settings_page() ) {
+			$configurations = get_transient( 'reepay_payment_window_configurations' );
+			if ( false === $configurations ) {
+				$result         = reepay()->api( $this )->get_configurations();
+				$configurations = is_wp_error( $result ) ? array() : $result;
+				set_transient( 'reepay_payment_window_configurations', $configurations, 5 );
+			}
+
+			foreach ( (array) $configurations as $configuration ) {
+				if ( ! empty( $configuration['handle'] ) ) {
+					$options[ $configuration['handle'] ] = $configuration['name'] ?? $configuration['handle'];
+				}
+			}
+		}
+
+		// Preserve a previously saved handle even if the API call failed or no longer
+		// returns it, so WooCommerce's validate_select_field() doesn't reset it on save.
+		$saved_handle = $this->get_option( 'payment_window_configuration' );
+		if ( ! empty( $saved_handle ) && ! isset( $options[ $saved_handle ] ) ) {
+			$options[ $saved_handle ] = $saved_handle;
+		}
+
+		// Fallback for when nothing could be fetched/preserved (e.g. rendering outside
+		// the settings page, or a failed API call with no previously saved handle) so
+		// the <select> is never left without any options.
+		if ( empty( $options ) ) {
+			$options[''] = __( 'Default', 'reepay-checkout-gateway' );
+		}
+
+		return $options;
+	}
+
+	/**
 	 * Initialise Settings Form Fields
 	 */
 	public function init_form_fields() {
 		$form_fields = array(
-			'enabled'                    => array(
+			'enabled'                         => array(
 				'title'   => __( 'Enable/Disable', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable plugin', 'reepay-checkout-gateway' ),
 				'default' => 'no',
 			),
-			'hr1'                        => array(
+			'hr1'                             => array(
 				'type' => 'separator',
 			),
-			'title'                      => array(
+			'title'                           => array(
 				'title'       => __( 'Title', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout', 'reepay-checkout-gateway' ),
 				'default'     => __( 'Frisbii Pay', 'reepay-checkout-gateway' ),
 			),
-			'description'                => array(
+			'description'                     => array(
 				'title'       => __( 'Description', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the description which the user sees during checkout', 'reepay-checkout-gateway' ),
 				'default'     => __( 'Frisbii Pay', 'reepay-checkout-gateway' ),
 			),
-			'hr2'                        => array(
+			'hr2'                             => array(
 				'type' => 'separator',
 			),
-			'private_key'                => array(
+			'private_key'                     => array(
 				'title'       => __( 'Live Private Key', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'Insert your private key from your live account', 'reepay-checkout-gateway' ),
 				'default'     => '',
 			),
-			'verify_key'                 => array(
+			'verify_key'                      => array(
 				'type' => 'verify_key',
 				'show' => function () {
 					return empty( $this->get_option( 'private_key' ) );
 				},
 			),
-			'account'                    => array(
+			'account'                         => array(
 				'title'     => __( 'Account', 'reepay-checkout-gateway' ),
 				'type'      => 'account_info',
 				'show'      => function () {
@@ -146,7 +189,7 @@ class ReepayCheckout extends ReepayGateway {
 				'info_type' => 'name',
 				'is_test'   => false,
 			),
-			'state'                      => array(
+			'state'                           => array(
 				'title'     => __( 'State', 'reepay-checkout-gateway' ),
 				'type'      => 'account_info',
 				'show'      => function () {
@@ -155,29 +198,29 @@ class ReepayCheckout extends ReepayGateway {
 				'info_type' => 'state',
 				'is_test'   => false,
 			),
-			'is_webhook_configured_live' => array(
+			'is_webhook_configured_live'      => array(
 				'type'    => 'webhook_status',
 				'show'    => function () {
 					return ! empty( $this->get_option( 'private_key' ) );
 				},
 				'is_test' => false,
 			),
-			'hr3'                        => array(
+			'hr3'                             => array(
 				'type' => 'separator',
 			),
-			'private_key_test'           => array(
+			'private_key_test'                => array(
 				'title'       => __( 'Test Private Key', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'Insert your private key from your test account', 'reepay-checkout-gateway' ),
 				'default'     => '',
 			),
-			'verify_key_test'            => array(
+			'verify_key_test'                 => array(
 				'type' => 'verify_key',
 				'show' => function () {
 					return empty( $this->get_option( 'private_key_test' ) );
 				},
 			),
-			'account_test'               => array(
+			'account_test'                    => array(
 				'title'     => __( 'Account', 'reepay-checkout-gateway' ),
 				'type'      => 'account_info',
 				'show'      => function () {
@@ -186,7 +229,7 @@ class ReepayCheckout extends ReepayGateway {
 				'info_type' => 'name',
 				'is_test'   => true,
 			),
-			'state_test'                 => array(
+			'state_test'                      => array(
 				'title'     => __( 'State', 'reepay-checkout-gateway' ),
 				'type'      => 'account_info',
 				'show'      => function () {
@@ -195,27 +238,27 @@ class ReepayCheckout extends ReepayGateway {
 				'info_type' => 'state',
 				'is_test'   => true,
 			),
-			'is_webhook_configured_test' => array(
+			'is_webhook_configured_test'      => array(
 				'type'    => 'webhook_status',
 				'show'    => function () {
 					return ! empty( $this->get_option( 'private_key_test' ) );
 				},
 				'is_test' => true,
 			),
-			'hr9'                        => array(
+			'hr9'                             => array(
 				'type' => 'separator',
 				'id'   => 'hr9',
 			),
-			'test_mode'                  => array(
+			'test_mode'                       => array(
 				'title'   => __( 'Test Mode', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable Test Mode', 'reepay-checkout-gateway' ),
 				'default' => '',
 			),
-			'hr4'                        => array(
+			'hr4'                             => array(
 				'type' => 'separator',
 			),
-			'failed_webhooks_email'      => array(
+			'failed_webhooks_email'           => array(
 				'title'             => __( 'Email address for notification about failed webhooks', 'reepay-checkout-gateway' ),
 				'type'              => 'text',
 				'description'       => __( 'Email address for notification about failed webhooks', 'reepay-checkout-gateway' ),
@@ -230,7 +273,7 @@ class ReepayCheckout extends ReepayGateway {
 					return $value;
 				},
 			),
-			'payment_type'               => array(
+			'payment_type'                    => array(
 				'title'       => __( 'Payment Window Display', 'reepay-checkout-gateway' ),
 				'description' => __( 'Choose between a redirect window or a overlay window. Note that some payment methods like Apple Pay do not work for overlay window.', 'reepay-checkout-gateway' ),
 				'type'        => 'select',
@@ -240,7 +283,7 @@ class ReepayCheckout extends ReepayGateway {
 				),
 				'default'     => self::METHOD_WINDOW,
 			),
-			'language'                   => array(
+			'language'                        => array(
 				'title'   => __( 'Language In Payment Window', 'reepay-checkout-gateway' ),
 				'type'    => 'select',
 				'options' => array(
@@ -266,7 +309,7 @@ class ReepayCheckout extends ReepayGateway {
 				),
 				'default' => 'en_US',
 			),
-			'payment_methods'            => array(
+			'payment_methods'                 => array(
 				'title'       => __( 'Payment Methods', 'reepay-checkout-gateway' ),
 				'description' => __( 'Payment Methods', 'reepay-checkout-gateway' ),
 				'type'        => 'multiselect',
@@ -299,7 +342,7 @@ class ReepayCheckout extends ReepayGateway {
 				),
 				'default'     => array(),
 			),
-			'settle'                     => array(
+			'settle'                          => array(
 				'title'          => __( 'Instant Settle', 'reepay-checkout-gateway' ),
 				'description'    => __( 'Instant Settle will charge your customers right away', 'reepay-checkout-gateway' ),
 				'type'           => 'multiselect',
@@ -313,57 +356,67 @@ class ReepayCheckout extends ReepayGateway {
 				'select_buttons' => true,
 				'default'        => array(),
 			),
-			'allow_partial_settle'       => array(
+			'allow_partial_settle'            => array(
 				'title'       => __( 'Partial instant settle', 'reepay-checkout-gateway' ),
 				'type'        => 'checkbox',
 				'label'       => __( 'Allow partial instant settlement', 'reepay-checkout-gateway' ),
 				'description' => __( 'Un-check to hinder that orders for mixed product types get automatic settlement for some of the products.', 'reepay-checkout-gateway' ),
 				'default'     => 'yes',
 			),
-			'disable_auto_settle'        => array(
+			'disable_auto_settle'             => array(
 				'title'       => __( 'Auto-settle', 'reepay-checkout-gateway' ),
 				'description' => __( 'Disable settle orders on status changing to completed', 'reepay-checkout-gateway' ),
 				'type'        => 'checkbox',
 				'label'       => __( 'Disable auto-settle', 'reepay-checkout-gateway' ),
 				'default'     => 'no',
 			),
-			'save_cc'                    => array(
+			'save_cc'                         => array(
 				'title'   => __( 'Allow Credit Card saving', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable Save CC feature', 'reepay-checkout-gateway' ),
 				'default' => 'no',
 			),
-			'age_verification'           => array(
+			'age_verification'                => array(
 				'title'   => __( 'Age Verification', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable', 'reepay-checkout-gateway' ),
 				'default' => 'no',
 			),
-			'hr5'                        => array(
+			'hr5'                             => array(
 				'type' => 'separator',
 			),
-			'debug'                      => array(
+			'debug'                           => array(
 				'title'   => __( 'Debug', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable logging', 'reepay-checkout-gateway' ),
 				'default' => 'yes',
 			),
-			'show_meta_fields_in_orders' => array(
+			'show_meta_fields_in_orders'      => array(
 				'title'   => __( 'Show meta fields in orders', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable display', 'reepay-checkout-gateway' ),
 				'default' => 'no',
 			),
-			'show_meta_fields_in_users'  => array(
+			'show_meta_fields_in_users'       => array(
 				'title'   => __( 'Show meta fields in users', 'reepay-checkout-gateway' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable display', 'reepay-checkout-gateway' ),
 				'default' => 'no',
 			),
-			'hr6'                        => array(
+			'hr_payment_window_configuration' => array(
 				'type' => 'separator',
 			),
-			'logos'                      => array(
+			'payment_window_configuration'    => array(
+				'title'       => __( 'Payment window configuration', 'reepay-checkout-gateway' ),
+				'description' => __( 'Alternative configurations of the payment window can be setup here.', 'reepay-checkout-gateway' ),
+				'type'        => 'select',
+				'options'     => $this->get_payment_window_configuration_options(),
+				'default'     => '',
+			),
+			'hr6'                             => array(
+				'type' => 'separator',
+			),
+			'logos'                           => array(
 				'title'          => __( 'Payment Logos', 'reepay-checkout-gateway' ),
 				'description'    => __(
 					'Choose the logos you would like to show in WooCommerce checkout. Make sure that they are enabled in Frisbii Pay Dashboard',
@@ -394,23 +447,23 @@ class ReepayCheckout extends ReepayGateway {
 				'select_buttons' => true,
 				'default'        => array(),
 			),
-			'logo_height'                => array(
+			'logo_height'                     => array(
 				'title'       => __( 'Logo Height', 'reepay-checkout-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'Set the Logo height in pixels', 'reepay-checkout-gateway' ),
 				'default'     => 20,
 			),
-			'hr7'                        => array(
+			'hr7'                             => array(
 				'type' => 'separator',
 			),
-			'handle_failover'            => array(
+			'handle_failover'                 => array(
 				'title'       => __( 'Order handle failover', 'reepay-checkout-gateway' ),
 				'type'        => 'checkbox',
 				'label'       => __( 'Order handle failover', 'reepay-checkout-gateway' ),
 				'description' => __( 'In case an invoice with the current handle was settled before, the plugin will generate a unique handle.', 'reepay-checkout-gateway' ),
 				'default'     => 'yes',
 			),
-			'order_handle_prefix'        => array(
+			'order_handle_prefix'             => array(
 				'title'             => __( 'Order Handle Prefix', 'reepay-checkout-gateway' ),
 				'type'              => 'text',
 				'description'       => sprintf(
@@ -466,7 +519,7 @@ class ReepayCheckout extends ReepayGateway {
 					return sanitize_text_field( $value );
 				},
 			),
-			'skip_order_lines'           => array(
+			'skip_order_lines'                => array(
 				'title'       => __( 'Skip order lines', 'reepay-checkout-gateway' ),
 				'description' => __( 'Select if order lines should not be send to Frisbii Pay', 'reepay-checkout-gateway' ),
 				'type'        => 'select',
@@ -476,7 +529,7 @@ class ReepayCheckout extends ReepayGateway {
 				),
 				'default'     => 'no',
 			),
-			'enable_order_autocancel'    => array(
+			'enable_order_autocancel'         => array(
 				'title'       => __( 'Order auto-cancel', 'reepay-checkout-gateway' ),
 				'description' => __( 'Allow or prefer no automatic order cancel?', 'reepay-checkout-gateway' ),
 				'type'        => 'select',
@@ -486,7 +539,7 @@ class ReepayCheckout extends ReepayGateway {
 				),
 				'default'     => 'no',
 			),
-			'payment_button_text'        => array(
+			'payment_button_text'             => array(
 				'title'             => __( 'Payment button text', 'reepay-checkout-gateway' ),
 				'type'              => 'text',
 				'description'       => __( 'Text on button which will be displayed on payment page if subscription products is being purchased', 'reepay-checkout-gateway' ),

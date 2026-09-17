@@ -847,4 +847,184 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 
 		wp_set_current_user( 0 );
 	}
+
+	// -----------------------------------------------------------------------
+	// process_payment() — "configuration" param (BWPM-279)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::process_payment includes the "configuration" param
+	 * in the session/charge payload when a payment window configuration is set.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_process_payment_session_charge_includes_configuration_param() {
+		self::$options->set_option( 'payment_window_configuration', 'boyd-test' );
+
+		$user_id = $this->factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		self::$gateway->id = 'reepay_checkout';
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$session_response = array(
+			'id'  => 'session_xyz',
+			'url' => 'https://checkout.reepay.com/pay/session_xyz',
+		);
+
+		$this->api_mock->expects( $this->atLeastOnce() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'POST' ),
+				$this->stringContains( 'session/charge' ),
+				$this->callback(
+					function ( $params ) {
+						return ( $params['configuration'] ?? null ) === 'boyd-test';
+					}
+				)
+			)
+			->willReturn( $session_response );
+		$this->api_mock->method( 'recurring' )->willReturn( $session_response );
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-' . $user_id );
+
+		$result = self::$gateway->process_payment( $order_id );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		self::$options->set_option( 'payment_window_configuration', '' );
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test @see ReepayGateway::process_payment falls back to the "default"
+	 * configuration handle when no payment window configuration is set, so
+	 * Reepay does not pick whichever checkout handle was created last.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_process_payment_session_charge_defaults_configuration_when_not_set() {
+		self::$options->set_option( 'payment_window_configuration', '' );
+
+		$user_id = $this->factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		self::$gateway->id = 'reepay_checkout';
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$session_response = array(
+			'id'  => 'session_xyz',
+			'url' => 'https://checkout.reepay.com/pay/session_xyz',
+		);
+
+		$this->api_mock->expects( $this->atLeastOnce() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'POST' ),
+				$this->stringContains( 'session/charge' ),
+				$this->callback(
+					function ( $params ) {
+						return ( $params['configuration'] ?? null ) === 'default';
+					}
+				)
+			)
+			->willReturn( $session_response );
+		$this->api_mock->method( 'recurring' )->willReturn( $session_response );
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-' . $user_id );
+
+		$result = self::$gateway->process_payment( $order_id );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		wp_set_current_user( 0 );
+	}
+
+	// -----------------------------------------------------------------------
+	// wcs_change_payment_method() — "configuration" param (BWPM-279)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::wcs_change_payment_method includes the "configuration"
+	 * param in the session/recurring payload when adding a new card (no token id).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_wcs_change_payment_method_includes_configuration_param() {
+		self::$options->set_option( 'payment_window_configuration', 'boyd-test' );
+
+		self::$gateway->id = 'reepay_checkout';
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+		$this->api_mock->expects( $this->atLeastOnce() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'POST' ),
+				$this->stringContains( 'session/recurring' ),
+				$this->callback(
+					function ( $params ) {
+						return ( $params['configuration'] ?? null ) === 'boyd-test';
+					}
+				)
+			)
+			->willReturn(
+				array(
+					'id'  => 'session_1',
+					'url' => 'https://checkout.reepay.com/pay/session_1',
+				)
+			);
+
+		$result = self::$gateway->wcs_change_payment_method( $this->order_generator->order() );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		self::$options->set_option( 'payment_window_configuration', '' );
+	}
+
+	/**
+	 * Test @see ReepayGateway::wcs_change_payment_method falls back to the
+	 * "default" configuration handle when no payment window configuration is set.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_wcs_change_payment_method_defaults_configuration_when_not_set() {
+		self::$options->set_option( 'payment_window_configuration', '' );
+
+		self::$gateway->id = 'reepay_checkout';
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+		$this->api_mock->expects( $this->atLeastOnce() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'POST' ),
+				$this->stringContains( 'session/recurring' ),
+				$this->callback(
+					function ( $params ) {
+						return ( $params['configuration'] ?? null ) === 'default';
+					}
+				)
+			)
+			->willReturn(
+				array(
+					'id'  => 'session_1',
+					'url' => 'https://checkout.reepay.com/pay/session_1',
+				)
+			);
+
+		$result = self::$gateway->wcs_change_payment_method( $this->order_generator->order() );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+	}
 }

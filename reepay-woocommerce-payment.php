@@ -205,6 +205,7 @@ class WC_ReepayCheckout {
 				'status_authorized'          => ! empty( $gateway_settings['status_authorized'] ) ? $gateway_settings['status_authorized'] : '',
 				'status_settled'             => ! empty( $gateway_settings['status_settled'] ) ? $gateway_settings['status_settled'] : '',
 				'logo_height'                => ! empty( $gateway_settings['logo_height'] ) ? $gateway_settings['logo_height'] : '20',
+				'payment_window_configuration' => ! empty( $gateway_settings['payment_window_configuration'] ) ? $gateway_settings['payment_window_configuration'] : '',
 			);
 		}
 
