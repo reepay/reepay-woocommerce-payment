@@ -50,7 +50,6 @@ class UnsettledOrdersFinder {
 	 * with a fresh live check, the next time find() runs, so a large backlog clears gradually
 	 * over a few days rather than in one slow or timed-out run.
 	 *
-	 *
 	 * @var int
 	 */
 	public const MAX_LIVE_VERIFICATIONS_PER_RUN = 20;
@@ -65,6 +64,13 @@ class UnsettledOrdersFinder {
 	/**
 	 * Find completed, non-zero-total, non-subscription Reepay orders with no settled-state meta,
 	 * on/after the cutoff date.
+	 *
+	 * Scans oldest-completed-first (not newest-first) deliberately: is_genuinely_settled_but_untracked()
+	 * spends one unit of MAX_LIVE_VERIFICATIONS_PER_RUN per candidate regardless of what the live
+	 * check finds, including genuinely still-unpaid ones. Newest-first would let an ever-refreshing
+	 * pool of recent, correctly-unpaid orders permanently starve the live-check budget, so the
+	 * actual (older) backlog this feature exists to clear would never get checked. Oldest-first
+	 * ensures the backlog drains over successive runs instead.
 	 *
 	 * @return array{order_ids: int[], capped: bool}
 	 */
@@ -85,7 +91,7 @@ class UnsettledOrdersFinder {
 					'limit'          => self::PAGE_SIZE,
 					'page'           => $page,
 					'orderby'        => 'date_completed',
-					'order'          => 'DESC',
+					'order'          => 'ASC',
 					'return'         => 'ids',
 				)
 			) )->get_orders();
