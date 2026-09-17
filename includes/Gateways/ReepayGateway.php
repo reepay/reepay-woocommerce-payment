@@ -1091,6 +1091,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		$configuration = reepay()->get_setting( 'payment_window_configuration' );
 		if ( ! empty( $configuration ) ) {
 			$params['configuration'] = $configuration;
+		} else {
+			$params['configuration'] = 'default';
 		}
 
 		// Try to charge with saved token.
@@ -1589,6 +1591,8 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$configuration = reepay()->get_setting( 'payment_window_configuration' );
 			if ( ! empty( $configuration ) ) {
 				$params['configuration'] = $configuration;
+			} else {
+				$params['configuration'] = 'default';
 			}
 
 			$this->log(

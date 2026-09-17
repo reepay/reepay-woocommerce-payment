@@ -744,6 +744,8 @@ class Api {
 		$configuration = reepay()->get_setting( 'payment_window_configuration' );
 		if ( ! empty( $configuration ) ) {
 			$params['configuration'] = $configuration;
+		} else {
+			$params['configuration'] = 'default';
 		}
 
 		$this->log(
