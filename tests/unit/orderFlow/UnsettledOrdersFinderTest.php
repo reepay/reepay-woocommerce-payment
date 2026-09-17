@@ -60,6 +60,121 @@ class UnsettledOrdersFinderTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * Regression test for BWPM-281: an order genuinely settled in Frisbii, but whose local
+	 * _reepay_state_settled meta was never set (e.g. a third-party integration captured it
+	 * directly, outside this plugin's own flow), must be excluded once find() checks Frisbii's
+	 * real invoice state — and the local meta should get quietly written so future runs don't
+	 * need to re-check this same order via the API again.
+	 *
+	 * @see UnsettledOrdersFinder::is_genuinely_settled_but_untracked
+	 */
+	public function test_find_excludes_and_heals_order_genuinely_settled_but_untracked() {
+		$this->order_generator->set_props(
+			array(
+				'status'         => 'completed',
+				'payment_method' => reepay()->gateways()->checkout()->id,
+			)
+		);
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$order = $this->order_generator->order();
+		$order->set_date_completed( '2026-08-10 00:00:00' );
+		$order->save();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 2000,
+			)
+		);
+
+		$result = ( new UnsettledOrdersFinder() )->find();
+
+		$this->assertNotContains( $order->get_id(), $result['order_ids'], 'A genuinely settled order should have been excluded' );
+
+		$order = wc_get_order( $order->get_id() );
+		$this->assertSame( 1, (int) $order->get_meta( '_reepay_state_settled' ), 'Local state was not healed after confirming the order is genuinely settled' );
+	}
+
+	/**
+	 * Test @see UnsettledOrdersFinder::is_genuinely_settled_but_untracked does not exclude an
+	 * order that the live invoice check confirms is genuinely still unpaid — the live check
+	 * must not accidentally hide real unpaid orders.
+	 */
+	public function test_find_still_includes_order_confirmed_genuinely_unpaid_by_live_check() {
+		$this->order_generator->set_props(
+			array(
+				'status'         => 'completed',
+				'payment_method' => reepay()->gateways()->checkout()->id,
+			)
+		);
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$order = $this->order_generator->order();
+		$order->set_date_completed( '2026-08-10 00:00:00' );
+		$order->save();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+			)
+		);
+
+		$result = ( new UnsettledOrdersFinder() )->find();
+
+		$this->assertContains( $order->get_id(), $result['order_ids'] );
+
+		$order = wc_get_order( $order->get_id() );
+		$this->assertSame( '', $order->get_meta( '_reepay_state_settled' ) );
+	}
+
+	/**
+	 * Regression test for BWPM-281: find() must not perform an unbounded number of live Frisbii
+	 * API checks in one run — a large backlog of affected orders (found live: 500+ on one real
+	 * site) should be verified gradually across several runs, not all in one potentially slow or
+	 * rate-limited request. Creates more untracked-but-settled candidates than the per-run cap
+	 * allows, and confirms only the cap's worth get excluded/healed in a single find() call.
+	 *
+	 * @see UnsettledOrdersFinder::MAX_LIVE_VERIFICATIONS_PER_RUN
+	 */
+	public function test_find_caps_live_verifications_per_run() {
+		$cap    = UnsettledOrdersFinder::MAX_LIVE_VERIFICATIONS_PER_RUN;
+		$orders = array();
+
+		for ( $i = 0; $i < $cap + 3; $i++ ) {
+			$this->order_generator->generate( array( 'status' => 'completed' ) );
+			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+			$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+			$this->order_generator->order()->calculate_totals();
+			$order = $this->order_generator->order();
+			$order->set_date_completed( '2026-08-10 00:00:00' );
+			$order->save();
+			$orders[] = $order;
+		}
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 2000,
+			)
+		);
+
+		$result = ( new UnsettledOrdersFinder() )->find();
+
+		$healed_count = 0;
+		foreach ( $orders as $order ) {
+			$order = wc_get_order( $order->get_id() );
+			if ( '' !== $order->get_meta( '_reepay_state_settled' ) ) {
+				++$healed_count;
+			}
+		}
+
+		$this->assertSame( $cap, $healed_count, 'Exactly the per-run cap of orders should have been live-checked and healed' );
+		$this->assertCount( 3, $result['order_ids'], 'The remaining orders beyond the cap should still show as unsettled for this run' );
+	}
+
+	/**
 	 * Test @see UnsettledOrdersFinder::find() excludes orders not paid via a Reepay gateway.
 	 */
 	public function test_find_excludes_non_reepay_order() {
