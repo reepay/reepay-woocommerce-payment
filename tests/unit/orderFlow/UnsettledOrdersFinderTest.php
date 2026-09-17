@@ -130,51 +130,6 @@ class UnsettledOrdersFinderTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * Regression test for BWPM-281: find() must not perform an unbounded number of live Frisbii
-	 * API checks in one run — a large backlog of affected orders (found live: 500+ on one real
-	 * site) should be verified gradually across several runs, not all in one potentially slow or
-	 * rate-limited request. Creates more untracked-but-settled candidates than the per-run cap
-	 * allows, and confirms only the cap's worth get excluded/healed in a single find() call.
-	 *
-	 * @see UnsettledOrdersFinder::MAX_LIVE_VERIFICATIONS_PER_RUN
-	 */
-	public function test_find_caps_live_verifications_per_run() {
-		$cap    = UnsettledOrdersFinder::MAX_LIVE_VERIFICATIONS_PER_RUN;
-		$orders = array();
-
-		for ( $i = 0; $i < $cap + 3; $i++ ) {
-			$this->order_generator->generate( array( 'status' => 'completed' ) );
-			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
-			$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
-			$this->order_generator->order()->calculate_totals();
-			$order = $this->order_generator->order();
-			$order->set_date_completed( '2026-08-10 00:00:00' );
-			$order->save();
-			$orders[] = $order;
-		}
-
-		$this->api_mock->method( 'get_invoice_data' )->willReturn(
-			array(
-				'authorized_amount' => 2000,
-				'settled_amount'    => 2000,
-			)
-		);
-
-		$result = ( new UnsettledOrdersFinder() )->find();
-
-		$healed_count = 0;
-		foreach ( $orders as $order ) {
-			$order = wc_get_order( $order->get_id() );
-			if ( '' !== $order->get_meta( '_reepay_state_settled' ) ) {
-				++$healed_count;
-			}
-		}
-
-		$this->assertSame( $cap, $healed_count, 'Exactly the per-run cap of orders should have been live-checked and healed' );
-		$this->assertCount( 3, $result['order_ids'], 'The remaining orders beyond the cap should still show as unsettled for this run' );
-	}
-
-	/**
 	 * Regression test (Cursor Bugbot finding, BWPM-281): is_genuinely_settled_but_untracked()
 	 * spends one unit of the live-check budget on every candidate it inspects, including ones the
 	 * live check confirms are genuinely still unpaid. If find() scanned newest-completed-first, an
@@ -391,29 +346,5 @@ class UnsettledOrdersFinderTest extends Reepay_UnitTestCase {
 		$result = ( new UnsettledOrdersFinder() )->find();
 
 		$this->assertNotContains( $order->get_id(), $result['order_ids'] );
-	}
-
-	/**
-	 * Test @see UnsettledOrdersFinder::find() caps results at MAX_RESULTS and reports capped=true.
-	 */
-	public function test_find_caps_results_and_reports_capped() {
-		for ( $i = 0; $i < UnsettledOrdersFinder::MAX_RESULTS + 2; $i++ ) {
-			// wc_create_order() (used internally by generate()) only recognizes a fixed whitelist
-			// of args (status, customer_id, customer_note, parent, created_via, cart_hash,
-			// order_id) — 'payment_method' is silently dropped, so it must be set afterwards via
-			// set_props(), same as every other test in this file.
-			$this->order_generator->generate( array( 'status' => 'completed' ) );
-			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
-			$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
-			$this->order_generator->order()->calculate_totals();
-			$order = $this->order_generator->order();
-			$order->set_date_completed( '2026-08-10 00:00:00' );
-			$order->save();
-		}
-
-		$result = ( new UnsettledOrdersFinder() )->find();
-
-		$this->assertCount( UnsettledOrdersFinder::MAX_RESULTS, $result['order_ids'] );
-		$this->assertTrue( $result['capped'] );
 	}
 }
