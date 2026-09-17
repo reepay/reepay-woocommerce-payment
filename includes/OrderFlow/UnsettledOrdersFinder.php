@@ -50,7 +50,6 @@ class UnsettledOrdersFinder {
 	 * with a fresh live check, the next time find() runs, so a large backlog clears gradually
 	 * over a few days rather than in one slow or timed-out run.
 	 *
-	 *
 	 * @var int
 	 */
 	public const MAX_LIVE_VERIFICATIONS_PER_RUN = 20;
