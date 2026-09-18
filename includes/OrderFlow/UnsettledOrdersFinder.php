@@ -142,11 +142,19 @@ class UnsettledOrdersFinder {
 	 * This prevents the order from appearing in the unsettled list and avoids
 	 * checking the same order again on future runs.
 	 *
+	 * Guards against an already-tracked order itself, not just relying on find()'s own check
+	 * before calling this — so this method never spends live-verification budget or makes an
+	 * API call for an order that doesn't need one, even if called some other way in future.
+	 *
 	 * @param WC_Order $order order to check.
 	 *
 	 * @return bool
 	 */
 	private function is_genuinely_settled_but_untracked( WC_Order $order ): bool {
+		if ( $order->get_meta( '_reepay_state_settled' ) ) {
+			return false;
+		}
+
 		$max_live_verifications = (int) apply_filters(
 			'reepay_unsettled_orders_max_live_verifications',
 			self::MAX_LIVE_VERIFICATIONS_PER_RUN
