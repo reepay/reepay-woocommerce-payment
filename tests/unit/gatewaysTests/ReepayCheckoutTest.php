@@ -297,4 +297,103 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 
 		$this->assertSame( 'yes', $gateway->enable_order_autocancel );
 	}
+
+	// -----------------------------------------------------------------------
+	// "Payment window configuration" setting (BWPM-279)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Resets $_GET after each test in this group so is_gateway_settings_page()
+	 * doesn't leak into unrelated tests.
+	 */
+	public function tear_down() {
+		unset( $_GET['tab'], $_GET['section'] );
+
+		parent::tear_down();
+	}
+
+	/**
+	 * Test @see ReepayCheckout::init_form_fields registers the "payment_window_configuration"
+	 * select field.
+	 *
+	 * @group gateways_checkout
+	 */
+	public function test_init_form_fields_has_payment_window_configuration_field() {
+		unset( $_GET['tab'], $_GET['section'] );
+
+		self::$gateway->init_form_fields();
+
+		$this->assertArrayHasKey( 'payment_window_configuration', self::$gateway->form_fields );
+		$this->assertSame( 'select', self::$gateway->form_fields['payment_window_configuration']['type'] );
+	}
+
+	/**
+	 * Test @see ReepayCheckout::get_payment_window_configuration_options fetches
+	 * the configuration list from the API when on the gateway settings page.
+	 *
+	 * @group gateways_checkout
+	 */
+	public function test_payment_window_configuration_options_fetched_on_settings_page() {
+		$_GET['tab']     = 'checkout';
+		$_GET['section'] = self::$gateway->id;
+
+		$this->api_mock->method( 'get_configurations' )->willReturn(
+			array(
+				array(
+					'name'   => 'Boyd test',
+					'handle' => 'boyd-test',
+				),
+			)
+		);
+
+		self::$gateway->init_form_fields();
+
+		$this->assertArrayHasKey(
+			'boyd-test',
+			self::$gateway->form_fields['payment_window_configuration']['options']
+		);
+	}
+
+	/**
+	 * Test @see ReepayCheckout::get_payment_window_configuration_options does NOT call
+	 * the API outside the gateway settings page, to avoid an extra HTTP request on
+	 * every checkout/cart/admin page load.
+	 *
+	 * @group gateways_checkout
+	 */
+	public function test_payment_window_configuration_not_fetched_outside_settings_page() {
+		unset( $_GET['tab'], $_GET['section'] );
+
+		$this->api_mock->expects( $this->never() )->method( 'get_configurations' );
+
+		self::$gateway->init_form_fields();
+
+		$this->assertArrayHasKey( 'payment_window_configuration', self::$gateway->form_fields );
+	}
+
+	/**
+	 * Test @see ReepayCheckout::get_payment_window_configuration_options keeps a
+	 * previously saved handle in the options list even if the API no longer returns
+	 * it, so WooCommerce's validate_select_field() doesn't silently reset the setting.
+	 *
+	 * @group gateways_checkout
+	 */
+	public function test_payment_window_configuration_preserves_saved_handle_when_api_returns_empty() {
+		self::$options->set_option( 'payment_window_configuration', 'legacy-handle' );
+		// self::$gateway is a separate WC_Settings_API instance from the singleton
+		// OptionsController writes through, so its settings cache must be refreshed.
+		self::$gateway->init_settings();
+
+		$_GET['tab']     = 'checkout';
+		$_GET['section'] = self::$gateway->id;
+
+		$this->api_mock->method( 'get_configurations' )->willReturn( array() );
+
+		self::$gateway->init_form_fields();
+
+		$this->assertArrayHasKey(
+			'legacy-handle',
+			self::$gateway->form_fields['payment_window_configuration']['options']
+		);
+	}
 }

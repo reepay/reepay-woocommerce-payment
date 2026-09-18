@@ -556,6 +556,14 @@ msgstr "Aktiver visning"
 msgid "Show meta fields in users"
 msgstr "Vis metafelter i brugere"
 
+#: ../includes/Gateways/ReepayCheckout.php:403
+msgid "Payment window configuration"
+msgstr "Betalingsvinduets konfiguration"
+
+#: ../includes/Gateways/ReepayCheckout.php:404
+msgid "Alternative configurations of the payment window can be setup here."
+msgstr "Alternative konfigurationer af betalingsvinduet kan opsættes her."
+
 #: ../includes/Gateways/ReepayCheckout.php:345
 msgid "Payment Logos"
 msgstr "Betalingslogoer"

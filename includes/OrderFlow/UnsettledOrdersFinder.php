@@ -42,8 +42,35 @@ class UnsettledOrdersFinder {
 	private const PAGE_SIZE = 200;
 
 	/**
+	 * Default maximum number of live Frisbii invoice checks (see is_genuinely_settled_but_untracked())
+	 * performed in one find() run. Bounds how long a single run can take and avoids tripping the
+	 * API's own rate limiting (Api.php sleeps and retries on a 429) across many orders in one
+	 * request — a real risk on a site with a large backlog of affected orders (BWPM-281 found
+	 * one site with 500+). An order skipped here for this reason is simply reconsidered,
+	 * with a fresh live check, the next time find() runs, so a large backlog clears gradually
+	 * over a few days rather than in one slow or timed-out run.
+	 *
+	 * @var int
+	 */
+	public const MAX_LIVE_VERIFICATIONS_PER_RUN = 20;
+
+	/**
+	 * Number of live Frisbii invoice checks performed so far in the current find() call.
+	 *
+	 * @var int
+	 */
+	private int $live_verifications_used = 0;
+
+	/**
 	 * Find completed, non-zero-total, non-subscription Reepay orders with no settled-state meta,
 	 * on/after the cutoff date.
+	 *
+	 * Scans oldest-completed-first (not newest-first) deliberately: is_genuinely_settled_but_untracked()
+	 * spends one unit of MAX_LIVE_VERIFICATIONS_PER_RUN per candidate regardless of what the live
+	 * check finds, including genuinely still-unpaid ones. Newest-first would let an ever-refreshing
+	 * pool of recent, correctly-unpaid orders permanently starve the live-check budget, so the
+	 * actual (older) backlog this feature exists to clear would never get checked. Oldest-first
+	 * ensures the backlog drains over successive runs instead.
 	 *
 	 * @return array{order_ids: int[], capped: bool}
 	 */
@@ -52,6 +79,8 @@ class UnsettledOrdersFinder {
 		$capped     = false;
 		$page       = 1;
 		$batch_size = self::PAGE_SIZE;
+
+		$this->live_verifications_used = 0;
 
 		do {
 			$batch = ( new WC_Order_Query(
@@ -62,7 +91,7 @@ class UnsettledOrdersFinder {
 					'limit'          => self::PAGE_SIZE,
 					'page'           => $page,
 					'orderby'        => 'date_completed',
-					'order'          => 'DESC',
+					'order'          => 'ASC',
 					'return'         => 'ids',
 				)
 			) )->get_orders();
@@ -77,6 +106,7 @@ class UnsettledOrdersFinder {
 					|| $order->get_meta( '_reepay_state_settled' )
 					|| order_contains_subscription( $order )
 					|| $this->is_frisbii_billing_subscription_order( $order )
+					|| $this->is_genuinely_settled_but_untracked( $order )
 				) {
 					continue;
 				}
@@ -100,6 +130,56 @@ class UnsettledOrdersFinder {
 			'order_ids' => $order_ids,
 			'capped'    => $capped,
 		);
+	}
+
+	/**
+	 * Check whether the real Frisbii invoice is already settled even if our local
+	 * settlement meta was not set, for example when a third-party integration
+	 * settles the payment outside our normal capture flow (BWPM-281).
+	 *
+	 * If settled, only update _reepay_state_settled locally. Do not trigger the
+	 * normal settlement flow, add notes, change status, or fire events again.
+	 * This prevents the order from appearing in the unsettled list and avoids
+	 * checking the same order again on future runs.
+	 *
+	 * Guards against an already-tracked order itself, not just relying on find()'s own check
+	 * before calling this — so this method never spends live-verification budget or makes an
+	 * API call for an order that doesn't need one, even if called some other way in future.
+	 *
+	 * @param WC_Order $order order to check.
+	 *
+	 * @return bool
+	 */
+	private function is_genuinely_settled_but_untracked( WC_Order $order ): bool {
+		if ( $order->get_meta( '_reepay_state_settled' ) ) {
+			return false;
+		}
+
+		$max_live_verifications = (int) apply_filters(
+			'reepay_unsettled_orders_max_live_verifications',
+			self::MAX_LIVE_VERIFICATIONS_PER_RUN
+		);
+
+		if ( $this->live_verifications_used >= $max_live_verifications ) {
+			return false;
+		}
+
+		++$this->live_verifications_used;
+
+		$invoice = reepay()->api( $order )->get_invoice_data( $order );
+
+		if ( is_wp_error( $invoice ) || ! isset( $invoice['settled_amount'], $invoice['authorized_amount'] ) ) {
+			return false;
+		}
+
+		if ( $invoice['settled_amount'] <= 0 || $invoice['settled_amount'] < $invoice['authorized_amount'] ) {
+			return false;
+		}
+
+		$order->update_meta_data( '_reepay_state_settled', 1 );
+		$order->save_meta_data();
+
+		return true;
 	}
 
 	/**

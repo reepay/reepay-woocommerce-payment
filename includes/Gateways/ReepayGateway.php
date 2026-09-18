@@ -270,6 +270,12 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$params['payment_methods'] = $this->payment_methods;
 		}
 
+		$configuration = reepay()->get_setting( 'payment_window_configuration' );
+		if ( empty( $configuration ) ) {
+			$configuration = 'default';
+		}
+		$params['configuration'] = $configuration;
+
 		$result = reepay()->api( $this )->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
 		if ( is_wp_error( $result ) ) {
 			if ( $result->get_error_code() === Api::ERROR_CODES['Customer has been deleted'] ||
@@ -296,6 +302,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'cancel_url'      => $cancel_url,
 				);
 
+				if ( ! empty( $configuration ) ) {
+					$params['configuration'] = $configuration;
+				}
+
 				$result = reepay()->api( $this )->request( 'POST', 'https://checkout-api.reepay.com/v1/session/recurring', $params );
 
 				if ( is_wp_error( $result ) ) {
@@ -310,8 +320,10 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$this->log(
 			array(
-				'source' => 'add_payment_method',
-				'result' => $result,
+				'source'   => 'add_payment_method_session_recurring_request',
+				'order_id' => $order_id ?? 'N/A',
+				'params'   => $params,
+				'result'   => $result,
 			)
 		);
 
@@ -1076,6 +1088,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		// Add age verification data if needed.
 		$this->add_age_verification_to_charge_session( $params, $order );
 
+		$configuration = reepay()->get_setting( 'payment_window_configuration' );
+		if ( ! empty( $configuration ) ) {
+			$params['configuration'] = $configuration;
+		} else {
+			$params['configuration'] = 'default';
+		}
+
 		// Try to charge with saved token.
 		if ( absint( $token_id ) > 0 ) {
 			$this->log(
@@ -1489,6 +1508,11 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 		$customer_handle = reepay()->api( $this )->get_customer_handle_by_order( $order->get_id() );
 
+		$country = WC()->countries->country_exists( $order->get_billing_country() ) ? $order->get_billing_country() : '';
+		if ( empty( $country ) ) {
+			$country = WC()->countries->country_exists( $order->get_shipping_country() ) ? $order->get_shipping_country() : '';
+		}
+
 		if ( absint( $token_id ) > 0 ) {
 			$token = new TokenReepay( $token_id );
 			if ( ! $token->get_id() ) {
@@ -1564,6 +1588,21 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				$params['payment_methods'] = $this->payment_methods;
 			}
 
+			$configuration = reepay()->get_setting( 'payment_window_configuration' );
+			if ( ! empty( $configuration ) ) {
+				$params['configuration'] = $configuration;
+			} else {
+				$params['configuration'] = 'default';
+			}
+
+			$this->log(
+				array(
+					'source'   => 'session_recurring_request',
+					'order_id' => $order->get_id(),
+					'params'   => $params,
+				)
+			);
+
 			$result = reepay()->api( $this )->request(
 				'POST',
 				'https://checkout-api.reepay.com/v1/session/recurring',
@@ -1600,6 +1639,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'order_handle'    => $params['order']['handle'] ?? 'N/A',
 				'payment_type'    => $this->payment_type,
 				'handle_failover' => $this->handle_failover,
+				'params'          => $params,
 			)
 		);
 
@@ -1654,6 +1694,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 							'source'     => 'process_session_charge_failover_retry',
 							'order_id'   => $order->get_id(),
 							'new_handle' => $handle,
+							'params'     => $params,
 						)
 					);
 
