@@ -2228,6 +2228,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			'mobilepay'                   => 'mobilepay',
 			'ms_subscripiton'             => 'mobilepay',
 			'viabill'                     => 'viabill',
+			'klarna'                      => 'klarna',
 			'klarna_pay_later'            => 'klarna',
 			'klarna_pay_now'              => 'klarna',
 			'china_union_pay'             => 'cup',
