@@ -543,7 +543,12 @@ class OrderStatuses {
 						// regardless of the product type selected for Instant Settle.
 						if ( $amount_to_capture > 0 ) {
 							$amount_to_capture = rp_prepare_amount( $amount_to_capture, $order->get_currency() );
-							$gateway->capture_payment( $order, $amount_to_capture );
+							// BWPM-286: $amount_to_capture is the entire outstanding balance (not a
+							// partial amount), so mark items settled to prevent OrderCapture's own
+							// auto-settle handler - hooked to this same status change - from resending
+							// the same total a second time and overcharging via its "amount higher than
+							// authorized" retry fallback.
+							$gateway->capture_payment( $order, $amount_to_capture, true );
 						}
 					} catch ( Exception $e ) {
 						$message = $e->getMessage();
