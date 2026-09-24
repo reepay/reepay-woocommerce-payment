@@ -168,11 +168,19 @@ class UnsettledOrdersFinder {
 
 		$invoice = reepay()->api( $order )->get_invoice_data( $order );
 
-		if ( is_wp_error( $invoice ) || ! isset( $invoice['settled_amount'], $invoice['authorized_amount'] ) ) {
+		if ( is_wp_error( $invoice ) || ! isset( $invoice['settled_amount'] ) ) {
 			return false;
 		}
 
-		if ( $invoice['settled_amount'] <= 0 || $invoice['settled_amount'] < $invoice['authorized_amount'] ) {
+		// Compare against the order's own current total, not authorized_amount: a discount
+		// (e.g. a coupon applied by staff) added after authorization but before settlement means
+		// the genuinely, fully settled amount is legitimately less than what was authorized —
+		// comparing to authorized_amount would then wrongly treat a fully paid order as unpaid
+		// (confirmed live, BWPM-281: order settled for less than authorized after a post-
+		// authorization coupon, remaining stuck as "unsettled" under the old comparison).
+		$order_total_amount = rp_prepare_amount( (float) $order->get_total(), $order->get_currency() );
+
+		if ( $invoice['settled_amount'] <= 0 || $invoice['settled_amount'] < $order_total_amount ) {
 			return false;
 		}
 

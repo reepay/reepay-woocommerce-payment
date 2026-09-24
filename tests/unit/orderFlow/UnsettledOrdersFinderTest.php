@@ -97,6 +97,43 @@ class UnsettledOrdersFinderTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * Regression test for BWPM-281 (client-reported, live order #20748): a discount (e.g. a
+	 * coupon applied by staff) added after authorization but before settlement means the
+	 * genuinely, fully settled amount is legitimately less than what was authorized. Comparing
+	 * against authorized_amount would wrongly treat this order as still unpaid forever, even
+	 * though Frisbii settled exactly the order's own (discounted) total.
+	 *
+	 * @see UnsettledOrdersFinder::is_genuinely_settled_but_untracked
+	 */
+	public function test_find_excludes_and_heals_order_settled_for_less_than_authorized_due_to_discount() {
+		$this->order_generator->set_props(
+			array(
+				'status'         => 'completed',
+				'payment_method' => reepay()->gateways()->checkout()->id,
+			)
+		);
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$order = $this->order_generator->order();
+		$order->set_date_completed( '2026-08-10 00:00:00' );
+		$order->save();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2200,
+				'settled_amount'    => 2000,
+			)
+		);
+
+		$result = ( new UnsettledOrdersFinder() )->find();
+
+		$this->assertNotContains( $order->get_id(), $result['order_ids'], 'An order settled for its own (discounted) total should have been excluded, even though settled_amount is less than authorized_amount' );
+
+		$order = wc_get_order( $order->get_id() );
+		$this->assertSame( 1, (int) $order->get_meta( '_reepay_state_settled' ), 'Local state was not healed for an order genuinely settled at a discounted amount' );
+	}
+
+	/**
 	 * Test @see UnsettledOrdersFinder::is_genuinely_settled_but_untracked does not exclude an
 	 * order that the live invoice check confirms is genuinely still unpaid — the live check
 	 * must not accidentally hide real unpaid orders.
