@@ -1102,7 +1102,7 @@ class Api {
 			$error = sprintf(
 				// translators: %1$s refund amount, %2$s error message.
 				__( 'Failed to refund "%1$s". Error: %2$s.', 'reepay-checkout-gateway' ),
-				wc_price( $amount ),
+				wc_price( $amount, array( 'currency' => $order->get_currency() ) ),
 				$result->get_error_message()
 			);
 
@@ -1158,7 +1158,7 @@ class Api {
 					sprintf(
 						// translators: %1$s pending amount, transaction id.
 						__( 'Transaction is pending. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
-						wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ) ),
+						wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ), array( 'currency' => $order->get_currency() ) ),
 						$result['transaction']
 					),
 					$result['transaction']
@@ -1171,7 +1171,7 @@ class Api {
 					sprintf(
 						// translators: %1$s authorized amount, %2$s transaction id.
 						__( 'Payment has been authorized. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
-						wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ) ),
+						wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ), array( 'currency' => $order->get_currency() ) ),
 						$result['transaction']
 					),
 					$result['transaction']
@@ -1189,7 +1189,7 @@ class Api {
 					sprintf(
 						// translators: %1$s settled amount, transaction id.
 						__( 'Payment has been settled. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
-						wc_price( $result['amount'] ),
+						wc_price( $result['amount'], array( 'currency' => $order->get_currency() ) ),
 						$result['transaction']
 					),
 					$result['transaction']
