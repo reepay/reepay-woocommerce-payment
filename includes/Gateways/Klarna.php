@@ -131,6 +131,6 @@ class Klarna extends ReepayGateway {
 	private function is_localhost(): bool {
 		$host = wp_parse_url( home_url(), PHP_URL_HOST );
 
-		return in_array( $host, array( 'localhost', '127.0.0.1', 'frisbii-paydev.radarsofthouse.com','frisbii-woodev.radarsofthouse.com' ), true );
+		return in_array( $host, array( 'localhost', '127.0.0.1', 'frisbii-paydev.radarsofthouse.com', 'frisbii-woodev.radarsofthouse.com' ), true );
 	}
 }
