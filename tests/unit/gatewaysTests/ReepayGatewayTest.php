@@ -1027,4 +1027,178 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 		$this->assertIsArray( $result );
 		$this->assertSame( 'success', $result['result'] );
 	}
+
+	// -----------------------------------------------------------------------
+	// wcs_change_payment_method() — VAT number
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::wcs_change_payment_method includes the customer's
+	 * VAT number from order meta in the create_customer payload when adding a
+	 * new card (no token id).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_wcs_change_payment_method_includes_vat_number() {
+		self::$gateway->id = 'reepay_checkout';
+
+		$this->order_generator->set_meta( '_billing_eu_vat_number', 'DK32097901' );
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+
+		$captured_calls = array();
+		$this->api_mock->method( 'request' )->willReturnCallback(
+			function ( $method, $url, $params = array() ) use ( &$captured_calls ) {
+				$captured_calls[] = array(
+					'method' => $method,
+					'url'    => $url,
+					'params' => $params,
+				);
+
+				return array(
+					'id'  => 'session_1',
+					'url' => 'https://checkout.reepay.com/pay/session_1',
+				);
+			}
+		);
+
+		$result = self::$gateway->wcs_change_payment_method( $this->order_generator->order() );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		$recurring_call = null;
+		foreach ( $captured_calls as $call ) {
+			if ( str_contains( $call['url'], 'session/recurring' ) ) {
+				$recurring_call = $call;
+			}
+		}
+
+		$this->assertNotNull( $recurring_call, 'Expected a session/recurring request' );
+		$this->assertSame( 'POST', $recurring_call['method'] );
+		$this->assertSame( 'DK32097901', $recurring_call['params']['create_customer']['vat'] ?? null );
+	}
+
+	/**
+	 * Test @see ReepayGateway::wcs_change_payment_method sends an empty VAT
+	 * value when the order has no VAT meta set.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_wcs_change_payment_method_sends_empty_vat_when_no_vat_meta() {
+		self::$gateway->id = 'reepay_checkout';
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+		$this->api_mock->expects( $this->atLeastOnce() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'POST' ),
+				$this->stringContains( 'session/recurring' ),
+				$this->callback(
+					function ( $params ) {
+						return ( $params['create_customer']['vat'] ?? null ) === '';
+					}
+				)
+			)
+			->willReturn(
+				array(
+					'id'  => 'session_1',
+					'url' => 'https://checkout.reepay.com/pay/session_1',
+				)
+			);
+
+		$result = self::$gateway->wcs_change_payment_method( $this->order_generator->order() );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+	}
+
+	/**
+	 * Test @see ReepayGateway::wcs_change_payment_method fires a PUT
+	 * /v1/customer/{handle} request to sync the VAT number onto the persisted
+	 * Frisbii customer record.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_wcs_change_payment_method_syncs_vat_to_existing_customer() {
+		self::$gateway->id = 'reepay_checkout';
+
+		$this->order_generator->set_meta( '_billing_eu_vat_number', 'DK32097901' );
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+
+		$captured_calls = array();
+		$this->api_mock->method( 'request' )->willReturnCallback(
+			function ( $method, $url, $params = array() ) use ( &$captured_calls ) {
+				$captured_calls[] = array(
+					'method' => $method,
+					'url'    => $url,
+					'params' => $params,
+				);
+
+				return array(
+					'id'  => 'session_1',
+					'url' => 'https://checkout.reepay.com/pay/session_1',
+				);
+			}
+		);
+
+		$result = self::$gateway->wcs_change_payment_method( $this->order_generator->order() );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		$vat_sync_call = null;
+		foreach ( $captured_calls as $call ) {
+			if ( 'PUT' === $call['method'] && str_contains( $call['url'], 'customer/customer-1' ) ) {
+				$vat_sync_call = $call;
+			}
+		}
+
+		$this->assertNotNull( $vat_sync_call, 'Expected a PUT request to sync the VAT number to the existing Frisbii customer' );
+		$this->assertSame( 'DK32097901', $vat_sync_call['params']['vat'] ?? null );
+	}
+
+	/**
+	 * Test @see ReepayGateway::wcs_change_payment_method does not fire a
+	 * customer-sync PUT request when the order has no VAT number — a
+	 * previously-set VAT number on the customer must NOT be cleared just
+	 * because one order omitted it, since Frisbii's customer record is shared
+	 * across all of that customer's invoices.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_wcs_change_payment_method_does_not_sync_vat_when_none_present() {
+		self::$gateway->id = 'reepay_checkout';
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+
+		$captured_calls = array();
+		$this->api_mock->method( 'request' )->willReturnCallback(
+			function ( $method, $url, $params = array() ) use ( &$captured_calls ) {
+				$captured_calls[] = array(
+					'method' => $method,
+					'url'    => $url,
+					'params' => $params,
+				);
+
+				return array(
+					'id'  => 'session_1',
+					'url' => 'https://checkout.reepay.com/pay/session_1',
+				);
+			}
+		);
+
+		$result = self::$gateway->wcs_change_payment_method( $this->order_generator->order() );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		foreach ( $captured_calls as $call ) {
+			$this->assertFalse(
+				'PUT' === $call['method'] && str_contains( $call['url'], 'customer/customer-1' ),
+				'Did not expect a customer-sync PUT request when there is no VAT number'
+			);
+		}
+	}
 }

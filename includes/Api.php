@@ -647,7 +647,7 @@ class Api {
 				'city'        => $order->get_billing_city(),
 				'phone'       => $order->get_billing_phone(),
 				'company'     => $order->get_billing_company(),
-				'vat'         => '',
+				'vat'         => rp_get_order_vat_number( $order ),
 				'first_name'  => $order->get_billing_first_name(),
 				'last_name'   => $order->get_billing_last_name(),
 				'postal_code' => $order->get_billing_postcode(),
@@ -756,11 +756,26 @@ class Api {
 			)
 		);
 
-		return $this->request(
+		$result = $this->request(
 			'POST',
 			'https://checkout-api.reepay.com/v1/session/recurring',
 			$params
 		);
+
+		$vat_number = rp_get_order_vat_number( $order );
+
+		if ( ! is_wp_error( $result ) && ! empty( $data['customer_handle'] ) && ! empty( $vat_number ) ) {
+			// PUT /v1/customer/{handle} replaces the whole record — any field not
+			// included gets deleted, so the full customer array must be sent, not
+			// just 'vat'.
+			$this->request(
+				'PUT',
+				'https://api.reepay.com/v1/customer/' . $data['customer_handle'],
+				$params['create_customer']
+			);
+		}
+
+		return $result;
 	}
 
 	/**

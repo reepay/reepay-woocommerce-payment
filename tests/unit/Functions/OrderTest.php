@@ -251,4 +251,73 @@ class OrderTest extends Reepay_UnitTestCase {
 
 		$this->assertSame( '', $result );
 	}
+
+	// -----------------------------------------------------------------------
+	// rp_get_order_vat_number()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see rp_get_order_vat_number returns the value from _billing_eu_vat_number
+	 * when only that meta is set.
+	 */
+	public function test_rp_get_order_vat_number_returns_eu_vat_number() {
+		$this->order_generator->set_meta( '_billing_eu_vat_number', 'DK32097901' );
+
+		self::assertSame(
+			'DK32097901',
+			rp_get_order_vat_number( $this->order_generator->order() )
+		);
+	}
+
+	/**
+	 * Test @see rp_get_order_vat_number returns the value from _billing_vat_number
+	 * when only that (legacy) meta is set.
+	 */
+	public function test_rp_get_order_vat_number_returns_legacy_vat_number() {
+		$this->order_generator->set_meta( '_billing_vat_number', 'DK12345674' );
+
+		self::assertSame(
+			'DK12345674',
+			rp_get_order_vat_number( $this->order_generator->order() )
+		);
+	}
+
+	/**
+	 * Test @see rp_get_order_vat_number prefers _billing_eu_vat_number over
+	 * _billing_vat_number when both metas are set on the same order.
+	 */
+	public function test_rp_get_order_vat_number_prefers_eu_vat_number_when_both_set() {
+		$this->order_generator->set_meta( '_billing_eu_vat_number', 'DK32097901' );
+		$this->order_generator->set_meta( '_billing_vat_number', 'DK12345674' );
+
+		self::assertSame(
+			'DK32097901',
+			rp_get_order_vat_number( $this->order_generator->order() )
+		);
+	}
+
+	/**
+	 * Test @see rp_get_order_vat_number returns an empty string when neither
+	 * VAT meta key is present on the order.
+	 */
+	public function test_rp_get_order_vat_number_returns_empty_when_not_set() {
+		self::assertSame(
+			'',
+			rp_get_order_vat_number( $this->order_generator->order() )
+		);
+	}
+
+	/**
+	 * Test @see rp_get_order_vat_number trims surrounding whitespace from the
+	 * stored meta value.
+	 */
+	public function test_rp_get_order_vat_number_trims_whitespace() {
+		$this->order_generator->set_meta( '_billing_eu_vat_number', '  DK32097901  ' );
+
+		self::assertSame(
+			'DK32097901',
+			rp_get_order_vat_number( $this->order_generator->order() )
+		);
+	}
+
 }

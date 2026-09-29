@@ -219,6 +219,213 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 		wp_set_current_user( 0 );
 	}
 
+	/**
+	 * Test @see ReepayCheckout::process_payment includes the customer's VAT number
+	 * from order meta in the session/charge customer payload — Frisbii models VAT
+	 * on the Customer object because it identifies the customer's registered
+	 * business, not a specific invoice (confirmed with the PM).
+	 *
+	 * @group gateways_checkout
+	 */
+	public function test_process_payment_includes_vat_number_in_customer_payload() {
+		wp_set_current_user( $this->factory()->user->create() );
+
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->set_meta( '_billing_eu_vat_number', 'DK32097901' );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+
+		$captured_calls = array();
+		$this->api_mock->method( 'request' )->willReturnCallback(
+			function ( $method, $url, $params = array() ) use ( &$captured_calls ) {
+				$captured_calls[] = array(
+					'method' => $method,
+					'url'    => $url,
+					'params' => $params,
+				);
+
+				return array(
+					'id'  => 'session_abc123',
+					'url' => 'https://checkout.reepay.com/pay/session_abc123',
+				);
+			}
+		);
+
+		$result = self::$gateway->process_payment( $order_id );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		$charge_call = null;
+		foreach ( $captured_calls as $call ) {
+			if ( str_contains( $call['url'], 'session/charge' ) ) {
+				$charge_call = $call;
+			}
+		}
+
+		$this->assertNotNull( $charge_call, 'Expected a session/charge request' );
+		$this->assertSame( 'DK32097901', $charge_call['params']['order']['customer']['vat'] ?? null );
+
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test @see ReepayCheckout::process_payment sends an empty VAT value when the
+	 * order has no VAT meta set, and still processes the order normally (AC1.1/AC2.1).
+	 *
+	 * @group gateways_checkout
+	 */
+	public function test_process_payment_sends_empty_vat_when_no_vat_meta() {
+		wp_set_current_user( $this->factory()->user->create() );
+
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+		$this->api_mock->expects( $this->atLeastOnce() )
+			->method( 'request' )
+			->with(
+				$this->anything(),
+				$this->anything(),
+				$this->callback(
+					function ( $params ) {
+						return ( $params['order']['customer']['vat'] ?? null ) === '';
+					}
+				)
+			)
+			->willReturn(
+				array(
+					'id'  => 'session_abc123',
+					'url' => 'https://checkout.reepay.com/pay/session_abc123',
+				)
+			);
+
+		$result = self::$gateway->process_payment( $order_id );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test @see ReepayCheckout::process_payment fires a PUT /v1/customer/{handle}
+	 * request to sync the VAT number onto the persisted Frisbii customer record
+	 * for a logged-in/returning customer (whose customer_id is non-zero, so the
+	 * existing guest-only full-customer-sync PUT does not cover this case).
+	 *
+	 * @group gateways_checkout
+	 */
+	public function test_process_payment_syncs_vat_to_existing_customer() {
+		wp_set_current_user( $this->factory()->user->create() );
+
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->set_meta( '_billing_eu_vat_number', 'DK32097901' );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+
+		$captured_calls = array();
+		$this->api_mock->method( 'request' )->willReturnCallback(
+			function ( $method, $url, $params = array() ) use ( &$captured_calls ) {
+				$captured_calls[] = array(
+					'method' => $method,
+					'url'    => $url,
+					'params' => $params,
+				);
+
+				if ( str_contains( $url, 'session/charge' ) ) {
+					return array(
+						'id'  => 'session_abc123',
+						'url' => 'https://checkout.reepay.com/pay/session_abc123',
+					);
+				}
+
+				return array( 'handle' => 'customer-1' );
+			}
+		);
+
+		self::$gateway->process_payment( $order_id );
+
+		$vat_sync_call = null;
+		foreach ( $captured_calls as $call ) {
+			if ( 'PUT' === $call['method'] && str_contains( $call['url'], 'customer/customer-1' ) ) {
+				$vat_sync_call = $call;
+			}
+		}
+
+		$this->assertNotNull( $vat_sync_call, 'Expected a PUT request to sync the VAT number to the existing Frisbii customer' );
+		$this->assertSame( 'DK32097901', $vat_sync_call['params']['vat'] ?? null );
+
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test @see ReepayCheckout::process_payment does not fire a customer-sync PUT
+	 * request when the order has no VAT number — a previously-set VAT number on
+	 * the customer must NOT be cleared just because one order omitted it. The
+	 * VAT/CVR number identifies the customer's registered business; it doesn't
+	 * change per order.
+	 *
+	 * @group gateways_checkout
+	 */
+	public function test_process_payment_does_not_sync_vat_when_none_present() {
+		wp_set_current_user( $this->factory()->user->create() );
+
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+
+		$captured_calls = array();
+		$this->api_mock->method( 'request' )->willReturnCallback(
+			function ( $method, $url, $params = array() ) use ( &$captured_calls ) {
+				$captured_calls[] = array(
+					'method' => $method,
+					'url'    => $url,
+					'params' => $params,
+				);
+
+				if ( str_contains( $url, 'session/charge' ) ) {
+					return array(
+						'id'  => 'session_abc123',
+						'url' => 'https://checkout.reepay.com/pay/session_abc123',
+					);
+				}
+
+				return array( 'handle' => 'customer-1' );
+			}
+		);
+
+		self::$gateway->process_payment( $order_id );
+
+		foreach ( $captured_calls as $call ) {
+			$this->assertFalse(
+				'PUT' === $call['method'] && str_contains( $call['url'], 'customer/customer-1' ),
+				'Did not expect a customer-sync PUT request when there is no VAT number'
+			);
+		}
+
+		wp_set_current_user( 0 );
+	}
+
 	// -----------------------------------------------------------------------
 	// Gateway identity
 	// -----------------------------------------------------------------------
