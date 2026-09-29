@@ -645,6 +645,162 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 		$this->assertTrue( self::$gateway->is_webhook_configured() );
 	}
 
+	/**
+	 * Test @see ReepayGateway::get_webhook_url always resolves to the canonical
+	 * WordPress "home" option host, ignoring a filtered/aliased home_url() such
+	 * as would be produced by a site reachable via multiple domain aliases.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_get_webhook_url_ignores_aliased_home_url_filter() {
+		$canonical_url   = ReepayGateway::get_webhook_url();
+		$canonical_host  = wp_parse_url( $canonical_url, PHP_URL_HOST );
+		$canonical_path  = wp_parse_url( $canonical_url, PHP_URL_PATH );
+		$canonical_query = wp_parse_url( $canonical_url, PHP_URL_QUERY );
+
+		$filter = function () {
+			return 'https://matterscph.dk';
+		};
+
+		add_filter( 'home_url', $filter );
+
+		try {
+			$aliased_url = ReepayGateway::get_webhook_url();
+		} finally {
+			remove_filter( 'home_url', $filter );
+		}
+
+		$this->assertSame(
+			$canonical_host,
+			wp_parse_url( $aliased_url, PHP_URL_HOST ),
+			'Webhook URL host must remain the canonical site URL host, ignoring an aliased home_url() filter.'
+		);
+		$this->assertNotSame(
+			'matterscph.dk',
+			wp_parse_url( $aliased_url, PHP_URL_HOST ),
+			'Webhook URL host must not leak the aliased domain.'
+		);
+		$this->assertSame(
+			$canonical_path,
+			wp_parse_url( $aliased_url, PHP_URL_PATH ),
+			'Webhook URL path must be unchanged when only the host alias differs.'
+		);
+		$this->assertSame(
+			$canonical_query,
+			wp_parse_url( $aliased_url, PHP_URL_QUERY ),
+			'Webhook URL query must be unchanged when only the host alias differs.'
+		);
+	}
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured replaces a stale webhook URL
+	 * registered under a different host alias (same path/query) with the
+	 * canonical webhook URL, instead of leaving both registered.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_replaces_alias_host_duplicate() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+		$parts       = wp_parse_url( $webhook_url );
+
+		$alias_duplicate = 'https://matterscph.dk'
+			. ( $parts['path'] ?? '' )
+			. ( isset( $parts['query'] ) ? '?' . $parts['query'] : '' );
+
+		$captured_put_data = null;
+
+		// A single callback-based matcher is used (rather than stacking two
+		// expects()->method('request')->with(...) matchers) because PHPUnit
+		// dispatches to the first registered matcher for a given method name
+		// regardless of a later matcher being the better argument-based fit —
+		// stacking would make the GET matcher intercept the PUT call too.
+		$this->api_mock->expects( $this->exactly( 2 ) )
+			->method( 'request' )
+			->willReturnCallback(
+				function ( $method, $url, $data = array() ) use ( &$captured_put_data, $alias_duplicate, $webhook_url ) {
+					if ( 'GET' === $method ) {
+						return array(
+							'urls'         => array( $alias_duplicate ),
+							'alert_emails' => array(),
+							'disabled'     => false,
+							'secret'       => 'secret_key',
+						);
+					}
+
+					$captured_put_data = $data;
+
+					return array(
+						'urls'         => array( $webhook_url ),
+						'alert_emails' => array(),
+						'disabled'     => false,
+					);
+				}
+			);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+
+		$this->assertNotNull( $captured_put_data, 'PUT request must have been issued to replace the stale alias-host duplicate.' );
+		$this->assertContains( $webhook_url, $captured_put_data['urls'], 'Canonical webhook URL must be (re-)registered.' );
+		$this->assertNotContains( $alias_duplicate, $captured_put_data['urls'], 'Stale alias-host duplicate must be dropped from the PUT payload.' );
+	}
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured still returns true without
+	 * issuing a PUT when already correctly registered under the canonical host
+	 * — guards against the alias-dedup logic causing a spurious PUT.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_already_correct_host_returns_true_without_put() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+
+		$this->api_mock->expects( $this->once() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'GET' ),
+				$this->stringContains( 'webhook_settings' )
+			)
+			->willReturn(
+				array(
+					'urls'         => array( $webhook_url ),
+					'alert_emails' => array(),
+					'disabled'     => false,
+					'secret'       => 'secret_key',
+				)
+			);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+	}
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured never removes unrelated,
+	 * third-party-registered webhook URLs (e.g. a different integration's
+	 * webhook) when reconciling this plugin's own webhook URL.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_preserves_unrelated_third_party_urls() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+		$flatpay_url = 'https://data-api.flatpay.dk/publish/queue/tx/reepay?identifier=144185';
+
+		$this->api_mock->expects( $this->once() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'GET' ),
+				$this->stringContains( 'webhook_settings' )
+			)
+			->willReturn(
+				array(
+					'urls'         => array( $webhook_url, $flatpay_url ),
+					'alert_emails' => array(),
+					'disabled'     => false,
+					'secret'       => 'secret_key',
+				)
+			);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+	}
+
 	// -----------------------------------------------------------------------
 	// exclude_payment_gateway_based_on_currency()
 	// -----------------------------------------------------------------------

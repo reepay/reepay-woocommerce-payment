@@ -473,7 +473,45 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$default_wc_api_url = $default_wc_api_url . 'WC_Gateway_Reepay/';
 		}
 
+		// Force the canonical host (Settings > General "home" option), ignoring
+		// whatever host home_url()/domain-alias filters produced for this
+		// request. Sites reachable via multiple domain aliases would otherwise
+		// register a different webhook URL per alias.
+		$default_wc_api_url = self::force_canonical_host( $default_wc_api_url );
+
 		return $default_wc_api_url;
+	}
+
+	/**
+	 * Rewrite only the scheme+host of a URL to match the canonical WordPress
+	 * "home" option, leaving the path and query untouched.
+	 *
+	 * @param string $url URL to normalize.
+	 *
+	 * @return string
+	 */
+	private static function force_canonical_host( string $url ): string {
+		$canonical = wp_parse_url( get_option( 'home' ) );
+		if ( empty( $canonical['host'] ) ) {
+			return $url;
+		}
+
+		$current = wp_parse_url( $url );
+		if ( false === $current ) {
+			return $url;
+		}
+
+		$scheme = $canonical['scheme'] ?? ( $current['scheme'] ?? 'https' );
+		$host   = $canonical['host'];
+		$port   = isset( $canonical['port'] ) ? ':' . $canonical['port'] : '';
+
+		$rebuilt  = $scheme . '://' . $host . $port;
+		$rebuilt .= $current['path'] ?? '';
+		if ( ! empty( $current['query'] ) ) {
+			$rebuilt .= '?' . $current['query'];
+		}
+
+		return $rebuilt;
 	}
 
 	/**
@@ -507,16 +545,36 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			$exist_waste_urls = false;
 
-			$urls = array();
+			$urls            = array();
+			$dropped_urls    = array();
+			$webhook_path_qs = self::url_path_and_query( $webhook_url );
 
 			foreach ( $response['urls'] as $url ) {
-				if ( ( strpos( $url, $webhook_url ) === false || // either another site or exact url match.
-					$url === $webhook_url ) &&
-					strpos( $url, 'WC_Gateway_Reepay_Checkout' ) === false ) {
-					$urls[] = $url;
-				} else {
+				$is_legacy_waste = strpos( $url, 'WC_Gateway_Reepay_Checkout' ) !== false;
+
+				// Same endpoint (path+query), different host — a stale
+				// registration left over from a different domain alias of
+				// this same server. Replace it with the canonical URL.
+				$is_alias_duplicate = ( $url !== $webhook_url )
+					&& self::url_path_and_query( $url ) === $webhook_path_qs;
+
+				if ( $is_legacy_waste || $is_alias_duplicate ) {
 					$exist_waste_urls = true;
+					$dropped_urls[]   = $url;
+					continue;
 				}
+
+				$urls[] = $url;
+			}
+
+			if ( ! empty( $dropped_urls ) ) {
+				$this->log(
+					array(
+						'source'  => 'WebHook: dropping stale registered URL(s)',
+						'dropped' => $dropped_urls,
+						'kept'    => $webhook_url,
+					)
+				);
 			}
 
 			// Verify the webhook settings.
@@ -569,6 +627,23 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Normalize a URL to just its path+query, ignoring scheme and host, so
+	 * URLs for the same endpoint on different domain aliases can be compared.
+	 *
+	 * @param string $url URL to normalize.
+	 *
+	 * @return string
+	 */
+	private static function url_path_and_query( string $url ): string {
+		$parts = wp_parse_url( $url );
+		if ( false === $parts ) {
+			return $url;
+		}
+
+		return ( $parts['path'] ?? '' ) . ( isset( $parts['query'] ) ? '?' . $parts['query'] : '' );
 	}
 
 	/**
