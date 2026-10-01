@@ -545,34 +545,33 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			$exist_waste_urls = false;
 
-			$urls            = array();
-			$dropped_urls    = array();
-			$webhook_path_qs = self::url_path_and_query( $webhook_url );
+			$urls                 = array();
+			$same_path_other_host = array();
+			$webhook_path_qs      = self::url_path_and_query( $webhook_url );
 
 			foreach ( $response['urls'] as $url ) {
-				$is_legacy_waste = strpos( $url, 'WC_Gateway_Reepay_Checkout' ) !== false;
-
-				// Same endpoint (path+query), different host — a stale
-				// registration left over from a different domain alias of
-				// this same server. Replace it with the canonical URL.
-				$is_alias_duplicate = ( $url !== $webhook_url )
-					&& self::url_path_and_query( $url ) === $webhook_path_qs;
-
-				if ( $is_legacy_waste || $is_alias_duplicate ) {
+				if ( strpos( $url, 'WC_Gateway_Reepay_Checkout' ) !== false ) {
 					$exist_waste_urls = true;
-					$dropped_urls[]   = $url;
 					continue;
+				}
+
+			// Same path, different host may belong to another environment.
+			// We cannot safely distinguish it, so never remove it automatically.
+			// Admin can remove it manually if needed.
+				if ( $url !== $webhook_url && self::url_path_and_query( $url ) === $webhook_path_qs ) {
+					$same_path_other_host[] = $url;
 				}
 
 				$urls[] = $url;
 			}
 
-			if ( ! empty( $dropped_urls ) ) {
+			if ( ! empty( $same_path_other_host ) ) {
 				$this->log(
 					array(
-						'source'  => 'WebHook: dropping stale registered URL(s)',
-						'dropped' => $dropped_urls,
-						'kept'    => $webhook_url,
+						'source'                => 'WebHook: found other registered URL(s) with the same path',
+						'other_host_urls'       => $same_path_other_host,
+						'canonical_webhook_url' => $webhook_url,
+						'note'                  => 'Not removed automatically — could be a different environment (e.g. staging) sharing this account, or a stale alias. Review and remove manually via the Frisbii dashboard if stale.',
 					)
 				);
 			}

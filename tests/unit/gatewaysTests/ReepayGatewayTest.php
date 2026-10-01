@@ -693,17 +693,21 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * Test @see ReepayGateway::is_webhook_configured replaces a stale webhook URL
-	 * registered under a different host alias (same path/query) with the
-	 * canonical webhook URL, instead of leaving both registered.
+	 * Test @see ReepayGateway::is_webhook_configured never removes another
+	 * registered URL that shares the canonical webhook's path but has a
+	 * different host. Such a URL could be a stale alias of this same server,
+	 * but it could equally be a different live environment (e.g. staging)
+	 * intentionally sharing this Frisbii account — removing it automatically
+	 * risks silently deleting a different server's working webhook, so it
+	 * must always be left registered rather than replaced.
 	 *
 	 * @group gateways_gateway
 	 */
-	public function test_is_webhook_configured_replaces_alias_host_duplicate() {
+	public function test_is_webhook_configured_never_removes_same_path_different_host_url() {
 		$webhook_url = ReepayGateway::get_webhook_url();
 		$parts       = wp_parse_url( $webhook_url );
 
-		$alias_duplicate = 'https://matterscph.dk'
+		$other_host_url = 'https://matterscph.dk'
 			. ( $parts['path'] ?? '' )
 			. ( isset( $parts['query'] ) ? '?' . $parts['query'] : '' );
 
@@ -717,10 +721,10 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 		$this->api_mock->expects( $this->exactly( 2 ) )
 			->method( 'request' )
 			->willReturnCallback(
-				function ( $method, $url, $data = array() ) use ( &$captured_put_data, $alias_duplicate, $webhook_url ) {
+				function ( $method, $url, $data = array() ) use ( &$captured_put_data, $other_host_url ) {
 					if ( 'GET' === $method ) {
 						return array(
-							'urls'         => array( $alias_duplicate ),
+							'urls'         => array( $other_host_url ),
 							'alert_emails' => array(),
 							'disabled'     => false,
 							'secret'       => 'secret_key',
@@ -730,7 +734,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 					$captured_put_data = $data;
 
 					return array(
-						'urls'         => array( $webhook_url ),
+						'urls'         => $data['urls'],
 						'alert_emails' => array(),
 						'disabled'     => false,
 					);
@@ -739,9 +743,9 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 
 		$this->assertTrue( self::$gateway->is_webhook_configured() );
 
-		$this->assertNotNull( $captured_put_data, 'PUT request must have been issued to replace the stale alias-host duplicate.' );
-		$this->assertContains( $webhook_url, $captured_put_data['urls'], 'Canonical webhook URL must be (re-)registered.' );
-		$this->assertNotContains( $alias_duplicate, $captured_put_data['urls'], 'Stale alias-host duplicate must be dropped from the PUT payload.' );
+		$this->assertNotNull( $captured_put_data, 'PUT request must have been issued to register the missing canonical URL.' );
+		$this->assertContains( $webhook_url, $captured_put_data['urls'], 'Canonical webhook URL must be registered.' );
+		$this->assertContains( $other_host_url, $captured_put_data['urls'], 'Same-path different-host URL must be preserved, never auto-removed — it may belong to a different live environment (e.g. staging) sharing this account.' );
 	}
 
 	/**
