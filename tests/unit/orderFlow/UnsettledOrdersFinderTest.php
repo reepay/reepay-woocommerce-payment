@@ -134,6 +134,51 @@ class UnsettledOrdersFinderTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * Regression test for BWPM-281 (PM-reported, live order #31704): a refund issued before
+	 * settlement reduces what Frisbii actually captures, so settled_amount reflects the order's
+	 * net total (order total minus the refund), not its gross total. Comparing against the
+	 * gross order total alone would wrongly treat this order as still unpaid forever, even
+	 * though Frisbii settled exactly what remained owed after the refund.
+	 *
+	 * @see UnsettledOrdersFinder::is_genuinely_settled_but_untracked
+	 */
+	public function test_find_excludes_and_heals_order_settled_for_net_total_after_pre_settlement_refund() {
+		$this->order_generator->set_props(
+			array(
+				'status'         => 'completed',
+				'payment_method' => reepay()->gateways()->checkout()->id,
+			)
+		);
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$order = $this->order_generator->order();
+		$order->set_date_completed( '2026-08-10 00:00:00' );
+		$order->save();
+
+		wc_create_refund(
+			array(
+				'order_id' => $order->get_id(),
+				'amount'   => '5.00',
+				'reason'   => 'Test refund before settlement',
+			)
+		);
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 1500,
+			)
+		);
+
+		$result = ( new UnsettledOrdersFinder() )->find();
+
+		$this->assertNotContains( $order->get_id(), $result['order_ids'], 'An order settled for its net total (after a pre-settlement refund) should have been excluded' );
+
+		$order = wc_get_order( $order->get_id() );
+		$this->assertSame( 1, (int) $order->get_meta( '_reepay_state_settled' ), 'Local state was not healed for an order genuinely settled at its net (post-refund) total' );
+	}
+
+	/**
 	 * Test @see UnsettledOrdersFinder::is_genuinely_settled_but_untracked does not exclude an
 	 * order that the live invoice check confirms is genuinely still unpaid — the live check
 	 * must not accidentally hide real unpaid orders.
