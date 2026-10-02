@@ -473,7 +473,45 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$default_wc_api_url = $default_wc_api_url . 'WC_Gateway_Reepay/';
 		}
 
+		// Force the canonical host (Settings > General "home" option), ignoring
+		// whatever host home_url()/domain-alias filters produced for this
+		// request. Sites reachable via multiple domain aliases would otherwise
+		// register a different webhook URL per alias.
+		$default_wc_api_url = self::force_canonical_host( $default_wc_api_url );
+
 		return $default_wc_api_url;
+	}
+
+	/**
+	 * Rewrite only the scheme+host of a URL to match the canonical WordPress
+	 * "home" option, leaving the path and query untouched.
+	 *
+	 * @param string $url URL to normalize.
+	 *
+	 * @return string
+	 */
+	private static function force_canonical_host( string $url ): string {
+		$canonical = wp_parse_url( get_option( 'home' ) );
+		if ( empty( $canonical['host'] ) ) {
+			return $url;
+		}
+
+		$current = wp_parse_url( $url );
+		if ( false === $current ) {
+			return $url;
+		}
+
+		$scheme = $canonical['scheme'] ?? ( $current['scheme'] ?? 'https' );
+		$host   = $canonical['host'];
+		$port   = isset( $canonical['port'] ) ? ':' . $canonical['port'] : '';
+
+		$rebuilt  = $scheme . '://' . $host . $port;
+		$rebuilt .= $current['path'] ?? '';
+		if ( ! empty( $current['query'] ) ) {
+			$rebuilt .= '?' . $current['query'];
+		}
+
+		return $rebuilt;
 	}
 
 	/**
@@ -507,16 +545,35 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			$exist_waste_urls = false;
 
-			$urls = array();
+			$urls                 = array();
+			$same_path_other_host = array();
+			$webhook_path_qs      = self::url_path_and_query( $webhook_url );
 
 			foreach ( $response['urls'] as $url ) {
-				if ( ( strpos( $url, $webhook_url ) === false || // either another site or exact url match.
-					$url === $webhook_url ) &&
-					strpos( $url, 'WC_Gateway_Reepay_Checkout' ) === false ) {
-					$urls[] = $url;
-				} else {
+				if ( strpos( $url, 'WC_Gateway_Reepay_Checkout' ) !== false ) {
 					$exist_waste_urls = true;
+					continue;
 				}
+
+				// Same path, different host may belong to another environment.
+				// We cannot safely distinguish it, so never remove it automatically.
+				// Admin can remove it manually if needed.
+				if ( $url !== $webhook_url && self::url_path_and_query( $url ) === $webhook_path_qs ) {
+					$same_path_other_host[] = $url;
+				}
+
+				$urls[] = $url;
+			}
+
+			if ( ! empty( $same_path_other_host ) ) {
+				$this->log(
+					array(
+						'source'                => 'WebHook: found other registered URL(s) with the same path',
+						'other_host_urls'       => $same_path_other_host,
+						'canonical_webhook_url' => $webhook_url,
+						'note'                  => 'Not removed automatically — could be a different environment (e.g. staging) sharing this account, or a stale alias. Review and remove manually via the Frisbii dashboard if stale.',
+					)
+				);
 			}
 
 			// Verify the webhook settings.
@@ -569,6 +626,23 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Normalize a URL to just its path+query, ignoring scheme and host, so
+	 * URLs for the same endpoint on different domain aliases can be compared.
+	 *
+	 * @param string $url URL to normalize.
+	 *
+	 * @return string
+	 */
+	private static function url_path_and_query( string $url ): string {
+		$parts = wp_parse_url( $url );
+		if ( false === $parts ) {
+			return $url;
+		}
+
+		return ( $parts['path'] ?? '' ) . ( isset( $parts['query'] ) ? '?' . $parts['query'] : '' );
 	}
 
 	/**
@@ -674,20 +748,31 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Capture order payment
 	 *
-	 * @param mixed      $order  order to capture.
-	 * @param float|null $amount amount to capture. Null to capture order total.
+	 * @param mixed      $order              order to capture.
+	 * @param float|null $amount             amount to capture. Null to capture order total.
+	 * @param bool       $mark_items_settled whether this call captures the full remaining
+	 *                                       balance. @see Api::capture_payment.
 	 *
 	 * @return void
 	 * @throws Exception If capture error.
 	 */
-	public function capture_payment( $order, $amount = null ) {
-		$order = wc_get_order( $order );
+	public function capture_payment( $order, $amount = null, bool $mark_items_settled = false ) {
+		// BWPM-286: only reload when not already a WC_Order - wc_get_order() always
+		// constructs a fresh instance from the DB (see WC_Order_Factory::get_order()), even
+		// when handed a valid WC_Order object. Discarding the caller's object here breaks
+		// object identity with whatever order instance the caller (and other callbacks
+		// hooked to the same woocommerce_order_status_changed event) are holding, so item
+		// meta updates made via this fresh instance (e.g. marking items settled) would
+		// silently not be visible on the caller's copy within the same request.
+		if ( ! $order instanceof WC_Order ) {
+			$order = wc_get_order( $order );
+		}
 
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
 			throw new Exception( esc_html__( 'Order is canceled', 'reepay-checkout-gateway' ) );
 		}
 
-		$result = reepay()->api( $this )->capture_payment( $order, $amount );
+		$result = reepay()->api( $this )->capture_payment( $order, $amount, $mark_items_settled );
 
 		if ( is_wp_error( $result ) ) {
 			throw new Exception( esc_html( $result->get_error_message() ) );
@@ -982,6 +1067,18 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			)
 		);
 
+		$vat_number = rp_get_order_vat_number( $order );
+
+		if ( ! empty( $vat_number ) ) {
+			$this->log(
+				array(
+					'source'     => 'process_payment_vat_number',
+					'order_id'   => $order_id,
+					'vat_number' => $vat_number,
+				)
+			);
+		}
+
 		$data = array(
 			'country'         => $country,
 			'customer_handle' => $customer_handle,
@@ -1023,7 +1120,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'city'        => $order->get_billing_city(),
 					'phone'       => $order->get_billing_phone(),
 					'company'     => $order->get_billing_company(),
-					'vat'         => '',
+					'vat'         => $vat_number,
 					'first_name'  => $order->get_billing_first_name(),
 					'last_name'   => $order->get_billing_last_name(),
 					'postal_code' => $order->get_billing_postcode(),
@@ -1383,6 +1480,22 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'https://api.reepay.com/v1/customer/' . $customer_handle,
 				$params['order']['customer']
 			);
+		} elseif ( ! empty( $customer_handle ) && ! empty( $vat_number ) ) {
+			// Only sync when a VAT number is present.
+			$this->log(
+				array(
+					'source'          => 'process_payment_updating_customer_vat',
+					'order_id'        => $order_id,
+					'customer_handle' => $customer_handle,
+					'customer_data'   => $params['order']['customer'],
+				)
+			);
+
+			reepay()->api( $this )->request(
+				'PUT',
+				'https://api.reepay.com/v1/customer/' . $customer_handle,
+				$params['order']['customer']
+			);
 		}
 
 		$have_sub = ( class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) || wcs_cart_have_subscription();
@@ -1564,7 +1677,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'city'        => $order->get_billing_city(),
 					'phone'       => $order->get_billing_phone(),
 					'company'     => $order->get_billing_company(),
-					'vat'         => '',
+					'vat'         => rp_get_order_vat_number( $order ),
 					'first_name'  => $order->get_billing_first_name(),
 					'last_name'   => $order->get_billing_last_name(),
 					'postal_code' => $order->get_billing_postcode(),
@@ -1612,6 +1725,17 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				return array(
 					'result'  => 'failure',
 					'message' => $result->get_error_message(),
+				);
+			}
+
+			$vat_number = rp_get_order_vat_number( $order );
+
+			if ( ! empty( $customer_handle ) && ! empty( $vat_number ) ) {
+				// PUT /v1/customer/{handle} replaces the whole record.
+				reepay()->api( $this )->request(
+					'PUT',
+					'https://api.reepay.com/v1/customer/' . $customer_handle,
+					$params['create_customer']
 				);
 			}
 
@@ -2228,6 +2352,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			'mobilepay'                   => 'mobilepay',
 			'ms_subscripiton'             => 'mobilepay',
 			'viabill'                     => 'viabill',
+			'klarna'                      => 'klarna',
 			'klarna_pay_later'            => 'klarna',
 			'klarna_pay_now'              => 'klarna',
 			'china_union_pay'             => 'cup',

@@ -168,11 +168,18 @@ class UnsettledOrdersFinder {
 
 		$invoice = reepay()->api( $order )->get_invoice_data( $order );
 
-		if ( is_wp_error( $invoice ) || ! isset( $invoice['settled_amount'], $invoice['authorized_amount'] ) ) {
+		if ( is_wp_error( $invoice ) || ! isset( $invoice['settled_amount'] ) ) {
 			return false;
 		}
 
-		if ( $invoice['settled_amount'] <= 0 || $invoice['settled_amount'] < $invoice['authorized_amount'] ) {
+		// Compare against the order's net total, not the authorized or gross total.
+		// This correctly handles discounts and refunds before or after settlement.
+		$net_total_amount = rp_prepare_amount(
+			(float) ( $order->get_total() - $order->get_total_refunded() ),
+			$order->get_currency()
+		);
+
+		if ( $invoice['settled_amount'] <= 0 || $invoice['settled_amount'] < $net_total_amount ) {
 			return false;
 		}
 

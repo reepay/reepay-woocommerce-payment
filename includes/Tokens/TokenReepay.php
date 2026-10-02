@@ -81,6 +81,7 @@ class TokenReepay extends WC_Payment_Token_CC {
 			'googlepay'        => 'googlepay',
 			'vipps'            => 'vipps',
 			'anyday'           => 'anyday',
+			'klarna'           => 'klarna',
 			'klarna_pay_later' => 'klarna',
 			'klarna_pay_now'   => 'klarna',
 		);

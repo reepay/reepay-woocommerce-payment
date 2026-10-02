@@ -578,12 +578,18 @@ class Api {
 	/**
 	 * Capture order payment
 	 *
-	 * @param WC_Order|int $order order to capture.
-	 * @param float|null   $amount amount to capture. Null to capture order total.
+	 * @param WC_Order|int $order              order to capture.
+	 * @param float|null   $amount             amount to capture. Null to capture order total.
+	 * @param bool         $mark_items_settled whether this call captures the full remaining
+	 *                                         balance, so unsettled order items should be marked
+	 *                                         'settled' on success. Only pass true when $amount is
+	 *                                         known to cover the entire outstanding balance - not for
+	 *                                         partial captures - otherwise items get marked settled
+	 *                                         for amounts that were never actually captured.
 	 *
 	 * @return array|WP_Error|Bool
 	 */
-	public function capture_payment( $order, $amount = null ) {
+	public function capture_payment( $order, $amount = null, bool $mark_items_settled = false ) {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
@@ -620,7 +626,49 @@ class Api {
 			}
 		}
 
-		return $this->settle( $order, $amount, array_values( $order_lines ) );
+		$result = $this->settle( $order, $amount, array_values( $order_lines ) );
+
+		if ( $mark_items_settled && ! is_wp_error( $result ) && ( empty( $result['state'] ) || 'failed' !== $result['state'] ) ) {
+			$this->mark_order_items_settled( $order );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Mark every not-yet-settled order item (product lines, shipping, fees) as 'settled'.
+	 *
+	 * BWPM-286: capture_payment() settles via order-lines built fresh from the order, but
+	 * unlike OrderCapture::complete_settle() it never recorded which items were captured.
+	 * When a second full-settle path (e.g. OrderCapture::multi_settle(), also hooked to
+	 * woocommerce_order_status_changed) ran right after, it had no way to know the balance
+	 * was already settled, resent the full current order total, got rejected by the API
+	 * ("Amount higher than authorized amount"), and the settle() retry fallback for that
+	 * error then settled whatever authorization remained - silently overcharging the
+	 * customer. Marking items here lets multi_settle() see them as already settled and
+	 * skip them, exactly as it does after its own settlement calls.
+	 *
+	 * @param WC_Order $order order that was just fully captured.
+	 *
+	 * @see OrderCapture::complete_settle
+	 */
+	private function mark_order_items_settled( WC_Order $order ) {
+		foreach ( $order->get_items( array( 'line_item', 'shipping', 'fee' ) ) as $item ) {
+			if ( ! empty( $item->get_meta( 'settled' ) ) ) {
+				continue;
+			}
+
+			$total = rp_prepare_amount( OrderCapture::get_item_price( $item, $order )['with_tax'], $order->get_currency() );
+
+			if ( $total <= 0 ) {
+				continue;
+			}
+
+			$item->update_meta_data( 'settled', rp_make_initial_amount( $total, $order->get_currency() ) );
+			$item->save();
+
+			do_action( 'reepay_order_item_settled', $item, $order );
+		}
 	}
 
 	/**
@@ -647,7 +695,7 @@ class Api {
 				'city'        => $order->get_billing_city(),
 				'phone'       => $order->get_billing_phone(),
 				'company'     => $order->get_billing_company(),
-				'vat'         => '',
+				'vat'         => rp_get_order_vat_number( $order ),
 				'first_name'  => $order->get_billing_first_name(),
 				'last_name'   => $order->get_billing_last_name(),
 				'postal_code' => $order->get_billing_postcode(),
@@ -756,11 +804,26 @@ class Api {
 			)
 		);
 
-		return $this->request(
+		$result = $this->request(
 			'POST',
 			'https://checkout-api.reepay.com/v1/session/recurring',
 			$params
 		);
+
+		$vat_number = rp_get_order_vat_number( $order );
+
+		if ( ! is_wp_error( $result ) && ! empty( $data['customer_handle'] ) && ! empty( $vat_number ) ) {
+			// PUT /v1/customer/{handle} replaces the whole record — any field not
+			// included gets deleted, so the full customer array must be sent, not
+			// just 'vat'.
+			$this->request(
+				'PUT',
+				'https://api.reepay.com/v1/customer/' . $data['customer_handle'],
+				$params['create_customer']
+			);
+		}
+
+		return $result;
 	}
 
 	/**
@@ -1102,7 +1165,7 @@ class Api {
 			$error = sprintf(
 				// translators: %1$s refund amount, %2$s error message.
 				__( 'Failed to refund "%1$s". Error: %2$s.', 'reepay-checkout-gateway' ),
-				wc_price( $amount ),
+				wc_price( $amount, array( 'currency' => $order->get_currency() ) ),
 				$result->get_error_message()
 			);
 
@@ -1158,7 +1221,7 @@ class Api {
 					sprintf(
 						// translators: %1$s pending amount, transaction id.
 						__( 'Transaction is pending. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
-						wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ) ),
+						wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ), array( 'currency' => $order->get_currency() ) ),
 						$result['transaction']
 					),
 					$result['transaction']
@@ -1171,7 +1234,7 @@ class Api {
 					sprintf(
 						// translators: %1$s authorized amount, %2$s transaction id.
 						__( 'Payment has been authorized. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
-						wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ) ),
+						wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ), array( 'currency' => $order->get_currency() ) ),
 						$result['transaction']
 					),
 					$result['transaction']
@@ -1189,7 +1252,7 @@ class Api {
 					sprintf(
 						// translators: %1$s settled amount, transaction id.
 						__( 'Payment has been settled. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
-						wc_price( $result['amount'] ),
+						wc_price( $result['amount'], array( 'currency' => $order->get_currency() ) ),
 						$result['transaction']
 					),
 					$result['transaction']

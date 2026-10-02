@@ -553,6 +553,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	 * ["mobilepay", "mobilepay"]
 	 * ["ms_subscripiton", "mobilepay"]
 	 * ["viabill", "viabill"]
+	 * ["klarna", "klarna"]
 	 * ["klarna_pay_later", "klarna"]
 	 * ["klarna_pay_now", "klarna"]
 	 * ["china_union_pay", "cup"]
@@ -641,6 +642,166 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 				'disabled'     => false,
 			)
 		);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+	}
+
+	/**
+	 * Test @see ReepayGateway::get_webhook_url always resolves to the canonical
+	 * WordPress "home" option host, ignoring a filtered/aliased home_url() such
+	 * as would be produced by a site reachable via multiple domain aliases.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_get_webhook_url_ignores_aliased_home_url_filter() {
+		$canonical_url   = ReepayGateway::get_webhook_url();
+		$canonical_host  = wp_parse_url( $canonical_url, PHP_URL_HOST );
+		$canonical_path  = wp_parse_url( $canonical_url, PHP_URL_PATH );
+		$canonical_query = wp_parse_url( $canonical_url, PHP_URL_QUERY );
+
+		$filter = function () {
+			return 'https://matterscph.dk';
+		};
+
+		add_filter( 'home_url', $filter );
+
+		try {
+			$aliased_url = ReepayGateway::get_webhook_url();
+		} finally {
+			remove_filter( 'home_url', $filter );
+		}
+
+		$this->assertSame(
+			$canonical_host,
+			wp_parse_url( $aliased_url, PHP_URL_HOST ),
+			'Webhook URL host must remain the canonical site URL host, ignoring an aliased home_url() filter.'
+		);
+		$this->assertNotSame(
+			'matterscph.dk',
+			wp_parse_url( $aliased_url, PHP_URL_HOST ),
+			'Webhook URL host must not leak the aliased domain.'
+		);
+		$this->assertSame(
+			$canonical_path,
+			wp_parse_url( $aliased_url, PHP_URL_PATH ),
+			'Webhook URL path must be unchanged when only the host alias differs.'
+		);
+		$this->assertSame(
+			$canonical_query,
+			wp_parse_url( $aliased_url, PHP_URL_QUERY ),
+			'Webhook URL query must be unchanged when only the host alias differs.'
+		);
+	}
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured never removes another
+	 * registered URL that shares the canonical webhook's path but has a
+	 * different host. Such a URL could be a stale alias of this same server,
+	 * but it could equally be a different live environment (e.g. staging)
+	 * intentionally sharing this Frisbii account — removing it automatically
+	 * risks silently deleting a different server's working webhook, so it
+	 * must always be left registered rather than replaced.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_never_removes_same_path_different_host_url() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+		$parts       = wp_parse_url( $webhook_url );
+
+		$other_host_url = 'https://matterscph.dk'
+			. ( $parts['path'] ?? '' )
+			. ( isset( $parts['query'] ) ? '?' . $parts['query'] : '' );
+
+		$captured_put_data = null;
+
+		// A single callback-based matcher is used (rather than stacking two
+		// expects()->method('request')->with(...) matchers) because PHPUnit
+		// dispatches to the first registered matcher for a given method name
+		// regardless of a later matcher being the better argument-based fit —
+		// stacking would make the GET matcher intercept the PUT call too.
+		$this->api_mock->expects( $this->exactly( 2 ) )
+			->method( 'request' )
+			->willReturnCallback(
+				function ( $method, $url, $data = array() ) use ( &$captured_put_data, $other_host_url ) {
+					if ( 'GET' === $method ) {
+						return array(
+							'urls'         => array( $other_host_url ),
+							'alert_emails' => array(),
+							'disabled'     => false,
+							'secret'       => 'secret_key',
+						);
+					}
+
+					$captured_put_data = $data;
+
+					return array(
+						'urls'         => $data['urls'],
+						'alert_emails' => array(),
+						'disabled'     => false,
+					);
+				}
+			);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+
+		$this->assertNotNull( $captured_put_data, 'PUT request must have been issued to register the missing canonical URL.' );
+		$this->assertContains( $webhook_url, $captured_put_data['urls'], 'Canonical webhook URL must be registered.' );
+		$this->assertContains( $other_host_url, $captured_put_data['urls'], 'Same-path different-host URL must be preserved, never auto-removed — it may belong to a different live environment (e.g. staging) sharing this account.' );
+	}
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured still returns true without
+	 * issuing a PUT when already correctly registered under the canonical host
+	 * — guards against the alias-dedup logic causing a spurious PUT.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_already_correct_host_returns_true_without_put() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+
+		$this->api_mock->expects( $this->once() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'GET' ),
+				$this->stringContains( 'webhook_settings' )
+			)
+			->willReturn(
+				array(
+					'urls'         => array( $webhook_url ),
+					'alert_emails' => array(),
+					'disabled'     => false,
+					'secret'       => 'secret_key',
+				)
+			);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+	}
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured never removes unrelated,
+	 * third-party-registered webhook URLs (e.g. a different integration's
+	 * webhook) when reconciling this plugin's own webhook URL.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_preserves_unrelated_third_party_urls() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+		$flatpay_url = 'https://data-api.flatpay.dk/publish/queue/tx/reepay?identifier=144185';
+
+		$this->api_mock->expects( $this->once() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'GET' ),
+				$this->stringContains( 'webhook_settings' )
+			)
+			->willReturn(
+				array(
+					'urls'         => array( $webhook_url, $flatpay_url ),
+					'alert_emails' => array(),
+					'disabled'     => false,
+					'secret'       => 'secret_key',
+				)
+			);
 
 		$this->assertTrue( self::$gateway->is_webhook_configured() );
 	}
@@ -1026,5 +1187,179 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertSame( 'success', $result['result'] );
+	}
+
+	// -----------------------------------------------------------------------
+	// wcs_change_payment_method() — VAT number
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::wcs_change_payment_method includes the customer's
+	 * VAT number from order meta in the create_customer payload when adding a
+	 * new card (no token id).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_wcs_change_payment_method_includes_vat_number() {
+		self::$gateway->id = 'reepay_checkout';
+
+		$this->order_generator->set_meta( '_billing_eu_vat_number', 'DK32097901' );
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+
+		$captured_calls = array();
+		$this->api_mock->method( 'request' )->willReturnCallback(
+			function ( $method, $url, $params = array() ) use ( &$captured_calls ) {
+				$captured_calls[] = array(
+					'method' => $method,
+					'url'    => $url,
+					'params' => $params,
+				);
+
+				return array(
+					'id'  => 'session_1',
+					'url' => 'https://checkout.reepay.com/pay/session_1',
+				);
+			}
+		);
+
+		$result = self::$gateway->wcs_change_payment_method( $this->order_generator->order() );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		$recurring_call = null;
+		foreach ( $captured_calls as $call ) {
+			if ( str_contains( $call['url'], 'session/recurring' ) ) {
+				$recurring_call = $call;
+			}
+		}
+
+		$this->assertNotNull( $recurring_call, 'Expected a session/recurring request' );
+		$this->assertSame( 'POST', $recurring_call['method'] );
+		$this->assertSame( 'DK32097901', $recurring_call['params']['create_customer']['vat'] ?? null );
+	}
+
+	/**
+	 * Test @see ReepayGateway::wcs_change_payment_method sends an empty VAT
+	 * value when the order has no VAT meta set.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_wcs_change_payment_method_sends_empty_vat_when_no_vat_meta() {
+		self::$gateway->id = 'reepay_checkout';
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+		$this->api_mock->expects( $this->atLeastOnce() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'POST' ),
+				$this->stringContains( 'session/recurring' ),
+				$this->callback(
+					function ( $params ) {
+						return ( $params['create_customer']['vat'] ?? null ) === '';
+					}
+				)
+			)
+			->willReturn(
+				array(
+					'id'  => 'session_1',
+					'url' => 'https://checkout.reepay.com/pay/session_1',
+				)
+			);
+
+		$result = self::$gateway->wcs_change_payment_method( $this->order_generator->order() );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+	}
+
+	/**
+	 * Test @see ReepayGateway::wcs_change_payment_method fires a PUT
+	 * /v1/customer/{handle} request to sync the VAT number onto the persisted
+	 * Frisbii customer record.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_wcs_change_payment_method_syncs_vat_to_existing_customer() {
+		self::$gateway->id = 'reepay_checkout';
+
+		$this->order_generator->set_meta( '_billing_eu_vat_number', 'DK32097901' );
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+
+		$captured_calls = array();
+		$this->api_mock->method( 'request' )->willReturnCallback(
+			function ( $method, $url, $params = array() ) use ( &$captured_calls ) {
+				$captured_calls[] = array(
+					'method' => $method,
+					'url'    => $url,
+					'params' => $params,
+				);
+
+				return array(
+					'id'  => 'session_1',
+					'url' => 'https://checkout.reepay.com/pay/session_1',
+				);
+			}
+		);
+
+		$result = self::$gateway->wcs_change_payment_method( $this->order_generator->order() );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		$vat_sync_call = null;
+		foreach ( $captured_calls as $call ) {
+			if ( 'PUT' === $call['method'] && str_contains( $call['url'], 'customer/customer-1' ) ) {
+				$vat_sync_call = $call;
+			}
+		}
+
+		$this->assertNotNull( $vat_sync_call, 'Expected a PUT request to sync the VAT number to the existing Frisbii customer' );
+		$this->assertSame( 'DK32097901', $vat_sync_call['params']['vat'] ?? null );
+	}
+
+	/**
+	 * Test @see ReepayGateway::wcs_change_payment_method does not fire a
+	 * customer-sync PUT request when the order has no VAT number — a
+	 * previously-set VAT number on the customer must NOT be cleared just
+	 * because one order omitted it, since Frisbii's customer record is shared
+	 * across all of that customer's invoices.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_wcs_change_payment_method_does_not_sync_vat_when_none_present() {
+		self::$gateway->id = 'reepay_checkout';
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+
+		$captured_calls = array();
+		$this->api_mock->method( 'request' )->willReturnCallback(
+			function ( $method, $url, $params = array() ) use ( &$captured_calls ) {
+				$captured_calls[] = array(
+					'method' => $method,
+					'url'    => $url,
+					'params' => $params,
+				);
+
+				return array(
+					'id'  => 'session_1',
+					'url' => 'https://checkout.reepay.com/pay/session_1',
+				);
+			}
+		);
+
+		$result = self::$gateway->wcs_change_payment_method( $this->order_generator->order() );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		foreach ( $captured_calls as $call ) {
+			$this->assertFalse(
+				'PUT' === $call['method'] && str_contains( $call['url'], 'customer/customer-1' ),
+				'Did not expect a customer-sync PUT request when there is no VAT number'
+			);
+		}
 	}
 }

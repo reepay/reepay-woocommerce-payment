@@ -324,6 +324,7 @@ class ReepayCheckout extends ReepayGateway {
 					'amex'             => 'American Express',
 					'mobilepay'        => 'MobilePay',
 					'viabill'          => 'ViaBill',
+					'klarna'           => 'Klarna',
 					'klarna_pay_later' => 'Klarna Pay Later',
 					'klarna_pay_now'   => 'Klarna Pay Now',
 					'klarna_slice_it'  => 'Klarna Slice It',
@@ -920,7 +921,7 @@ class ReepayCheckout extends ReepayGateway {
 							sprintf(
 							// translators: %1$s authorized amount, %2$s transaction id.
 								__( 'Payment has been authorized. Amount: %s.', 'reepay-checkout-gateway' ),
-								wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ) )
+								wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ), array( 'currency' => $order->get_currency() ) )
 							),
 							null
 						);
@@ -934,7 +935,7 @@ class ReepayCheckout extends ReepayGateway {
 							sprintf(
 							// translators: %1$s settled amount, transaction id.
 								__( 'Payment has been settled. Amount: %s.', 'reepay-checkout-gateway' ),
-								wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ) )
+								wc_price( rp_make_initial_amount( $result['amount'], $order->get_currency() ), array( 'currency' => $order->get_currency() ) )
 							),
 							null
 						);

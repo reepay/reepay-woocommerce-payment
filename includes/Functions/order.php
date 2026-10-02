@@ -274,3 +274,26 @@ if ( ! function_exists( 'rp_is_order_paid_via_reepay' ) ) {
 		return rp_is_reepay_payment_method( $order->get_payment_method() );
 	}
 }
+
+if ( ! function_exists( 'rp_get_order_vat_number' ) ) {
+	/**
+	 * Get the customer VAT/CVR number stored on the order by a supported VAT plugin.
+	 *
+	 * Checks `_billing_eu_vat_number` (EU/UK VAT Validation Manager for WooCommerce)
+	 * first, then falls back to `_billing_vat_number` (legacy EU VAT Number for
+	 * WooCommerce). Returns an empty string if neither meta is set.
+	 *
+	 * @param WC_Order $order order to read VAT meta from.
+	 *
+	 * @return string
+	 */
+	function rp_get_order_vat_number( WC_Order $order ): string {
+		$vat = $order->get_meta( '_billing_eu_vat_number' );
+
+		if ( empty( $vat ) ) {
+			$vat = $order->get_meta( '_billing_vat_number' );
+		}
+
+		return $vat ? sanitize_text_field( trim( $vat ) ) : '';
+	}
+}
