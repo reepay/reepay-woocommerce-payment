@@ -324,6 +324,7 @@ class ReepayCheckout extends ReepayGateway {
 					'amex'             => 'American Express',
 					'mobilepay'        => 'MobilePay',
 					'viabill'          => 'ViaBill',
+					'klarna'           => 'Klarna',
 					'klarna_pay_later' => 'Klarna Pay Later',
 					'klarna_pay_now'   => 'Klarna Pay Now',
 					'klarna_slice_it'  => 'Klarna Slice It',
