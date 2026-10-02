@@ -813,4 +813,150 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 		// Simulate the real authorization event: pending -> processing.
 		$this->order_statuses->order_status_changed( $order->get_id(), 'pending', 'processing', $order );
 	}
+
+	/**
+	 * Regression test for BWPM-286: "Modified orders get settled for their full original
+	 * amount". Reproduces the reported bug end-to-end: OrderStatuses::order_status_changed()
+	 * and OrderCapture::capture_full_order() are both hooked to woocommerce_order_status_changed
+	 * and both used to attempt a full settle when an order transitioned to "completed". For an
+	 * order that was reduced after authorization (e.g. a coupon applied post-authorization,
+	 * so only part of the original authorization is still owed), OrderStatuses used to settle
+	 * the correct (reduced) amount first, then OrderCapture - unaware anything had already been
+	 * settled - resent the same amount again. The API rejected it ("Amount higher than
+	 * authorized amount"), and Api::settle()'s retry-on-that-error fallback then silently
+	 * settled whatever authorization remained, overcharging the customer for the difference
+	 * between the original and the reduced order total.
+	 *
+	 * Uses a real (non-mocked) Api instance, shared via the DI container by both handlers
+	 * exactly as in production, with HTTP mocked at the transport level so the invoice's
+	 * settled_amount reflects the actual settle call made.
+	 *
+	 * @group orderflow_statuses
+	 */
+	public function test_order_status_changed_then_capture_full_order_does_not_double_settle_reduced_order() {
+		$real_api = new Api();
+		$real_api->set_logging_source( 'reepay_checkout' );
+		reepay()->di()->set( Api::class, $real_api );
+
+		self::$options->set_options(
+			array(
+				'test_mode'           => 'no',
+				'private_key'         => 'priv_test_key_for_unit_tests',
+				'enable_sync'         => 'yes',
+				'status_authorized'   => 'processing',
+				'status_settled'      => 'completed',
+				'disable_auto_settle' => 'no',
+			)
+		);
+		OrderStatuses::init_statuses();
+
+		// Order was authorized for 657.00, then reduced (e.g. via coupon) to 607.00 before
+		// completion - only the current (reduced) total should ever be charged.
+		$authorized_amount_minor = 65700;
+		$settled_amount_minor    = 0;
+		$settle_call_count       = 0;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $parsed_args, $url ) use ( &$settled_amount_minor, $authorized_amount_minor, &$settle_call_count ) {
+				if ( false !== strpos( $url, '/settle' ) ) {
+					++$settle_call_count;
+
+					$body            = json_decode( $parsed_args['body'] ?? '{}', true );
+					$requested_minor = isset( $body['amount'] ) ? (int) $body['amount'] : 0;
+
+					$settled_amount_minor += $requested_minor;
+
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode(
+							array(
+								'state'       => 'settled',
+								'transaction' => 'transaction_' . $settle_call_count,
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'cookies'  => array(),
+						'filename' => null,
+					);
+				}
+
+				if ( false !== strpos( $url, '/invoice/' ) ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode(
+							array(
+								'state'             => 'authorized',
+								'authorized_amount' => $authorized_amount_minor,
+								'settled_amount'    => $settled_amount_minor,
+								'refunded_amount'   => 0,
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'cookies'  => array(),
+						'filename' => null,
+					);
+				}
+
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+		$order_item_id = $this->order_generator->add_product( 'simple', array( 'regular_price' => 607.00 ) );
+
+		$order = $this->order_generator->order();
+		$order->calculate_totals();
+		$order->save();
+
+		$order_id = $order->get_id();
+		delete_transient( 'reepay_order_complete_should_settle_' . $order_id );
+
+		try {
+			// Handler order matches production: OrderStatuses is hooked before OrderCapture
+			// in OrderFlow\Main (@see OrderFlow\Main::__construct).
+			$this->order_statuses->order_status_changed( $order_id, 'processing', 'completed', $order );
+
+			$this->assertSame( 1, $settle_call_count, 'OrderStatuses alone should make exactly one settle call for the reduced total.' );
+
+			// Regression guard for BWPM-286's second contributing bug: ReepayGateway::capture_payment()
+			// used to unconditionally do $order = wc_get_order( $order ), which discards the caller's
+			// already-loaded WC_Order instance for a freshly constructed one (@see WC_Order_Factory::get_order).
+			// That silently broke object identity with the $order instance WooCommerce passes to every
+			// woocommerce_order_status_changed callback (including OrderCapture::capture_full_order()
+			// below), so the 'settled' item meta written during capture was invisible to it in-memory
+			// within the same request, even though it was correctly persisted to the database.
+			$this->assertNotEmpty(
+				$order->get_item( $order_item_id, false )->get_meta( 'settled' ),
+				'The order object shared across woocommerce_order_status_changed callbacks must reflect the item as settled in-memory, not just in the database.'
+			);
+
+			$this->order_capture->capture_full_order( $order_id, 'processing', 'completed', $order );
+
+			$this->assertSame(
+				1,
+				$settle_call_count,
+				'The settle endpoint must only be hit once - OrderCapture must recognize the amount was already captured by OrderStatuses and not resend it.'
+			);
+			$this->assertSame(
+				60700,
+				$settled_amount_minor,
+				'Only the current (reduced) order total should be settled, not the original authorized amount.'
+			);
+			$this->assertEquals(
+				607.00,
+				(float) WC_Order_Factory::get_order_item( $order_item_id )->get_meta( 'settled' )
+			);
+		} finally {
+			remove_all_filters( 'pre_http_request' );
+		}
+	}
 }
