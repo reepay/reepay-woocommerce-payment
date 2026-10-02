@@ -85,6 +85,39 @@ class ApiTest extends Reepay_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Intercepts wp_remote_request() and returns different canned responses depending on
+	 * which URL substring matches, so a single real Api instance can be driven through a
+	 * multi-request flow (e.g. get_invoice_data() followed by settle()).
+	 *
+	 * @param array<string, mixed> $responses_by_url_substring map of URL substring => response body.
+	 */
+	private function mock_http_request_by_url( array $responses_by_url_substring ) {
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $parsed_args, $url ) use ( $responses_by_url_substring ) {
+				foreach ( $responses_by_url_substring as $needle => $body ) {
+					if ( false !== strpos( $url, $needle ) ) {
+						return array(
+							'headers'  => array(),
+							'body'     => wp_json_encode( $body ),
+							'response' => array(
+								'code'    => 200,
+								'message' => 'OK',
+							),
+							'cookies'  => array(),
+							'filename' => null,
+						);
+					}
+				}
+
+				return $preempt;
+			},
+			10,
+			3
+		);
+	}
+
 	// -----------------------------------------------------------------------
 	// get_configurations()
 	// -----------------------------------------------------------------------
@@ -207,5 +240,96 @@ class ApiTest extends Reepay_UnitTestCase {
 		$body = json_decode( $captured_args['body'], true );
 
 		$this->assertSame( 'default', $body['configuration'] ?? null );
+	}
+
+	// -----------------------------------------------------------------------
+	// capture_payment() — 'settled' item meta tracking (BWPM-286)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Regression test for BWPM-286: modified orders got settled for their full original
+	 * amount. When capture_payment() is told it captured the full remaining balance
+	 * ($mark_items_settled = true), it must mark the order's not-yet-settled items as
+	 * 'settled'. This is what lets a second, independent auto-settle handler
+	 * (OrderCapture::multi_settle(), hooked to the same woocommerce_order_status_changed
+	 * event as OrderStatuses::order_status_changed()) recognize the balance is already
+	 * captured and skip it, instead of resending the same amount again - which the API
+	 * rejects, triggering a fallback that silently settles whatever remains authorized
+	 * and overcharges the customer.
+	 *
+	 * @see \Reepay\Checkout\Api::capture_payment
+	 */
+	public function test_capture_payment_marks_items_settled_when_requested() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+
+		$order_item_id = $this->order_generator->add_product(
+			'simple',
+			array( 'regular_price' => 20.00 )
+		);
+
+		$order = $this->order_generator->order();
+		$order->calculate_totals();
+		$order->save();
+
+		$this->mock_http_request_by_url(
+			array(
+				'/invoice/' => array(
+					'state'             => 'authorized',
+					'authorized_amount' => 2000,
+					'settled_amount'    => 0,
+					'refunded_amount'   => 0,
+				),
+				'/settle'   => array(
+					'state'       => 'settled',
+					'transaction' => 'transaction_1',
+				),
+			)
+		);
+
+		$result = $this->api->capture_payment( $order, 20.00, true );
+
+		$this->assertFalse( is_wp_error( $result ), 'capture_payment unexpectedly failed: ' . ( is_wp_error( $result ) ? $result->get_error_message() : '' ) );
+		$this->assertNotEmpty( WC_Order_Factory::get_order_item( $order_item_id )->get_meta( 'settled' ) );
+	}
+
+	/**
+	 * Regression test for BWPM-286: without $mark_items_settled, capture_payment() must
+	 * keep its original behavior and leave order items untouched. This covers the
+	 * existing Admin\Ajax call sites - in particular capture_partly(), which genuinely
+	 * captures a partial amount and must not have items falsely marked as fully settled.
+	 *
+	 * @see \Reepay\Checkout\Api::capture_payment
+	 */
+	public function test_capture_payment_does_not_mark_items_settled_by_default() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+
+		$order_item_id = $this->order_generator->add_product(
+			'simple',
+			array( 'regular_price' => 20.00 )
+		);
+
+		$order = $this->order_generator->order();
+		$order->calculate_totals();
+		$order->save();
+
+		$this->mock_http_request_by_url(
+			array(
+				'/invoice/' => array(
+					'state'             => 'authorized',
+					'authorized_amount' => 2000,
+					'settled_amount'    => 0,
+					'refunded_amount'   => 0,
+				),
+				'/settle'   => array(
+					'state'       => 'settled',
+					'transaction' => 'transaction_1',
+				),
+			)
+		);
+
+		$result = $this->api->capture_payment( $order, 20.00 );
+
+		$this->assertFalse( is_wp_error( $result ), 'capture_payment unexpectedly failed: ' . ( is_wp_error( $result ) ? $result->get_error_message() : '' ) );
+		$this->assertEmpty( WC_Order_Factory::get_order_item( $order_item_id )->get_meta( 'settled' ) );
 	}
 }

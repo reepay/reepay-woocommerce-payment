@@ -674,20 +674,31 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	/**
 	 * Capture order payment
 	 *
-	 * @param mixed      $order  order to capture.
-	 * @param float|null $amount amount to capture. Null to capture order total.
+	 * @param mixed      $order              order to capture.
+	 * @param float|null $amount             amount to capture. Null to capture order total.
+	 * @param bool       $mark_items_settled whether this call captures the full remaining
+	 *                                       balance. @see Api::capture_payment.
 	 *
 	 * @return void
 	 * @throws Exception If capture error.
 	 */
-	public function capture_payment( $order, $amount = null ) {
-		$order = wc_get_order( $order );
+	public function capture_payment( $order, $amount = null, bool $mark_items_settled = false ) {
+		// BWPM-286: only reload when not already a WC_Order - wc_get_order() always
+		// constructs a fresh instance from the DB (see WC_Order_Factory::get_order()), even
+		// when handed a valid WC_Order object. Discarding the caller's object here breaks
+		// object identity with whatever order instance the caller (and other callbacks
+		// hooked to the same woocommerce_order_status_changed event) are holding, so item
+		// meta updates made via this fresh instance (e.g. marking items settled) would
+		// silently not be visible on the caller's copy within the same request.
+		if ( ! $order instanceof WC_Order ) {
+			$order = wc_get_order( $order );
+		}
 
 		if ( '1' === $order->get_meta( '_reepay_order_cancelled' ) ) {
 			throw new Exception( esc_html__( 'Order is canceled', 'reepay-checkout-gateway' ) );
 		}
 
-		$result = reepay()->api( $this )->capture_payment( $order, $amount );
+		$result = reepay()->api( $this )->capture_payment( $order, $amount, $mark_items_settled );
 
 		if ( is_wp_error( $result ) ) {
 			throw new Exception( esc_html( $result->get_error_message() ) );
