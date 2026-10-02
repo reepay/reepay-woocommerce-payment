@@ -1067,6 +1067,18 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			)
 		);
 
+		$vat_number = rp_get_order_vat_number( $order );
+
+		if ( ! empty( $vat_number ) ) {
+			$this->log(
+				array(
+					'source'     => 'process_payment_vat_number',
+					'order_id'   => $order_id,
+					'vat_number' => $vat_number,
+				)
+			);
+		}
+
 		$data = array(
 			'country'         => $country,
 			'customer_handle' => $customer_handle,
@@ -1108,7 +1120,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'city'        => $order->get_billing_city(),
 					'phone'       => $order->get_billing_phone(),
 					'company'     => $order->get_billing_company(),
-					'vat'         => '',
+					'vat'         => $vat_number,
 					'first_name'  => $order->get_billing_first_name(),
 					'last_name'   => $order->get_billing_last_name(),
 					'postal_code' => $order->get_billing_postcode(),
@@ -1468,6 +1480,22 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'https://api.reepay.com/v1/customer/' . $customer_handle,
 				$params['order']['customer']
 			);
+		} elseif ( ! empty( $customer_handle ) && ! empty( $vat_number ) ) {
+			// Only sync when a VAT number is present
+			$this->log(
+				array(
+					'source'          => 'process_payment_updating_customer_vat',
+					'order_id'        => $order_id,
+					'customer_handle' => $customer_handle,
+					'customer_data'   => $params['order']['customer'],
+				)
+			);
+
+			reepay()->api( $this )->request(
+				'PUT',
+				'https://api.reepay.com/v1/customer/' . $customer_handle,
+				$params['order']['customer']
+			);
 		}
 
 		$have_sub = ( class_exists( WC_Reepay_Renewals::class ) && WC_Reepay_Renewals::is_order_contain_subscription( $order ) ) || wcs_cart_have_subscription();
@@ -1649,7 +1677,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'city'        => $order->get_billing_city(),
 					'phone'       => $order->get_billing_phone(),
 					'company'     => $order->get_billing_company(),
-					'vat'         => '',
+					'vat'         => rp_get_order_vat_number( $order ),
 					'first_name'  => $order->get_billing_first_name(),
 					'last_name'   => $order->get_billing_last_name(),
 					'postal_code' => $order->get_billing_postcode(),
@@ -1697,6 +1725,17 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				return array(
 					'result'  => 'failure',
 					'message' => $result->get_error_message(),
+				);
+			}
+
+			$vat_number = rp_get_order_vat_number( $order );
+
+			if ( ! empty( $customer_handle ) && ! empty( $vat_number ) ) {
+				// PUT /v1/customer/{handle} replaces the whole record 
+				reepay()->api( $this )->request(
+					'PUT',
+					'https://api.reepay.com/v1/customer/' . $customer_handle,
+					$params['create_customer']
 				);
 			}
 
