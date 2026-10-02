@@ -555,9 +555,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					continue;
 				}
 
-			// Same path, different host may belong to another environment.
-			// We cannot safely distinguish it, so never remove it automatically.
-			// Admin can remove it manually if needed.
+				// Same path, different host may belong to another environment.
+				// We cannot safely distinguish it, so never remove it automatically.
+				// Admin can remove it manually if needed.
 				if ( $url !== $webhook_url && self::url_path_and_query( $url ) === $webhook_path_qs ) {
 					$same_path_other_host[] = $url;
 				}
@@ -1481,7 +1481,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				$params['order']['customer']
 			);
 		} elseif ( ! empty( $customer_handle ) && ! empty( $vat_number ) ) {
-			// Only sync when a VAT number is present
+			// Only sync when a VAT number is present.
 			$this->log(
 				array(
 					'source'          => 'process_payment_updating_customer_vat',
@@ -1731,7 +1731,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			$vat_number = rp_get_order_vat_number( $order );
 
 			if ( ! empty( $customer_handle ) && ! empty( $vat_number ) ) {
-				// PUT /v1/customer/{handle} replaces the whole record 
+				// PUT /v1/customer/{handle} replaces the whole record.
 				reepay()->api( $this )->request(
 					'PUT',
 					'https://api.reepay.com/v1/customer/' . $customer_handle,
