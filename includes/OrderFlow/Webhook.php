@@ -295,7 +295,7 @@ class Webhook {
 						sprintf(
 						// translators: %1$s - order amount, %2$s - transaction id.
 							__( 'Payment has been authorized. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
-							wc_price( rp_make_initial_amount( $invoice_data['amount'], $order->get_currency() ) ),
+							wc_price( rp_make_initial_amount( $invoice_data['amount'], $order->get_currency() ), array( 'currency' => $order->get_currency() ) ),
 							$data['transaction']
 						)
 					);
@@ -308,7 +308,7 @@ class Webhook {
 						sprintf(
 						// translators: %1$s - order amount, %2$s - transaction id.
 							__( 'Payment has been authorized. Amount: %1$s. Transaction: %2$s', 'reepay-checkout-gateway' ),
-							wc_price( rp_make_initial_amount( $invoice_data['amount'], $order->get_currency() ) ),
+							wc_price( rp_make_initial_amount( $invoice_data['amount'], $order->get_currency() ), array( 'currency' => $order->get_currency() ) ),
 							$data['transaction']
 						),
 						$data['transaction']
@@ -637,7 +637,7 @@ class Webhook {
 							sprintf(
 							// translators: %1$s refund amount, %2$s refund reason.
 								__( 'Refunded: %1$s. Reason: %2$s', 'reepay-checkout-gateway' ),
-								wc_price( $amount ),
+								wc_price( $amount, array( 'currency' => $order->get_currency() ) ),
 								$reason
 							)
 						);
