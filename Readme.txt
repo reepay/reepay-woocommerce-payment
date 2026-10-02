@@ -4,7 +4,7 @@ Tags: Frisbii, billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.8.17
+Stable tag: 1.8.18
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,6 +18,14 @@ The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.8.18
+- [Fix] – Orders that got discounted or refunded after payment authorisation got charged again up to the full authorised amount.
+- [Fix] – List of unsettled Completed orders could contain orders discounted or refunded after payment authorisation.
+- [Fix] – Currency symbol in order notes for non-default currency products.
+- [Fix] – Only registers webhook URL for the canonical WordPress Address.
+- [Feature] – Support new Klarna payment option with support for subscriptions and all previous Klarna options.
+- [Feature] – Submits VAT numbers stored in _billing_eu_vat_number and _billing_vat_number meta field_ids. Requires 3rd party plugin.
+
 v 1.8.17
 - [Fix] – List of unsettled Completed orders could contain orders settled by 3rd parties.
 - [Feature] – Support for alternative payment windows.
