@@ -37,6 +37,9 @@
         <testsuite name="Analytics tested">
             <directory suffix="Test.php">./tests/unit/analytics</directory>
         </testsuite>
+        <testsuite name="Integrations tested">
+            <directory suffix="Test.php">./tests/unit/integrations</directory>
+        </testsuite>
 	</testsuites>
     <filter>
         <whitelist>
