@@ -297,3 +297,98 @@ if ( ! function_exists( 'rp_get_order_vat_number' ) ) {
 		return $vat ? sanitize_text_field( trim( $vat ) ) : '';
 	}
 }
+
+if ( ! function_exists( 'rp_get_discount_tax_percent' ) ) {
+	/**
+	 * Get the VAT percent to send to Reepay/Frisbii for an order's synthetic "Discount" line.
+	 *
+	 * WooCommerce only exposes the discount total excl. tax and incl. tax already
+	 * rounded to the order currency's minor unit (e.g. 22.90 / 28.62). Reconstructing
+	 * the VAT rate as `tax / discount * 100` from those rounded figures amplifies
+	 * their rounding error (a 0.005 kr tax rounding can shift the recovered rate by
+	 * several hundredths of a percent), which in turn makes Reepay/Frisbii settle the
+	 * discount line for a different amount than WooCommerce's own total. Prefer the
+	 * order's actual configured tax rate when it is unambiguous (exactly one distinct
+	 * rate applied), falling back to the historical ratio-based estimate otherwise
+	 * (e.g. orders mixing multiple tax classes).
+	 *
+	 * @param WC_Order $order             order the discount belongs to.
+	 * @param float    $discount          discount total excl. tax.
+	 * @param float    $discount_with_tax discount total incl. tax.
+	 *
+	 * @return float VAT percent, e.g. 25 for 25%.
+	 */
+	function rp_get_discount_tax_percent( WC_Order $order, float $discount, float $discount_with_tax ): float {
+		$rates = array();
+
+		foreach ( $order->get_items( 'tax' ) as $tax_item ) {
+			/**
+			 * Order tax line item.
+			 *
+			 * @var WC_Order_Item_Tax $tax_item
+			 */
+			$rate = $tax_item->get_rate_percent();
+
+			if ( '' !== $rate && null !== $rate ) {
+				$rates[ (string) $rate ] = true;
+			}
+		}
+
+		if ( 1 === count( $rates ) ) {
+			return (float) key( $rates );
+		}
+
+		$tax = $discount_with_tax - $discount;
+
+		return ( $tax > 0 && $discount > 0 ) ? round( 100 / ( $discount / $tax ), 2 ) : 0;
+	}
+}
+
+if ( ! function_exists( 'rp_reconcile_discount_amount' ) ) {
+	/**
+	 * Nudge the "Discount" line amount (minor currency units) to whatever makes the
+	 * itemized lines sum to WooCommerce's own order total, but only when that nudge is
+	 * exactly the ±1 minor unit a half-minor-unit tax rounding boundary can introduce
+	 * (e.g. a 10% discount at 25% VAT: 22.90 * 0.25 = 5.725 kr, an amount with no single
+	 * "correct" rounding). WooCommerce's own `get_total_discount()` /
+	 * `get_total_discount( false )` round that case independently of how the order's
+	 * grand total was originally computed, so the directly-calculated discount amount
+	 * can end up 1 minor unit off from what's needed to reconcile.
+	 *
+	 * A larger mismatch means `$items_so_far` doesn't represent the whole order (e.g. a
+	 * partial settle, or items excluded by settle-type settings) and `get_total()` is
+	 * not a safe reconciliation target — in that case the direct calculation is kept
+	 * unchanged.
+	 *
+	 * @param WC_Order $order                  order being charged/settled.
+	 * @param array    $items_so_far           order lines already built for this
+	 *                                         charge/settle call, each with 'amount',
+	 *                                         'quantity', 'vat' and 'amount_incl_vat'.
+	 * @param int      $direct_discount_amount the discount amount computed directly
+	 *                                         from WC's discount accessors.
+	 *
+	 * @return int minor-unit amount (incl. tax) for the discount line.
+	 */
+	function rp_reconcile_discount_amount( WC_Order $order, array $items_so_far, int $direct_discount_amount ): int {
+		$sum_incl_vat = 0;
+
+		foreach ( $items_so_far as $item ) {
+			$line_amount = (float) $item['amount'] * (int) ( $item['quantity'] ?? 1 );
+
+			if ( ! empty( $item['vat'] ) && empty( $item['amount_incl_vat'] ) ) {
+				$line_amount *= ( 1 + $item['vat'] );
+			}
+
+			$sum_incl_vat += round( $line_amount );
+		}
+
+		$target                    = rp_prepare_amount( $order->get_total(), $order->get_currency() );
+		$remainder_discount_amount = (int) ( $target - $sum_incl_vat );
+
+		if ( abs( $remainder_discount_amount - $direct_discount_amount ) <= 1 ) {
+			return $remainder_discount_amount;
+		}
+
+		return $direct_discount_amount;
+	}
+}
