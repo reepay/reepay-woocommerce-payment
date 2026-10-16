@@ -13,6 +13,16 @@ use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
 class ReepayGatewayTestChild extends ReepayGateway {
 
+	/**
+	 * Test-only public wrapper around the protected decision method.
+	 *
+	 * @param array $existing_event_types Event types currently enabled on the account.
+	 *
+	 * @return array{needs_update: bool, event_types: array}
+	 */
+	public function resolve_webhook_event_types_public( array $existing_event_types ): array {
+		return $this->resolve_webhook_event_types( $existing_event_types );
+	}
 }
 
 /**
@@ -771,6 +781,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 					'alert_emails' => array(),
 					'disabled'     => false,
 					'secret'       => 'secret_key',
+					'event_types'  => array( 'invoice_authorized' ),
 				)
 			);
 
@@ -800,10 +811,255 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 					'alert_emails' => array(),
 					'disabled'     => false,
 					'secret'       => 'secret_key',
+					'event_types'  => array( 'invoice_authorized' ),
 				)
 			);
 
 		$this->assertTrue( self::$gateway->is_webhook_configured() );
+	}
+
+	// -----------------------------------------------------------------------
+	// resolve_webhook_event_types()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::resolve_webhook_event_types activates all implemented
+	 * event types when none of them are currently active on the account.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_resolve_webhook_event_types_activates_all_when_none_active() {
+		$result = self::$gateway->resolve_webhook_event_types_public( array() );
+
+		$this->assertTrue( $result['needs_update'] );
+		$this->assertEqualsCanonicalizing(
+			ReepayGateway::IMPLEMENTED_WEBHOOK_EVENT_TYPES,
+			$result['event_types']
+		);
+	}
+
+	/**
+	 * Test @see ReepayGateway::resolve_webhook_event_types preserves a pre-existing,
+	 * unrelated (e.g. third-party) event type while still activating all 7 implemented
+	 * ones, when none of the implemented ones are active yet.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_resolve_webhook_event_types_preserves_third_party_when_none_of_ours_active() {
+		$result = self::$gateway->resolve_webhook_event_types_public( array( 'some_third_party_event' ) );
+
+		$this->assertTrue( $result['needs_update'] );
+		$this->assertContains( 'some_third_party_event', $result['event_types'] );
+
+		foreach ( ReepayGateway::IMPLEMENTED_WEBHOOK_EVENT_TYPES as $event_type ) {
+			$this->assertContains( $event_type, $result['event_types'] );
+		}
+	}
+
+	/**
+	 * Test @see ReepayGateway::resolve_webhook_event_types leaves event_types
+	 * completely unchanged when at least one implemented event type is already
+	 * active — the admin's configuration is assumed deliberate, missing ones from
+	 * the 7 must NOT be filled in individually.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_resolve_webhook_event_types_leaves_unchanged_when_one_already_active() {
+		$existing = array( 'invoice_authorized', 'some_third_party_event' );
+
+		$result = self::$gateway->resolve_webhook_event_types_public( $existing );
+
+		$this->assertFalse( $result['needs_update'] );
+		$this->assertEqualsCanonicalizing( $existing, $result['event_types'] );
+	}
+
+	/**
+	 * Test @see ReepayGateway::resolve_webhook_event_types never produces duplicates
+	 * or flip-flops when fed its own previous output (simulates two consecutive
+	 * settings saves with no external change in between).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_resolve_webhook_event_types_idempotent_across_consecutive_calls() {
+		$first  = self::$gateway->resolve_webhook_event_types_public( array() );
+		$second = self::$gateway->resolve_webhook_event_types_public( $first['event_types'] );
+
+		$this->assertFalse( $second['needs_update'], 'Second call must see at least one implemented event already active.' );
+		$this->assertEqualsCanonicalizing( $first['event_types'], $second['event_types'] );
+		$this->assertCount( count( array_unique( $second['event_types'] ) ), $second['event_types'], 'No duplicate entries.' );
+	}
+
+	// -----------------------------------------------------------------------
+	// is_webhook_configured() — event_types integration
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured activates all implemented
+	 * webhook event types when none are active yet, even though the webhook URL
+	 * and alert email are already correctly configured — the early-return path
+	 * must not skip the event_types check (AC6).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_activates_events_even_when_url_already_correct() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+
+		$captured_put_data = null;
+
+		$this->api_mock->expects( $this->exactly( 2 ) )
+			->method( 'request' )
+			->willReturnCallback(
+				function ( $method, $url, $data = array() ) use ( &$captured_put_data, $webhook_url ) {
+					if ( 'GET' === $method ) {
+						return array(
+							'urls'         => array( $webhook_url ),
+							'alert_emails' => array(),
+							'disabled'     => false,
+							'secret'       => 'secret_key',
+							'event_types'  => array( 'some_third_party_event' ),
+						);
+					}
+
+					$captured_put_data = $data;
+
+					return array(
+						'urls'         => $data['urls'],
+						'alert_emails' => array(),
+						'disabled'     => false,
+					);
+				}
+			);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+
+		$this->assertNotNull( $captured_put_data, 'A PUT must be issued purely to activate the missing implemented event types.' );
+		$this->assertContains( 'some_third_party_event', $captured_put_data['event_types'], 'Pre-existing third-party event types must be preserved.' );
+
+		foreach ( ReepayGateway::IMPLEMENTED_WEBHOOK_EVENT_TYPES as $event_type ) {
+			$this->assertContains( $event_type, $captured_put_data['event_types'] );
+		}
+	}
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured issues NO PUT at all when the
+	 * URL/email are already correct AND at least one implemented event type is
+	 * already active — the admin's configuration must be assumed deliberate (AC2).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_no_put_when_already_configured_and_one_event_active() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+
+		$this->api_mock->expects( $this->once() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'GET' ),
+				$this->stringContains( 'webhook_settings' )
+			)
+			->willReturn(
+				array(
+					'urls'         => array( $webhook_url ),
+					'alert_emails' => array(),
+					'disabled'     => false,
+					'secret'       => 'secret_key',
+					'event_types'  => array( 'invoice_settled' ),
+				)
+			);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+	}
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured treats a missing event_types
+	 * key in the GET response (e.g. brand new account) the same as an empty list —
+	 * activates all 7 implemented events (AC1).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_missing_event_types_key_treated_as_none_active() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+
+		$captured_put_data = null;
+
+		$this->api_mock->expects( $this->exactly( 2 ) )
+			->method( 'request' )
+			->willReturnCallback(
+				function ( $method, $url, $data = array() ) use ( &$captured_put_data, $webhook_url ) {
+					if ( 'GET' === $method ) {
+						return array(
+							'urls'         => array( $webhook_url ),
+							'alert_emails' => array(),
+							'disabled'     => false,
+							'secret'       => 'secret_key',
+							// Deliberately no 'event_types' key.
+						);
+					}
+
+					$captured_put_data = $data;
+
+					return array(
+						'urls'         => $data['urls'],
+						'alert_emails' => array(),
+						'disabled'     => false,
+					);
+				}
+			);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+
+		$this->assertNotNull( $captured_put_data );
+		$this->assertEqualsCanonicalizing( ReepayGateway::IMPLEMENTED_WEBHOOK_EVENT_TYPES, $captured_put_data['event_types'] );
+	}
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured always explicitly includes
+	 * event_types in the PUT payload even when the PUT is triggered purely by a
+	 * URL registration unrelated to event_types, and leaves it unchanged in that
+	 * case — guards against ever silently omitting (and risking the clearing of)
+	 * the key just because the URL needed fixing (AC3, AC4).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_put_always_includes_unchanged_event_types_on_url_only_change() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+
+		$captured_put_data = null;
+
+		// GET returns no registered URL (forces a PUT) but one implemented event
+		// type already active (so event_types itself needs no change).
+		$this->api_mock->expects( $this->exactly( 2 ) )
+			->method( 'request' )
+			->willReturnCallback(
+				function ( $method, $url, $data = array() ) use ( &$captured_put_data ) {
+					if ( 'GET' === $method ) {
+						return array(
+							'urls'         => array(),
+							'alert_emails' => array(),
+							'disabled'     => false,
+							'secret'       => 'secret_key',
+							'event_types'  => array( 'invoice_authorized' ),
+						);
+					}
+
+					$captured_put_data = $data;
+
+					return array(
+						'urls'         => $data['urls'],
+						'alert_emails' => array(),
+						'disabled'     => false,
+					);
+				}
+			);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+
+		$this->assertArrayHasKey( 'event_types', $captured_put_data, 'event_types must always be sent explicitly on any PUT, never omitted.' );
+		$this->assertEqualsCanonicalizing(
+			array( 'invoice_authorized' ),
+			$captured_put_data['event_types'],
+			'event_types must be left unchanged — only the URL needed fixing, one implemented event was already active.'
+		);
+		$this->assertContains( $webhook_url, $captured_put_data['urls'] );
 	}
 
 	// -----------------------------------------------------------------------

@@ -45,6 +45,23 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	const METHOD_OVERLAY = 'OVERLAY';
 
 	/**
+	 * Webhook event types this plugin's Webhook::process() actually handles with a
+	 * real side effect (order status transitions, customer/token creation) — not
+	 * just the generic do_action() extensibility fallback for unknown event types.
+	 *
+	 * @see \Reepay\Checkout\OrderFlow\Webhook::process()
+	 */
+	const IMPLEMENTED_WEBHOOK_EVENT_TYPES = array(
+		'invoice_authorized',
+		'invoice_settled',
+		'invoice_cancelled',
+		'invoice_refund',
+		'invoice_created',
+		'customer_created',
+		'customer_payment_method_added',
+	);
+
+	/**
 	 * Test mode
 	 *
 	 * @var string
@@ -576,10 +593,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				);
 			}
 
+			$event_types_resolution = $this->resolve_webhook_event_types( $response['event_types'] ?? array() );
+
 			// Verify the webhook settings.
 			if ( ! $exist_waste_urls &&
 				in_array( $webhook_url, $urls, true )
 				&& ( empty( $alert_email ) || in_array( $alert_email, $alert_emails, true ) )
+				&& ! $event_types_resolution['needs_update']
 			) {
 				return true;
 			}
@@ -597,6 +617,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'urls'         => array_unique( $urls ),
 				'disabled'     => false,
 				'alert_emails' => array_unique( $alert_emails ),
+				'event_types'  => $event_types_resolution['event_types'],
 			);
 
 			$response = reepay()->api( $this )->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
@@ -626,6 +647,34 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Decide whether this plugin's implemented webhook event types need to be
+	 * activated on the Frisbii account.
+	 *
+	 * Only activates them when NONE of the implemented event types are currently
+	 * enabled — if even one is already enabled, the merchant's configuration is
+	 * assumed deliberate and is left untouched. Existing event types (ours or
+	 * third-party) are always preserved, never removed.
+	 *
+	 * @param array $existing_event_types Event types currently enabled on the Frisbii account.
+	 *
+	 * @return array{needs_update: bool, event_types: array} needs_update is true when
+	 *               none of the implemented event types were present; event_types is
+	 *               the full array to send on the next PUT either way.
+	 */
+	protected function resolve_webhook_event_types( array $existing_event_types ): array {
+		$needs_update = empty( array_intersect( $existing_event_types, self::IMPLEMENTED_WEBHOOK_EVENT_TYPES ) );
+
+		$event_types = $needs_update
+			? array_values( array_unique( array_merge( $existing_event_types, self::IMPLEMENTED_WEBHOOK_EVENT_TYPES ) ) )
+			: array_values( array_unique( $existing_event_types ) );
+
+		return array(
+			'needs_update' => $needs_update,
+			'event_types'  => $event_types,
+		);
 	}
 
 	/**
