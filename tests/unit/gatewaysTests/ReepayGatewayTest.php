@@ -23,6 +23,17 @@ class ReepayGatewayTestChild extends ReepayGateway {
 	public function resolve_webhook_event_types_public( array $existing_event_types ): array {
 		return $this->resolve_webhook_event_types( $existing_event_types );
 	}
+
+	/**
+	 * Test-only public wrapper around the protected click_to_pay decision method.
+	 *
+	 * @param array $payment_methods Configured payment methods before the click_to_pay check.
+	 *
+	 * @return array
+	 */
+	public function maybe_add_click_to_pay_public( array $payment_methods ): array {
+		return $this->maybe_add_click_to_pay( $payment_methods );
+	}
 }
 
 /**
@@ -1617,5 +1628,287 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 				'Did not expect a customer-sync PUT request when there is no VAT number'
 			);
 		}
+	}
+
+	// -----------------------------------------------------------------------
+	// maybe_add_click_to_pay() (BWPM-291)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * @testWith
+	 * ["card"]
+	 * ["mc"]
+	 * ["visa"]
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_maybe_add_click_to_pay_appends_for_each_trigger_method( string $trigger ) {
+		$result = self::$gateway->maybe_add_click_to_pay_public( array( $trigger ) );
+
+		$this->assertContains( 'click_to_pay', $result );
+		$this->assertContains( $trigger, $result );
+	}
+
+	/**
+	 * @group gateways_gateway
+	 */
+	public function test_maybe_add_click_to_pay_appends_only_once_for_multiple_triggers() {
+		$result = self::$gateway->maybe_add_click_to_pay_public( array( 'card', 'visa', 'mc' ) );
+
+		$this->assertSame( 1, count( array_keys( $result, 'click_to_pay', true ) ) );
+	}
+
+	/**
+	 * @group gateways_gateway
+	 */
+	public function test_maybe_add_click_to_pay_does_not_duplicate_when_already_present() {
+		$result = self::$gateway->maybe_add_click_to_pay_public( array( 'card', 'click_to_pay' ) );
+
+		$this->assertSame( 1, count( array_keys( $result, 'click_to_pay', true ) ) );
+	}
+
+	/**
+	 * @group gateways_gateway
+	 */
+	public function test_maybe_add_click_to_pay_unchanged_for_non_trigger_methods() {
+		$methods = array( 'klarna', 'vipps' );
+
+		$result = self::$gateway->maybe_add_click_to_pay_public( $methods );
+
+		$this->assertSame( $methods, $result );
+		$this->assertNotContains( 'click_to_pay', $result );
+	}
+
+	/**
+	 * Sub-brand options are deliberately NOT triggers on their own — only exact
+	 * "card", "visa", "mc" strings count, per the literal Frisbii API docs.
+	 *
+	 * @testWith
+	 * ["visa_dk"]
+	 * ["visa_elec"]
+	 * ["maestro"]
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_maybe_add_click_to_pay_unchanged_for_card_subbrands_alone( string $sub_brand ) {
+		$result = self::$gateway->maybe_add_click_to_pay_public( array( $sub_brand ) );
+
+		$this->assertNotContains( 'click_to_pay', $result );
+	}
+
+	/**
+	 * @group gateways_gateway
+	 */
+	public function test_maybe_add_click_to_pay_unchanged_for_empty_array() {
+		$this->assertSame( array(), self::$gateway->maybe_add_click_to_pay_public( array() ) );
+	}
+
+	// -----------------------------------------------------------------------
+	// process_payment() — click_to_pay (BWPM-291)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::process_payment includes "click_to_pay" in the
+	 * session/charge payload for a plain, non-subscription order when a supported
+	 * card method is configured (AC1/AC2/AC3).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_process_payment_session_charge_includes_click_to_pay_for_plain_order() {
+		$user_id = $this->factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		self::$gateway->id              = 'reepay_checkout';
+		self::$gateway->payment_methods = array( 'card', 'visa', 'mc' );
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$session_response = array(
+			'id'  => 'session_xyz',
+			'url' => 'https://checkout.reepay.com/pay/session_xyz',
+		);
+
+		$this->api_mock->expects( $this->atLeastOnce() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'POST' ),
+				$this->stringContains( 'session/charge' ),
+				$this->callback(
+					function ( $params ) {
+						return in_array( 'click_to_pay', $params['payment_methods'] ?? array(), true );
+					}
+				)
+			)
+			->willReturn( $session_response );
+		$this->api_mock->method( 'recurring' )->willReturn( $session_response );
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-' . $user_id );
+
+		$result = self::$gateway->process_payment( $order_id );
+
+		$this->assertSame( 'success', $result['result'] );
+
+		self::$gateway->payment_methods = array();
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test @see ReepayGateway::process_payment never includes "click_to_pay" when
+	 * the order contains a subscription product, even though a supported card
+	 * method is configured — Click to Pay does not work for recurring payments
+	 * (AC4).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_process_payment_session_charge_excludes_click_to_pay_for_subscription_order() {
+		PLUGINS_STATE::maybe_skip_test_by_product_type( 'woo_sub' );
+
+		$user_id = $this->factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		self::$gateway->id              = 'reepay_checkout';
+		self::$gateway->payment_methods = array( 'card', 'visa', 'mc' );
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		// Non-zero price so the order falls through to process_session_charge()
+		// instead of the zero-amount subscription-only early-return branch.
+		$this->order_generator->add_product( 'woo_sub', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$session_response = array(
+			'id'  => 'session_xyz',
+			'url' => 'https://checkout.reepay.com/pay/session_xyz',
+		);
+
+		$captured_params = null;
+
+		$this->api_mock->method( 'request' )->willReturnCallback(
+			function ( $method, $url, $params = array() ) use ( &$captured_params, $session_response ) {
+				if ( str_contains( $url, 'session/charge' ) ) {
+					$captured_params = $params;
+				}
+
+				return $session_response;
+			}
+		);
+		$this->api_mock->method( 'recurring' )->willReturn( $session_response );
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-' . $user_id );
+
+		$result = self::$gateway->process_payment( $order_id );
+
+		$this->assertSame( 'success', $result['result'] );
+		$this->assertNotNull( $captured_params, 'Expected a session/charge request to have been made.' );
+		$this->assertNotContains( 'click_to_pay', $captured_params['payment_methods'] ?? array() );
+		$this->assertContains( 'card', $captured_params['payment_methods'] ?? array(), 'Sanity check: configured methods are still sent.' );
+
+		self::$gateway->payment_methods = array();
+		wp_set_current_user( 0 );
+	}
+
+	// -----------------------------------------------------------------------
+	// wcs_change_payment_method() — click_to_pay (BWPM-291)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::wcs_change_payment_method includes "click_to_pay"
+	 * in the session/recurring payload when adding a new card (no token id) and a
+	 * supported card method is configured. This branch only tokenizes a card —
+	 * it does not execute a recurring charge — so it is treated like the Add Card
+	 * flow, not a subscription charge.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_wcs_change_payment_method_includes_click_to_pay_when_configured() {
+		self::$gateway->id              = 'reepay_checkout';
+		self::$gateway->payment_methods = array( 'card', 'visa', 'mc' );
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+		$this->api_mock->expects( $this->atLeastOnce() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'POST' ),
+				$this->stringContains( 'session/recurring' ),
+				$this->callback(
+					function ( $params ) {
+						return in_array( 'click_to_pay', $params['payment_methods'] ?? array(), true );
+					}
+				)
+			)
+			->willReturn(
+				array(
+					'id'  => 'session_1',
+					'url' => 'https://checkout.reepay.com/pay/session_1',
+				)
+			);
+
+		$result = self::$gateway->wcs_change_payment_method( $this->order_generator->order() );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		self::$gateway->payment_methods = array();
+	}
+
+	// -----------------------------------------------------------------------
+	// Subscription-charge paths never receive click_to_pay (BWPM-291 safety net)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::process_payment's zero-amount/all-subscription-items
+	 * branch (which calls Api::recurring()) never receives "click_to_pay", even
+	 * when a supported card method is configured — this path is exclusively a
+	 * subscription setup flow, and Click to Pay does not work for recurring
+	 * payments (AC4).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_process_payment_subscription_recurring_setup_never_includes_click_to_pay() {
+		PLUGINS_STATE::maybe_skip_test_by_product_type( 'woo_sub' );
+
+		$user_id = $this->factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		self::$gateway->id              = 'reepay_checkout';
+		self::$gateway->payment_methods = array( 'card', 'visa', 'mc' );
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		// process_payment()'s subscription-branch check ($have_sub) looks at the
+		// active WC cart (wcs_cart_have_subscription()), not the order's own items
+		// — mirror that by also populating the cart, matching how a real checkout
+		// still has the cart populated while payment is being processed.
+		$this->cart_generator->new_cart( 'woo_sub' );
+		// Zero-amount subscription-only order triggers the Api::recurring() branch
+		// instead of process_session_charge().
+		$this->order_generator->add_product( 'woo_sub', array( 'regular_price' => '0.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$captured_payment_methods = null;
+
+		$this->api_mock->method( 'recurring' )->willReturnCallback(
+			function ( $payment_methods ) use ( &$captured_payment_methods ) {
+				$captured_payment_methods = $payment_methods;
+
+				return array(
+					'id'  => 'session_xyz',
+					'url' => 'https://checkout.reepay.com/pay/session_xyz',
+				);
+			}
+		);
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-' . $user_id );
+
+		self::$gateway->process_payment( $order_id );
+
+		$this->assertNotNull( $captured_payment_methods, 'Expected Api::recurring() to have been called.' );
+		$this->assertNotContains( 'click_to_pay', $captured_payment_methods );
+
+		self::$gateway->payment_methods = array();
+		wp_set_current_user( 0 );
 	}
 }

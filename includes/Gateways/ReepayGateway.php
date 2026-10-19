@@ -62,6 +62,19 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	);
 
 	/**
+	 * Payment methods that, when configured, must also carry "click_to_pay" in the
+	 * session payload — Frisbii shows the Click to Pay wallet option only when one
+	 * of these is present alongside "click_to_pay" itself.
+	 *
+	 * @see https://docs.frisbii.com/docs/click-to-pay
+	 */
+	const CLICK_TO_PAY_TRIGGER_METHODS = array(
+		'card',
+		'visa',
+		'mc',
+	);
+
+	/**
 	 * Test mode
 	 *
 	 * @var string
@@ -284,7 +297,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
-			$params['payment_methods'] = $this->payment_methods;
+			$params['payment_methods'] = $this->maybe_add_click_to_pay( $this->payment_methods );
 		}
 
 		$configuration = reepay()->get_setting( 'payment_window_configuration' );
@@ -675,6 +688,27 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			'needs_update' => $needs_update,
 			'event_types'  => $event_types,
 		);
+	}
+
+	/**
+	 * Append "click_to_pay" to a payment_methods payload when a supported card
+	 * method (card/visa/mc) is configured. No-op when none of those are present,
+	 * and never adds a duplicate if "click_to_pay" is already there.
+	 *
+	 * @param array $payment_methods Configured payment methods before the check.
+	 *
+	 * @return array
+	 */
+	protected function maybe_add_click_to_pay( array $payment_methods ): array {
+		if ( in_array( 'click_to_pay', $payment_methods, true )
+			|| empty( array_intersect( $payment_methods, self::CLICK_TO_PAY_TRIGGER_METHODS ) )
+		) {
+			return $payment_methods;
+		}
+
+		$payment_methods[] = 'click_to_pay';
+
+		return $payment_methods;
 	}
 
 	/**
@@ -1203,7 +1237,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
-			$params['payment_methods'] = $this->payment_methods;
+			$params['payment_methods'] = order_contains_subscription( $order )
+				? $this->payment_methods
+				: $this->maybe_add_click_to_pay( $this->payment_methods );
 		}
 
 		if ( $order->needs_shipping_address() ) {
@@ -1747,7 +1783,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 
 			if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
-				$params['payment_methods'] = $this->payment_methods;
+				$params['payment_methods'] = $this->maybe_add_click_to_pay( $this->payment_methods );
 			}
 
 			$configuration = reepay()->get_setting( 'payment_window_configuration' );
