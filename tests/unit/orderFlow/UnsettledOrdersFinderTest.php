@@ -472,6 +472,52 @@ class UnsettledOrdersFinderTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * Regression test for BWPM-293 (the oldest-first query's deterministic secondary sort key): an
+	 * intermittent, non-deterministic sort order was observed against real data where a candidate
+	 * could be returned out of its correct chronological position even though its own
+	 * date_completed was stored correctly — see the ID ASC secondary orderby key added to
+	 * get_candidates(). Calling find() repeatedly against an unchanged candidate pool must always
+	 * return every candidate in the same oldest-first order, every run, with no flakiness.
+	 *
+	 * @see UnsettledOrdersFinder::get_candidates
+	 */
+	public function test_find_returns_candidates_in_stable_deterministic_oldest_first_order() {
+		$dates              = array( '2026-07-10', '2026-07-12', '2026-07-14', '2026-07-16', '2026-07-18' );
+		$expected_order_ids = array();
+
+		foreach ( $dates as $date ) {
+			$this->order_generator->generate( array( 'status' => 'completed' ) );
+			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+			$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+			$this->order_generator->order()->calculate_totals();
+			$order = $this->order_generator->order();
+			$order->set_date_completed( $date . ' 00:00:00' );
+			$order->save();
+
+			$expected_order_ids[] = $order->get_id();
+		}
+
+		// Nothing is ever settled, so every candidate stays in the result on every run — the
+		// returned order of order_ids directly reflects get_candidates()'s oldest-first sort.
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+			)
+		);
+
+		for ( $run = 1; $run <= 20; $run++ ) {
+			$result = ( new UnsettledOrdersFinder() )->find();
+
+			$this->assertSame(
+				$expected_order_ids,
+				$result['order_ids'],
+				sprintf( 'Run %d returned candidates out of their correct chronological order', $run )
+			);
+		}
+	}
+
+	/**
 	 * Test @see UnsettledOrdersFinder::find() excludes orders not paid via a Reepay gateway.
 	 */
 	public function test_find_excludes_non_reepay_order() {
