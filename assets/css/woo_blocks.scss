@@ -1,3 +1,31 @@
+.reepay-payment-method-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
+}
+
+.reepay-logos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin: 0 0 0 auto;
+  padding: 0;
+
+  .reepay-logo {
+    list-style: none;
+    margin: .25rem;
+
+    img {
+      display: block;
+      height: 24px;
+      width: auto;
+    }
+  }
+}
+
 .reepay-blocks {
   &-list {
     margin: 0;

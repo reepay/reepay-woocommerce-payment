@@ -260,7 +260,27 @@ if (window.wc
      */
     const Label = createElement(props => {
         const {PaymentMethodLabel} = props.components;
-        return createElement(PaymentMethodLabel, {text: label})
+
+        if (!settings.logos || !settings.logos.length) {
+            return createElement(PaymentMethodLabel, {text: label});
+        }
+
+        const logos = createElement(
+            'ul',
+            {className: 'reepay-logos'},
+            ...settings.logos.map((logo, index) => createElement(
+                'li',
+                {key: index, className: 'reepay-logo'},
+                createElement('img', {src: logo.src, alt: logo.alt})
+            ))
+        );
+
+        return createElement(
+            'span',
+            {className: 'reepay-payment-method-label'},
+            createElement(PaymentMethodLabel, {text: label}),
+            logos
+        );
     }, null)
 
     /**
