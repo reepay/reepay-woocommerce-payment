@@ -220,10 +220,16 @@ class InstantSettle {
 				$prices_incl_tax   = wc_prices_include_tax();
 				$discount          = $order->get_total_discount();
 				$discount_with_tax = $order->get_total_discount( false );
-				$tax               = $discount_with_tax - $discount;
-				$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ), 2 ) : 0;
+				$tax_percent       = rp_get_discount_tax_percent( $order, $discount, $discount_with_tax );
 
-				if ( $prices_incl_tax ) {
+				// Send the discount incl. tax whenever a tax rate applies, not only when
+				// store prices are entered incl. tax. See ReepayGateway::get_order_items()
+				// for why: it avoids Reepay/Frisbii re-deriving VAT forward from the excl.
+				// tax amount, which can round differently than WooCommerce whenever the
+				// tax portion lands exactly on a half-minor-unit boundary.
+				$discount_incl_vat = $prices_incl_tax || $tax_percent > 0;
+
+				if ( $discount_incl_vat ) {
 					/**
 					 * Discount for simple product included tax
 					 */
@@ -233,6 +239,7 @@ class InstantSettle {
 				}
 
 				$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
+				$discount_amount = rp_reconcile_discount_amount( $order, $items_data, $discount_amount );
 
 				if ( $discount_amount < 0 ) {
 					$items_discount = array(
@@ -240,7 +247,7 @@ class InstantSettle {
 						'quantity'        => 1,
 						'amount'          => round( $discount_amount, 2 ),
 						'vat'             => round( $tax_percent / 100, 4 ),
-						'amount_incl_vat' => $prices_incl_tax,
+						'amount_incl_vat' => $discount_incl_vat,
 					);
 					$items_data[]   = $items_discount;
 					$total_all     += $discount_amount;

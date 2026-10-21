@@ -528,6 +528,85 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * Regression test for BWSM-114: reproduces the exact real-world staging
+	 * figures that caused renewal orders to get stuck 1 øre short.
+	 *
+	 * Store is "prices excl. tax" (like Bookinabox), a 229.00 kr product at a
+	 * real 25% VAT rate, 23.20 kr shipping also at 25% VAT, and a 10% discount
+	 * that lands exactly on the half-öre rounding boundary (22.90 * 0.25 =
+	 * 5.725 kr, which WooCommerce's own storage rounds to 5.73).
+	 *
+	 * Before the fix this produced a Discount line of -2863 (28.63 kr) sent
+	 * incl. tax=false, which Frisbii/Reepay then grossed up by its own 25% VAT
+	 * calculation - landing 1 øre short of the order's real 286.63 kr total.
+	 * After the fix the Discount line must be exactly -2862 incl. tax=true, so
+	 * the itemized lines sum to precisely 286.63 kr (28663 minor units).
+	 */
+	public function test_get_order_items_bwsm_114_half_minor_unit_discount_boundary() {
+		update_option( 'woocommerce_calc_taxes', 'yes' );
+		update_option( 'woocommerce_prices_include_tax', 'no' );
+
+		$this->order_generator->add_product(
+			'simple',
+			array( 'regular_price' => 229.00 ),
+			array(
+				'quantity' => 1,
+				'taxes'    => array(
+					'total'    => array( 57.25 ),
+					'subtotal' => array( 57.25 ),
+				),
+			)
+		);
+
+		$this->order_generator->add_shipping(
+			array(
+				'method_title' => 'Test shipping',
+				'total'        => 23.20,
+			),
+			array(
+				'taxes' => array(
+					'total' => array( 5.80 ),
+				),
+			)
+		);
+
+		// Attached directly (not via add_tax(), which calls calculate_taxes() and
+		// would recompute/strip tax based on the line items above rather than
+		// leaving our manually-set 57.25 / 5.80 tax amounts alone).
+		$this->order_generator->add_tax_rate_only( 25 );
+
+		$order = $this->order_generator->order();
+		$order->set_discount_total( 22.90 );
+		// WC's own already-rounded storage of the ambiguous 5.725 kr tax.
+		$order->set_discount_tax( 5.73 );
+		$order->set_total( 286.63 );
+		$order->save();
+
+		$items = self::$gateway->get_order_items( $order );
+
+		$discount_line = end( $items );
+
+		$this->assertSame( 'Discount', $discount_line['ordertext'] );
+		// ReepayGateway::get_order_items() wraps the reconciled int in round(..., 2),
+		// which always returns float in PHP - -2862.0, not -2862.
+		$this->assertSame( -2862.0, $discount_line['amount'], 'Discount amount must reconcile to -2862, not the directly-calculated -2863' );
+		$this->assertSame( 0.25, $discount_line['vat'], 'Discount VAT must use the order\'s real 25% rate' );
+		$this->assertTrue( $discount_line['amount_incl_vat'], 'Discount must be sent incl. tax even on an excl.-tax store, since a real tax rate applies' );
+
+		$sum_incl_vat = 0;
+		foreach ( $items as $item ) {
+			$line_amount = $item['amount'] * $item['quantity'];
+			if ( ! empty( $item['vat'] ) && empty( $item['amount_incl_vat'] ) ) {
+				$line_amount *= ( 1 + $item['vat'] );
+			}
+			$sum_incl_vat += round( $line_amount );
+		}
+
+		// round() always returns float in PHP, hence 28663.0 not 28663.
+		$this->assertSame( 28663.0, $sum_incl_vat, 'Itemized lines must sum to the order\'s real 286.63 kr total' );
+	}
+
+	/**
 	 * @param bool $include_tax
 	 * @param bool $only_not_settled
 	 *

@@ -2279,19 +2279,22 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		if ( $order->get_total_discount( false ) > 0 ) {
 			$discount          = $order->get_total_discount();
 			$discount_with_tax = $order->get_total_discount( false );
-			$tax               = $discount_with_tax - $discount;
-			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ), 2 ) : 0;
+			$tax_percent       = rp_get_discount_tax_percent( $order, $discount, $discount_with_tax );
+
+			// Send the discount incl. tax whenever a tax rate applies, not only when
+			// store prices are entered incl. tax. Reepay/Frisbii then derives net/VAT
+			// from WooCommerce's own already-rounded inclusive total instead of
+			// re-deriving VAT forward from the excl. tax amount, which can round
+			// differently than WooCommerce whenever the tax portion lands exactly on
+			// a half-minor-unit boundary (e.g. a discount whose tax is exactly X.5).
+			$discount_incl_vat = $prices_incl_tax || $tax_percent > 0;
 
 			if ( abs( floatval( $sub_amount_discount ) ) > 0.001 && abs( floatval( $discount ) ) > 0.001 ) {
 				/**
 				 * Discount for subscription
 				 */
-				if ( $prices_incl_tax || $tax_percent > 0 ) {
-					$simple_discount_amount = $discount_with_tax - $sub_amount_discount;
-				} else {
-					$simple_discount_amount = $discount - $sub_amount_discount;
-				}
-			} elseif ( $prices_incl_tax ) {
+				$simple_discount_amount = $discount_incl_vat ? ( $discount_with_tax - $sub_amount_discount ) : ( $discount - $sub_amount_discount );
+			} elseif ( $discount_incl_vat ) {
 				/**
 				 * Discount for simple product included tax
 				 */
@@ -2301,6 +2304,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 
 			$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
+			$discount_amount = rp_reconcile_discount_amount( $order, $items, $discount_amount );
 
 			if ( $discount_amount < 0 ) {
 				$items[] = array(
@@ -2308,7 +2312,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'quantity'        => 1,
 					'amount'          => round( $discount_amount, 2 ),
 					'vat'             => round( $tax_percent / 100, 4 ),
-					'amount_incl_vat' => $prices_incl_tax,
+					'amount_incl_vat' => $discount_incl_vat,
 				);
 			}
 		}

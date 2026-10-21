@@ -91,11 +91,23 @@ class ApiTest extends Reepay_UnitTestCase {
 	 * multi-request flow (e.g. get_invoice_data() followed by settle()).
 	 *
 	 * @param array<string, mixed> $responses_by_url_substring map of URL substring => response body.
+	 * @param array                $captured_args               filled by reference with the
+	 *                                                           args of whichever request's URL
+	 *                                                           matches $capture_url_substring
+	 *                                                           - useful when a flow makes
+	 *                                                           multiple requests and only one
+	 *                                                           needs to be asserted on.
+	 * @param string|null          $capture_url_substring        URL substring to capture args for.
 	 */
-	private function mock_http_request_by_url( array $responses_by_url_substring ) {
+	private function mock_http_request_by_url( array $responses_by_url_substring, array &$captured_args = array(), ?string $capture_url_substring = null ) {
 		add_filter(
 			'pre_http_request',
-			function ( $preempt, $parsed_args, $url ) use ( $responses_by_url_substring ) {
+			function ( $preempt, $parsed_args, $url ) use ( $responses_by_url_substring, &$captured_args, $capture_url_substring ) {
+				if ( null !== $capture_url_substring && false !== strpos( $url, $capture_url_substring ) ) {
+					$captured_args        = $parsed_args;
+					$captured_args['url'] = $url;
+				}
+
 				foreach ( $responses_by_url_substring as $needle => $body ) {
 					if ( false !== strpos( $url, $needle ) ) {
 						return array(
@@ -557,5 +569,116 @@ class ApiTest extends Reepay_UnitTestCase {
 
 		$this->assertFalse( is_wp_error( $result ), 'capture_payment unexpectedly failed: ' . ( is_wp_error( $result ) ? $result->get_error_message() : '' ) );
 		$this->assertEmpty( WC_Order_Factory::get_order_item( $order_item_id )->get_meta( 'settled' ) );
+	}
+
+	// -----------------------------------------------------------------------
+	// settle() - BWSM-114
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Regression test for BWSM-114: Api::settle() must respect an explicitly
+	 * provided $amount even when $items_data is empty/false - exactly how
+	 * OrderCapture::settle_amount() calls it for a manual "Capture Specified
+	 * Amount". Previously, any falsy $items_data (regardless of $amount)
+	 * triggered a full InstantSettle::calculate_instant_settle() recalculation
+	 * that silently discarded the caller's $amount and sent a completely
+	 * different value to Frisbii - e.g. attempting to capture the last 0.01 kr
+	 * of a stuck order would instead resend the whole order's recalculated
+	 * total, which the API correctly rejects as "Amount higher than authorized
+	 * amount" - leaving merchants with no way to manually recover such orders.
+	 *
+	 * @see \Reepay\Checkout\Api::settle
+	 */
+	public function test_settle_respects_explicit_amount_when_items_data_empty() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => 257.63 ) );
+
+		$order = $this->order_generator->order();
+		$order->calculate_totals();
+		$order->save();
+
+		// settle() makes two calls on success: the POST to /settle itself, then a
+		// GET to /invoice/{handle} afterwards to verify the transaction - capture
+		// the former specifically, since both would otherwise return the same
+		// canned response and the GET would overwrite the args we want to assert on.
+		$captured_settle_args = array();
+		$this->mock_http_request_by_url(
+			array(
+				'/settle'   => array(
+					'state'             => 'settled',
+					'transaction'       => 'transaction_1',
+					'authorized_amount' => 25763,
+					'amount'            => 25763,
+				),
+				'/invoice/' => array(
+					'state'             => 'settled',
+					'authorized_amount' => 25763,
+					'settled_amount'    => 1,
+				),
+			),
+			$captured_settle_args,
+			'/settle'
+		);
+
+		// Mirrors OrderCapture::settle_amount()'s exact call: a flat 1-minor-unit
+		// amount (0.01 kr) with no itemized order_lines.
+		$result = $this->api->settle( $order, 1, false, false );
+
+		$this->assertFalse( is_wp_error( $result ), 'settle() unexpectedly failed: ' . ( is_wp_error( $result ) ? $result->get_error_message() : '' ) );
+
+		$sent_body = json_decode( $captured_settle_args['body'], true );
+
+		$this->assertSame( 'POST', $captured_settle_args['method'] ?? null );
+		$this->assertSame( 'https://api.reepay.com/v1/charge/order-' . $order->get_id() . '/settle', $captured_settle_args['url'] ?? null );
+		$this->assertSame( 1, $sent_body['amount'] ?? null, 'settle() must send the caller-provided amount (1), not a recalculated full-order amount' );
+		$this->assertArrayNotHasKey( 'order_lines', $sent_body, 'A flat-amount settle (no items_data) must not include order_lines' );
+	}
+
+	/**
+	 * Test @see \Reepay\Checkout\Api::settle falls back to a full
+	 * InstantSettle::calculate_instant_settle() amount when the caller provides
+	 * neither $amount nor $items_data - preserving the original default-settle
+	 * behavior that other callers (e.g. webhook-driven settlement) rely on.
+	 */
+	public function test_settle_falls_back_to_instant_settle_when_both_missing() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => 20.00,
+				'virtual'       => true,
+			)
+		);
+
+		self::$options->set_option( 'settle', array( \Reepay\Checkout\OrderFlow\InstantSettle::SETTLE_VIRTUAL ) );
+
+		$order = $this->order_generator->order();
+		$order->calculate_totals();
+		$order->save();
+
+		$captured_settle_args = array();
+		$this->mock_http_request_by_url(
+			array(
+				'/settle'   => array(
+					'state'       => 'settled',
+					'transaction' => 'transaction_1',
+				),
+				'/invoice/' => array(
+					'state'             => 'settled',
+					'authorized_amount' => 2000,
+					'settled_amount'    => 2000,
+				),
+			),
+			$captured_settle_args,
+			'/settle'
+		);
+
+		$result = $this->api->settle( $order );
+
+		$this->assertFalse( is_wp_error( $result ), 'settle() unexpectedly failed: ' . ( is_wp_error( $result ) ? $result->get_error_message() : '' ) );
+
+		$sent_body = json_decode( $captured_settle_args['body'], true );
+
+		$this->assertSame( 2000, $sent_body['amount'] ?? null, 'With neither $amount nor $items_data provided, settle() must derive both from InstantSettle' );
 	}
 }
