@@ -276,8 +276,8 @@ if (window.wc
         );
 
         return createElement(
-            Fragment,
-            {},
+            'span',
+            {className: 'reepay-payment-method-label'},
             createElement(PaymentMethodLabel, {text: label}),
             logos
         );
