@@ -51,7 +51,7 @@
         "@typescript-eslint/eslint-plugin": "^7.2.0",
         "@typescript-eslint/parser": "^7.2.0",
         "@vitejs/plugin-react-swc": "^3.5.0",
-        "@wordpress/i18n": "^4.57.0",
+        "@wordpress/i18n": "^6.0.0",
         "autoprefixer": "^10.4.19",
         "axios": "^1.20.0",
         "form-data": "^4.0.4",
@@ -74,7 +74,8 @@
     },
     "overrides": {
         "minimatch": ">=10.2.3",
-        "dompurify": ">=3.4.16"
+        "dompurify": ">=3.4.16",
+        "postcss-selector-parser": ">=7.1.6"
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "4.9.5"
