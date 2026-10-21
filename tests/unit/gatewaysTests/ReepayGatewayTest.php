@@ -13,6 +13,27 @@ use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 
 class ReepayGatewayTestChild extends ReepayGateway {
 
+	/**
+	 * Test-only public wrapper around the protected decision method.
+	 *
+	 * @param array $existing_event_types Event types currently enabled on the account.
+	 *
+	 * @return array{needs_update: bool, event_types: array}
+	 */
+	public function resolve_webhook_event_types_public( array $existing_event_types ): array {
+		return $this->resolve_webhook_event_types( $existing_event_types );
+	}
+
+	/**
+	 * Test-only public wrapper around the protected click_to_pay decision method.
+	 *
+	 * @param array $payment_methods Configured payment methods before the click_to_pay check.
+	 *
+	 * @return array
+	 */
+	public function maybe_add_click_to_pay_public( array $payment_methods ): array {
+		return $this->maybe_add_click_to_pay( $payment_methods );
+	}
 }
 
 /**
@@ -771,6 +792,7 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 					'alert_emails' => array(),
 					'disabled'     => false,
 					'secret'       => 'secret_key',
+					'event_types'  => array( 'invoice_authorized' ),
 				)
 			);
 
@@ -800,10 +822,255 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 					'alert_emails' => array(),
 					'disabled'     => false,
 					'secret'       => 'secret_key',
+					'event_types'  => array( 'invoice_authorized' ),
 				)
 			);
 
 		$this->assertTrue( self::$gateway->is_webhook_configured() );
+	}
+
+	// -----------------------------------------------------------------------
+	// resolve_webhook_event_types()
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::resolve_webhook_event_types activates all implemented
+	 * event types when none of them are currently active on the account.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_resolve_webhook_event_types_activates_all_when_none_active() {
+		$result = self::$gateway->resolve_webhook_event_types_public( array() );
+
+		$this->assertTrue( $result['needs_update'] );
+		$this->assertEqualsCanonicalizing(
+			ReepayGateway::IMPLEMENTED_WEBHOOK_EVENT_TYPES,
+			$result['event_types']
+		);
+	}
+
+	/**
+	 * Test @see ReepayGateway::resolve_webhook_event_types preserves a pre-existing,
+	 * unrelated (e.g. third-party) event type while still activating all 7 implemented
+	 * ones, when none of the implemented ones are active yet.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_resolve_webhook_event_types_preserves_third_party_when_none_of_ours_active() {
+		$result = self::$gateway->resolve_webhook_event_types_public( array( 'some_third_party_event' ) );
+
+		$this->assertTrue( $result['needs_update'] );
+		$this->assertContains( 'some_third_party_event', $result['event_types'] );
+
+		foreach ( ReepayGateway::IMPLEMENTED_WEBHOOK_EVENT_TYPES as $event_type ) {
+			$this->assertContains( $event_type, $result['event_types'] );
+		}
+	}
+
+	/**
+	 * Test @see ReepayGateway::resolve_webhook_event_types leaves event_types
+	 * completely unchanged when at least one implemented event type is already
+	 * active — the admin's configuration is assumed deliberate, missing ones from
+	 * the 7 must NOT be filled in individually.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_resolve_webhook_event_types_leaves_unchanged_when_one_already_active() {
+		$existing = array( 'invoice_authorized', 'some_third_party_event' );
+
+		$result = self::$gateway->resolve_webhook_event_types_public( $existing );
+
+		$this->assertFalse( $result['needs_update'] );
+		$this->assertEqualsCanonicalizing( $existing, $result['event_types'] );
+	}
+
+	/**
+	 * Test @see ReepayGateway::resolve_webhook_event_types never produces duplicates
+	 * or flip-flops when fed its own previous output (simulates two consecutive
+	 * settings saves with no external change in between).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_resolve_webhook_event_types_idempotent_across_consecutive_calls() {
+		$first  = self::$gateway->resolve_webhook_event_types_public( array() );
+		$second = self::$gateway->resolve_webhook_event_types_public( $first['event_types'] );
+
+		$this->assertFalse( $second['needs_update'], 'Second call must see at least one implemented event already active.' );
+		$this->assertEqualsCanonicalizing( $first['event_types'], $second['event_types'] );
+		$this->assertCount( count( array_unique( $second['event_types'] ) ), $second['event_types'], 'No duplicate entries.' );
+	}
+
+	// -----------------------------------------------------------------------
+	// is_webhook_configured() — event_types integration
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured activates all implemented
+	 * webhook event types when none are active yet, even though the webhook URL
+	 * and alert email are already correctly configured — the early-return path
+	 * must not skip the event_types check (AC6).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_activates_events_even_when_url_already_correct() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+
+		$captured_put_data = null;
+
+		$this->api_mock->expects( $this->exactly( 2 ) )
+			->method( 'request' )
+			->willReturnCallback(
+				function ( $method, $url, $data = array() ) use ( &$captured_put_data, $webhook_url ) {
+					if ( 'GET' === $method ) {
+						return array(
+							'urls'         => array( $webhook_url ),
+							'alert_emails' => array(),
+							'disabled'     => false,
+							'secret'       => 'secret_key',
+							'event_types'  => array( 'some_third_party_event' ),
+						);
+					}
+
+					$captured_put_data = $data;
+
+					return array(
+						'urls'         => $data['urls'],
+						'alert_emails' => array(),
+						'disabled'     => false,
+					);
+				}
+			);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+
+		$this->assertNotNull( $captured_put_data, 'A PUT must be issued purely to activate the missing implemented event types.' );
+		$this->assertContains( 'some_third_party_event', $captured_put_data['event_types'], 'Pre-existing third-party event types must be preserved.' );
+
+		foreach ( ReepayGateway::IMPLEMENTED_WEBHOOK_EVENT_TYPES as $event_type ) {
+			$this->assertContains( $event_type, $captured_put_data['event_types'] );
+		}
+	}
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured issues NO PUT at all when the
+	 * URL/email are already correct AND at least one implemented event type is
+	 * already active — the admin's configuration must be assumed deliberate (AC2).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_no_put_when_already_configured_and_one_event_active() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+
+		$this->api_mock->expects( $this->once() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'GET' ),
+				$this->stringContains( 'webhook_settings' )
+			)
+			->willReturn(
+				array(
+					'urls'         => array( $webhook_url ),
+					'alert_emails' => array(),
+					'disabled'     => false,
+					'secret'       => 'secret_key',
+					'event_types'  => array( 'invoice_settled' ),
+				)
+			);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+	}
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured treats a missing event_types
+	 * key in the GET response (e.g. brand new account) the same as an empty list —
+	 * activates all 7 implemented events (AC1).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_missing_event_types_key_treated_as_none_active() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+
+		$captured_put_data = null;
+
+		$this->api_mock->expects( $this->exactly( 2 ) )
+			->method( 'request' )
+			->willReturnCallback(
+				function ( $method, $url, $data = array() ) use ( &$captured_put_data, $webhook_url ) {
+					if ( 'GET' === $method ) {
+						return array(
+							'urls'         => array( $webhook_url ),
+							'alert_emails' => array(),
+							'disabled'     => false,
+							'secret'       => 'secret_key',
+							// Deliberately no 'event_types' key.
+						);
+					}
+
+					$captured_put_data = $data;
+
+					return array(
+						'urls'         => $data['urls'],
+						'alert_emails' => array(),
+						'disabled'     => false,
+					);
+				}
+			);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+
+		$this->assertNotNull( $captured_put_data );
+		$this->assertEqualsCanonicalizing( ReepayGateway::IMPLEMENTED_WEBHOOK_EVENT_TYPES, $captured_put_data['event_types'] );
+	}
+
+	/**
+	 * Test @see ReepayGateway::is_webhook_configured always explicitly includes
+	 * event_types in the PUT payload even when the PUT is triggered purely by a
+	 * URL registration unrelated to event_types, and leaves it unchanged in that
+	 * case — guards against ever silently omitting (and risking the clearing of)
+	 * the key just because the URL needed fixing (AC3, AC4).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_is_webhook_configured_put_always_includes_unchanged_event_types_on_url_only_change() {
+		$webhook_url = ReepayGateway::get_webhook_url();
+
+		$captured_put_data = null;
+
+		// GET returns no registered URL (forces a PUT) but one implemented event
+		// type already active (so event_types itself needs no change).
+		$this->api_mock->expects( $this->exactly( 2 ) )
+			->method( 'request' )
+			->willReturnCallback(
+				function ( $method, $url, $data = array() ) use ( &$captured_put_data ) {
+					if ( 'GET' === $method ) {
+						return array(
+							'urls'         => array(),
+							'alert_emails' => array(),
+							'disabled'     => false,
+							'secret'       => 'secret_key',
+							'event_types'  => array( 'invoice_authorized' ),
+						);
+					}
+
+					$captured_put_data = $data;
+
+					return array(
+						'urls'         => $data['urls'],
+						'alert_emails' => array(),
+						'disabled'     => false,
+					);
+				}
+			);
+
+		$this->assertTrue( self::$gateway->is_webhook_configured() );
+
+		$this->assertArrayHasKey( 'event_types', $captured_put_data, 'event_types must always be sent explicitly on any PUT, never omitted.' );
+		$this->assertEqualsCanonicalizing(
+			array( 'invoice_authorized' ),
+			$captured_put_data['event_types'],
+			'event_types must be left unchanged — only the URL needed fixing, one implemented event was already active.'
+		);
+		$this->assertContains( $webhook_url, $captured_put_data['urls'] );
 	}
 
 	// -----------------------------------------------------------------------
@@ -1361,5 +1628,287 @@ class ReepayGatewayTest extends Reepay_UnitTestCase {
 				'Did not expect a customer-sync PUT request when there is no VAT number'
 			);
 		}
+	}
+
+	// -----------------------------------------------------------------------
+	// maybe_add_click_to_pay() (BWPM-291)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * @testWith
+	 * ["card"]
+	 * ["mc"]
+	 * ["visa"]
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_maybe_add_click_to_pay_appends_for_each_trigger_method( string $trigger ) {
+		$result = self::$gateway->maybe_add_click_to_pay_public( array( $trigger ) );
+
+		$this->assertContains( 'click_to_pay', $result );
+		$this->assertContains( $trigger, $result );
+	}
+
+	/**
+	 * @group gateways_gateway
+	 */
+	public function test_maybe_add_click_to_pay_appends_only_once_for_multiple_triggers() {
+		$result = self::$gateway->maybe_add_click_to_pay_public( array( 'card', 'visa', 'mc' ) );
+
+		$this->assertSame( 1, count( array_keys( $result, 'click_to_pay', true ) ) );
+	}
+
+	/**
+	 * @group gateways_gateway
+	 */
+	public function test_maybe_add_click_to_pay_does_not_duplicate_when_already_present() {
+		$result = self::$gateway->maybe_add_click_to_pay_public( array( 'card', 'click_to_pay' ) );
+
+		$this->assertSame( 1, count( array_keys( $result, 'click_to_pay', true ) ) );
+	}
+
+	/**
+	 * @group gateways_gateway
+	 */
+	public function test_maybe_add_click_to_pay_unchanged_for_non_trigger_methods() {
+		$methods = array( 'klarna', 'vipps' );
+
+		$result = self::$gateway->maybe_add_click_to_pay_public( $methods );
+
+		$this->assertSame( $methods, $result );
+		$this->assertNotContains( 'click_to_pay', $result );
+	}
+
+	/**
+	 * Sub-brand options are deliberately NOT triggers on their own — only exact
+	 * "card", "visa", "mc" strings count, per the literal Frisbii API docs.
+	 *
+	 * @testWith
+	 * ["visa_dk"]
+	 * ["visa_elec"]
+	 * ["maestro"]
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_maybe_add_click_to_pay_unchanged_for_card_subbrands_alone( string $sub_brand ) {
+		$result = self::$gateway->maybe_add_click_to_pay_public( array( $sub_brand ) );
+
+		$this->assertNotContains( 'click_to_pay', $result );
+	}
+
+	/**
+	 * @group gateways_gateway
+	 */
+	public function test_maybe_add_click_to_pay_unchanged_for_empty_array() {
+		$this->assertSame( array(), self::$gateway->maybe_add_click_to_pay_public( array() ) );
+	}
+
+	// -----------------------------------------------------------------------
+	// process_payment() — click_to_pay (BWPM-291)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::process_payment includes "click_to_pay" in the
+	 * session/charge payload for a plain, non-subscription order when a supported
+	 * card method is configured (AC1/AC2/AC3).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_process_payment_session_charge_includes_click_to_pay_for_plain_order() {
+		$user_id = $this->factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		self::$gateway->id              = 'reepay_checkout';
+		self::$gateway->payment_methods = array( 'card', 'visa', 'mc' );
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$session_response = array(
+			'id'  => 'session_xyz',
+			'url' => 'https://checkout.reepay.com/pay/session_xyz',
+		);
+
+		$this->api_mock->expects( $this->atLeastOnce() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'POST' ),
+				$this->stringContains( 'session/charge' ),
+				$this->callback(
+					function ( $params ) {
+						return in_array( 'click_to_pay', $params['payment_methods'] ?? array(), true );
+					}
+				)
+			)
+			->willReturn( $session_response );
+		$this->api_mock->method( 'recurring' )->willReturn( $session_response );
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-' . $user_id );
+
+		$result = self::$gateway->process_payment( $order_id );
+
+		$this->assertSame( 'success', $result['result'] );
+
+		self::$gateway->payment_methods = array();
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test @see ReepayGateway::process_payment never includes "click_to_pay" when
+	 * the order contains a subscription product, even though a supported card
+	 * method is configured — Click to Pay does not work for recurring payments
+	 * (AC4).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_process_payment_session_charge_excludes_click_to_pay_for_subscription_order() {
+		PLUGINS_STATE::maybe_skip_test_by_product_type( 'woo_sub' );
+
+		$user_id = $this->factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		self::$gateway->id              = 'reepay_checkout';
+		self::$gateway->payment_methods = array( 'card', 'visa', 'mc' );
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		// Non-zero price so the order falls through to process_session_charge()
+		// instead of the zero-amount subscription-only early-return branch.
+		$this->order_generator->add_product( 'woo_sub', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$session_response = array(
+			'id'  => 'session_xyz',
+			'url' => 'https://checkout.reepay.com/pay/session_xyz',
+		);
+
+		$captured_params = null;
+
+		$this->api_mock->method( 'request' )->willReturnCallback(
+			function ( $method, $url, $params = array() ) use ( &$captured_params, $session_response ) {
+				if ( str_contains( $url, 'session/charge' ) ) {
+					$captured_params = $params;
+				}
+
+				return $session_response;
+			}
+		);
+		$this->api_mock->method( 'recurring' )->willReturn( $session_response );
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-' . $user_id );
+
+		$result = self::$gateway->process_payment( $order_id );
+
+		$this->assertSame( 'success', $result['result'] );
+		$this->assertNotNull( $captured_params, 'Expected a session/charge request to have been made.' );
+		$this->assertNotContains( 'click_to_pay', $captured_params['payment_methods'] ?? array() );
+		$this->assertContains( 'card', $captured_params['payment_methods'] ?? array(), 'Sanity check: configured methods are still sent.' );
+
+		self::$gateway->payment_methods = array();
+		wp_set_current_user( 0 );
+	}
+
+	// -----------------------------------------------------------------------
+	// wcs_change_payment_method() — click_to_pay (BWPM-291)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::wcs_change_payment_method includes "click_to_pay"
+	 * in the session/recurring payload when adding a new card (no token id) and a
+	 * supported card method is configured. This branch only tokenizes a card —
+	 * it does not execute a recurring charge — so it is treated like the Add Card
+	 * flow, not a subscription charge.
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_wcs_change_payment_method_includes_click_to_pay_when_configured() {
+		self::$gateway->id              = 'reepay_checkout';
+		self::$gateway->payment_methods = array( 'card', 'visa', 'mc' );
+
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-1' );
+		$this->api_mock->expects( $this->atLeastOnce() )
+			->method( 'request' )
+			->with(
+				$this->equalTo( 'POST' ),
+				$this->stringContains( 'session/recurring' ),
+				$this->callback(
+					function ( $params ) {
+						return in_array( 'click_to_pay', $params['payment_methods'] ?? array(), true );
+					}
+				)
+			)
+			->willReturn(
+				array(
+					'id'  => 'session_1',
+					'url' => 'https://checkout.reepay.com/pay/session_1',
+				)
+			);
+
+		$result = self::$gateway->wcs_change_payment_method( $this->order_generator->order() );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'success', $result['result'] );
+
+		self::$gateway->payment_methods = array();
+	}
+
+	// -----------------------------------------------------------------------
+	// Subscription-charge paths never receive click_to_pay (BWPM-291 safety net)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see ReepayGateway::process_payment's zero-amount/all-subscription-items
+	 * branch (which calls Api::recurring()) never receives "click_to_pay", even
+	 * when a supported card method is configured — this path is exclusively a
+	 * subscription setup flow, and Click to Pay does not work for recurring
+	 * payments (AC4).
+	 *
+	 * @group gateways_gateway
+	 */
+	public function test_process_payment_subscription_recurring_setup_never_includes_click_to_pay() {
+		PLUGINS_STATE::maybe_skip_test_by_product_type( 'woo_sub' );
+
+		$user_id = $this->factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		self::$gateway->id              = 'reepay_checkout';
+		self::$gateway->payment_methods = array( 'card', 'visa', 'mc' );
+		$this->order_generator->set_prop( 'payment_method', self::$gateway->id );
+		// process_payment()'s subscription-branch check ($have_sub) looks at the
+		// active WC cart (wcs_cart_have_subscription()), not the order's own items
+		// — mirror that by also populating the cart, matching how a real checkout
+		// still has the cart populated while payment is being processed.
+		$this->cart_generator->new_cart( 'woo_sub' );
+		// Zero-amount subscription-only order triggers the Api::recurring() branch
+		// instead of process_session_charge().
+		$this->order_generator->add_product( 'woo_sub', array( 'regular_price' => '0.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$this->order_generator->order()->save();
+
+		$order_id = $this->order_generator->order()->get_id();
+
+		$captured_payment_methods = null;
+
+		$this->api_mock->method( 'recurring' )->willReturnCallback(
+			function ( $payment_methods ) use ( &$captured_payment_methods ) {
+				$captured_payment_methods = $payment_methods;
+
+				return array(
+					'id'  => 'session_xyz',
+					'url' => 'https://checkout.reepay.com/pay/session_xyz',
+				);
+			}
+		);
+		$this->api_mock->method( 'get_customer_handle_by_order' )->willReturn( 'customer-' . $user_id );
+
+		self::$gateway->process_payment( $order_id );
+
+		$this->assertNotNull( $captured_payment_methods, 'Expected Api::recurring() to have been called.' );
+		$this->assertNotContains( 'click_to_pay', $captured_payment_methods );
+
+		self::$gateway->payment_methods = array();
+		wp_set_current_user( 0 );
 	}
 }
