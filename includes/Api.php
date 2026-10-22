@@ -908,8 +908,6 @@ class Api {
 	 * @param bool           $instant_note add order note instantly.
 	 *
 	 * @return array|WP_Error
-	 *
-	 * @ToDO refactor function. $amount is useless.
 	 */
 	public function settle( WC_Order $order, $amount = null, $items_data = false, $line_item = false, bool $instant_note = true ) {
 		$this->log( sprintf( 'Settle: %s, Amount: %s', $order->get_id(), $amount ) );
@@ -919,16 +917,20 @@ class Api {
 			return new WP_Error( 0, 'Unable to get order handle' );
 		}
 
-		if ( ! $amount || ! $items_data ) {
+		// BWSM-114: only fall back to a full instant-settle calculation for whichever
+		// of $amount/$items_data the caller actually left unset. Previously, an
+		// explicitly-provided $amount with no $items_data (as OrderCapture::settle_amount()
+		// passes for a manual "Capture Specified Amount") was discarded here in favour of
+		// a freshly recalculated full-order amount - silently ignoring the caller's
+		// requested amount. An empty $items_data is a deliberate "send a flat amount, no
+		// itemized lines" request and must be left alone when $amount was given.
+		if ( ! $amount && ! $items_data ) {
 			$settle_data = InstantSettle::calculate_instant_settle( $order );
-
-			if ( ! $amount ) {
-				$amount = $settle_data['settle_amount'];
-			}
-
-			if ( ! $items_data ) {
-				$items_data = $settle_data['items'];
-			}
+			$amount      = $settle_data['settle_amount'];
+			$items_data  = $settle_data['items'];
+		} elseif ( ! $amount ) {
+			$settle_data = InstantSettle::calculate_instant_settle( $order );
+			$amount      = $settle_data['settle_amount'];
 		}
 
 		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {

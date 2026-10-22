@@ -275,6 +275,39 @@ class OrderGenerator {
 	}
 
 	/**
+	 * Add a WC_Order_Item_Tax rate directly to the order, without going through
+	 * WC_Order::calculate_taxes() (see add_tax()). calculate_taxes() recomputes
+	 * tax from the order's actual line items/customer address and strips
+	 * zero-amount tax lines, which destroys a rate added purely so a function
+	 * like rp_get_discount_tax_percent() can see a single, unambiguous
+	 * configured rate on the order - independent of whatever tax amounts are
+	 * separately set on individual line items.
+	 *
+	 * @param float  $tax_rate tax rate percent, e.g. 25 for 25%.
+	 * @param string $tax_rate_name unique name for the WC tax rate.
+	 *
+	 * @return int order item id
+	 */
+	public function add_tax_rate_only( float $tax_rate, string $tax_rate_name = 'test' ): int {
+		$tax_rate_id = WC_Tax::_insert_tax_rate(
+			array(
+				'tax_rate'      => $tax_rate,
+				'tax_rate_name' => $tax_rate_name,
+			)
+		);
+
+		$item = new WC_Order_Item_Tax();
+		$item->set_rate( $tax_rate_id );
+		$item->set_order_id( $this->order->get_id() );
+		$item->save();
+
+		$this->order->add_item( $item );
+		$this->order->save();
+
+		return $item->get_id();
+	}
+
+	/**
 	 * Add meta data to order item
 	 *
 	 * @param WC_Order_Item|int $order_item order item.

@@ -141,6 +141,7 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 			'description' => $this->get_setting( 'description' ),
 			'supports'    => $this->get_supported_features(),
 			'cssPath'     => reepay()->get_setting( 'css_url' ) . 'woo_blocks' . $suffix . '.css?ver=' . reepay()->get_setting( 'plugin_version' ),
+			'logos'       => $this->get_logos(),
 		);
 
 		if ( 'reepay_vipps_epayment' === $this->name ) {
@@ -189,5 +190,29 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 		$data = apply_filters( 'reepay_blocks_payment_method_data', $data, $this );
 
 		return apply_filters( 'reepay_blocks_payment_method_data_' . $this->name, $data, $this );
+	}
+
+	/**
+	 * Returns the list of payment logos (src + alt) configured for the wrapped gateway.
+	 *
+	 * @return array
+	 */
+	private function get_logos(): array {
+		if ( ! $this->gateway instanceof ReepayGateway ) {
+			return array();
+		}
+
+		return array_values(
+			array_map(
+				function ( $logo ) {
+					return array(
+						'src' => $this->gateway->get_logo( $logo ),
+						// translators: %s gateway title.
+						'alt' => esc_attr( sprintf( __( 'Pay with %s on Frisbii Pay', 'reepay-checkout-gateway' ), $this->gateway->get_title() ) ),
+					);
+				},
+				array_filter( (array) $this->gateway->logos, 'strlen' )
+			)
+		);
 	}
 }

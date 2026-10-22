@@ -16,6 +16,22 @@ use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
 class UnsettledOrdersFinderTest extends Reepay_UnitTestCase {
 
 	/**
+	 * Runs the routine before each test is executed.
+	 *
+	 * The live-check round-robin cursor (see UnsettledOrdersFinder::LIVE_CHECK_CURSOR_OPTION) is a
+	 * persisted option by design — it must survive between real cron runs. In tests that means it
+	 * can otherwise leak across test methods (order IDs are also not reused run-to-run, making a
+	 * leftover cursor from an earlier test silently point at a meaningless position in a later
+	 * test's own candidate list). Reset it explicitly so every test starts from a clean, known
+	 * state regardless of execution order.
+	 */
+	public function set_up() {
+		parent::set_up();
+
+		delete_option( UnsettledOrdersFinder::LIVE_CHECK_CURSOR_OPTION );
+	}
+
+	/**
 	 * Test @see UnsettledOrdersFinder::find() finds a completed, unsettled Reepay order with a non-zero total.
 	 */
 	public function test_find_returns_completed_unsettled_reepay_order() {
@@ -266,6 +282,307 @@ class UnsettledOrdersFinderTest extends Reepay_UnitTestCase {
 
 		$old_order = wc_get_order( $old_order_id );
 		$this->assertSame( 1, (int) $old_order->get_meta( '_reepay_state_settled' ), 'The oldest order should have been healed within the per-run budget instead of being starved out by newer orders' );
+	}
+
+	/**
+	 * BWPM-293 investigation: the oldest-first strategy protects old backlog from being
+	 * starved by a flood of newer noise (see test_find_prioritizes_oldest_orders_for_live_
+	 * verification_budget above), but it does NOT protect a newer genuinely-settled-but-
+	 * untracked order from being starved when the orders AHEAD of it (older, genuinely
+	 * still unpaid, or otherwise never healed) permanently fill the per-run budget. Each
+	 * such older order consumes one budget slot on every single run forever, since nothing
+	 * ever sets its _reepay_state_settled meta. Once there are >= MAX_LIVE_VERIFICATIONS_PER_RUN
+	 * of them, any newer order missing the meta — even one Frisbii confirms is fully settled —
+	 * never gets a live check at all, and is incorrectly reported as unpaid indefinitely.
+	 *
+	 * @see UnsettledOrdersFinder::find
+	 */
+	public function test_find_incorrectly_flags_newer_genuinely_settled_order_when_older_unpaid_backlog_exhausts_budget() {
+		$cap = UnsettledOrdersFinder::MAX_LIVE_VERIFICATIONS_PER_RUN;
+
+		for ( $i = 0; $i < $cap; $i++ ) {
+			$this->order_generator->generate( array( 'status' => 'completed' ) );
+			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+			$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+			$this->order_generator->order()->calculate_totals();
+			$order = $this->order_generator->order();
+			$order->set_date_completed( '2026-07-10 00:00:00' );
+			$order->save();
+		}
+
+		$this->order_generator->generate( array( 'status' => 'completed' ) );
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$newer_order = $this->order_generator->order();
+		$newer_order->set_date_completed( '2026-08-20 00:00:00' );
+		$newer_order->save();
+		$newer_order_id = $newer_order->get_id();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturnCallback(
+			function ( $order ) use ( $newer_order_id ) {
+				$settled = ( $order->get_id() === $newer_order_id ) ? 2000 : 0;
+
+				return array(
+					'authorized_amount' => 2000,
+					'settled_amount'    => $settled,
+				);
+			}
+		);
+
+		$result = ( new UnsettledOrdersFinder() )->find();
+
+		$this->assertContains(
+			$newer_order_id,
+			$result['order_ids'],
+			'Demonstrates BWPM-293: a genuinely settled order is incorrectly reported as unpaid because older, genuinely-unpaid orders ahead of it in the oldest-first scan permanently consume the entire live-check budget every run.'
+		);
+
+		$newer_order = wc_get_order( $newer_order_id );
+		$this->assertSame( '', $newer_order->get_meta( '_reepay_state_settled' ), 'The genuinely settled order was never live-checked, so its local state was never healed either.' );
+	}
+
+	/**
+	 * BWPM-293 fix (round-robin cursor): after a run spends its whole budget on the oldest
+	 * candidates, the next run resumes live-verification right after where it left off instead
+	 * of restarting from the oldest candidate again — so a newer genuinely-settled-but-untracked
+	 * order starved out on the first run (see previous test) gets its turn on the next run, once
+	 * the cursor reaches it.
+	 *
+	 * @see UnsettledOrdersFinder::get_cursor_start_index
+	 */
+	public function test_find_heals_newer_order_on_next_run_once_cursor_reaches_it() {
+		$cap = UnsettledOrdersFinder::MAX_LIVE_VERIFICATIONS_PER_RUN;
+
+		for ( $i = 0; $i < $cap; $i++ ) {
+			$this->order_generator->generate( array( 'status' => 'completed' ) );
+			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+			$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+			$this->order_generator->order()->calculate_totals();
+			$order = $this->order_generator->order();
+			$order->set_date_completed( '2026-07-10 00:00:00' );
+			$order->save();
+		}
+
+		$this->order_generator->generate( array( 'status' => 'completed' ) );
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$newer_order = $this->order_generator->order();
+		$newer_order->set_date_completed( '2026-08-20 00:00:00' );
+		$newer_order->save();
+		$newer_order_id = $newer_order->get_id();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturnCallback(
+			function ( $order ) use ( $newer_order_id ) {
+				$settled = ( $order->get_id() === $newer_order_id ) ? 2000 : 0;
+
+				return array(
+					'authorized_amount' => 2000,
+					'settled_amount'    => $settled,
+				);
+			}
+		);
+
+		// Run 1 (simulates "today"): exhausts the budget on the older backlog, same as the
+		// previous test — the newer order is left unchecked and still incorrectly flagged.
+		$first_run = ( new UnsettledOrdersFinder() )->find();
+		$this->assertContains( $newer_order_id, $first_run['order_ids'] );
+
+		// Run 2 (simulates "tomorrow"): the cursor resumes right after the last order checked in
+		// run 1, which is exactly where the newer order sits — no need to re-check the older
+		// backlog again before reaching it.
+		$second_run = ( new UnsettledOrdersFinder() )->find();
+
+		$this->assertNotContains(
+			$newer_order_id,
+			$second_run['order_ids'],
+			'The newer genuinely settled order should have been live-checked and excluded once the cursor reached it'
+		);
+
+		$newer_order = wc_get_order( $newer_order_id );
+		$this->assertSame( 1, (int) $newer_order->get_meta( '_reepay_state_settled' ), 'Local state should have been healed on the second run' );
+	}
+
+	/**
+	 * BWPM-293 a fixed per-order cooldown is not enough on
+	 * its own — if the backlog of never-resolving orders ahead of a newer one is large and static,
+	 * a cooldown can settle into a stable rotation that keeps landing back on that same backlog
+	 * every run (its cooldown keeps expiring just in time to consume the whole budget again)
+	 * without ever reaching anything behind it. Uses a backlog exactly 3x the per-run cap (60 vs.
+	 * 20) specifically because that size would fall into such a stable rotation under a 3-day
+	 * cooldown. The round-robin cursor has no such failure mode: it always advances forward
+	 * through the full candidate list, so it provably reaches the newer order within
+	 * ceil(61 / 20) = 4 runs regardless of how the backlog is shaped.
+	 *
+	 * @see UnsettledOrdersFinder::live_check_candidates
+	 */
+	public function test_find_heals_newer_order_after_cycling_through_backlog_several_times_the_cap_size() {
+		$cap          = UnsettledOrdersFinder::MAX_LIVE_VERIFICATIONS_PER_RUN;
+		$backlog_size = $cap * 3;
+
+		for ( $i = 0; $i < $backlog_size; $i++ ) {
+			$this->order_generator->generate( array( 'status' => 'completed' ) );
+			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+			$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+			$this->order_generator->order()->calculate_totals();
+			$order = $this->order_generator->order();
+			$order->set_date_completed( '2026-07-10 00:00:00' );
+			$order->save();
+		}
+
+		$this->order_generator->generate( array( 'status' => 'completed' ) );
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$newer_order = $this->order_generator->order();
+		$newer_order->set_date_completed( '2026-08-20 00:00:00' );
+		$newer_order->save();
+		$newer_order_id = $newer_order->get_id();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturnCallback(
+			function ( $order ) use ( $newer_order_id ) {
+				$settled = ( $order->get_id() === $newer_order_id ) ? 2000 : 0;
+
+				return array(
+					'authorized_amount' => 2000,
+					'settled_amount'    => $settled,
+				);
+			}
+		);
+
+		$healed = false;
+
+		// ceil(61 / 20) = 4 runs needed to cycle all the way to the newer order; allow a couple
+		// extra as headroom without masking a real regression (a real bug here would mean it
+		// never heals, not just takes one run longer).
+		for ( $run = 0; $run < 6; $run++ ) {
+			$result = ( new UnsettledOrdersFinder() )->find();
+
+			if ( ! in_array( $newer_order_id, $result['order_ids'], true ) ) {
+				$healed = true;
+				break;
+			}
+		}
+
+		$this->assertTrue( $healed, 'The newer genuinely settled order should have been reached and healed within a bounded number of runs, however large or evenly-sized the older backlog ahead of it is' );
+
+		$newer_order = wc_get_order( $newer_order_id );
+		$this->assertSame( 1, (int) $newer_order->get_meta( '_reepay_state_settled' ) );
+	}
+
+	/**
+	 * Regression test (Cursor Bugbot finding): get_cursor_start_index() used to resume by scanning
+	 * for the first candidate with an order ID greater than the stored cursor, as though the
+	 * candidate list were ID-ordered. It is actually ordered by date_completed (ID only breaks
+	 * ties), and WooCommerce order IDs do not increase with completion date. Here the target order
+	 * is created FIRST (lowest ID) but completes LATEST (sorts to the end of the list), while the
+	 * backlog is created AFTER it (higher IDs) but completes EARLIER (sorts ahead of it). Once the
+	 * cursor is set to a backlog order's (higher) ID, the old ID-threshold comparison could never
+	 * match the target order's (lower) ID, so every subsequent run restarted from the top and the
+	 * target order was starved out indefinitely.
+	 *
+	 * @see UnsettledOrdersFinder::get_cursor_start_index
+	 */
+	public function test_find_heals_lower_id_but_later_completed_order_not_skipped_by_cursor() {
+		$cap = UnsettledOrdersFinder::MAX_LIVE_VERIFICATIONS_PER_RUN;
+
+		$this->order_generator->set_props(
+			array(
+				'status'         => 'completed',
+				'payment_method' => reepay()->gateways()->checkout()->id,
+			)
+		);
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$target_order = $this->order_generator->order();
+		$target_order->set_date_completed( '2026-08-20 00:00:00' );
+		$target_order->save();
+		$target_order_id = $target_order->get_id();
+
+		for ( $i = 0; $i < $cap; $i++ ) {
+			$this->order_generator->generate( array( 'status' => 'completed' ) );
+			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+			$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+			$this->order_generator->order()->calculate_totals();
+			$order = $this->order_generator->order();
+			$order->set_date_completed( '2026-07-10 00:00:00' );
+			$order->save();
+		}
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturnCallback(
+			function ( $order ) use ( $target_order_id ) {
+				$settled = ( $order->get_id() === $target_order_id ) ? 2000 : 0;
+
+				return array(
+					'authorized_amount' => 2000,
+					'settled_amount'    => $settled,
+				);
+			}
+		);
+
+		// Run 1: budget is fully consumed by the higher-ID, earlier-completed backlog (processed
+		// first, oldest-first); the target order sits at the end of the list and isn't reached yet.
+		$first_run = ( new UnsettledOrdersFinder() )->find();
+		$this->assertContains( $target_order_id, $first_run['order_ids'] );
+
+		// Run 2: the cursor must resume right after the last backlog order actually processed.
+		$second_run = ( new UnsettledOrdersFinder() )->find();
+
+		$this->assertNotContains(
+			$target_order_id,
+			$second_run['order_ids'],
+			'A later-completed order with a lower ID than the cursor must still be reached and healed, not skipped indefinitely'
+		);
+
+		$target_order = wc_get_order( $target_order_id );
+		$this->assertSame( 1, (int) $target_order->get_meta( '_reepay_state_settled' ) );
+	}
+
+	/**
+	 * Regression test for BWPM-293 (the oldest-first query's deterministic secondary sort key): an
+	 * intermittent, non-deterministic sort order was observed against real data where a candidate
+	 * could be returned out of its correct chronological position even though its own
+	 * date_completed was stored correctly — see the ID ASC secondary orderby key added to
+	 * get_candidates(). Calling find() repeatedly against an unchanged candidate pool must always
+	 * return every candidate in the same oldest-first order, every run, with no flakiness.
+	 *
+	 * @see UnsettledOrdersFinder::get_candidates
+	 */
+	public function test_find_returns_candidates_in_stable_deterministic_oldest_first_order() {
+		$dates              = array( '2026-07-10', '2026-07-12', '2026-07-14', '2026-07-16', '2026-07-18' );
+		$expected_order_ids = array();
+
+		foreach ( $dates as $date ) {
+			$this->order_generator->generate( array( 'status' => 'completed' ) );
+			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+			$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+			$this->order_generator->order()->calculate_totals();
+			$order = $this->order_generator->order();
+			$order->set_date_completed( $date . ' 00:00:00' );
+			$order->save();
+
+			$expected_order_ids[] = $order->get_id();
+		}
+
+		// Nothing is ever settled, so every candidate stays in the result on every run — the
+		// returned order of order_ids directly reflects get_candidates()'s oldest-first sort.
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
+				'settled_amount'    => 0,
+			)
+		);
+
+		for ( $run = 1; $run <= 20; $run++ ) {
+			$result = ( new UnsettledOrdersFinder() )->find();
+
+			$this->assertSame(
+				$expected_order_ids,
+				$result['order_ids'],
+				sprintf( 'Run %d returned candidates out of their correct chronological order', $run )
+			);
+		}
 	}
 
 	/**

@@ -23,22 +23,22 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: ${{ matrix.php-versions }}
-        extension-csv: mbstring, intl #optional, setup extensions
-        ini-values-csv: post_max_size=256M, short_open_tag=On #optional, setup php.ini configuration
+        extensions: mbstring, intl #optional, setup extensions
+        ini-values: post_max_size=256M, short_open_tag=On #optional, setup php.ini configuration
         coverage: xdebug #optional, setup coverage driver
-        pecl: false #optional, setup PECL
 
     - name: Check PHP Version
       run: php -v
 
     - name: Composer install
-      run: | 
+      run: |
           composer update
           composer install --optimize-autoloader --prefer-dist
 
     -   name: Set up MySQL
         run: |
-            sudo /etc/init.d/mysql start
+            sudo bash -c 'printf "[mysqld]\nloose_mysql_native_password=ON\n" > /etc/mysql/mysql.conf.d/mysql-native-password.cnf'
+            sudo systemctl restart mysql.service
             mysql --user="root" --password="root" --execute="ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';"
 
     - name: Install Subversion

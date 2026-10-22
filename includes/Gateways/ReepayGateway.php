@@ -45,6 +45,36 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	const METHOD_OVERLAY = 'OVERLAY';
 
 	/**
+	 * Webhook event types this plugin's Webhook::process() actually handles with a
+	 * real side effect (order status transitions, customer/token creation) — not
+	 * just the generic do_action() extensibility fallback for unknown event types.
+	 *
+	 * @see \Reepay\Checkout\OrderFlow\Webhook::process()
+	 */
+	const IMPLEMENTED_WEBHOOK_EVENT_TYPES = array(
+		'invoice_authorized',
+		'invoice_settled',
+		'invoice_cancelled',
+		'invoice_refund',
+		'invoice_created',
+		'customer_created',
+		'customer_payment_method_added',
+	);
+
+	/**
+	 * Payment methods that, when configured, must also carry "click_to_pay" in the
+	 * session payload — Frisbii shows the Click to Pay wallet option only when one
+	 * of these is present alongside "click_to_pay" itself.
+	 *
+	 * @see https://docs.frisbii.com/docs/click-to-pay
+	 */
+	const CLICK_TO_PAY_TRIGGER_METHODS = array(
+		'card',
+		'visa',
+		'mc',
+	);
+
+	/**
 	 * Test mode
 	 *
 	 * @var string
@@ -267,7 +297,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
-			$params['payment_methods'] = $this->payment_methods;
+			$params['payment_methods'] = $this->maybe_add_click_to_pay( $this->payment_methods );
 		}
 
 		$configuration = reepay()->get_setting( 'payment_window_configuration' );
@@ -576,10 +606,13 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				);
 			}
 
+			$event_types_resolution = $this->resolve_webhook_event_types( $response['event_types'] ?? array() );
+
 			// Verify the webhook settings.
 			if ( ! $exist_waste_urls &&
 				in_array( $webhook_url, $urls, true )
 				&& ( empty( $alert_email ) || in_array( $alert_email, $alert_emails, true ) )
+				&& ! $event_types_resolution['needs_update']
 			) {
 				return true;
 			}
@@ -597,6 +630,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'urls'         => array_unique( $urls ),
 				'disabled'     => false,
 				'alert_emails' => array_unique( $alert_emails ),
+				'event_types'  => $event_types_resolution['event_types'],
 			);
 
 			$response = reepay()->api( $this )->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
@@ -626,6 +660,55 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Decide whether this plugin's implemented webhook event types need to be
+	 * activated on the Frisbii account.
+	 *
+	 * Only activates them when NONE of the implemented event types are currently
+	 * enabled — if even one is already enabled, the merchant's configuration is
+	 * assumed deliberate and is left untouched. Existing event types (ours or
+	 * third-party) are always preserved, never removed.
+	 *
+	 * @param array $existing_event_types Event types currently enabled on the Frisbii account.
+	 *
+	 * @return array{needs_update: bool, event_types: array} needs_update is true when
+	 *               none of the implemented event types were present; event_types is
+	 *               the full array to send on the next PUT either way.
+	 */
+	protected function resolve_webhook_event_types( array $existing_event_types ): array {
+		$needs_update = empty( array_intersect( $existing_event_types, self::IMPLEMENTED_WEBHOOK_EVENT_TYPES ) );
+
+		$event_types = $needs_update
+			? array_values( array_unique( array_merge( $existing_event_types, self::IMPLEMENTED_WEBHOOK_EVENT_TYPES ) ) )
+			: array_values( array_unique( $existing_event_types ) );
+
+		return array(
+			'needs_update' => $needs_update,
+			'event_types'  => $event_types,
+		);
+	}
+
+	/**
+	 * Append "click_to_pay" to a payment_methods payload when a supported card
+	 * method (card/visa/mc) is configured. No-op when none of those are present,
+	 * and never adds a duplicate if "click_to_pay" is already there.
+	 *
+	 * @param array $payment_methods Configured payment methods before the check.
+	 *
+	 * @return array
+	 */
+	protected function maybe_add_click_to_pay( array $payment_methods ): array {
+		if ( in_array( 'click_to_pay', $payment_methods, true )
+			|| empty( array_intersect( $payment_methods, self::CLICK_TO_PAY_TRIGGER_METHODS ) )
+		) {
+			return $payment_methods;
+		}
+
+		$payment_methods[] = 'click_to_pay';
+
+		return $payment_methods;
 	}
 
 	/**
@@ -1154,7 +1237,9 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		}
 
 		if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
-			$params['payment_methods'] = $this->payment_methods;
+			$params['payment_methods'] = order_contains_subscription( $order )
+				? $this->payment_methods
+				: $this->maybe_add_click_to_pay( $this->payment_methods );
 		}
 
 		if ( $order->needs_shipping_address() ) {
@@ -1698,7 +1783,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 
 			if ( $this->payment_methods && count( $this->payment_methods ) > 0 ) {
-				$params['payment_methods'] = $this->payment_methods;
+				$params['payment_methods'] = $this->maybe_add_click_to_pay( $this->payment_methods );
 			}
 
 			$configuration = reepay()->get_setting( 'payment_window_configuration' );
@@ -2194,19 +2279,22 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 		if ( $order->get_total_discount( false ) > 0 ) {
 			$discount          = $order->get_total_discount();
 			$discount_with_tax = $order->get_total_discount( false );
-			$tax               = $discount_with_tax - $discount;
-			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ), 2 ) : 0;
+			$tax_percent       = rp_get_discount_tax_percent( $order, $discount, $discount_with_tax );
+
+			// Send the discount incl. tax whenever a tax rate applies, not only when
+			// store prices are entered incl. tax. Reepay/Frisbii then derives net/VAT
+			// from WooCommerce's own already-rounded inclusive total instead of
+			// re-deriving VAT forward from the excl. tax amount, which can round
+			// differently than WooCommerce whenever the tax portion lands exactly on
+			// a half-minor-unit boundary (e.g. a discount whose tax is exactly X.5).
+			$discount_incl_vat = $prices_incl_tax || $tax_percent > 0;
 
 			if ( abs( floatval( $sub_amount_discount ) ) > 0.001 && abs( floatval( $discount ) ) > 0.001 ) {
 				/**
 				 * Discount for subscription
 				 */
-				if ( $prices_incl_tax || $tax_percent > 0 ) {
-					$simple_discount_amount = $discount_with_tax - $sub_amount_discount;
-				} else {
-					$simple_discount_amount = $discount - $sub_amount_discount;
-				}
-			} elseif ( $prices_incl_tax ) {
+				$simple_discount_amount = $discount_incl_vat ? ( $discount_with_tax - $sub_amount_discount ) : ( $discount - $sub_amount_discount );
+			} elseif ( $discount_incl_vat ) {
 				/**
 				 * Discount for simple product included tax
 				 */
@@ -2216,6 +2304,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			}
 
 			$discount_amount = round( - 1 * rp_prepare_amount( $simple_discount_amount, $order->get_currency() ) );
+			$discount_amount = rp_reconcile_discount_amount( $order, $items, $discount_amount );
 
 			if ( $discount_amount < 0 ) {
 				$items[] = array(
@@ -2223,7 +2312,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'quantity'        => 1,
 					'amount'          => round( $discount_amount, 2 ),
 					'vat'             => round( $tax_percent / 100, 4 ),
-					'amount_incl_vat' => $prices_incl_tax,
+					'amount_incl_vat' => $discount_incl_vat,
 				);
 			}
 		}

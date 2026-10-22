@@ -320,4 +320,205 @@ class OrderTest extends Reepay_UnitTestCase {
 		);
 	}
 
+	// -----------------------------------------------------------------------
+	// rp_get_discount_tax_percent() - BWSM-114
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see rp_get_discount_tax_percent returns the order's actual configured
+	 * tax rate when exactly one distinct rate applies, instead of reconstructing
+	 * an imprecise rate from already-rounded discount totals.
+	 *
+	 * Uses the real BWSM-114 figures: a 10% discount on a 229.00 kr product at a
+	 * true 25% VAT rate, where WooCommerce's own rounded totals (22.90 / 28.62)
+	 * reconstruct to 24.98% via the ratio formula - not the actual 25% rate.
+	 */
+	public function test_rp_get_discount_tax_percent_uses_single_configured_rate() {
+		$this->order_generator->add_tax_rate_only( 25 );
+
+		self::assertSame(
+			25.0,
+			rp_get_discount_tax_percent( $this->order_generator->order(), 22.90, 28.62 ),
+			'Should use the order\'s real 25% tax rate, not the ~24.98% reconstructed from rounded totals'
+		);
+	}
+
+	/**
+	 * Test @see rp_get_discount_tax_percent falls back to the historical
+	 * ratio-based estimate when the order has no tax line items at all (e.g.
+	 * taxes disabled, or a tax-exempt order).
+	 */
+	public function test_rp_get_discount_tax_percent_falls_back_when_no_tax_rates() {
+		self::assertSame(
+			24.98,
+			rp_get_discount_tax_percent( $this->order_generator->order(), 22.90, 28.62 ),
+			'With no configured tax rate, should fall back to the ratio-based estimate'
+		);
+	}
+
+	/**
+	 * Test @see rp_get_discount_tax_percent falls back to the ratio-based
+	 * estimate when the order mixes more than one distinct tax rate, since it's
+	 * then ambiguous which single rate the discount line should use.
+	 */
+	public function test_rp_get_discount_tax_percent_falls_back_when_multiple_tax_rates() {
+		$this->order_generator->add_tax_rate_only( 25 );
+		$this->order_generator->add_tax_rate_only( 7, 'reduced' );
+
+		self::assertSame(
+			24.98,
+			rp_get_discount_tax_percent( $this->order_generator->order(), 22.90, 28.62 ),
+			'With multiple distinct tax rates on the order, should fall back to the ratio-based estimate'
+		);
+	}
+
+	/**
+	 * Test @see rp_get_discount_tax_percent returns 0 when there is no tax
+	 * portion to derive a rate from (e.g. a tax-exempt discount).
+	 */
+	public function test_rp_get_discount_tax_percent_returns_zero_when_no_tax_amount() {
+		self::assertSame(
+			0.0,
+			rp_get_discount_tax_percent( $this->order_generator->order(), 22.90, 22.90 ),
+			'Discount with no tax portion should yield a 0% rate'
+		);
+	}
+
+	/**
+	 * Test @see rp_get_discount_tax_percent returns 0 when the discount amount
+	 * itself is 0 (division-by-zero guard).
+	 */
+	public function test_rp_get_discount_tax_percent_returns_zero_when_discount_is_zero() {
+		self::assertSame(
+			0.0,
+			rp_get_discount_tax_percent( $this->order_generator->order(), 0, 5.725 ),
+			'Zero discount amount should not trigger a division error and should yield 0'
+		);
+	}
+
+	// -----------------------------------------------------------------------
+	// rp_reconcile_discount_amount() - BWSM-114
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see rp_reconcile_discount_amount reproduces the real BWSM-114
+	 * reconciliation: a 229.00 kr product (excl. tax, 25% VAT) plus 23.20 kr
+	 * shipping (excl. tax, 25% VAT), 10% discount, order total 286.63 kr.
+	 *
+	 * The direct calculation lands on -2863 (28.63 kr), one minor unit short of
+	 * the -2862 (28.62 kr) needed for the itemized lines to sum to the order's
+	 * real total - exactly the ±1 minor-unit signature this function corrects
+	 * for. These are the literal figures captured from the staging reproduction
+	 * (see BWSM-114-rounding-fix-report.md, Appendix A.2).
+	 */
+	public function test_rp_reconcile_discount_amount_nudges_half_minor_unit_boundary() {
+		$this->order_generator->set_prop( 'total', 286.63 );
+
+		$items_so_far = array(
+			array(
+				'amount'          => 22900,
+				'quantity'        => 1,
+				'vat'             => 0.25,
+				'amount_incl_vat' => false,
+			),
+			array(
+				'amount'          => 2320,
+				'quantity'        => 1,
+				'vat'             => 0.25,
+				'amount_incl_vat' => false,
+			),
+		);
+
+		self::assertSame(
+			-2862,
+			rp_reconcile_discount_amount( $this->order_generator->order(), $items_so_far, -2863 ),
+			'Should nudge the direct -2863 discount to -2862 so the lines sum to the real 286.63 kr total'
+		);
+	}
+
+	/**
+	 * Test @see rp_reconcile_discount_amount leaves the direct calculation
+	 * unchanged when the remainder differs by more than ±1 minor unit, since a
+	 * bigger mismatch means $items_so_far doesn't represent the whole order
+	 * (e.g. a partial settle) and the order's grand total isn't a safe
+	 * reconciliation target.
+	 */
+	public function test_rp_reconcile_discount_amount_keeps_direct_when_mismatch_too_large() {
+		$this->order_generator->set_prop( 'total', 50.00 );
+
+		$items_so_far = array(
+			array(
+				'amount'          => 22900,
+				'quantity'        => 1,
+				'vat'             => 0.25,
+				'amount_incl_vat' => false,
+			),
+		);
+
+		self::assertSame(
+			-2863,
+			rp_reconcile_discount_amount( $this->order_generator->order(), $items_so_far, -2863 ),
+			'A large mismatch (partial settle scenario) must not be silently reconciled'
+		);
+	}
+
+	/**
+	 * Test @see rp_reconcile_discount_amount when the direct calculation
+	 * already matches the remainder exactly (no rounding ambiguity present).
+	 */
+	public function test_rp_reconcile_discount_amount_exact_match_unchanged() {
+		$this->order_generator->set_prop( 'total', 100.00 );
+
+		// 120.00 kr product line (already incl. tax) minus a 20.00 kr discount
+		// reconciles exactly to the 100.00 kr order total - no ambiguity here.
+		$items_so_far = array(
+			array(
+				'amount'          => 12000,
+				'quantity'        => 1,
+				'vat'             => 0.25,
+				'amount_incl_vat' => true,
+			),
+		);
+
+		self::assertSame(
+			-2000,
+			rp_reconcile_discount_amount( $this->order_generator->order(), $items_so_far, -2000 ),
+			'When the direct amount already reconciles exactly, it should be returned unchanged'
+		);
+	}
+
+	/**
+	 * Test @see rp_reconcile_discount_amount correctly converts excl.-tax lines
+	 * to incl.-tax (amount_incl_vat=false) before summing, and leaves
+	 * incl.-tax lines (amount_incl_vat=true) as-is.
+	 */
+	public function test_rp_reconcile_discount_amount_handles_mixed_incl_and_excl_vat_lines() {
+		$this->order_generator->set_prop( 'total', 100.00 );
+
+		$items_so_far = array(
+			// 50.00 kr excl. tax at 25% VAT -> 62.50 kr incl. tax.
+			array(
+				'amount'          => 5000,
+				'quantity'        => 1,
+				'vat'             => 0.25,
+				'amount_incl_vat' => false,
+			),
+			// 37.50 kr already incl. tax -> used as-is.
+			array(
+				'amount'          => 3750,
+				'quantity'        => 1,
+				'vat'             => 0.25,
+				'amount_incl_vat' => true,
+			),
+		);
+
+		// Sum incl. tax: 6250 + 3750 = 10000 (100.00 kr) = target exactly, so the
+		// reconciled discount should be 0 remainder - direct value kept since
+		// abs(0 - (-1)) = 1 is within tolerance, giving back the remainder 0.
+		self::assertSame(
+			0,
+			rp_reconcile_discount_amount( $this->order_generator->order(), $items_so_far, -1 ),
+			'Mixed incl./excl. vat lines should be normalized to incl.-tax before summing'
+		);
+	}
 }
