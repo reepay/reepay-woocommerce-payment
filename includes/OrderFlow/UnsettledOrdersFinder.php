@@ -109,6 +109,13 @@ class UnsettledOrdersFinder {
 	 * Shared by both reporting (find()) and live-verification rotation
 	 * (live_check_candidates()), so the two always agree on what "the backlog" is.
 	 *
+	 * Sorted in PHP after fetching rather than via the query's `orderby`: WC_Order_Query (via
+	 * WC_Order_Data_Store_CPT::get_wp_query_args()) only special-cases `orderby => 'total'` for
+	 * mapping onto a meta-based sort — there is no equivalent mapping for `date_completed`, so
+	 * WP_Query silently ignores it as an orderby key and the query falls back to its default (ID
+	 * order) instead. The query still uses `orderby => 'ID'` for pagination purposes only (any
+	 * stable order is fine there, since the real sort happens below), oldest-completed-first.
+	 *
 	 * @return WC_Order[]
 	 */
 	private function get_candidates(): array {
@@ -124,10 +131,8 @@ class UnsettledOrdersFinder {
 					'date_completed' => '>=' . self::CUTOFF_DATE,
 					'limit'          => self::PAGE_SIZE,
 					'page'           => $page,
-					'orderby'        => array(
-						'date_completed' => 'ASC',
-						'ID'             => 'ASC',
-					),
+					'orderby'        => 'ID',
+					'order'          => 'ASC',
 					'return'         => 'ids',
 				)
 			) )->get_orders();
@@ -151,6 +156,15 @@ class UnsettledOrdersFinder {
 
 			++$page;
 		} while ( self::PAGE_SIZE === $batch_size );
+
+		usort(
+			$candidates,
+			static function ( WC_Order $a, WC_Order $b ): int {
+				$date_comparison = $a->get_date_completed()->getTimestamp() <=> $b->get_date_completed()->getTimestamp();
+
+				return 0 !== $date_comparison ? $date_comparison : $a->get_id() <=> $b->get_id();
+			}
+		);
 
 		return $candidates;
 	}
@@ -192,9 +206,15 @@ class UnsettledOrdersFinder {
 	}
 
 	/**
-	 * Find the index to resume live-verification from: the position of the first candidate with
-	 * an order ID greater than the previous run's last-checked order ID, or 0 if that order is no
-	 * longer a candidate (already healed/excluded by now) or this is the very first run.
+	 * Find the index to resume live-verification from: the position right after the candidate
+	 * matching the previous run's last-checked order ID, or 0 if that order is no longer a
+	 * candidate (already healed/excluded by now) or this is the very first run.
+	 *
+	 * Matches by exact order ID rather than comparing IDs as a sort key, since $candidates is
+	 * ordered by date_completed (ID only breaks ties) and WooCommerce order IDs do not increase
+	 * with completion date — comparing IDs against the cursor would skip later-completed,
+	 * lower-ID orders whenever a higher-ID order already advanced the cursor, starving them
+	 * indefinitely (the exact problem this cursor exists to prevent).
 	 *
 	 * @param WC_Order[] $candidates full candidate pool, oldest-completed-first.
 	 *
@@ -208,8 +228,8 @@ class UnsettledOrdersFinder {
 		}
 
 		foreach ( $candidates as $index => $order ) {
-			if ( $order->get_id() > $cursor_order_id ) {
-				return $index;
+			if ( $order->get_id() === $cursor_order_id ) {
+				return ( $index + 1 ) % count( $candidates );
 			}
 		}
 

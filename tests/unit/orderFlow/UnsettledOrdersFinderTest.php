@@ -472,6 +472,74 @@ class UnsettledOrdersFinderTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * Regression test (Cursor Bugbot finding): get_cursor_start_index() used to resume by scanning
+	 * for the first candidate with an order ID greater than the stored cursor, as though the
+	 * candidate list were ID-ordered. It is actually ordered by date_completed (ID only breaks
+	 * ties), and WooCommerce order IDs do not increase with completion date. Here the target order
+	 * is created FIRST (lowest ID) but completes LATEST (sorts to the end of the list), while the
+	 * backlog is created AFTER it (higher IDs) but completes EARLIER (sorts ahead of it). Once the
+	 * cursor is set to a backlog order's (higher) ID, the old ID-threshold comparison could never
+	 * match the target order's (lower) ID, so every subsequent run restarted from the top and the
+	 * target order was starved out indefinitely.
+	 *
+	 * @see UnsettledOrdersFinder::get_cursor_start_index
+	 */
+	public function test_find_heals_lower_id_but_later_completed_order_not_skipped_by_cursor() {
+		$cap = UnsettledOrdersFinder::MAX_LIVE_VERIFICATIONS_PER_RUN;
+
+		$this->order_generator->set_props(
+			array(
+				'status'         => 'completed',
+				'payment_method' => reepay()->gateways()->checkout()->id,
+			)
+		);
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+		$this->order_generator->order()->calculate_totals();
+		$target_order = $this->order_generator->order();
+		$target_order->set_date_completed( '2026-08-20 00:00:00' );
+		$target_order->save();
+		$target_order_id = $target_order->get_id();
+
+		for ( $i = 0; $i < $cap; $i++ ) {
+			$this->order_generator->generate( array( 'status' => 'completed' ) );
+			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+			$this->order_generator->add_product( 'simple', array( 'regular_price' => '20.00' ) );
+			$this->order_generator->order()->calculate_totals();
+			$order = $this->order_generator->order();
+			$order->set_date_completed( '2026-07-10 00:00:00' );
+			$order->save();
+		}
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturnCallback(
+			function ( $order ) use ( $target_order_id ) {
+				$settled = ( $order->get_id() === $target_order_id ) ? 2000 : 0;
+
+				return array(
+					'authorized_amount' => 2000,
+					'settled_amount'    => $settled,
+				);
+			}
+		);
+
+		// Run 1: budget is fully consumed by the higher-ID, earlier-completed backlog (processed
+		// first, oldest-first); the target order sits at the end of the list and isn't reached yet.
+		$first_run = ( new UnsettledOrdersFinder() )->find();
+		$this->assertContains( $target_order_id, $first_run['order_ids'] );
+
+		// Run 2: the cursor must resume right after the last backlog order actually processed.
+		$second_run = ( new UnsettledOrdersFinder() )->find();
+
+		$this->assertNotContains(
+			$target_order_id,
+			$second_run['order_ids'],
+			'A later-completed order with a lower ID than the cursor must still be reached and healed, not skipped indefinitely'
+		);
+
+		$target_order = wc_get_order( $target_order_id );
+		$this->assertSame( 1, (int) $target_order->get_meta( '_reepay_state_settled' ) );
+	}
+
+	/**
 	 * Regression test for BWPM-293 (the oldest-first query's deterministic secondary sort key): an
 	 * intermittent, non-deterministic sort order was observed against real data where a candidate
 	 * could be returned out of its correct chronological position even though its own
