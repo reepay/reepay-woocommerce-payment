@@ -727,7 +727,7 @@ class OrderCapture {
 		);
 
 		if ( ! empty( $items_data ) ) {
-			return $this->settle_items( $order, $items_data, $total_all, $line_items, true );
+			return $this->settle_items( $order, $items_data, $total_all, $line_items, true, true );
 		} else {
 			$this->log(
 				array(
@@ -745,15 +745,25 @@ class OrderCapture {
 	/**
 	 * Settle order items.
 	 *
-	 * @param WC_Order        $order        order to settle.
-	 * @param array[]         $items_data   items data from self::get_item_data.
-	 * @param float           $total_all    order total amount ot settle.
-	 * @param WC_Order_Item[] $line_items   order line items.
-	 * @param bool            $instant_note add order note instantly.
+	 * @param WC_Order        $order            order to settle.
+	 * @param array[]         $items_data       items data from self::get_item_data.
+	 * @param float           $total_all        order total amount ot settle.
+	 * @param WC_Order_Item[] $line_items       order line items.
+	 * @param bool            $instant_note     add order note instantly.
+	 * @param bool            $send_flat_amount BWPM-302: when true (a full-order capture — see
+	 *                                          multi_settle()), send Frisbii a flat `amount`
+	 *                                          instead of itemized `order_lines`, matching the
+	 *                                          format already used at authorization. Sending
+	 *                                          itemized lines makes Frisbii recompute VAT per
+	 *                                          line independently, which can round differently
+	 *                                          than WooCommerce's own total by one minor unit.
+	 *                                          Left false (unchanged) for callers — e.g.
+	 *                                          InstantSettle — that may genuinely be settling
+	 *                                          only a subset of the order's items.
 	 *
 	 * @return bool
 	 */
-	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = true ): bool {
+	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = true, bool $send_flat_amount = false ): bool {
 		unset( $_POST['post_status'] ); // Prevent order status changing by WooCommerce.
 
 		$this->log(
@@ -780,7 +790,11 @@ class OrderCapture {
 			return false;
 		}
 
-		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note );
+		if ( $send_flat_amount ) {
+			$result = reepay()->api( $order )->settle( $order, $total_all, false, false, $instant_note );
+		} else {
+			$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note );
+		}
 
 		$this->log(
 			array(

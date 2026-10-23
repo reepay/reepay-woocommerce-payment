@@ -399,6 +399,56 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * Regression test for BWPM-302: a full-order capture (multi_settle()) must send Frisbii a
+	 * flat `amount`, matching the format WooCommerce already used at authorization — not
+	 * itemized `order_lines`. When itemized lines are sent, Frisbii recomputes VAT per line
+	 * independently and can round differently than WooCommerce's own order total, producing a
+	 * 1-minor-unit settlement shortfall (reproduced live on order #32338, WooDev, 2026-10-23:
+	 * authorized 263.69 kr, settled 263.68 kr, because `order_lines` was sent instead of
+	 * `amount`). Before the fix, OrderCapture::settle_items() always passed the item/line
+	 * arrays into Api::settle()'s $items_data/$line_item parameters, so Api::settle()'s
+	 * `false === $line_item` check (meant to select the flat-amount path) could never match —
+	 * an array is never `=== false`.
+	 *
+	 * @see OrderCapture::multi_settle
+	 * @see OrderCapture::settle_items
+	 */
+	public function test_multi_settle_sends_flat_amount_not_order_lines() {
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 10,
+				'refunded_amount'   => 0,
+			)
+		);
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$this->order_generator->add_product(
+			'simple',
+			array( 'regular_price' => 1.02 ),
+			array( 'quantity' => 2 )
+		);
+		$this->order_generator->add_shipping( array( 'total' => 2.03 ) );
+
+		$this->api_mock->expects( $this->once() )
+			->method( 'settle' )
+			->with(
+				$this->anything(),
+				$this->anything(),
+				false,
+				false,
+				$this->anything()
+			)
+			->willReturn( array( 'state' => 'success' ) );
+
+		$this->order_capture->multi_settle( $this->order_generator->order() );
+	}
+
+	/**
 	 * Test @see OrderCapture::settle_items with wp error from api
 	 */
 	public function test_settle_items_with_wp_error() {
