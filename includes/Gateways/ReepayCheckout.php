@@ -94,6 +94,10 @@ class ReepayCheckout extends ReepayGateway {
 		add_action( 'wp_ajax_nopriv_reepay_card_store_' . $this->id, array( $this, 'reepay_card_store' ) );
 		add_action( 'wp_ajax_reepay_finalize', array( $this, 'reepay_finalize' ) );
 		add_action( 'wp_ajax_nopriv_reepay_finalize', array( $this, 'reepay_finalize' ) );
+
+		// BWPM-297: client-side reports of a blocked unsafe accept_url redirect.
+		add_action( 'wp_ajax_reepay_log_unsafe_redirect', array( $this, 'ajax_log_unsafe_redirect' ) );
+		add_action( 'wp_ajax_nopriv_reepay_log_unsafe_redirect', array( $this, 'ajax_log_unsafe_redirect' ) );
 	}
 
 	/**
@@ -958,6 +962,29 @@ class ReepayCheckout extends ReepayGateway {
 	}
 
 	/**
+	 * Ajax: Log a rejected (unsafe) accept_url redirect attempt.
+	 *
+	 * Fired client-side from checkout.js when the same-origin/http(s) check
+	 * rejects an accept_url instead of redirecting the shopper (BWPM-297).
+	 */
+	public function ajax_log_unsafe_redirect() {
+		check_ajax_referer( 'reepay', 'nonce' );
+
+		$rid = isset( $_POST['rid'] ) ? wc_clean( wp_unslash( $_POST['rid'] ) ) : '';
+		$url = isset( $_POST['url'] ) ? wc_clean( wp_unslash( $_POST['url'] ) ) : '';
+
+		$this->log(
+			array(
+				'source' => 'checkout_js_blocked_unsafe_accept_url',
+				'rid'    => $rid,
+				'url'    => $url,
+			)
+		);
+
+		wp_send_json_success();
+	}
+
+	/**
 	 * Get data for wp_localize_script
 	 *
 	 * @return array
@@ -967,6 +994,11 @@ class ReepayCheckout extends ReepayGateway {
 			'payment_type'                 => $this->payment_type,
 			'cancel_text'                  => __( 'Payment was canceled, please try again', 'reepay-checkout-gateway' ),
 			'error_text'                   => __( 'Error with payment, please try again', 'reepay-checkout-gateway' ),
+			// BWPM-297: shown when a redirect URL fails the same-origin check instead of navigating.
+			'invalid_redirect_text'        => __( 'Your payment was received, but we could not safely redirect you automatically. Please check your order status under My Account.', 'reepay-checkout-gateway' ),
+			// BWPM-297: used to report a blocked unsafe redirect back to the server for logging.
+			'ajax_url'                     => admin_url( 'admin-ajax.php' ),
+			'nonce'                        => wp_create_nonce( 'reepay' ),
 			// Guest checkout validation (BWPM-178, BWPM-184).
 			'guest_checkout_disabled'      => WC()->checkout()->is_registration_required(),
 			'registration_enabled'         => WC()->checkout()->is_registration_enabled(),
