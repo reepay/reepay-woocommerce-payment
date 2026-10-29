@@ -53,6 +53,32 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * Test @see ReepayCheckout::get_localize_script_data includes the BWPM-297 fallback message.
+	 *
+	 * @group gateways_checkout
+	 */
+	public function test_get_localize_script_data_has_invalid_redirect_text() {
+		$data = self::$gateway->get_localize_script_data();
+
+		$this->assertArrayHasKey( 'invalid_redirect_text', $data );
+		$this->assertNotEmpty( $data['invalid_redirect_text'] );
+	}
+
+	/**
+	 * Test @see ReepayCheckout::get_localize_script_data includes ajax_url/nonce for BWPM-297 logging.
+	 *
+	 * @group gateways_checkout
+	 */
+	public function test_get_localize_script_data_has_ajax_logging_fields() {
+		$data = self::$gateway->get_localize_script_data();
+
+		$this->assertArrayHasKey( 'ajax_url', $data );
+		$this->assertSame( admin_url( 'admin-ajax.php' ), $data['ajax_url'] );
+		$this->assertArrayHasKey( 'nonce', $data );
+		$this->assertNotEmpty( $data['nonce'] );
+	}
+
+	/**
 	 * Test @see ReepayCheckout::get_localize_script_data is_user_logged_in reflects real state.
 	 *
 	 * @group gateways_checkout
