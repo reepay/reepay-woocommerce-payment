@@ -849,8 +849,12 @@ class MetaFieldsController extends WP_REST_Controller {
 			return true;
 		}
 
-		// For order metadata operations, require appropriate post capabilities.
-		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'delete_posts' ) ) {
+		// For order metadata operations, require order-management capability. 'edit_posts'/
+		// 'delete_posts' are generic blog capabilities every Contributor has by default and
+		// are unrelated to order access; 'edit_shop_orders' is the capability WooCommerce
+		// grants only to Shop Managers/Administrators (see OrderFlow\OrderCapture for the
+		// same convention elsewhere in this plugin).
+		if ( ! current_user_can( 'edit_shop_orders' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
 				esc_html__( 'You cannot view the post resource.', 'reepay-checkout-gateway' ),
@@ -883,8 +887,14 @@ class MetaFieldsController extends WP_REST_Controller {
 		if ( isset( $schema['properties']['value'] ) ) {
 			$value = $item['value'];
 			if ( is_serialized( $value ) ) {
-				// Use maybe_unserialize() which is safer than unserialize().
-				$value = maybe_unserialize( $value );
+				// Disallow all classes so untrusted meta values can never be unserialized into
+				// PHP objects (CVE-2026-118076 - PHP Object Injection). The @ matches
+				// WordPress core's own maybe_unserialize(), guarding against a malformed
+				// string that passed is_serialized()'s format check but still fails to parse.
+				$unserialized_value = @unserialize( trim( $value ), array( 'allowed_classes' => false ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- allowed_classes is false, so no object can ever be instantiated; this is the fix for CVE-2026-118076, not the vulnerability.
+				if ( false !== $unserialized_value || 'b:0;' === trim( $value ) ) {
+					$value = $unserialized_value;
+				}
 			}
 			if ( is_array( $value ) ) {
 				$value = wp_json_encode( $value );
