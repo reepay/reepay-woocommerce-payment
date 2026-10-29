@@ -250,7 +250,9 @@ class InstantSettle {
 						'amount_incl_vat' => $discount_incl_vat,
 					);
 					$items_data[]   = $items_discount;
-					$total_all     += $discount_amount;
+
+					// $total_all already contains post-discount item prices. Do not subtract the
+					// discount again, as this would double-count it in full-order captures (BWPM-302).
 				}
 			}
 
@@ -285,7 +287,12 @@ class InstantSettle {
 				// when skip_order_lines is enabled.
 			}
 
-			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items );
+			// BWPM-302: If this call covers the entire remaining capturable amount, send a
+			// flat `amount` instead of `order_lines` to avoid VAT rounding differences.
+			$not_settled_total = rp_prepare_amount( self::$order_capture->get_not_settled_amount( $order ), $order->get_currency() );
+			$send_flat_amount  = abs( $total_all - $not_settled_total ) < 1;
+
+			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items, true, $send_flat_amount );
 
 			$order->add_meta_data( '_is_instant_settled', '1' );
 			$order->save_meta_data();

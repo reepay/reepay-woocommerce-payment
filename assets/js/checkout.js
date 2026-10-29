@@ -106,6 +106,13 @@ wc_reepay = {
                 redirect_url = wc_reepay.setUrlParameter(redirect_url, prop, data[prop]);
             }
 
+            if (!wc_reepay.isSafeRedirectUrl(redirect_url)) {
+                console.warn('Reepay: blocked unsafe redirect URL', redirect_url);
+                wc_reepay.logUnsafeRedirect(reepay_id, redirect_url);
+                wc_reepay.throw_error(WC_Gateway_Reepay_Checkout.invalid_redirect_text);
+                return;
+            }
+
             window.location.href = redirect_url;
         });
 
@@ -182,6 +189,54 @@ wc_reepay = {
         params = params === '?' ? '' : params;
 
         return baseUrl + params;
+    },
+
+    /**
+     * Is this URL safe to redirect the browser to?
+     *
+     * Only same-origin http(s) URLs are considered safe. Rejects cross-origin
+     * URLs and non-http(s) schemes (e.g. `javascript:`, `data:`) — see BWPM-297.
+     *
+     * @param url
+     * @return {boolean}
+     */
+    isSafeRedirectUrl: function (url) {
+        if (typeof url !== 'string' || url === '') {
+            return false;
+        }
+
+        let parsed;
+        try {
+            parsed = new URL(url, window.location.origin);
+        } catch (e) {
+            return false;
+        }
+
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+            return false;
+        }
+
+        return parsed.origin === window.location.origin;
+    },
+
+    /**
+     * Report a blocked unsafe redirect URL to the server for logging (BWPM-297).
+     * Fire-and-forget: failures here must never affect the shopper-facing flow.
+     *
+     * @param reepay_id
+     * @param url
+     */
+    logUnsafeRedirect: function (reepay_id, url) {
+        if (typeof WC_Gateway_Reepay_Checkout === 'undefined' || !WC_Gateway_Reepay_Checkout.ajax_url) {
+            return;
+        }
+
+        jQuery.post(WC_Gateway_Reepay_Checkout.ajax_url, {
+            action: 'reepay_log_unsafe_redirect',
+            nonce: WC_Gateway_Reepay_Checkout.nonce,
+            rid: reepay_id,
+            url: url
+        });
     }
 };
 
