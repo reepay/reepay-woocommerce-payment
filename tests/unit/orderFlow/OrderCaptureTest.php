@@ -449,6 +449,70 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * Regression test (found testing BWPM-302's live discount scenarios, WooDev order #32368,
+	 * 2026-10-27): the flat-amount full-capture path double-subtracted a discount coupon.
+	 * `$total_all` was accumulated from each item's `get_item_price()['with_tax']`, which is
+	 * already WooCommerce's POST-discount line total (`get_line_total()`) — then the discount
+	 * block subtracted the SAME discount from `$total_all` a second time, building an explicit
+	 * "Discount" line meant only to reconcile `$items_data`'s PRE-discount per-item amounts
+	 * (built via `get_item_data($item, $order, true)`) for the itemized `order_lines` path.
+	 * Live repro: product 194.95 kr + shipping 16.00 kr, `rele20dkk` (fixed -20 kr) coupon —
+	 * authorized 238.69 kr, settled only 218.69 kr (short by exactly the discount amount).
+	 *
+	 * @see OrderCapture::multi_settle
+	 */
+	public function test_multi_settle_does_not_double_subtract_discount_from_flat_amount() {
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 10000,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+			)
+		);
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$this->order_generator->add_product(
+			'simple',
+			array( 'regular_price' => 100.00 )
+		);
+		$this->order_generator->add_shipping( array( 'total' => 20.00 ) );
+
+		$order = $this->order_generator->order();
+
+		// Apply a flat 20.00 discount directly to the product line — same end state a real
+		// "fixed_cart" coupon produces (subtotal unchanged, total reduced), without depending
+		// on WC_Order::apply_coupon()'s full cart-validation pipeline.
+		foreach ( $order->get_items() as $item ) {
+			$item->set_subtotal( 100.00 );
+			$item->set_total( 80.00 );
+			$item->save();
+		}
+		$order->set_discount_total( 20.00 );
+		$order->set_discount_tax( 0 );
+		$order->calculate_totals( false );
+		$order->save();
+
+		// Order total: 100.00 (item) + 20.00 (shipping) - 20.00 (coupon) = 100.00 — the flat
+		// amount sent to Frisbii must equal this, not 80.00 (double-subtracted).
+		$this->api_mock->expects( $this->once() )
+			->method( 'settle' )
+			->with(
+				$this->anything(),
+				$this->equalTo( 10000.0 ),
+				false,
+				false,
+				$this->anything()
+			)
+			->willReturn( array( 'state' => 'success' ) );
+
+		$this->order_capture->multi_settle( $order );
+	}
+
+	/**
 	 * Test @see OrderCapture::settle_items with wp error from api
 	 */
 	public function test_settle_items_with_wp_error() {

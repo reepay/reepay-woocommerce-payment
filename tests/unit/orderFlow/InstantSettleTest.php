@@ -9,6 +9,7 @@ use Reepay\Checkout\OrderFlow\InstantSettle;
 
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
+use Reepay\Checkout\Tests\Mocks\OrderFlow\OrderCaptureMock;
 
 /**
  * InstantSettleTest.
@@ -16,6 +17,19 @@ use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
  * @covers \Reepay\Checkout\OrderFlow\InstantSettle
  */
 class InstantSettleTest extends Reepay_UnitTestCase {
+	/**
+	 * InstantSettle::$order_capture is wired once, class-wide, to OrderCaptureMock (a stub
+	 * that marks items 'settled' directly and never calls Api::settle() at all). Tests that
+	 * need to assert on the actual Api::settle() call (e.g. BWPM-302 flat-amount regression
+	 * tests below) must temporarily swap in the real OrderCapture — restore the mock
+	 * afterward unconditionally so later tests in this file aren't affected.
+	 */
+	public function tear_down(): void {
+		InstantSettle::set_order_capture( new OrderCaptureMock() );
+
+		parent::tear_down();
+	}
+
 	/**
 	 * Test @see InstantSettle::maybe_settle_instantly with reepay payment method
 	 */
@@ -226,6 +240,180 @@ class InstantSettleTest extends Reepay_UnitTestCase {
 				WC_Order_Factory::get_order_item( $order_item_id )->meta_exists( 'settled' )
 			);
 		}
+	}
+
+	/**
+	 * Regression test for BWPM-302 (follow-up): when InstantSettle's eligible items happen to
+	 * cover the ENTIRE order (nothing left uncaptured), it must send Frisbii a flat `amount`,
+	 * matching the format already used at authorization — not itemized `order_lines`, which
+	 * forces Frisbii to recompute VAT per line and can round differently than WooCommerce's own
+	 * total. Reproduced live on order #32363, WooDev, 2026-10-26: a single virtual ticket
+	 * product with a percentage discount coupon, settled automatically via InstantSettle at
+	 * checkout — authorized 805.23 DKK, settled 805.22 DKK, because this call path was not
+	 * covered by the earlier multi_settle() fix (only the manual "mark Completed" flow was).
+	 *
+	 * @see InstantSettle::process_instant_settle
+	 */
+	public function test_process_instant_settle_sends_flat_amount_when_covering_full_order() {
+		InstantSettle::set_order_capture( $this->order_capture );
+
+		self::$options->set_option(
+			'settle',
+			array( InstantSettle::SETTLE_VIRTUAL )
+		);
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'       => true,
+				'downloadable'  => false,
+				'regular_price' => 12.23,
+			)
+		);
+		$this->order_generator->order()->save();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 1223,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+			)
+		);
+
+		$this->api_mock->expects( $this->once() )
+			->method( 'settle' )
+			->with(
+				$this->anything(),
+				$this->anything(),
+				false,
+				false,
+				$this->anything()
+			)
+			->willReturn( array( 'state' => 'success' ) );
+
+		self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
+	}
+
+	/**
+	 * Regression test (companion to OrderCaptureTest's equivalent, found testing BWPM-302's
+	 * live discount scenarios): InstantSettle's flat-amount full-capture path had the identical
+	 * double-subtraction bug as multi_settle() — $total_all was accumulated from post-discount
+	 * item prices, then the discount block subtracted the same discount again.
+	 *
+	 * @see InstantSettle::process_instant_settle
+	 */
+	public function test_process_instant_settle_does_not_double_subtract_discount_from_flat_amount() {
+		InstantSettle::set_order_capture( $this->order_capture );
+
+		self::$options->set_option(
+			'settle',
+			array( InstantSettle::SETTLE_VIRTUAL )
+		);
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'       => true,
+				'downloadable'  => false,
+				'regular_price' => 100.00,
+			)
+		);
+
+		$order = $this->order_generator->order();
+
+		// Apply a flat 20.00 discount directly to the product line (same end state a real
+		// "fixed_cart" coupon produces), without depending on apply_coupon()'s full validation.
+		foreach ( $order->get_items() as $item ) {
+			$item->set_subtotal( 100.00 );
+			$item->set_total( 80.00 );
+			$item->save();
+		}
+		$order->set_discount_total( 20.00 );
+		$order->set_discount_tax( 0 );
+		$order->calculate_totals( false );
+		$order->save();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 8000,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+			)
+		);
+
+		// Order total: 100.00 (item) - 20.00 (discount) = 80.00 — the flat amount sent to
+		// Frisbii must equal this, not 60.00 (double-subtracted).
+		$this->api_mock->expects( $this->once() )
+			->method( 'settle' )
+			->with(
+				$this->anything(),
+				$this->equalTo( 8000.0 ),
+				false,
+				false,
+				$this->anything()
+			)
+			->willReturn( array( 'state' => 'success' ) );
+
+		self::$instant_settle_instance->process_instant_settle( $order );
+	}
+
+	/**
+	 * Regression test for BWPM-302 (follow-up): when InstantSettle's eligible items are only
+	 * PART of the order (e.g. a mixed cart where only virtual items are configured to
+	 * instant-settle, leaving a physical item for later), it must keep sending itemized
+	 * `order_lines` — this is a genuine partial capture and must behave exactly as before.
+	 *
+	 * @see InstantSettle::process_instant_settle
+	 */
+	public function test_process_instant_settle_keeps_itemized_lines_for_genuine_partial_capture() {
+		InstantSettle::set_order_capture( $this->order_capture );
+
+		self::$options->set_option(
+			'settle',
+			array( InstantSettle::SETTLE_VIRTUAL )
+		);
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'       => true,
+				'downloadable'  => false,
+				'regular_price' => 12.23,
+			)
+		);
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'       => false,
+				'downloadable'  => false,
+				'regular_price' => 34.56,
+			)
+		);
+		$this->order_generator->order()->save();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 4679,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+			)
+		);
+
+		$this->api_mock->expects( $this->once() )
+			->method( 'settle' )
+			->with(
+				$this->anything(),
+				$this->anything(),
+				$this->logicalNot( $this->isFalse() ),
+				$this->logicalNot( $this->isFalse() ),
+				$this->anything()
+			)
+			->willReturn( array( 'state' => 'success' ) );
+
+		self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
 	}
 
 	/**

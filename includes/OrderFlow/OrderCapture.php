@@ -660,7 +660,9 @@ class OrderCapture {
 						'amount_incl_vat' => $prices_incl_tax,
 					);
 					$items_data[]   = $items_discount;
-					$total_all     += $discount_amount;
+
+					// $total_all already contains post-discount prices. Do not subtract the
+					// discount again, as this would double-count it during full-order capture (BWPM-302).
 				}
 			}
 		}
