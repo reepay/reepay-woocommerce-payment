@@ -24,15 +24,16 @@ class OrderCaptureMock extends OrderCapture {
 	/**
 	 * Settle order items.
 	 *
-	 * @param WC_Order        $order      order to settle.
-	 * @param array[]         $items_data items data from self::get_item_data.
-	 * @param float           $total_all  order total amount ot settle.
-	 * @param WC_Order_Item[] $line_items order line items.
-	 * @param bool            $instant_note add order note instantly.
+	 * @param WC_Order        $order            order to settle.
+	 * @param array[]         $items_data       items data from self::get_item_data.
+	 * @param float           $total_all        order total amount ot settle.
+	 * @param WC_Order_Item[] $line_items       order line items.
+	 * @param bool            $instant_note     add order note instantly.
+	 * @param bool            $send_flat_amount unused in this mock.
 	 *
 	 * @return bool
 	 */
-	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = false ) : bool {
+	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = false, bool $send_flat_amount = false ) : bool {
 		foreach ( $line_items as $item ) {
 			$item_data = $this->get_item_data( $item, $order );
 			$total     = $item_data['amount'] * $item_data['quantity'];
