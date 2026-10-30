@@ -96,6 +96,10 @@ final class WooBlocksPaymentMethod extends AbstractPaymentMethodType {
 		 */
 		$script_dependencies = apply_filters( 'woocommerce_blocks_register_script_dependencies', is_admin() ? array() : array( Assets::SLUG_CHECKOUT_JS ), $handle );
 
+		if ( in_array( Assets::SLUG_CHECKOUT_JS, $script_dependencies, true ) ) {
+			Assets::register_checkout_scripts();
+		}
+
 		wp_register_script(
 			$handle,
 			reepay()->get_setting( 'js_url' ) . "woo-blocks$suffix.js?name=$this->name",
