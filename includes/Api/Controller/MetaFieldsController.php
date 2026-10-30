@@ -530,6 +530,18 @@ class MetaFieldsController extends WP_REST_Controller {
 			return new WP_Error( 'not_found', esc_html__( 'Not found order.', 'reepay-checkout-gateway' ) );
 		}
 
+		// Verify the field_id actually belongs to the user in the route before deleting it,
+		// matching the same check already done in edit_user_meta_field().
+		$existing_meta = get_metadata_by_mid( 'user', $field_id );
+
+		if ( ! $existing_meta || (int) $existing_meta->user_id !== $id ) {
+			return new WP_Error(
+				'invalid_meta_field',
+				esc_html__( 'Invalid metadata field ID for this user.', 'reepay-checkout-gateway' ),
+				array( 'status' => 400 )
+			);
+		}
+
 		$result = delete_metadata_by_mid( 'user', $field_id );
 		if ( false === $result ) {
 			return new WP_Error( 'deleting_field', esc_html__( 'Error deleting meta field.', 'reepay-checkout-gateway' ) );
@@ -764,9 +776,15 @@ class MetaFieldsController extends WP_REST_Controller {
 	 * @return true|WP_Error True if the request has access, WP_Error object otherwise.
 	 */
 	public function get_items_permissions_check( $request ) {
+		// Branch on the URL route params only, not WP_REST_Request's ArrayAccess (which also
+		// reads query/body params). Using isset( $request['user_id'] ) let a forged ?user_id=
+		// query string on an order route reroute the request into the user-metadata branch,
+		// bypassing the edit_shop_orders check below entirely.
+		$url_params = $request->get_url_params();
+
 		// For user metadata operations, require manage_options capability.
-		if ( isset( $request['user_id'] ) ) {
-			$user_id = (int) $request['user_id'];
+		if ( isset( $url_params['user_id'] ) ) {
+			$user_id = (int) $url_params['user_id'];
 
 			// Only administrators can modify user metadata.
 			// OR users can modify their own non-sensitive metadata.
