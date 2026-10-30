@@ -19,9 +19,11 @@ See installation guide right here: https://docu.billwerk.plus/help/en/apps/wooco
 
 == Changelog ==
 v 1.8.20
-- [Improvement] – Prevention of PHP Object Injection in newest PHP-version.
+- [Improvement] – Prevention of PHP Object Injection.
+– [Improvement] – Prevention of meta filed unauthorized access.
 - [Improvement] – Prevent unvalidated redirect after payment.
 - [Fix] – Rounding error for excl. VAT prices for regular orders.
+
 
 v 1.8.19
 - [Fix] – Settle specific amount could fail.
