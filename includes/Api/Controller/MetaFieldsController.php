@@ -530,6 +530,18 @@ class MetaFieldsController extends WP_REST_Controller {
 			return new WP_Error( 'not_found', esc_html__( 'Not found order.', 'reepay-checkout-gateway' ) );
 		}
 
+		// Verify the field_id actually belongs to the user in the route before deleting it,
+		// matching the same check already done in edit_user_meta_field().
+		$existing_meta = get_metadata_by_mid( 'user', $field_id );
+
+		if ( ! $existing_meta || (int) $existing_meta->user_id !== $id ) {
+			return new WP_Error(
+				'invalid_meta_field',
+				esc_html__( 'Invalid metadata field ID for this user.', 'reepay-checkout-gateway' ),
+				array( 'status' => 400 )
+			);
+		}
+
 		$result = delete_metadata_by_mid( 'user', $field_id );
 		if ( false === $result ) {
 			return new WP_Error( 'deleting_field', esc_html__( 'Error deleting meta field.', 'reepay-checkout-gateway' ) );
@@ -764,9 +776,15 @@ class MetaFieldsController extends WP_REST_Controller {
 	 * @return true|WP_Error True if the request has access, WP_Error object otherwise.
 	 */
 	public function get_items_permissions_check( $request ) {
+		// Branch on the URL route params only, not WP_REST_Request's ArrayAccess (which also
+		// reads query/body params). Using isset( $request['user_id'] ) let a forged ?user_id=
+		// query string on an order route reroute the request into the user-metadata branch,
+		// bypassing the edit_shop_orders check below entirely.
+		$url_params = $request->get_url_params();
+
 		// For user metadata operations, require manage_options capability.
-		if ( isset( $request['user_id'] ) ) {
-			$user_id = (int) $request['user_id'];
+		if ( isset( $url_params['user_id'] ) ) {
+			$user_id = (int) $url_params['user_id'];
 
 			// Only administrators can modify user metadata.
 			// OR users can modify their own non-sensitive metadata.
@@ -849,8 +867,12 @@ class MetaFieldsController extends WP_REST_Controller {
 			return true;
 		}
 
-		// For order metadata operations, require appropriate post capabilities.
-		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'delete_posts' ) ) {
+		// For order metadata operations, require order-management capability. 'edit_posts'/
+		// 'delete_posts' are generic blog capabilities every Contributor has by default and
+		// are unrelated to order access; 'edit_shop_orders' is the capability WooCommerce
+		// grants only to Shop Managers/Administrators (see OrderFlow\OrderCapture for the
+		// same convention elsewhere in this plugin).
+		if ( ! current_user_can( 'edit_shop_orders' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
 				esc_html__( 'You cannot view the post resource.', 'reepay-checkout-gateway' ),
@@ -883,8 +905,14 @@ class MetaFieldsController extends WP_REST_Controller {
 		if ( isset( $schema['properties']['value'] ) ) {
 			$value = $item['value'];
 			if ( is_serialized( $value ) ) {
-				// Use maybe_unserialize() which is safer than unserialize().
-				$value = maybe_unserialize( $value );
+				// Disallow all classes so untrusted meta values can never be unserialized into
+				// PHP objects (CVE-2026-118076 - PHP Object Injection). The @ matches
+				// WordPress core's own maybe_unserialize(), guarding against a malformed
+				// string that passed is_serialized()'s format check but still fails to parse.
+				$unserialized_value = @unserialize( trim( $value ), array( 'allowed_classes' => false ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- allowed_classes is false, so no object can ever be instantiated; this is the fix for CVE-2026-118076, not the vulnerability.
+				if ( false !== $unserialized_value || 'b:0;' === trim( $value ) ) {
+					$value = $unserialized_value;
+				}
 			}
 			if ( is_array( $value ) ) {
 				$value = wp_json_encode( $value );
