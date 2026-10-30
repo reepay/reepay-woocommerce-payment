@@ -288,9 +288,13 @@ class InstantSettle {
 			}
 
 			// BWPM-302: If this call covers the entire remaining capturable amount, send a
-			// flat `amount` instead of `order_lines` to avoid VAT rounding differences.
+			// flat `amount` instead of `order_lines` to avoid VAT rounding differences. $total_all
+			// (summed from already-rounded per-item amounts) and $not_settled_total (summed from
+			// raw amounts, rounded once at the end) are computed via different rounding paths and
+			// can legitimately differ by exactly one minor unit for a genuine full settle; `<= 1`
+			// (not `< 1`) accounts for that known rounding-path drift (Cursor Bugbot finding).
 			$not_settled_total = rp_prepare_amount( self::$order_capture->get_not_settled_amount( $order ), $order->get_currency() );
-			$send_flat_amount  = abs( $total_all - $not_settled_total ) < 1;
+			$send_flat_amount  = abs( $total_all - $not_settled_total ) <= 1;
 
 			self::$order_capture->settle_items( $order, $items_data, $total_all, $settle_items, true, $send_flat_amount );
 

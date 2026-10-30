@@ -6,6 +6,7 @@
  */
 
 use Reepay\Checkout\OrderFlow\InstantSettle;
+use Reepay\Checkout\OrderFlow\OrderCapture;
 
 use Reepay\Checkout\Tests\Helpers\PLUGINS_STATE;
 use Reepay\Checkout\Tests\Helpers\Reepay_UnitTestCase;
@@ -276,6 +277,72 @@ class InstantSettleTest extends Reepay_UnitTestCase {
 		$this->api_mock->method( 'get_invoice_data' )->willReturn(
 			array(
 				'authorized_amount' => 1223,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+			)
+		);
+
+		$this->api_mock->expects( $this->once() )
+			->method( 'settle' )
+			->with(
+				$this->anything(),
+				$this->anything(),
+				false,
+				false,
+				$this->anything()
+			)
+			->willReturn( array( 'state' => 'success' ) );
+
+		self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
+	}
+
+	/**
+	 * Regression test for a Cursor Bugbot finding on BWPM-302's follow-up fix: $total_all (summed
+	 * from already-rounded per-item amounts) and get_not_settled_amount()'s result (summed from
+	 * raw unrounded amounts, then rounded once at the end) are computed via genuinely different
+	 * rounding paths and can legitimately differ by exactly one minor unit even when the capture
+	 * actually covers the entire remaining order. The strict `< 1` comparison missed this case and
+	 * stayed on itemized order_lines, letting Frisbii re-derive VAT from those lines and land a
+	 * cent below the WooCommerce total — the exact failure mode BWPM-302 exists to prevent.
+	 *
+	 * Uses a partial OrderCapture mock (only get_not_settled_amount() stubbed) to make the
+	 * one-minor-unit rounding gap deterministic, rather than relying on a specific real price/tax
+	 * combination that happens to trigger the same float rounding drift by coincidence.
+	 *
+	 * @see InstantSettle::process_instant_settle
+	 */
+	public function test_process_instant_settle_sends_flat_amount_when_off_by_one_cent_due_to_rounding() {
+		$order_capture_mock = $this->getMockBuilder( OrderCapture::class )
+			->onlyMethods( array( 'get_not_settled_amount' ) )
+			->getMock();
+
+		// $total_all will be exactly 20.00 (2000 minor units) from the single item below.
+		// Simulate get_not_settled_amount()'s independent raw-sum-then-round-once path landing one
+		// minor unit higher (2001), purely from rounding-path drift, not because any money is
+		// actually still owed on the order.
+		$order_capture_mock->method( 'get_not_settled_amount' )->willReturn( 20.01 );
+
+		InstantSettle::set_order_capture( $order_capture_mock );
+
+		self::$options->set_option(
+			'settle',
+			array( InstantSettle::SETTLE_VIRTUAL )
+		);
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'       => true,
+				'downloadable'  => false,
+				'regular_price' => 20.00,
+			)
+		);
+		$this->order_generator->order()->save();
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 2000,
 				'settled_amount'    => 0,
 				'refunded_amount'   => 0,
 			)
