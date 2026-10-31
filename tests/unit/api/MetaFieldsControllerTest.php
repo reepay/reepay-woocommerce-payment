@@ -279,4 +279,207 @@ class MetaFieldsControllerTest extends Reepay_UnitTestCase {
 			"The user's own meta row should have been updated."
 		);
 	}
+
+	// -------------------------------------------------------------------------
+	// BWPM-307: handlers must read user_id from the same source (the URL route)
+	// as get_items_permissions_check(), not from WP_REST_Request's ArrayAccess
+	// (query/body first). Before this fix, a logged-in user could put their own
+	// ID in the route (passing the permission check) and a victim's ID in
+	// ?user_id= or the JSON body (so the handler acted on the victim instead).
+	// -------------------------------------------------------------------------
+
+	/**
+	 * A request whose route names the caller's own account must not act on a different user named
+	 * only via a forged query-string user_id.
+	 *
+	 * @testdox BWPM-307: get_user_meta_fields() ignores a forged query-string user_id
+	 */
+	public function test_get_user_meta_fields_ignores_query_string_user_id() {
+		$self_id   = self::factory()->user->create();
+		$victim_id = self::factory()->user->create();
+
+		add_user_meta( $self_id, 'self_key', 'self_value' );
+		add_user_meta( $victim_id, 'victim_key', 'victim_value' );
+
+		$request = new WP_REST_Request( 'GET', "/billwerk/v1/meta-fields/user/$self_id" );
+		$request->set_url_params( array( 'user_id' => $self_id ) );
+		$request->set_query_params( array( 'user_id' => $victim_id ) );
+
+		$response = $this->controller->get_user_meta_fields( $request );
+		$keys     = wp_list_pluck( $response->get_data(), 'key' );
+
+		$this->assertContains( 'self_key', $keys, "Must return the route user's own meta." );
+		$this->assertNotContains(
+			'victim_key',
+			$keys,
+			'Must not return another user\'s meta via a forged query-string user_id.'
+		);
+	}
+
+	/**
+	 * A request whose route names the caller's own account must not add meta to a different user
+	 * named only via a forged body user_id.
+	 *
+	 * @testdox BWPM-307: add_user_meta_field() ignores a forged body user_id
+	 */
+	public function test_add_user_meta_field_ignores_body_user_id() {
+		$self_id   = self::factory()->user->create();
+		$victim_id = self::factory()->user->create();
+
+		$request = new WP_REST_Request( 'POST', "/billwerk/v1/meta-fields/user/$self_id" );
+		$request->set_url_params( array( 'user_id' => $self_id ) );
+		$request->set_body_params(
+			array(
+				'user_id' => $victim_id,
+				'key'     => 'new_key',
+				'value'   => 'new_value',
+			)
+		);
+
+		$this->controller->add_user_meta_field( $request );
+
+		$this->assertSame(
+			'new_value',
+			get_user_meta( $self_id, 'new_key', true ),
+			'Meta must be added to the route user.'
+		);
+		$this->assertSame(
+			'',
+			get_user_meta( $victim_id, 'new_key', true ),
+			'Meta must not be added to a user named only via a forged body user_id.'
+		);
+	}
+
+	/**
+	 * Attacker aligns the forged user_id with the victim's actual ID, attempting to make the
+	 * ownership check (which used to compare against that same forged value) pass. After the fix,
+	 * the ownership check uses the route's user_id, so this must still be denied.
+	 *
+	 * @testdox BWPM-307: edit_user_meta_field() ownership check cannot be bypassed via a forged user_id
+	 */
+	public function test_edit_user_meta_field_denies_when_query_user_id_matches_victim_meta_owner() {
+		$self_id   = self::factory()->user->create();
+		$victim_id = self::factory()->user->create();
+
+		$meta_id = add_user_meta( $victim_id, 'some_key', 'original_value' );
+
+		$request = new WP_REST_Request( 'PUT', "/billwerk/v1/meta-fields/user/$self_id/$meta_id" );
+		$request->set_url_params(
+			array(
+				'user_id'  => $self_id,
+				'field_id' => $meta_id,
+			)
+		);
+		$request->set_query_params( array( 'user_id' => $victim_id ) );
+		$request->set_body_params(
+			array(
+				'key'   => 'some_key',
+				'value' => 'malicious_value',
+			)
+		);
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'key'   => 'some_key',
+					'value' => 'malicious_value',
+				)
+			)
+		);
+
+		$result = $this->controller->edit_user_meta_field( $request );
+
+		$this->assertWPError( $result );
+		$this->assertSame(
+			'original_value',
+			get_metadata_by_mid( 'user', $meta_id )->meta_value,
+			"The victim's meta row must not have been modified."
+		);
+	}
+
+	/**
+	 * Same forged-user_id-alignment attack as the edit test above, against delete instead.
+	 *
+	 * @testdox BWPM-307: delete_user_meta_field() ownership check cannot be bypassed via a forged user_id
+	 */
+	public function test_delete_user_meta_field_denies_when_query_user_id_matches_victim_meta_owner() {
+		$self_id   = self::factory()->user->create();
+		$victim_id = self::factory()->user->create();
+
+		$meta_id = add_user_meta( $victim_id, 'some_key', 'some_value' );
+
+		$request = new WP_REST_Request( 'DELETE', "/billwerk/v1/meta-fields/user/$self_id/$meta_id" );
+		$request->set_url_params(
+			array(
+				'user_id'  => $self_id,
+				'field_id' => $meta_id,
+			)
+		);
+		$request->set_query_params( array( 'user_id' => $victim_id ) );
+
+		$result = $this->controller->delete_user_meta_field( $request );
+
+		$this->assertWPError( $result );
+		$this->assertNotFalse(
+			get_metadata_by_mid( 'user', $meta_id ),
+			"The victim's meta row must not have been deleted."
+		);
+	}
+
+	/**
+	 * Deleting protected keys (e.g. wp_capabilities) must be rejected, matching the check
+	 * edit_user_meta_field() already does. delete_user_meta_field() never validated the meta key
+	 * before deleting; this was a separate, pre-existing gap not introduced by BWPM-306, reported
+	 * alongside it.
+	 *
+	 * @testdox BWPM-307: delete_user_meta_field() rejects deleting a protected key
+	 */
+	public function test_delete_user_meta_field_denies_deleting_protected_key() {
+		$user_id = self::factory()->user->create();
+		$meta_id = add_user_meta( $user_id, 'wp_capabilities', 'a:1:{s:10:"subscriber";b:1;}' );
+
+		$request = new WP_REST_Request( 'DELETE', "/billwerk/v1/meta-fields/user/$user_id/$meta_id" );
+		$request->set_url_params(
+			array(
+				'user_id'  => $user_id,
+				'field_id' => $meta_id,
+			)
+		);
+
+		$result = $this->controller->delete_user_meta_field( $request );
+
+		$this->assertWPError( $result );
+		$this->assertNotFalse(
+			get_metadata_by_mid( 'user', $meta_id ),
+			'A protected key must not have been deleted.'
+		);
+	}
+
+	/**
+	 * Resolves the open question from the BWPM-307 review: add and edit requests for a protected
+	 * key are already rejected, by get_items_permissions_check() (the shared permission_callback
+	 * for every billwerk/v1/meta-fields/user/... route) validating the key before either handler
+	 * ever runs.
+	 *
+	 * @testdox BWPM-307: permission check rejects a protected key for non-admin add/edit requests
+	 */
+	public function test_get_items_permissions_check_denies_protected_key_for_own_user_route() {
+		$user_id = self::factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'PUT', "/billwerk/v1/meta-fields/user/$user_id/123" );
+		$request->set_url_params( array( 'user_id' => $user_id ) );
+		$request->set_body_params(
+			array(
+				'key'   => 'wp_capabilities',
+				'value' => 'malicious_value',
+			)
+		);
+
+		$result = $this->controller->get_items_permissions_check( $request );
+
+		$this->assertWPError(
+			$result,
+			'A protected key must be rejected before add/edit handlers ever run, even for the user\'s own route.'
+		);
+	}
 }
