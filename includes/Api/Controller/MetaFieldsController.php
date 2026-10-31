@@ -443,8 +443,12 @@ class MetaFieldsController extends WP_REST_Controller {
 	 */
 	public function get_user_meta_fields( WP_REST_Request $request ) {
 		$responses = array();
-		$id        = (int) $request['user_id'];
-		$user      = get_user_by( 'id', $id );
+		// Read user_id from the URL route only, matching get_items_permissions_check() (BWPM-307).
+		// $request['user_id'] reads query/body params before the route, letting a request whose
+		// route names the caller's own account but whose query/body names another user's ID pass
+		// the permission check ("me") and then act on the victim here.
+		$id   = (int) $request->get_url_params()['user_id'];
+		$user = get_user_by( 'id', $id );
 
 		if ( ! $user ) {
 			return new WP_Error( 'not_found', esc_html__( 'Not found user.', 'reepay-checkout-gateway' ) );
@@ -481,7 +485,8 @@ class MetaFieldsController extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
 	 */
 	public function add_user_meta_field( WP_REST_Request $request ) {
-		$id    = (int) $request['user_id'];
+		// Read user_id from the URL route only; see get_user_meta_fields() for why (BWPM-307).
+		$id    = (int) $request->get_url_params()['user_id'];
 		$key   = $request['key'];
 		$value = $request['value'];
 
@@ -522,7 +527,10 @@ class MetaFieldsController extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
 	 */
 	public function delete_user_meta_field( WP_REST_Request $request ) {
-		$id       = (int) $request['user_id'];
+		// Read user_id from the URL route only; see get_user_meta_fields() for why (BWPM-307).
+		// The ownership check below compares against this value, so sourcing it correctly is what
+		// makes that check actually mean something.
+		$id       = (int) $request->get_url_params()['user_id'];
 		$field_id = (int) $request['field_id'];
 		$user     = get_user_by( 'id', $id );
 
@@ -542,6 +550,18 @@ class MetaFieldsController extends WP_REST_Controller {
 			);
 		}
 
+		// Reject deleting protected keys (e.g. wp_capabilities), matching the check
+		// edit_user_meta_field() already does. Validate the row's actual key, not user input —
+		// deletion is identified by field_id, so there is no attacker-supplied key to check here.
+		$security_violation = $this->validate_metadata_key_security( $existing_meta->meta_key );
+		if ( $security_violation ) {
+			return new WP_Error(
+				$security_violation['error_code'],
+				$security_violation['message'],
+				array( 'status' => 403 )
+			);
+		}
+
 		$result = delete_metadata_by_mid( 'user', $field_id );
 		if ( false === $result ) {
 			return new WP_Error( 'deleting_field', esc_html__( 'Error deleting meta field.', 'reepay-checkout-gateway' ) );
@@ -558,7 +578,10 @@ class MetaFieldsController extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
 	 */
 	public function edit_user_meta_field( WP_REST_Request $request ) {
-		$id       = (int) $request['user_id'];
+		// Read user_id from the URL route only; see get_user_meta_fields() for why (BWPM-307).
+		// The ownership check below compares against this value, so sourcing it correctly is what
+		// makes that check actually mean something.
+		$id       = (int) $request->get_url_params()['user_id'];
 		$field_id = (int) $request['field_id'];
 		$key      = (string) $request['key'];
 		$value    = (string) $request['value'];
