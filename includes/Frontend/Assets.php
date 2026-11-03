@@ -65,6 +65,33 @@ class Assets {
 			);
 		}
 
+		self::register_checkout_scripts();
+
+		if ( ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() )
+			&& ! is_order_received_page()
+		) {
+			wp_enqueue_style( self::SLUG_CHECKOUT_CSS );
+
+			wp_enqueue_script( self::SLUG_REEPAY_CDN_JS );
+			wp_enqueue_script( self::SLUG_CHECKOUT_JS );
+		}
+	}
+
+	/**
+	 * Register checkout scripts.
+	 *
+	 * Checkout blocks payment method scripts depend on these handles, and WooCommerce can verify
+	 * that dependency on requests where the enqueue hooks above never fire (e.g. post embeds).
+	 *
+	 * @return void
+	 */
+	public static function register_checkout_scripts() {
+		if ( wp_script_is( self::SLUG_CHECKOUT_JS, 'registered' ) ) {
+			return;
+		}
+
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
 		wp_register_script(
 			self::SLUG_REEPAY_CDN_JS,
 			reepay()->get_setting( 'js_url' ) . 'checkout-cdn.js',
@@ -90,14 +117,5 @@ class Assets {
 			'WC_Gateway_Reepay_Checkout',
 			reepay()->gateways()->checkout()->get_localize_script_data()
 		);
-
-		if ( ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() )
-			&& ! is_order_received_page()
-		) {
-			wp_enqueue_style( self::SLUG_CHECKOUT_CSS );
-
-			wp_enqueue_script( self::SLUG_REEPAY_CDN_JS );
-			wp_enqueue_script( self::SLUG_CHECKOUT_JS );
-		}
 	}
 }
