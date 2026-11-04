@@ -44,6 +44,10 @@ abstract class ReepayTokens {
 			throw new Exception( 'Invalid token parameter' );
 		}
 
+		if ( $token->get_user_id() !== $order->get_customer_id() ) {
+			throw new Exception( 'Token does not belong to the order customer' );
+		}
+
 		if ( $token->get_id() ) {
 
 			// Reload order.
@@ -298,6 +302,10 @@ abstract class ReepayTokens {
 
 		// Check if token already exists to prevent duplicates.
 		$existing_token = self::get_payment_token( $card_info['id'] );
+		if ( $existing_token && $existing_token->get_user_id() !== $customer_id ) {
+			throw new Exception( esc_html__( 'Card already belongs to another customer', 'reepay-checkout-gateway' ) );
+		}
+
 		if ( $existing_token && $existing_token->get_user_id() === $customer_id ) {
 			return array(
 				'token'     => $existing_token,

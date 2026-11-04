@@ -39,7 +39,10 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 	 * ["simple", "object", true]
 	 */
 	public function test_assign_payment_token( string $type, string $token_arg, bool $expect_exception ) {
-		$token = $this->generate_token( $type );
+		$token = $this->generate_token(
+			$type,
+			array( 'user_id' => $this->order_generator->order()->get_customer_id() )
+		);
 
 		if ( $expect_exception ) {
 			$this->expectException( Exception::class );
@@ -60,6 +63,37 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 		$this->assertSame( array( $token->get_id() ), $this->order_generator->order()->get_payment_tokens() );
 		$this->assertSame( $token->get_token(), $this->order_generator->get_meta( 'reepay_token' ) );
 		$this->assertSame( $token->get_token(), $this->order_generator->get_meta( '_reepay_token' ) );
+	}
+
+	public function test_assign_payment_token_of_another_user_rejected() {
+		$token = $this->generate_token( 'reepay' ); // Owned by a freshly created user, not the order customer.
+
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Token does not belong to the order customer' );
+
+		ReepayTokens::assign_payment_token( $this->order_generator->order(), $token );
+	}
+
+	public function test_add_payment_token_to_customer_rejects_card_owned_by_another_user() {
+		$token = $this->generate_token( 'reepay', array( 'token' => 'ca_owned_by_other' ) );
+
+		$this->api_mock->method( 'get_reepay_cards' )->willReturn(
+			array(
+				'id'          => 'ca_owned_by_other',
+				'exp_date'    => '12-77',
+				'masked_card' => '457111XXXXXX2077',
+				'card_type'   => 'visa_dk',
+			)
+		);
+
+		$attacker = $this->factory()->user->create();
+
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Card already belongs to another customer' );
+
+		ReepayTokens::add_payment_token_to_customer( $attacker, 'ca_owned_by_other' );
+
+		$this->assertNotSame( $attacker, $token->get_user_id() );
 	}
 
 	public function test_add_payment_token_to_customer_wp_error() {

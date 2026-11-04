@@ -137,7 +137,7 @@ class MainTest extends Reepay_UnitTestCase {
 				$this->generate_token( 'simple', array( 'user_id' => $customer_id ) ),
 				$this->generate_token( 'simple', array( 'user_id' => $customer_id ) )
 			),
-			0,
+			$customer_id,
 			reepay()->gateways()->checkout()->id
 		);
 
@@ -171,7 +171,7 @@ class MainTest extends Reepay_UnitTestCase {
 				$this->generate_token( 'simple', array( 'user_id' => $customer_id ) ),
 				$this->generate_token( 'simple', array( 'user_id' => $customer_id ) )
 			),
-			0,
+			$customer_id,
 			reepay()->gateways()->checkout()->id
 		);
 
@@ -204,7 +204,7 @@ class MainTest extends Reepay_UnitTestCase {
 				$this->generate_token( 'simple', array( 'user_id' => $customer_id ) ),
 				$this->generate_token( 'simple', array( 'user_id' => $customer_id ) )
 			),
-			0,
+			$customer_id,
 			reepay()->gateways()->checkout()->id
 		);
 
@@ -231,7 +231,7 @@ class MainTest extends Reepay_UnitTestCase {
 				$this->generate_token( 'simple', array( 'user_id' => $customer_id ) ),
 				$this->generate_token( 'simple', array( 'user_id' => $customer_id ) )
 			),
-			0,
+			$customer_id,
 			reepay()->gateways()->checkout()->id
 		);
 
@@ -240,5 +240,33 @@ class MainTest extends Reepay_UnitTestCase {
 		$this->assertInstanceOf( TokenReepayMS::class, $result_token );
 		$this->assertSame( $token_reepay_string, $result_token->get_token() );
 		$this->assertSame( 3, count( WC_Payment_Tokens::get_customer_tokens( $customer_id ) ) );
+	}
+
+	/**
+	 * Test @see Main::add_reepay_cards_to_list
+	 * A card already owned by another user must never be listed for this customer.
+	 */
+	public function test_add_reepay_cards_to_list_skips_card_owned_by_another_user() {
+		$owner_id    = $this->generate_user_for_token();
+		$customer_id = $this->factory()->user->create();
+
+		$token_reepay_string = 'rp_owned_by_owner';
+		$this->generate_token( 'reepay', array(
+			'token'   => $token_reepay_string,
+			'user_id' => $owner_id,
+		) );
+
+		$this->api_mock->method( 'get_reepay_cards' )->willReturn( array(
+			array( 'id' => $token_reepay_string )
+		) );
+
+		$result_tokens = $this->tokens_main->add_reepay_cards_to_list(
+			array(),
+			$customer_id,
+			reepay()->gateways()->checkout()->id
+		);
+
+		$this->assertSame( array(), $result_tokens );
+		$this->assertSame( 0, count( WC_Payment_Tokens::get_customer_tokens( $customer_id ) ) );
 	}
 }

@@ -46,32 +46,33 @@ class ReepayCustomer {
 			return $cache[ $user_id ];
 		}
 
-		$customer = new WC_Customer( $user_id );
+		// The handle is never inferred from the (unverified) email: only a handle already
+		// stored on a previous order of this very user is reused.
+		$customer_handle = '';
 
-		$email = $customer->get_billing_email();
-		if ( empty( $email ) && ! empty( $_POST['billing_email'] ) ) {
-			$email = $_POST['billing_email'];
+		if ( $user_id > 0 ) {
+			// meta_query is not supported by every order datastore (legacy posts storage), so filter in PHP.
+			$orders = wc_get_orders(
+				array(
+					'customer_id' => $user_id,
+					'limit'       => 20,
+					'orderby'     => 'ID',
+					'order'       => 'ASC',
+				)
+			);
+
+			foreach ( $orders as $order ) {
+				$order_handle = (string) $order->get_meta( '_reepay_customer' );
+				if ( '' !== $order_handle ) {
+					$customer_handle = $order_handle;
+					break;
+				}
+			}
 		}
 
-		if ( empty( $email ) ) {
-			$email = $customer->get_email();
+		if ( ! empty( $customer_handle ) ) {
+			update_user_meta( $user_id, 'reepay_customer_id', $customer_handle );
 		}
-
-		if ( empty( $email ) ) {
-			$cache[ $user_id ] = '';
-			return $cache[ $user_id ];
-		}
-
-		$reepay_customers = reepay()->api( 'reepay_user_register' )->request( 'GET', "https://api.reepay.com/v1/list/customer?email=$email" );
-
-		if ( is_wp_error( $reepay_customers ) || empty( $reepay_customers['content'][0] ) ) {
-			$cache[ $user_id ] = '';
-			return $cache[ $user_id ];
-		}
-
-		$customer_handle = $reepay_customers['content'][0]['handle'];
-
-		update_user_meta( $user_id, 'reepay_customer_id', $customer_handle );
 
 		$cache[ $user_id ] = $customer_handle;
 		return $cache[ $user_id ];
