@@ -96,6 +96,48 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 		$this->assertNotSame( $attacker, $token->get_user_id() );
 	}
 
+	public function test_get_payment_token_is_scoped_to_user() {
+		$owner = $this->generate_user_for_token();
+		$other = $this->factory()->user->create();
+		$token = $this->generate_token( 'reepay', array( 'token' => 'rp_scoped', 'user_id' => $owner ) );
+
+		$this->assertSame( $token->get_id(), ReepayTokens::get_payment_token( 'rp_scoped' )->get_id() );
+		$this->assertSame( $token->get_id(), ReepayTokens::get_payment_token( 'rp_scoped', $owner )->get_id() );
+		$this->assertNull( ReepayTokens::get_payment_token( 'rp_scoped', $other ) );
+	}
+
+	public function test_assign_payment_token_string_uses_order_customer_row() {
+		$order    = $this->order_generator->order();
+		$customer = $order->get_customer_id();
+		$other    = $this->factory()->user->create();
+
+		// Legacy duplicate: another user's row has the lower token_id.
+		$this->generate_token( 'reepay', array( 'token' => 'rp_dup', 'user_id' => $other ) );
+		$own = $this->generate_token( 'reepay', array( 'token' => 'rp_dup', 'user_id' => $customer ) );
+
+		ReepayTokens::assign_payment_token( $order, 'rp_dup' );
+
+		$this->assertSame( $own->get_id(), (int) wc_get_order( $order->get_id() )->get_meta( '_reepay_token_id' ) );
+	}
+
+	public function test_assign_payment_token_guest_order_with_guest_token() {
+		$this->api_mock->method( 'get_reepay_cards' )->willReturn(
+			array(
+				'id'          => 'ca_guest_token',
+				'exp_date'    => '12-77',
+				'masked_card' => '457111XXXXXX2077',
+				'card_type'   => 'visa_dk',
+			)
+		);
+
+		$order = wc_create_order( array( 'customer_id' => 0 ) );
+		$token = ReepayTokens::add_payment_token_to_customer( 0, 'ca_guest_token' )['token'];
+
+		ReepayTokens::assign_payment_token( $order, $token );
+
+		$this->assertSame( 'ca_guest_token', wc_get_order( $order->get_id() )->get_meta( '_reepay_token' ) );
+	}
+
 	public function test_add_payment_token_to_customer_wp_error() {
 		$this->api_mock->method( 'get_reepay_cards' )->willReturn( new WP_Error() );
 		$this->expectException( Exception::class );
@@ -533,44 +575,5 @@ class ReepayTokensTest extends Reepay_UnitTestCase {
 			$threw || false === $result,
 			'Expected false return or exception when API returns WP_Error'
 		);
-	}
-
-	// -----------------------------------------------------------------------
-	// user_has_token()
-	// -----------------------------------------------------------------------
-
-	/**
-	 * Test @see ReepayTokens::user_has_token returns true when user owns the token.
-	 *
-	 * @group tokens_reepay
-	 */
-	public function test_user_has_token_true() {
-		$user_id = $this->factory()->user->create();
-		$token_id = 'ca_user_' . wp_generate_uuid4();
-
-		// Pre-create the WC token for this user.
-		$this->generate_token( 'reepay', array( 'token' => $token_id, 'user_id' => $user_id ) );
-
-		$this->assertTrue( ReepayTokens::user_has_token( $user_id, $token_id ) );
-	}
-
-	/**
-	 * Test @see ReepayTokens::user_has_token returns false when user does not own the token.
-	 *
-	 * @group tokens_reepay
-	 */
-	public function test_user_has_token_false() {
-		$user_id = $this->factory()->user->create();
-
-		$this->assertFalse( ReepayTokens::user_has_token( $user_id, 'ca_nonexistent_token' ) );
-	}
-
-	/**
-	 * Test @see ReepayTokens::user_has_token returns false for guest (user_id = 0).
-	 *
-	 * @group tokens_reepay
-	 */
-	public function test_user_has_token_guest_returns_false() {
-		$this->assertFalse( ReepayTokens::user_has_token( 0, 'ca_any_token' ) );
 	}
 }

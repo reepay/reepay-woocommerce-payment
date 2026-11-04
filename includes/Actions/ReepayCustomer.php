@@ -35,11 +35,16 @@ class ReepayCustomer {
 	/**
 	 * Set reepay user handle
 	 *
+	 * The handle is reused only from one of the user's own previous orders; it is never looked up
+	 * by the (unverified) email address.
+	 *
 	 * @param int $user_id user id to set handle.
+	 *
+	 * @return string Handle, or an empty string if the user has none yet.
 	 */
 	public static function set_reepay_handle( int $user_id ): string {
-		// Per-request cache: prevents duplicate API lookups for the same user within one request.
-		// This avoids a double call when user_register hook fires first, then rp_get_customer_handle()
+		// Per-request cache: prevents repeating the order lookup for the same user within one request.
+		// This avoids a double lookup when user_register hook fires first, then rp_get_customer_handle()
 		// calls set_reepay_handle() again during the same checkout process.
 		static $cache = array();
 		if ( array_key_exists( $user_id, $cache ) ) {
@@ -52,6 +57,7 @@ class ReepayCustomer {
 
 		if ( $user_id > 0 ) {
 			// meta_query is not supported by every order datastore (legacy posts storage), so filter in PHP.
+			// Only the 20 oldest orders are inspected; otherwise the caller falls back to customer-<id>.
 			$orders = wc_get_orders(
 				array(
 					'customer_id' => $user_id,
@@ -87,18 +93,18 @@ class ReepayCustomer {
 	public static function have_same_handle( int $user_id, string $handle ): bool {
 		$user_reepay = reepay()->api( 'reepay_user_register' )->request(
 			'GET',
-			'https://api.reepay.com/v1/customer/' . $handle,
+			'https://api.reepay.com/v1/customer/' . rawurlencode( $handle ),
 		);
 
 		if ( ! empty( $user_reepay ) && ! is_wp_error( $user_reepay ) ) {
 			$customer = new WC_Customer( $user_id );
 			$email    = $customer->get_billing_email();
 
-			if ( empty( $email ) && ! empty( $_POST['billing_email'] ) ) {
-				$email = $_POST['billing_email'];
+			if ( empty( $email ) && ! empty( $_POST['billing_email'] ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Missing
+				$email = sanitize_email( wp_unslash( $_POST['billing_email'] ) ); //phpcs:ignore WordPress.Security.NonceVerification.Missing
 			}
 
-			if ( ! empty( $email ) && $user_reepay['email'] !== $email ) {
+			if ( ! empty( $email ) && ( $user_reepay['email'] ?? '' ) !== $email ) {
 				return true;
 			}
 		}

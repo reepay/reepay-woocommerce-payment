@@ -77,14 +77,14 @@ class Main {
 		}
 
 		foreach ( $reepay_cards as $card_info ) {
-			$token = ReepayTokens::get_payment_token( $card_info['id'] );
-
-			if ( ! empty( $token ) && $token->get_user_id() !== $customer_id ) {
-				// Card is already owned by another user: never list it for this customer.
-				continue;
-			}
+			$token = ReepayTokens::get_payment_token( $card_info['id'], $customer_id );
 
 			if ( empty( $token ) ) {
+				if ( ReepayTokens::get_payment_token( $card_info['id'] ) ) {
+					// Card is already owned by another user: never list it for this customer.
+					continue;
+				}
+
 				$token = ReepayTokens::add_payment_token_to_customer( $customer_id, $card_info )['token'];
 			}
 
