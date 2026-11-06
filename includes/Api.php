@@ -1517,7 +1517,9 @@ class Api {
 				if ( ! empty( $item_data['vat'] ) && $item_data['vat'] > 0 ) {
 					// If amount_incl_vat is false, add VAT to the amount.
 					if ( empty( $item_data['amount_incl_vat'] ) ) {
-						$item_amount = $item_amount * ( 1 + $item_data['vat'] );
+						// Round each line to a whole minor unit before summing to match WooCommerce
+						// tax rounding and prevent Frisbii from truncating fractional amounts.
+						$item_amount = round( $item_amount * ( 1 + $item_data['vat'] ) );
 					}
 					// If amount_incl_vat is true, amount already includes VAT.
 				}
