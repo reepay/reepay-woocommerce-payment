@@ -244,18 +244,17 @@ class InstantSettleTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * Regression test for BWPM-302 (follow-up): when InstantSettle's eligible items happen to
-	 * cover the ENTIRE order (nothing left uncaptured), it must send Frisbii a flat `amount`,
-	 * matching the format already used at authorization — not itemized `order_lines`, which
-	 * forces Frisbii to recompute VAT per line and can round differently than WooCommerce's own
-	 * total. Reproduced live on order #32363, WooDev, 2026-10-26: a single virtual ticket
-	 * product with a percentage discount coupon, settled automatically via InstantSettle at
-	 * checkout — authorized 805.23 DKK, settled 805.22 DKK, because this call path was not
-	 * covered by the earlier multi_settle() fix (only the manual "mark Completed" flow was).
+	 * Regression test for BWPM-302/BWPM-324 (follow-up): when InstantSettle's eligible items
+	 * happen to cover the ENTIRE order (nothing left uncaptured), itemized `order_lines` must
+	 * still be sent (preserving each item's real VAT — BWPM-324), with any per-unit rounding
+	 * reconciled so the total Frisbii derives from those lines still matches WooCommerce's own
+	 * total exactly (BWPM-302; reproduced live on order #32363, WooDev, 2026-10-26: a single
+	 * virtual ticket product with a percentage discount coupon settled automatically via
+	 * InstantSettle at checkout — authorized 805.23 DKK, settled 805.22 DKK).
 	 *
 	 * @see InstantSettle::process_instant_settle
 	 */
-	public function test_process_instant_settle_sends_flat_amount_when_covering_full_order() {
+	public function test_process_instant_settle_reconciles_rounding_when_covering_full_order() {
 		InstantSettle::set_order_capture( $this->order_capture );
 
 		self::$options->set_option(
@@ -287,13 +286,138 @@ class InstantSettleTest extends Reepay_UnitTestCase {
 			->with(
 				$this->anything(),
 				$this->anything(),
-				false,
-				false,
+				$this->isType( 'array' ),
+				$this->isType( 'array' ),
 				$this->anything()
 			)
 			->willReturn( array( 'state' => 'success' ) );
 
 		self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
+	}
+
+	/**
+	 * Companion regression test for BWPM-324: InstantSettle's full-capture path must also
+	 * preserve a normal, non-zero VAT rate exactly as configured in WooCommerce, not just the
+	 * 0%-VAT case covered elsewhere. Grossing a line up by "1 + vat" is a no-op when vat is 0,
+	 * so this confirms the standard (e.g. 25%) case reaches Api::settle() unaffected too.
+	 *
+	 * @see InstantSettle::process_instant_settle
+	 */
+	public function test_process_instant_settle_preserves_standard_vat_rate_on_full_capture() {
+		add_filter( 'wc_tax_enabled', '__return_true' );
+
+		InstantSettle::set_order_capture( $this->order_capture );
+
+		self::$options->set_option(
+			'settle',
+			array( InstantSettle::SETTLE_VIRTUAL )
+		);
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'virtual'       => true,
+				'downloadable'  => false,
+				'regular_price' => 100.00,
+			)
+		);
+		$this->order_generator->add_tax( 25 );
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 12500,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+			)
+		);
+
+		// Order total: 100.00 (item) + 25% VAT = 125.00 kr. -> 12500 in minor units.
+		$this->api_mock->expects( $this->once() )
+			->method( 'settle' )
+			->with(
+				$this->anything(),
+				$this->equalTo( 12500.0 ),
+				$this->callback(
+					function ( $items_data ) {
+						return is_array( $items_data ) && ! empty( $items_data ) && 0.25 === $items_data[0]['vat'];
+					}
+				),
+				$this->anything(),
+				$this->anything()
+			)
+			->willReturn( array( 'state' => 'success' ) );
+
+		self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
+	}
+
+	/**
+	 * Regression test for BWPM-324: InstantSettle's "Skip order lines" handling is a genuinely
+	 * different code path from OrderCapture::multi_settle()'s - multi_settle() collapses
+	 * $items_data into a single, deliberate vat=0 line when this setting is enabled, but
+	 * InstantSettle only recalculates $total_all from the order's grand total (when every item
+	 * is instant-settleable) and still builds and sends the real itemized order_lines. This
+	 * confirms that path keeps the product's real (non-zero) VAT after the fix, rather than
+	 * assuming it behaves like multi_settle()'s "skip" branch.
+	 *
+	 * @see InstantSettle::process_instant_settle
+	 */
+	public function test_process_instant_settle_with_skip_order_lines_keeps_real_item_vat() {
+		add_filter( 'wc_tax_enabled', '__return_true' );
+		self::$options->set_option( 'skip_order_lines', 'yes' );
+
+		try {
+			InstantSettle::set_order_capture( $this->order_capture );
+
+			self::$options->set_option(
+				'settle',
+				array( InstantSettle::SETTLE_VIRTUAL )
+			);
+
+			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout()->id );
+			$this->order_generator->add_product(
+				'simple',
+				array(
+					'virtual'       => true,
+					'downloadable'  => false,
+					'regular_price' => 100.00,
+				)
+			);
+			$this->order_generator->add_tax( 25 );
+			// skip_order_lines reads $order->get_total(), which only calculate_totals() (not
+			// calculate_taxes() alone) keeps in sync with the just-inserted tax rate.
+			$this->order_generator->order()->calculate_totals( false );
+			$this->order_generator->order()->save();
+
+			$this->api_mock->method( 'get_invoice_data' )->willReturn(
+				array(
+					'authorized_amount' => 12500,
+					'settled_amount'    => 0,
+					'refunded_amount'   => 0,
+				)
+			);
+
+			// Order total: 100.00 (item) + 25% VAT = 125.00 kr. -> 12500 in minor units. Unlike
+			// multi_settle()'s skip_order_lines branch, the real 25% VAT must still be present.
+			$this->api_mock->expects( $this->once() )
+				->method( 'settle' )
+				->with(
+					$this->anything(),
+					$this->equalTo( 12500.0 ),
+					$this->callback(
+						function ( $items_data ) {
+							return is_array( $items_data ) && ! empty( $items_data ) && 0.25 === $items_data[0]['vat'];
+						}
+					),
+					$this->anything(),
+					$this->anything()
+				)
+				->willReturn( array( 'state' => 'success' ) );
+
+			self::$instant_settle_instance->process_instant_settle( $this->order_generator->order() );
+		} finally {
+			self::$options->set_option( 'skip_order_lines', 'no' );
+		}
 	}
 
 	/**
@@ -311,7 +435,7 @@ class InstantSettleTest extends Reepay_UnitTestCase {
 	 *
 	 * @see InstantSettle::process_instant_settle
 	 */
-	public function test_process_instant_settle_sends_flat_amount_when_off_by_one_cent_due_to_rounding() {
+	public function test_process_instant_settle_treats_rounding_drift_as_full_capture() {
 		$order_capture_mock = $this->getMockBuilder( OrderCapture::class )
 			->onlyMethods( array( 'get_not_settled_amount' ) )
 			->getMock();
@@ -353,8 +477,8 @@ class InstantSettleTest extends Reepay_UnitTestCase {
 			->with(
 				$this->anything(),
 				$this->anything(),
-				false,
-				false,
+				$this->isType( 'array' ),
+				$this->isType( 'array' ),
 				$this->anything()
 			)
 			->willReturn( array( 'state' => 'success' ) );
@@ -364,13 +488,13 @@ class InstantSettleTest extends Reepay_UnitTestCase {
 
 	/**
 	 * Regression test (companion to OrderCaptureTest's equivalent, found testing BWPM-302's
-	 * live discount scenarios): InstantSettle's flat-amount full-capture path had the identical
+	 * live discount scenarios): InstantSettle's full-capture path had the identical
 	 * double-subtraction bug as multi_settle() — $total_all was accumulated from post-discount
 	 * item prices, then the discount block subtracted the same discount again.
 	 *
 	 * @see InstantSettle::process_instant_settle
 	 */
-	public function test_process_instant_settle_does_not_double_subtract_discount_from_flat_amount() {
+	public function test_process_instant_settle_does_not_double_subtract_discount_on_full_capture() {
 		InstantSettle::set_order_capture( $this->order_capture );
 
 		self::$options->set_option(
@@ -410,15 +534,15 @@ class InstantSettleTest extends Reepay_UnitTestCase {
 			)
 		);
 
-		// Order total: 100.00 (item) - 20.00 (discount) = 80.00 — the flat amount sent to
+		// Order total: 100.00 (item) - 20.00 (discount) = 80.00 — the total settled with
 		// Frisbii must equal this, not 60.00 (double-subtracted).
 		$this->api_mock->expects( $this->once() )
 			->method( 'settle' )
 			->with(
 				$this->anything(),
 				$this->equalTo( 8000.0 ),
-				false,
-				false,
+				$this->isType( 'array' ),
+				$this->isType( 'array' ),
 				$this->anything()
 			)
 			->willReturn( array( 'state' => 'success' ) );

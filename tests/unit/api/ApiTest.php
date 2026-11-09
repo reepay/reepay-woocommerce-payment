@@ -681,4 +681,71 @@ class ApiTest extends Reepay_UnitTestCase {
 
 		$this->assertSame( 2000, $sent_body['amount'] ?? null, 'With neither $amount nor $items_data provided, settle() must derive both from InstantSettle' );
 	}
+
+	// -----------------------------------------------------------------------
+	// settle() - BWPM-324
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Regression test for BWPM-324: Api::settle() must send the caller's
+	 * itemized $items_data as 'order_lines' whenever it is actually provided,
+	 * even when the "skip_order_lines" plugin setting is 'yes'. Previously this
+	 * branch keyed off the skip_order_lines SETTING rather than whether
+	 * $items_data was actually supplied, so it discarded
+	 * OrderCapture::multi_settle()'s carefully-built single zero-VAT line (see
+	 * multi_settle()'s own "skip_order_lines" handling) and sent only a flat
+	 * 'amount' with no 'order_lines' at all - leaving Frisbii with no VAT
+	 * information and causing it to fall back to the account's default VAT
+	 * rate (e.g. 25%) instead of the order's real 0% VAT.
+	 *
+	 * @see \Reepay\Checkout\Api::settle
+	 */
+	public function test_settle_sends_order_lines_when_items_data_provided_even_with_skip_order_lines_setting() {
+		self::$options->set_option( 'skip_order_lines', 'yes' );
+
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => 100.00 ) );
+
+		$order = $this->order_generator->order();
+		$order->calculate_totals();
+		$order->save();
+
+		$captured_settle_args = array();
+		$this->mock_http_request_by_url(
+			array(
+				'/settle'   => array(
+					'state'       => 'settled',
+					'transaction' => 'transaction_1',
+				),
+				'/invoice/' => array(
+					'state'             => 'settled',
+					'authorized_amount' => 10000,
+					'settled_amount'    => 10000,
+				),
+			),
+			$captured_settle_args,
+			'/settle'
+		);
+
+		$items_data = array(
+			array(
+				'ordertext'       => __( 'Order Total', 'reepay-checkout-gateway' ),
+				'quantity'        => 1,
+				'amount'          => 10000,
+				'vat'             => 0,
+				'amount_incl_vat' => '',
+			),
+		);
+
+		// Mirrors OrderCapture::settle_items()'s call from multi_settle(): a real
+		// (non-false) $line_item, exactly as a full-order capture passes.
+		$result = $this->api->settle( $order, 10000, $items_data, $order->get_items() );
+
+		$this->assertFalse( is_wp_error( $result ), 'settle() unexpectedly failed: ' . ( is_wp_error( $result ) ? $result->get_error_message() : '' ) );
+
+		$sent_body = json_decode( $captured_settle_args['body'], true );
+
+		$this->assertArrayHasKey( 'order_lines', $sent_body, 'A settle with real $items_data must send order_lines, not a flat amount, even when skip_order_lines is "yes"' );
+		$this->assertSame( 0, $sent_body['order_lines'][0]['vat'] ?? null, 'The 0% VAT item must be preserved, not discarded by a flat-amount fallback' );
+	}
 }

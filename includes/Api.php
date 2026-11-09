@@ -933,7 +933,13 @@ class Api {
 			$amount      = $settle_data['settle_amount'];
 		}
 
-		if ( ! empty( $amount ) && reepay()->get_setting( 'skip_order_lines' ) === 'yes' ) {
+		// BWPM-324: whether to send a flat 'amount' or itemized 'order_lines' must be
+		// decided from $items_data itself, not from the "skip_order_lines" setting.
+		// OrderCapture::multi_settle() already honors that setting by building a
+		// single collapsed line (with the order's real VAT, e.g. 0%) when it's 'yes' -
+		// collapsing again here into a flat amount with no order_lines discarded that
+		// VAT entirely and let Frisbii fall back to its account-level default VAT.
+		if ( ! empty( $amount ) && empty( $items_data ) ) {
 			$request_data['amount'] = $this->calculate_amount_with_vat( $items_data, $amount );
 		} elseif ( ! empty( $amount ) && false === $line_item ) {
 			$request_data['amount'] = $this->calculate_amount_with_vat( $items_data, $amount );

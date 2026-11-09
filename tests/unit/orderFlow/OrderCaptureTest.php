@@ -399,21 +399,74 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * Regression test for BWPM-302: a full-order capture (multi_settle()) must send Frisbii a
-	 * flat `amount`, matching the format WooCommerce already used at authorization — not
-	 * itemized `order_lines`. When itemized lines are sent, Frisbii recomputes VAT per line
-	 * independently and can round differently than WooCommerce's own order total, producing a
-	 * 1-minor-unit settlement shortfall (reproduced live on order #32338, WooDev, 2026-10-23:
-	 * authorized 263.69 kr, settled 263.68 kr, because `order_lines` was sent instead of
-	 * `amount`). Before the fix, OrderCapture::settle_items() always passed the item/line
-	 * arrays into Api::settle()'s $items_data/$line_item parameters, so Api::settle()'s
-	 * `false === $line_item` check (meant to select the flat-amount path) could never match —
-	 * an array is never `=== false`.
+	 * Regression test for BWPM-324: a full-order capture (multi_settle()) must still send
+	 * Frisbii each item's real VAT rate via itemized `order_lines` — not discard it in favor of
+	 * a flat `amount` (the fix BWPM-302 applied). Discarding `order_lines` let Frisbii silently
+	 * fall back to its own account-level default VAT for the generic line it creates instead of
+	 * the merchant's actual VAT, e.g. 0%. Reported live: a merchant selling 0%-VAT products saw
+	 * Frisbii settle invoices at whatever VAT was configured as the Frisbii account default,
+	 * immediately after updating to v1.8.20 (which includes BWPM-302) with no other change on
+	 * their end.
 	 *
 	 * @see OrderCapture::multi_settle
 	 * @see OrderCapture::settle_items
 	 */
-	public function test_multi_settle_sends_flat_amount_not_order_lines() {
+	public function test_multi_settle_preserves_item_vat_on_full_capture() {
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 10,
+				'refunded_amount'   => 0,
+			)
+		);
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		// A product with tax status "none" mirrors a WooCommerce "Zero rate"-taxed product:
+		// get_item_data() must report its real vat (0), and that must survive into the API call.
+		$this->order_generator->add_product(
+			'simple',
+			array(
+				'regular_price' => 100.00,
+				'tax_status'    => 'none',
+			)
+		);
+
+		$this->api_mock->expects( $this->once() )
+			->method( 'settle' )
+			->with(
+				$this->anything(),
+				$this->anything(),
+				$this->callback(
+					function ( $items_data ) {
+						return is_array( $items_data ) && ! empty( $items_data ) && 0.0 === $items_data[0]['vat'];
+					}
+				),
+				$this->anything(),
+				$this->anything()
+			)
+			->willReturn( array( 'state' => 'success' ) );
+
+		$this->order_capture->multi_settle( $this->order_generator->order() );
+	}
+
+	/**
+	 * Companion regression test for BWPM-324: a full-order capture must also preserve a normal,
+	 * non-zero VAT rate exactly as configured in WooCommerce. The 0%-VAT test above alone isn't
+	 * enough proof — grossing a line up by "1 + vat" is a no-op when vat is 0, so a fix that
+	 * merely happens to work for 0% could still mishandle a real, non-zero rate. This confirms
+	 * the standard (e.g. 25%) case is unaffected: the real vat rate reaches Api::settle(), and
+	 * the settled total correctly includes that VAT.
+	 *
+	 * @see OrderCapture::multi_settle
+	 * @see OrderCapture::settle_items
+	 */
+	public function test_multi_settle_preserves_standard_vat_rate_on_full_capture() {
+		add_filter( 'wc_tax_enabled', '__return_true' );
+
 		$this->api_mock->method( 'get_invoice_data' )->willReturn(
 			array(
 				'authorized_amount' => 100,
@@ -429,23 +482,169 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 
 		$this->order_generator->add_product(
 			'simple',
-			array( 'regular_price' => 1.02 ),
-			array( 'quantity' => 2 )
+			array( 'regular_price' => 100.00 )
 		);
-		$this->order_generator->add_shipping( array( 'total' => 2.03 ) );
+		$this->order_generator->add_tax( 25 );
 
+		// Order total: 100.00 (item) + 25% VAT = 125.00 kr. -> 12500 in minor units.
 		$this->api_mock->expects( $this->once() )
 			->method( 'settle' )
 			->with(
 				$this->anything(),
+				$this->equalTo( 12500.0 ),
+				$this->callback(
+					function ( $items_data ) {
+						return is_array( $items_data ) && ! empty( $items_data ) && 0.25 === $items_data[0]['vat'];
+					}
+				),
 				$this->anything(),
-				false,
-				false,
 				$this->anything()
 			)
 			->willReturn( array( 'state' => 'success' ) );
 
 		$this->order_capture->multi_settle( $this->order_generator->order() );
+	}
+
+	/**
+	 * Regression test for BWPM-324: with the independent "Skip order lines" merchant setting
+	 * enabled, a full-order capture must still send Frisbii a single itemized order_line (not a
+	 * bare `amount`) - deliberately with vat=0, exactly as this setting has always worked. The
+	 * BWPM-302/BWPM-324 flat-amount bypass applied here too (it unconditionally discarded
+	 * whatever multi_settle() built, in both "include" and "skip" modes), so this guards against
+	 * the fix accidentally changing "Skip order lines" behaviour while fixing "Include order
+	 * lines". It also confirms settle_items()'s rounding reconciliation is a no-op here: the
+	 * single line's amount is already set to exactly $total_all, so no "Rounding adjustment"
+	 * line should be appended.
+	 *
+	 * @see OrderCapture::multi_settle
+	 * @see ReepayGateway::get_skip_order_lines_amount
+	 */
+	public function test_multi_settle_with_skip_order_lines_sends_single_zero_vat_line() {
+		// WordPress's object cache isn't cleared by the per-test DB rollback, so an
+		// update_option() left 'yes' here would leak into later tests that assume
+		// skip_order_lines is off. Always restore it, even if an assertion fails.
+		self::$options->set_option( 'skip_order_lines', 'yes' );
+
+		try {
+			$this->api_mock->method( 'get_invoice_data' )->willReturn(
+				array(
+					'authorized_amount' => 10000,
+					'settled_amount'    => 0,
+					'refunded_amount'   => 0,
+				)
+			);
+
+			$this->order_generator->set_prop(
+				'payment_method',
+				reepay()->gateways()->checkout()
+			);
+
+			$this->order_generator->add_product(
+				'simple',
+				array( 'regular_price' => 100.00 )
+			);
+
+			$this->api_mock->expects( $this->once() )
+				->method( 'settle' )
+				->with(
+					$this->anything(),
+					$this->equalTo( 10000.0 ),
+					$this->callback(
+						function ( $items_data ) {
+							return is_array( $items_data )
+								&& 1 === count( $items_data )
+								&& 0 == $items_data[0]['vat'] // phpcs:ignore Universal.Operators.StrictComparisons.LooseEqual -- 'vat' is set as int 0 by the skip-order-lines branch, not a float.
+								&& 1 === $items_data[0]['quantity'];
+						}
+					),
+					$this->anything(),
+					$this->anything()
+				)
+				->willReturn( array( 'state' => 'success' ) );
+
+			$this->order_capture->multi_settle( $this->order_generator->order() );
+		} finally {
+			self::$options->set_option( 'skip_order_lines', 'no' );
+		}
+	}
+
+	/**
+	 * Regression test for BWPM-302 (kept green after the BWPM-324 fix): a full-order capture
+	 * still must not settle for less than the order's authoritative total. Each order line's
+	 * `amount` is its PER-UNIT price rounded to the currency's minor unit; multiplying that back
+	 * out by quantity can land a minor unit short of WooCommerce's own line total (e.g. a 10.00
+	 * kr. line split across 3 units: round(10.00 / 3, 2) = 3.33, and 3.33 * 3 = 9.99, not
+	 * 10.00) — this is exactly the mechanism that produced the live shortfall BWPM-302 fixed
+	 * (order #32338, WooDev, 2026-10-23: authorized 263.69 kr, settled 263.68 kr). Rather than
+	 * dropping `order_lines` entirely (which caused BWPM-324), the sum of order lines actually
+	 * sent to Frisbii must be topped up to match the order total exactly.
+	 *
+	 * @see OrderCapture::multi_settle
+	 * @see OrderCapture::settle_items
+	 */
+	public function test_multi_settle_reconciles_order_lines_total_to_match_order_total() {
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 100,
+				'settled_amount'    => 10,
+				'refunded_amount'   => 0,
+			)
+		);
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$this->order_generator->add_product(
+			'simple',
+			array( 'regular_price' => 10.00 ),
+			array( 'quantity' => 3 )
+		);
+
+		$order = $this->order_generator->order();
+
+		// Force a line total of exactly 10.00 kr. for the 3 units, so the per-unit amount
+		// (10.00 / 3, rounded to 3.33) multiplies back out to 9.99, not 10.00 - a deterministic
+		// 1-öre rounding gap, without relying on tax calculation or float imprecision.
+		foreach ( $order->get_items() as $item ) {
+			$item->set_subtotal( 10.00 );
+			$item->set_total( 10.00 );
+			$item->save();
+		}
+		$order->calculate_totals( false );
+		$order->save();
+
+		$this->api_mock->expects( $this->once() )
+			->method( 'settle' )
+			->with(
+				$this->anything(),
+				$this->equalTo( 1000.0 ),
+				$this->callback(
+					function ( $items_data ) {
+						$predicted_total = 0;
+
+						foreach ( $items_data as $item_data ) {
+							$line_amount = $item_data['amount'] * $item_data['quantity'];
+
+							if ( ! empty( $item_data['vat'] ) && empty( $item_data['amount_incl_vat'] ) ) {
+								$line_amount *= ( 1 + $item_data['vat'] );
+							}
+
+							$predicted_total += $line_amount;
+						}
+
+						// The 1-öre gap must be reconciled: Frisbii's own computed total from
+						// order_lines must equal the order's authoritative total (1000 öre).
+						return 1000.0 === $predicted_total;
+					}
+				),
+				$this->anything(),
+				$this->anything()
+			)
+			->willReturn( array( 'state' => 'success' ) );
+
+		$this->order_capture->multi_settle( $order );
 	}
 
 	/**
@@ -461,7 +660,7 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 	 *
 	 * @see OrderCapture::multi_settle
 	 */
-	public function test_multi_settle_does_not_double_subtract_discount_from_flat_amount() {
+	public function test_multi_settle_does_not_double_subtract_discount_on_full_capture() {
 		$this->api_mock->method( 'get_invoice_data' )->willReturn(
 			array(
 				'authorized_amount' => 10000,
@@ -496,15 +695,15 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 		$order->calculate_totals( false );
 		$order->save();
 
-		// Order total: 100.00 (item) + 20.00 (shipping) - 20.00 (coupon) = 100.00 — the flat
-		// amount sent to Frisbii must equal this, not 80.00 (double-subtracted).
+		// Order total: 100.00 (item) + 20.00 (shipping) - 20.00 (coupon) = 100.00 — the total
+		// settled with Frisbii must equal this, not 80.00 (double-subtracted).
 		$this->api_mock->expects( $this->once() )
 			->method( 'settle' )
 			->with(
 				$this->anything(),
 				$this->equalTo( 10000.0 ),
-				false,
-				false,
+				$this->isType( 'array' ),
+				$this->isType( 'array' ),
 				$this->anything()
 			)
 			->willReturn( array( 'state' => 'success' ) );
