@@ -287,6 +287,11 @@ class Subscriptions {
 	 * @throws Exception Never, just for phpcs.
 	 */
 	public function scheduled_subscription_payment( float $amount_to_charge, WC_Order $renewal_order, $settle = false ) {
+		// Orders paid via another gateway (e.g. Quickpay) have no Frisbii gateway object.
+		if ( ! rp_is_order_paid_via_reepay( $renewal_order ) ) {
+			return;
+		}
+
 		$gateway = rp_get_payment_method( $renewal_order );
 		if ( ! $gateway ) {
 			$renewal_order->update_status( 'failed', __( 'Reepay: payment gateway not found for renewal.', 'reepay-checkout-gateway' ) );
@@ -493,8 +498,12 @@ class Subscriptions {
 	 */
 	public function create_sub_invoice( int $order_id, string $this_status_transition_from, string $this_status_transition_to, WC_Order $instance ) {
 		$renewal_order = wc_get_order( $order_id );
-		$renewal_sub   = $renewal_order->get_meta( '_subscription_renewal' );
-		$gateway       = rp_get_payment_method( $renewal_order );
+		if ( ! $renewal_order || ! rp_is_order_paid_via_reepay( $renewal_order ) ) {
+			return;
+		}
+
+		$renewal_sub = $renewal_order->get_meta( '_subscription_renewal' );
+		$gateway     = rp_get_payment_method( $renewal_order );
 		if ( ! empty( $renewal_sub ) && ! empty( $gateway ) ) {
 			$order_data = reepay()->api( $gateway )->get_invoice_data( $renewal_order );
 			if ( is_wp_error( $order_data ) && $renewal_order->get_total() > 0 ) {

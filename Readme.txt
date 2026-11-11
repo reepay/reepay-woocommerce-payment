@@ -4,7 +4,7 @@ Tags: Frisbii, billwerk+, visa, mastercard, dankort, mobilepay
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.8.21
+Stable tag: 1.8.22
 License: GPL
 License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 
@@ -18,6 +18,11 @@ The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your
 See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
 
 == Changelog ==
+v 1.8.22
+- [Fix] – Support for specific VAT with rounding fix.
+– [Fix] – Automatic settle rounding fix.
+- [Fix] – 3rd party gateway renewal PHP fatal error.
+
 v 1.8.21
 - [Improvement] – Consistent permission checks and validation.
 
