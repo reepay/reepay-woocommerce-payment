@@ -1,6 +1,6 @@
 {
   "name": "reepay-woocommerce-payment",
-  "version": "1.8.21",
+  "version": "1.8.22",
   "description": "",
   "main": "gulpfile.js",
   "dependencies": {
@@ -43,5 +43,9 @@
   },
   "author": "AAIT",
   "license": "SEE LICENSE IN License.txt",
-  "homepage": "https://github.com/reepay/reepay-woocommerce-payment/"
+  "homepage": "https://github.com/reepay/reepay-woocommerce-payment/",
+  "overrides": {
+    "minimatch": ">=11.0.1",
+    "glob": ">=14.0.4"
+  }
 }
