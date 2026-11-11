@@ -635,6 +635,61 @@ class ApiTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * BWPM-324 (Option A): with "Skip order lines" enabled, settle() sends only a flat amount,
+	 * even when item data is passed, so Frisbii applies the account default VAT.
+	 */
+	public function test_settle_sends_flat_amount_when_skip_order_lines_enabled() {
+		self::$options->set_option( 'skip_order_lines', 'yes' );
+
+		try {
+			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+			$this->order_generator->add_product( 'simple', array( 'regular_price' => 100.00 ) );
+
+			$order = $this->order_generator->order();
+			$order->calculate_totals();
+			$order->save();
+
+			$captured_settle_args = array();
+			$this->mock_http_request_by_url(
+				array(
+					'/settle'   => array(
+						'state'       => 'settled',
+						'transaction' => 'transaction_1',
+					),
+					'/invoice/' => array(
+						'state'             => 'settled',
+						'authorized_amount' => 10000,
+						'settled_amount'    => 10000,
+					),
+				),
+				$captured_settle_args,
+				'/settle'
+			);
+
+			$items_data = array(
+				array(
+					'ordertext'       => __( 'Order Total', 'reepay-checkout-gateway' ),
+					'quantity'        => 1,
+					'amount'          => 10000,
+					'vat'             => 0,
+					'amount_incl_vat' => true,
+				),
+			);
+
+			$result = $this->api->settle( $order, 10000, $items_data, $order->get_items() );
+
+			$this->assertFalse( is_wp_error( $result ), 'settle() unexpectedly failed: ' . ( is_wp_error( $result ) ? $result->get_error_message() : '' ) );
+
+			$sent_body = json_decode( $captured_settle_args['body'], true );
+
+			$this->assertSame( 10000, $sent_body['amount'] ?? null );
+			$this->assertArrayNotHasKey( 'order_lines', $sent_body, 'Skip order lines must not send order_lines at settle' );
+		} finally {
+			self::$options->set_option( 'skip_order_lines', 'no' );
+		}
+	}
+
+	/**
 	 * Test @see \Reepay\Checkout\Api::settle falls back to a full
 	 * InstantSettle::calculate_instant_settle() amount when the caller provides
 	 * neither $amount nor $items_data - preserving the original default-settle
@@ -680,5 +735,68 @@ class ApiTest extends Reepay_UnitTestCase {
 		$sent_body = json_decode( $captured_settle_args['body'], true );
 
 		$this->assertSame( 2000, $sent_body['amount'] ?? null, 'With neither $amount nor $items_data provided, settle() must derive both from InstantSettle' );
+	}
+
+	/**
+	 * Regression test: Api::settle()'s flat-amount path (calculate_amount_with_vat())
+	 * must round each VAT-derived line amount to a whole minor unit before summing and
+	 * sending it to Frisbii. Previously, a line whose excl.-VAT amount x (1 + vat) landed
+	 * on a fractional minor unit (19495 * 1.25 = 24368.75 - exactly the amount_incl_vat
+	 * false shape ReepayGateway::get_order_items() sends for a store with prices entered
+	 * exclusive of VAT) was sent to Frisbii unrounded. Frisbii truncates that fraction
+	 * rather than rounding it, silently settling for one minor unit less than intended.
+	 * Confirmed via a live reproduction against Frisbii's test environment: the actual
+	 * request body was {"amount": 24368.75}, and the response settled for 24368 against
+	 * an authorized_amount of 24369.
+	 *
+	 * @see \Reepay\Checkout\Api::settle
+	 */
+	public function test_settle_rounds_vat_derived_amount_to_whole_minor_unit() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => 194.95 ) );
+
+		$order = $this->order_generator->order();
+		$order->calculate_totals();
+		$order->save();
+
+		$captured_settle_args = array();
+		$this->mock_http_request_by_url(
+			array(
+				'/settle'   => array(
+					'state'       => 'settled',
+					'transaction' => 'transaction_1',
+				),
+				'/invoice/' => array(
+					'state'             => 'settled',
+					'authorized_amount' => 24369,
+					'settled_amount'    => 24369,
+				),
+			),
+			$captured_settle_args,
+			'/settle'
+		);
+
+		// Mirrors Api::capture_payment()'s exact call shape: a tax-exclusive line
+		// amount (19495 = 194.95 excl. VAT) plus a 25% vat rate, amount_incl_vat
+		// false.
+		$item_data = array(
+			'ordertext'       => 'Bookinabox regular',
+			'quantity'        => 1,
+			'amount'          => 19495,
+			'vat'             => 0.25,
+			'amount_incl_vat' => false,
+		);
+
+		$result = $this->api->settle( $order, 24369, array( $item_data ), false );
+
+		$this->assertFalse( is_wp_error( $result ), 'settle() unexpectedly failed: ' . ( is_wp_error( $result ) ? $result->get_error_message() : '' ) );
+
+		$sent_body = json_decode( $captured_settle_args['body'], true );
+
+		$this->assertSame(
+			24369,
+			$sent_body['amount'] ?? null,
+			'settle() must round the VAT-derived amount to the nearest whole minor unit (24369), not send the raw fractional value (24368.75)'
+		);
 	}
 }

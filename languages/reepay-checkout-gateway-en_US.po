@@ -671,6 +671,12 @@ msgstr ""
 msgid "Select if order lines should not be send to Frisbii Pay"
 msgstr ""
 
+#: ../includes/Gateways/ReepayCheckout.php:531
+msgid ""
+"0% VAT products are not supported when Skip order lines is enabled unless "
+"Frisbii default VAT rates are changed to support this."
+msgstr ""
+
 #: ../includes/Gateways/ReepayCheckout.php:480
 msgid "Order auto-cancel"
 msgstr ""

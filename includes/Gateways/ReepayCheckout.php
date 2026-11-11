@@ -526,7 +526,9 @@ class ReepayCheckout extends ReepayGateway {
 			),
 			'skip_order_lines'                => array(
 				'title'       => __( 'Skip order lines', 'reepay-checkout-gateway' ),
-				'description' => __( 'Select if order lines should not be send to Frisbii Pay', 'reepay-checkout-gateway' ),
+				'description' => __( 'Select if order lines should not be send to Frisbii Pay', 'reepay-checkout-gateway' )
+					. '<br>'
+					. __( '0% VAT products are not supported when Skip order lines is enabled unless Frisbii default VAT rates are changed to support this.', 'reepay-checkout-gateway' ),
 				'type'        => 'select',
 				'options'     => array(
 					'no'  => __( 'Include order lines', 'reepay-checkout-gateway' ),

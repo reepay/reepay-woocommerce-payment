@@ -640,8 +640,11 @@ class OrderCapture {
 			);
 
 			if ( $remaining_discount > 0 ) {
-				$tax         = $remaining_discount_with_tax - $remaining_discount;
-				$tax_percent = ( $tax > 0 && $remaining_discount > 0 ) ? round( 100 / ( $remaining_discount / $tax ), 2 ) : 0;
+				$tax = $remaining_discount_with_tax - $remaining_discount;
+				// Full captures send this line to Frisbii again (BWPM-324), so use the order's real
+				// tax rate where it is unambiguous instead of a ratio of rounded totals (e.g. 24.98%).
+				// Untaxed discounts stay at 0. The amount itself is reconciled in settle_items().
+				$tax_percent = $tax > 0 ? rp_get_discount_tax_percent( $order, (float) $remaining_discount, (float) $remaining_discount_with_tax ) : 0;
 
 				if ( $prices_incl_tax ) {
 					$simple_discount_amount = $remaining_discount_with_tax;
@@ -747,25 +750,29 @@ class OrderCapture {
 	/**
 	 * Settle order items.
 	 *
-	 * @param WC_Order        $order            order to settle.
-	 * @param array[]         $items_data       items data from self::get_item_data.
-	 * @param float           $total_all        order total amount ot settle.
-	 * @param WC_Order_Item[] $line_items       order line items.
-	 * @param bool            $instant_note     add order note instantly.
-	 * @param bool            $send_flat_amount BWPM-302: when true (a full-order capture — see
-	 *                                          multi_settle()), send Frisbii a flat `amount`
-	 *                                          instead of itemized `order_lines`, matching the
-	 *                                          format already used at authorization. Sending
-	 *                                          itemized lines makes Frisbii recompute VAT per
-	 *                                          line independently, which can round differently
-	 *                                          than WooCommerce's own total by one minor unit.
-	 *                                          Left false (unchanged) for callers — e.g.
-	 *                                          InstantSettle — that may genuinely be settling
-	 *                                          only a subset of the order's items.
+	 * @param WC_Order        $order           order to settle.
+	 * @param array[]         $items_data      items data from self::get_item_data.
+	 * @param float           $total_all       order total amount ot settle.
+	 * @param WC_Order_Item[] $line_items      order line items.
+	 * @param bool            $instant_note    add order note instantly.
+	 * @param bool            $is_full_capture BWPM-302/BWPM-324: when true (a full-order capture —
+	 *                                         see multi_settle()), each order line's `amount` is
+	 *                                         its per-unit price rounded to the currency's minor
+	 *                                         unit, so summing lines back out by quantity can land
+	 *                                         a minor unit short of $total_all - WooCommerce's own
+	 *                                         authoritative order total. This used to be "fixed" by
+	 *                                         sending Frisbii a flat `amount` with no `order_lines`
+	 *                                         at all, which also discarded every line's real VAT
+	 *                                         rate and let Frisbii fall back to its account-level
+	 *                                         default VAT (BWPM-324). Instead, order_lines are
+	 *                                         still sent, and any rounding gap is absorbed into a
+	 *                                         dedicated zero-VAT "Rounding adjustment" line so the
+	 *                                         amount Frisbii settles matches $total_all exactly
+	 *                                         without perturbing any real line's VAT.
 	 *
 	 * @return bool
 	 */
-	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = true, bool $send_flat_amount = false ): bool {
+	public function settle_items( WC_Order $order, array $items_data, float $total_all, array $line_items, bool $instant_note = true, bool $is_full_capture = false ): bool {
 		unset( $_POST['post_status'] ); // Prevent order status changing by WooCommerce.
 
 		$this->log(
@@ -792,11 +799,11 @@ class OrderCapture {
 			return false;
 		}
 
-		if ( $send_flat_amount ) {
-			$result = reepay()->api( $order )->settle( $order, $total_all, false, false, $instant_note );
-		} else {
-			$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note );
+		if ( $is_full_capture && ! empty( $items_data ) ) {
+			$items_data = $this->reconcile_order_lines_rounding( $items_data, $total_all );
 		}
+
+		$result = reepay()->api( $order )->settle( $order, $total_all, $items_data, $line_items, $instant_note );
 
 		$this->log(
 			array(
@@ -832,6 +839,50 @@ class OrderCapture {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Make the order lines of a full-order capture add up to exactly $total_all - WooCommerce's
+	 * own authoritative order total. VAT-exclusive lines are converted to VAT-inclusive whole
+	 * minor units (same VAT rate), then a zero-VAT "Rounding adjustment" line is appended if the
+	 * sum of amount x quantity still differs from $total_all.
+	 *
+	 * @param array[] $items_data items data from self::get_item_data.
+	 * @param float   $total_all  order total amount to settle, in the currency's minor unit.
+	 *
+	 * @return array[]
+	 */
+	private function reconcile_order_lines_rounding( array $items_data, float $total_all ): array {
+		$predicted_total = 0;
+
+		foreach ( $items_data as $key => $item_data ) {
+			// A VAT-exclusive line makes Frisbii gross the amount up itself, and it drops the
+			// fraction instead of rounding it (WooDev #32338: 19495 * 1.25 = 24368.75 was settled
+			// as 24368, one minor unit short of WooCommerce's 24369). A fractional gap like that
+			// cannot be expressed as an adjustment line, so send the line VAT-inclusive as a whole
+			// minor unit instead: the VAT rate is kept, and the total becomes a plain integer sum.
+			if ( ! empty( $item_data['vat'] ) && $item_data['vat'] > 0 && empty( $item_data['amount_incl_vat'] ) ) {
+				$item_data['amount']          = (int) round( $item_data['amount'] * ( 1 + $item_data['vat'] ) );
+				$item_data['amount_incl_vat'] = true;
+				$items_data[ $key ]           = $item_data;
+			}
+
+			$predicted_total += $item_data['amount'] * $item_data['quantity'];
+		}
+
+		$rounding_diff = (int) round( $total_all - $predicted_total );
+
+		if ( 0 !== $rounding_diff ) {
+			$items_data[] = array(
+				'ordertext'       => __( 'Rounding adjustment', 'reepay-checkout-gateway' ),
+				'quantity'        => 1,
+				'amount'          => $rounding_diff,
+				'vat'             => 0,
+				'amount_incl_vat' => true,
+			);
+		}
+
+		return $items_data;
 	}
 
 	/**
