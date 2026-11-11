@@ -506,15 +506,11 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * Regression test for BWPM-324: with the independent "Skip order lines" merchant setting
-	 * enabled, a full-order capture must still send Frisbii a single itemized order_line (not a
-	 * bare `amount`) - deliberately with vat=0, exactly as this setting has always worked. The
-	 * BWPM-302/BWPM-324 flat-amount bypass applied here too (it unconditionally discarded
-	 * whatever multi_settle() built, in both "include" and "skip" modes), so this guards against
-	 * the fix accidentally changing "Skip order lines" behaviour while fixing "Include order
-	 * lines". It also confirms settle_items()'s rounding reconciliation is a no-op here: the
-	 * single line's amount is already set to exactly $total_all, so no "Rounding adjustment"
-	 * line should be appended.
+	 * Regression test for BWPM-324: with "Skip order lines" enabled, a full-order capture passes
+	 * Api::settle() a single collapsed line with vat=0 and quantity 1 (Api::settle() itself then
+	 * sends Frisbii only a flat amount in this mode). It also confirms settle_items()'s rounding
+	 * reconciliation is a no-op here: the single line's amount is already exactly $total_all, so
+	 * no "Rounding adjustment" line should be appended.
 	 *
 	 * @see OrderCapture::multi_settle
 	 * @see ReepayGateway::get_skip_order_lines_amount

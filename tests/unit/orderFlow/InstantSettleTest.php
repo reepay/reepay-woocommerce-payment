@@ -352,13 +352,10 @@ class InstantSettleTest extends Reepay_UnitTestCase {
 	}
 
 	/**
-	 * Regression test for BWPM-324: InstantSettle's "Skip order lines" handling is a genuinely
-	 * different code path from OrderCapture::multi_settle()'s - multi_settle() collapses
-	 * $items_data into a single, deliberate vat=0 line when this setting is enabled, but
-	 * InstantSettle only recalculates $total_all from the order's grand total (when every item
-	 * is instant-settleable) and still builds and sends the real itemized order_lines. This
-	 * confirms that path keeps the product's real (non-zero) VAT after the fix, rather than
-	 * assuming it behaves like multi_settle()'s "skip" branch.
+	 * Regression test for BWPM-324: with "Skip order lines" enabled, InstantSettle only
+	 * recalculates $total_all from the order's grand total and still passes Api::settle() the real
+	 * itemized lines with their real VAT (unlike multi_settle(), which collapses to one vat=0 line).
+	 * Api::settle() then sends Frisbii only a flat amount in this mode.
 	 *
 	 * @see InstantSettle::process_instant_settle
 	 */
