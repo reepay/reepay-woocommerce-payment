@@ -677,6 +677,15 @@ msgstr "Spring ordrelinjer over"
 msgid "Select if order lines should not be send to Frisbii Pay"
 msgstr "Vælg om ordrelinjer ikke skal sendes til Frisbii Pay"
 
+#: ../includes/Gateways/ReepayCheckout.php:531
+msgid ""
+"0% VAT products are not supported when Skip order lines is enabled unless "
+"Frisbii default VAT rates are changed to support this."
+msgstr ""
+"Produkter med 0 % moms understøttes ikke, når \"Spring ordrelinjer over\" er "
+"aktiveret, medmindre Frisbiis standard-momssatser ændres til at "
+"understøtte dette."
+
 #: ../includes/Gateways/ReepayCheckout.php:480
 msgid "Order auto-cancel"
 msgstr "Automatisk annullering af ordrer"

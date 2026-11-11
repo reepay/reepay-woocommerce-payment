@@ -862,8 +862,17 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 				if ( false !== strpos( $url, '/settle' ) ) {
 					++$settle_call_count;
 
-					$body            = json_decode( $parsed_args['body'] ?? '{}', true );
-					$requested_minor = isset( $body['amount'] ) ? (int) $body['amount'] : 0;
+					$body = json_decode( $parsed_args['body'] ?? '{}', true );
+
+					// BWPM-324: a full-order multi_settle() sends 'order_lines' rather than a flat 'amount'.
+					if ( isset( $body['amount'] ) ) {
+						$requested_minor = (int) $body['amount'];
+					} else {
+						$requested_minor = 0;
+						foreach ( $body['order_lines'] ?? array() as $line ) {
+							$requested_minor += (int) round( (float) $line['amount'] * (int) $line['quantity'] );
+						}
+					}
 
 					$settled_amount_minor += $requested_minor;
 

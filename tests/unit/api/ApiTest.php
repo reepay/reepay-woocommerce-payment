@@ -635,6 +635,61 @@ class ApiTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * BWPM-324 (Option A): with "Skip order lines" enabled, settle() sends only a flat amount,
+	 * even when item data is passed, so Frisbii applies the account default VAT.
+	 */
+	public function test_settle_sends_flat_amount_when_skip_order_lines_enabled() {
+		self::$options->set_option( 'skip_order_lines', 'yes' );
+
+		try {
+			$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+			$this->order_generator->add_product( 'simple', array( 'regular_price' => 100.00 ) );
+
+			$order = $this->order_generator->order();
+			$order->calculate_totals();
+			$order->save();
+
+			$captured_settle_args = array();
+			$this->mock_http_request_by_url(
+				array(
+					'/settle'   => array(
+						'state'       => 'settled',
+						'transaction' => 'transaction_1',
+					),
+					'/invoice/' => array(
+						'state'             => 'settled',
+						'authorized_amount' => 10000,
+						'settled_amount'    => 10000,
+					),
+				),
+				$captured_settle_args,
+				'/settle'
+			);
+
+			$items_data = array(
+				array(
+					'ordertext'       => __( 'Order Total', 'reepay-checkout-gateway' ),
+					'quantity'        => 1,
+					'amount'          => 10000,
+					'vat'             => 0,
+					'amount_incl_vat' => true,
+				),
+			);
+
+			$result = $this->api->settle( $order, 10000, $items_data, $order->get_items() );
+
+			$this->assertFalse( is_wp_error( $result ), 'settle() unexpectedly failed: ' . ( is_wp_error( $result ) ? $result->get_error_message() : '' ) );
+
+			$sent_body = json_decode( $captured_settle_args['body'], true );
+
+			$this->assertSame( 10000, $sent_body['amount'] ?? null );
+			$this->assertArrayNotHasKey( 'order_lines', $sent_body, 'Skip order lines must not send order_lines at settle' );
+		} finally {
+			self::$options->set_option( 'skip_order_lines', 'no' );
+		}
+	}
+
+	/**
 	 * Test @see \Reepay\Checkout\Api::settle falls back to a full
 	 * InstantSettle::calculate_instant_settle() amount when the caller provides
 	 * neither $amount nor $items_data - preserving the original default-settle
