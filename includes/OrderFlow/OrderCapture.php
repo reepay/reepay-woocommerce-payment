@@ -640,8 +640,11 @@ class OrderCapture {
 			);
 
 			if ( $remaining_discount > 0 ) {
-				$tax         = $remaining_discount_with_tax - $remaining_discount;
-				$tax_percent = ( $tax > 0 && $remaining_discount > 0 ) ? round( 100 / ( $remaining_discount / $tax ), 2 ) : 0;
+				$tax = $remaining_discount_with_tax - $remaining_discount;
+				// Full captures send this line to Frisbii again (BWPM-324), so use the order's real
+				// tax rate where it is unambiguous instead of a ratio of rounded totals (e.g. 24.98%).
+				// Untaxed discounts stay at 0. The amount itself is reconciled in settle_items().
+				$tax_percent = $tax > 0 ? rp_get_discount_tax_percent( $order, (float) $remaining_discount, (float) $remaining_discount_with_tax ) : 0;
 
 				if ( $prices_incl_tax ) {
 					$simple_discount_amount = $remaining_discount_with_tax;
@@ -839,10 +842,10 @@ class OrderCapture {
 	}
 
 	/**
-	 * Append a zero-VAT "Rounding adjustment" line to $items_data if the total Frisbii will
-	 * derive from it (each line's amount x quantity, grossed up by VAT for VAT-exclusive lines)
-	 * differs from $total_all - WooCommerce's own authoritative order total. Mirrors the math
-	 * Api::calculate_amount_with_vat() already uses to predict a total from order lines.
+	 * Make the order lines of a full-order capture add up to exactly $total_all - WooCommerce's
+	 * own authoritative order total. VAT-exclusive lines are converted to VAT-inclusive whole
+	 * minor units (same VAT rate), then a zero-VAT "Rounding adjustment" line is appended if the
+	 * sum of amount x quantity still differs from $total_all.
 	 *
 	 * @param array[] $items_data items data from self::get_item_data.
 	 * @param float   $total_all  order total amount to settle, in the currency's minor unit.
@@ -852,14 +855,19 @@ class OrderCapture {
 	private function reconcile_order_lines_rounding( array $items_data, float $total_all ): array {
 		$predicted_total = 0;
 
-		foreach ( $items_data as $item_data ) {
-			$line_amount = $item_data['amount'] * $item_data['quantity'];
-
+		foreach ( $items_data as $key => $item_data ) {
+			// A VAT-exclusive line makes Frisbii gross the amount up itself, and it drops the
+			// fraction instead of rounding it (WooDev #32338: 19495 * 1.25 = 24368.75 was settled
+			// as 24368, one minor unit short of WooCommerce's 24369). A fractional gap like that
+			// cannot be expressed as an adjustment line, so send the line VAT-inclusive as a whole
+			// minor unit instead: the VAT rate is kept, and the total becomes a plain integer sum.
 			if ( ! empty( $item_data['vat'] ) && $item_data['vat'] > 0 && empty( $item_data['amount_incl_vat'] ) ) {
-				$line_amount *= ( 1 + $item_data['vat'] );
+				$item_data['amount']          = (int) round( $item_data['amount'] * ( 1 + $item_data['vat'] ) );
+				$item_data['amount_incl_vat'] = true;
+				$items_data[ $key ]           = $item_data;
 			}
 
-			$predicted_total += $line_amount;
+			$predicted_total += $item_data['amount'] * $item_data['quantity'];
 		}
 
 		$rounding_diff = (int) round( $total_all - $predicted_total );

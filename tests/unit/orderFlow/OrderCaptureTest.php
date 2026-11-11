@@ -644,6 +644,72 @@ class OrderCaptureTest extends Reepay_UnitTestCase {
 	}
 
 	/**
+	 * Regression test for the real BWPM-302 mechanism (WooDev order #32338: 194.95 kr. entered
+	 * excluding 25% VAT, quantity 1 - authorized 243.69 kr., settled 243.68 kr.). A VAT-exclusive
+	 * line of 19495 makes Frisbii compute 19495 * 1.25 = 24368.75 itself and drop the fraction.
+	 * That 0.25 gap is too small to become a "Rounding adjustment" line, so a full-order capture
+	 * must not leave the gross-up to Frisbii: every taxed line has to be sent VAT-inclusive as a
+	 * whole minor unit, with its VAT rate intact, adding up to exactly the order total.
+	 *
+	 * @see OrderCapture::multi_settle
+	 * @see OrderCapture::settle_items
+	 */
+	public function test_multi_settle_sends_vat_exclusive_lines_as_whole_vat_inclusive_amounts() {
+		add_filter( 'wc_tax_enabled', '__return_true' );
+
+		$this->api_mock->method( 'get_invoice_data' )->willReturn(
+			array(
+				'authorized_amount' => 24369,
+				'settled_amount'    => 0,
+				'refunded_amount'   => 0,
+			)
+		);
+
+		$this->order_generator->set_prop(
+			'payment_method',
+			reepay()->gateways()->checkout()
+		);
+
+		$this->order_generator->add_product(
+			'simple',
+			array( 'regular_price' => 194.95 )
+		);
+		$this->order_generator->add_tax( 25 );
+
+		// Order total: 194.95 + 25% VAT = 243.6875 -> 243.69 kr. -> 24369 in minor units.
+		$this->api_mock->expects( $this->once() )
+			->method( 'settle' )
+			->with(
+				$this->anything(),
+				$this->equalTo( 24369.0 ),
+				$this->callback(
+					function ( $items_data ) {
+						$sum = 0;
+
+						foreach ( $items_data as $item_data ) {
+							if ( ! empty( $item_data['vat'] ) && empty( $item_data['amount_incl_vat'] ) ) {
+								return false;
+							}
+
+							if ( (float) (int) $item_data['amount'] !== (float) $item_data['amount'] ) {
+								return false;
+							}
+
+							$sum += $item_data['amount'] * $item_data['quantity'];
+						}
+
+						return 24369 === (int) $sum && 0.25 === $items_data[0]['vat'];
+					}
+				),
+				$this->anything(),
+				$this->anything()
+			)
+			->willReturn( array( 'state' => 'success' ) );
+
+		$this->order_capture->multi_settle( $this->order_generator->order() );
+	}
+
+	/**
 	 * Regression test (found testing BWPM-302's live discount scenarios, WooDev order #32368,
 	 * 2026-10-27): the flat-amount full-capture path double-subtracted a discount coupon.
 	 * `$total_all` was accumulated from each item's `get_item_price()['with_tax']`, which is
