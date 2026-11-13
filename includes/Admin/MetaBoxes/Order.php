@@ -32,6 +32,27 @@ class Order {
 	 */
 	public function __construct() {
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
+		add_filter( 'woocommerce_admin_order_should_render_refunds', array( $this, 'hide_refund_button_when_fully_refunded' ), 10, 3 );
+	}
+
+	/**
+	 * Hide the Refund button of a fully refunded Reepay order.
+	 *
+	 * Partial refunds are created by amount without line items, so WooCommerce still counts the
+	 * items as not refunded and keeps the button after the whole amount has been refunded.
+	 *
+	 * @param bool     $render   whether WooCommerce renders the refund button.
+	 * @param int      $order_id order id.
+	 * @param WC_Order $order    order.
+	 *
+	 * @return bool
+	 */
+	public function hide_refund_button_when_fully_refunded( $render, $order_id, $order ) {
+		if ( $render && $order instanceof WC_Order && rp_is_order_paid_via_reepay( $order ) && $order->get_remaining_refund_amount() <= 0 ) {
+			return false;
+		}
+
+		return $render;
 	}
 
 	/**

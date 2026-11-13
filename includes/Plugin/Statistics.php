@@ -84,15 +84,14 @@ class Statistics {
 		$key = reepay()->get_setting( 'test_mode' ) === 'yes' ? reepay()->get_setting( 'private_key_test' ) : reepay()->get_setting( 'private_key' );
 
 		if ( ! empty( $key ) ) {
+			// The private key is never sent or logged. The shop is identified by a salted hash that cannot be used against the API.
 			$params = array(
-				'plugin'     => 'WOOCOMMERCE',
-				'version'    => reepay()->get_setting( 'plugin_version' ),
-				'privatekey' => $key,
-				'url'        => home_url(),
-				'event'      => $event,
+				'plugin'  => 'WOOCOMMERCE',
+				'version' => reepay()->get_setting( 'plugin_version' ),
+				'shop_id' => hash_hmac( 'sha256', $key, wp_salt( 'auth' ) ),
+				'url'     => home_url(),
+				'event'   => $event,
 			);
-
-			$this->log( sprintf( 'Request: %s', wp_json_encode( $params, JSON_PRETTY_PRINT ) ) );
 
 			$url = 'https://hook.reepay.integromat.celonis.com/1dndgwx6cwsvl3shsee29yyqf4d648xf';
 
@@ -106,7 +105,11 @@ class Statistics {
 				)
 			);
 
-			$this->log( sprintf( 'Response: %s', wp_remote_retrieve_body( $response ) ) );
+			if ( is_wp_error( $response ) ) {
+				$this->log( sprintf( 'Event %s failed: %s', $event, $response->get_error_code() ) );
+			} else {
+				$this->log( sprintf( 'Event %s sent, HTTP %s', $event, wp_remote_retrieve_response_code( $response ) ) );
+			}
 
 			return $response;
 		} else {
@@ -144,12 +147,11 @@ class Statistics {
 	 * @param array       $options         upgrade options.
 	 */
 	public static function upgrade_completed( WP_Upgrader $upgrader_object, array $options ) {
-		if ( ! empty( $options['plugins'] ) && is_array( $options['plugins'] ) ) {
-			foreach ( $options['plugins'] as $plugin ) {
-				if ( strpos( $plugin, self::$plugin_file ) ) {
-					self::get_instance()->send_event( 'updated' );
-				}
-			}
+		// The upgrader reports plugin basenames: 'plugins' for a bulk update, 'plugin' for a single one.
+		$updated = array_merge( (array) ( $options['plugins'] ?? array() ), (array) ( $options['plugin'] ?? array() ) );
+
+		if ( in_array( plugin_basename( self::$plugin_file ), $updated, true ) ) {
+			self::get_instance()->send_event( 'updated' );
 		}
 	}
 }

@@ -97,7 +97,7 @@ class CustomerTest extends Reepay_UnitTestCase {
 	 * @see rp_get_customer_handle
 	 * @group functions_customer
 	 */
-	public function test_rp_get_customer_exists_in_api() {
+	public function test_rp_get_customer_ignores_email_match_in_api() {
 		$this->api_mock
 			->method( 'request' )
 			->willReturn(
@@ -113,9 +113,9 @@ class CustomerTest extends Reepay_UnitTestCase {
 		$user = self::factory()->user->create();
 
 		$this::assertSame(
-			'rp-custom-handle-1',
+			'customer-' . $user,
 			rp_get_customer_handle( $user ),
-			'Wrong customer handle from API'
+			'Handle must not be taken from an unverified-email API lookup'
 		);
 	}
 

@@ -36,6 +36,7 @@ class UnsettledOrdersRealtimeCorrectionTest extends Reepay_UnitTestCase {
 			array(
 				'status'         => 'on-hold',
 				'payment_method' => reepay()->gateways()->checkout()->id,
+				'total'          => 1, // The invoice amounts below are 1.00 in minor units.
 			)
 		);
 		$order = $this->order_generator->order();
@@ -55,6 +56,8 @@ class UnsettledOrdersRealtimeCorrectionTest extends Reepay_UnitTestCase {
 
 		$this->api_mock->method( 'get_invoice_data' )->willReturn(
 			array(
+				'amount'            => 0,
+				'currency'          => get_woocommerce_currency(),
 				'authorized_amount' => 100,
 				'settled_amount'    => 100,
 			)

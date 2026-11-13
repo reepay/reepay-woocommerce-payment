@@ -635,7 +635,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			$response = reepay()->api( $this )->request( 'PUT', 'https://api.reepay.com/v1/account/webhook_settings', $data );
 			if ( is_wp_error( $response ) ) {
-				throw new Exception( $response->get_error_message(), $response->get_error_code() );
+				throw new Exception( $response->get_error_message(), intval( $response->get_error_code() ) );
 			}
 
 			$this->log(
@@ -1416,7 +1416,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				}
 
 				if ( wcr_cart_only_reepay_subscriptions() ) {
-					$method = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/payment_method/' . $token->get_token() );
+					$method = reepay()->api( $this )->request( 'GET', 'https://api.reepay.com/v1/payment_method/' . rawurlencode( (string) $token->get_token() ) );
 					if ( is_wp_error( $method ) ) {
 						wc_add_notice( $method->get_error_message(), 'error' );
 						return false;
@@ -1562,7 +1562,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			reepay()->api( $this )->request(
 				'PUT',
-				'https://api.reepay.com/v1/customer/' . $customer_handle,
+				'https://api.reepay.com/v1/customer/' . rawurlencode( (string) $customer_handle ),
 				$params['order']['customer']
 			);
 		} elseif ( ! empty( $customer_handle ) && ! empty( $vat_number ) ) {
@@ -1578,7 +1578,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 
 			reepay()->api( $this )->request(
 				'PUT',
-				'https://api.reepay.com/v1/customer/' . $customer_handle,
+				'https://api.reepay.com/v1/customer/' . rawurlencode( (string) $customer_handle ),
 				$params['order']['customer']
 			);
 		}
@@ -1819,7 +1819,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				// PUT /v1/customer/{handle} replaces the whole record.
 				reepay()->api( $this )->request(
 					'PUT',
-					'https://api.reepay.com/v1/customer/' . $customer_handle,
+					'https://api.reepay.com/v1/customer/' . rawurlencode( (string) $customer_handle ),
 					$params['create_customer']
 				);
 			}

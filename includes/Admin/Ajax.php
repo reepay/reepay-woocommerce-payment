@@ -8,7 +8,7 @@
 namespace Reepay\Checkout\Admin;
 
 use Exception;
-use WC_AJAX;
+use WC_Order;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -169,7 +169,7 @@ class Ajax {
 			wp_send_json_error( __( 'Order not paid via Reepay', 'reepay-checkout-gateway' ) );
 		}
 
-		$amount = ! empty( $_REQUEST['amount'] ) ? (int) wc_clean( $_REQUEST['amount'] ) : false;
+		$amount = ! empty( $_REQUEST['amount'] ) ? $this->get_amount_or_exit( $order ) : false;
 
 		try {
 			$gateway = rp_get_payment_method( $order );
@@ -187,20 +187,69 @@ class Ajax {
 	}
 
 	/**
-	 * Action for Cancel
+	 * Get the order from the request or exit with a JSON error.
+	 *
+	 * @return WC_Order
+	 */
+	private function get_reepay_order_or_exit(): WC_Order {
+		if ( empty( $_REQUEST['order_id'] ) ) {
+			wp_send_json_error( __( 'Order id not specified', 'reepay-checkout-gateway' ) );
+		}
+
+		$order = wc_get_order( (int) wc_clean( $_REQUEST['order_id'] ) );
+
+		if ( ! $order instanceof WC_Order ) {
+			wp_send_json_error( __( 'Invalid order', 'reepay-checkout-gateway' ) );
+		}
+
+		if ( ! rp_is_order_paid_via_reepay( $order ) ) {
+			wp_send_json_error( __( 'Order not paid via Reepay', 'reepay-checkout-gateway' ) );
+		}
+
+		return $order;
+	}
+
+	/**
+	 * Parse the amount from the request in the order currency or exit with a JSON error.
+	 *
+	 * @param WC_Order $order order the amount belongs to.
+	 *
+	 * @return float
+	 */
+	private function get_amount_or_exit( WC_Order $order ): float {
+		$raw = isset( $_REQUEST['amount'] ) ? wc_clean( wp_unslash( $_REQUEST['amount'] ) ) : '';
+
+		if ( ! is_string( $raw ) || ! is_numeric( wc_format_decimal( $raw ) ) ) {
+			wp_send_json_error( __( 'Invalid amount', 'reepay-checkout-gateway' ) );
+		}
+
+		$decimals = (int) log10( rp_get_currency_multiplier( $order->get_currency() ) );
+		$amount   = round( (float) wc_format_decimal( $raw ), $decimals );
+
+		if ( $amount <= 0 ) {
+			wp_send_json_error( __( 'Amount must be greater than 0.', 'reepay-checkout-gateway' ) );
+		}
+
+		return $amount;
+	}
+
+	/**
+	 * Action for Capture partly
 	 */
 	public function capture_partly() {
 		$this->verify_nonce();
 
-		$order_id = isset( $_REQUEST['order_id'] ) ? (int) wc_clean( $_REQUEST['order_id'] ) : 0;
-		$amount   = isset( $_REQUEST['amount'] ) ? wc_clean( $_REQUEST['amount'] ) : 0;
-
-		$order  = wc_get_order( $order_id );
-		$amount = str_replace( array( ',', '.' ), '', $amount );
+		$order  = $this->get_reepay_order_or_exit();
+		$amount = $this->get_amount_or_exit( $order );
 
 		try {
 			$gateway = rp_get_payment_method( $order );
-			$gateway->capture_payment( $order, (float) ( $amount / 100 ) );
+
+			if ( empty( $gateway ) ) {
+				wp_send_json_error( __( 'Payment method not found at the order', 'reepay-checkout-gateway' ) );
+			}
+
+			$gateway->capture_payment( $order, $amount );
 
 			wp_send_json_success( __( 'Capture partly success.', 'reepay-checkout-gateway' ) );
 		} catch ( Exception $e ) {
@@ -210,37 +259,56 @@ class Ajax {
 	}
 
 	/**
-	 * Action for Cancel
+	 * Action for Refund partly
 	 */
 	public function refund_partly() {
 		$this->verify_nonce();
 
-		$order_id = isset( $_REQUEST['order_id'] ) ? (int) wc_clean( $_REQUEST['order_id'] ) : 0;
-		$amount   = isset( $_REQUEST['amount'] ) ? wc_clean( $_REQUEST['amount'] ) : 0;
-
-		$order  = wc_get_order( $order_id );
-		$amount = str_replace( array( ',', '.' ), '', $amount );
+		$order  = $this->get_reepay_order_or_exit();
+		$amount = $this->get_amount_or_exit( $order );
 
 		try {
 			$gateway = rp_get_payment_method( $order );
-			$gateway->refund_payment( $order, (float) ( $amount / 100 ) );
 
-			$_POST['order_id']               = $order->get_id();
-			$_POST['refund_amount']          = $_REQUEST['amount'];
-			$_POST['refunded_amount']        = $order->get_total_refunded();
-			$_POST['line_item_qtys']         = array();
-			$_POST['line_item_totals']       = array();
-			$_POST['line_item_tax_totals']   = array();
-			$_POST['api_refund']             = 'true';
-			$_POST['restock_refunded_items'] = 'true';
-			$_REQUEST['security']            = wp_create_nonce( 'order-item' );
+			if ( empty( $gateway ) ) {
+				wp_send_json_error( __( 'Payment method not found at the order', 'reepay-checkout-gateway' ) );
+			}
 
-			WC_AJAX::refund_line_items();
-
-			wp_send_json_success( __( 'Refund partly success.', 'reepay-checkout-gateway' ) );
+			$gateway->refund_payment( $order, $amount );
 		} catch ( Exception $e ) {
 			wp_send_json_error( $e->getMessage() );
 		}
+
+		// The money is already refunded at the gateway; only the WooCommerce record is created here.
+		$refund = wc_create_refund(
+			array(
+				'amount'         => $amount,
+				'order_id'       => $order->get_id(),
+				'refund_payment' => false,
+				'restock_items'  => true,
+			)
+		);
+
+		if ( is_wp_error( $refund ) ) {
+			$order->add_order_note(
+				sprintf(
+					// translators: %1$s refund amount, %2$s error message.
+					__( 'Reepay refund of %1$s succeeded, but the WooCommerce refund could not be created: %2$s', 'reepay-checkout-gateway' ),
+					wc_price( $amount, array( 'currency' => $order->get_currency() ) ),
+					$refund->get_error_message()
+				)
+			);
+
+			wp_send_json_error(
+				sprintf(
+					// translators: %s error message.
+					__( 'Refunded at Reepay, but the WooCommerce refund could not be created: %s', 'reepay-checkout-gateway' ),
+					$refund->get_error_message()
+				)
+			);
+		}
+
+		wp_send_json_success( __( 'Refund partly success.', 'reepay-checkout-gateway' ) );
 	}
 
 	/**

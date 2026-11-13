@@ -262,6 +262,81 @@ class OrderStatuses {
 	}
 
 	/**
+	 * Check that the invoice from Frisbii covers the order before the order is marked authorized or paid.
+	 *
+	 * The currency must match and the amount must be exactly the order total, in minor units. A lower or a
+	 * higher invoice is refused. Orders with a Frisbii subscription are checked for currency only, because
+	 * their invoice does not include the subscription items. On a mismatch the order status is left unchanged, a note is
+	 * added and one log line is written.
+	 *
+	 * @param WC_Order    $order   order to check.
+	 * @param array|mixed $invoice invoice data from the API (needs `amount` in minor units and `currency`).
+	 * @param string      $source  where the check was called from, for the log.
+	 * @param string[]    $allowed_states invoice states that are accepted; an empty array skips the state check.
+	 *                                    A missing or other state is refused.
+	 *
+	 * @return bool True if the invoice matches the order.
+	 */
+	public static function invoice_matches_order( WC_Order $order, $invoice, string $source = '', array $allowed_states = array() ): bool {
+		$reason = '';
+
+		if ( ! is_array( $invoice ) || ! isset( $invoice['amount'], $invoice['currency'] ) || ! is_numeric( $invoice['amount'] ) ) {
+			$reason = 'invoice amount or currency is missing';
+		} elseif ( ! empty( $allowed_states ) && ! in_array( $invoice['state'] ?? null, $allowed_states, true ) ) {
+			$reason = 'invoice state is not accepted';
+		} elseif ( strtoupper( (string) $invoice['currency'] ) !== strtoupper( $order->get_currency() ) ) {
+			$reason = 'currency differs';
+		} elseif ( empty( $order->get_meta( '_reepay_state_authorized' ) ) && empty( $order->get_meta( '_reepay_subscription_handle' ) ) && ! order_contains_subscription( $order ) ) {
+			// An order whose authorization was already accepted may be edited later by the shop, so only new payments are compared.
+			$expected = (int) rp_prepare_amount( (float) $order->get_total(), $order->get_currency() );
+
+			// After a partial settle Frisbii lowers `amount` to the settled sum and keeps what was authorized in `authorized_amount`.
+			$paid = (int) $invoice['amount'];
+			if ( isset( $invoice['authorized_amount'] ) && is_numeric( $invoice['authorized_amount'] ) ) {
+				$paid = max( $paid, (int) $invoice['authorized_amount'] );
+			}
+
+			if ( $paid !== $expected ) {
+				$reason = $paid < $expected ? 'invoice amount is lower than the order total' : 'invoice amount is higher than the order total';
+			}
+		}
+
+		if ( '' === $reason ) {
+			return true;
+		}
+
+		$order->add_order_note(
+			sprintf(
+				// translators: %s invoice handle.
+				__( 'Payment was not accepted: the amount or currency of invoice %s does not match this order. Check the order and the invoice in Frisbii.', 'reepay-checkout-gateway' ),
+				(string) $order->get_meta( '_reepay_order' )
+			)
+		);
+
+		if ( function_exists( 'wc_get_logger' ) ) {
+			wc_get_logger()->warning(
+				sprintf(
+					'Invoice does not match Order ID %d (%s). Source: %s. Invoice: %s. Order total: %s %s. Invoice amount: %s %s (minor units).',
+					$order->get_id(),
+					$reason,
+					$source,
+					(string) $order->get_meta( '_reepay_order' ),
+					$order->get_total(),
+					$order->get_currency(),
+					is_array( $invoice ) && isset( $invoice['amount'] ) && is_scalar( $invoice['amount'] ) ? $invoice['amount'] : 'n/a',
+					is_array( $invoice ) && isset( $invoice['currency'] ) && is_scalar( $invoice['currency'] ) ? $invoice['currency'] : 'n/a'
+				),
+				array(
+					'source'  => 'reepay_order_statuses',
+					'_legacy' => true,
+				)
+			);
+		}
+
+		return false;
+	}
+
+	/**
 	 * Set Authorized Status.
 	 *
 	 * @param WC_Order $order          order to set.
@@ -336,6 +411,10 @@ class OrderStatuses {
 		$invoice = reepay()->api( $order )->get_invoice_data( $order );
 
 		if ( is_wp_error( $invoice ) ) {
+			return false;
+		}
+
+		if ( ! self::invoice_matches_order( $order, $invoice, 'set_settled_status' ) ) {
 			return false;
 		}
 

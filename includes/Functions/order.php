@@ -213,7 +213,7 @@ if ( ! function_exists( 'rp_get_order_by_customer' ) ) {
 	 * @return false|WC_Order
 	 */
 	function rp_get_order_by_customer( string $customer_id ) {
-		$reepay_list_invoice = reepay()->api( 'list-invoice' )->request( 'GET', "https://api.reepay.com/v1/list/invoice?customer=$customer_id" );
+		$reepay_list_invoice = reepay()->api( 'list-invoice' )->request( 'GET', 'https://api.reepay.com/v1/list/invoice?' . http_build_query( array( 'customer' => $customer_id ) ) );
 
 		if ( is_wp_error( $reepay_list_invoice ) || empty( $reepay_list_invoice['content'] ) ) {
 			return '';

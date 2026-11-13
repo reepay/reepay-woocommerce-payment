@@ -37,11 +37,15 @@ abstract class ReepayTokens {
 		if ( is_numeric( $token ) ) {
 			$token = WC_Payment_Tokens::get( $token );
 		} elseif ( is_string( $token ) ) {
-			$token = self::get_payment_token( $token );
+			$token = self::get_payment_token( $token, $order->get_customer_id() );
 		}
 
 		if ( ! $token instanceof TokenReepay && ! $token instanceof TokenReepayMS && ! $token instanceof TokenReepayVR ) {
 			throw new Exception( 'Invalid token parameter' );
+		}
+
+		if ( $token->get_user_id() !== $order->get_customer_id() ) {
+			throw new Exception( 'Token does not belong to the order customer' );
 		}
 
 		if ( $token->get_id() ) {
@@ -71,8 +75,8 @@ abstract class ReepayTokens {
 	 * @throws Exception If invalid token or order.
 	 */
 	public static function reepay_save_token( WC_Order $order, string $reepay_token ): ?WC_Payment_Token {
-		// Check if token is exists in WooCommerce.
-		$token = self::get_payment_token( $reepay_token );
+		// Check if the order customer already owns this token in WooCommerce.
+		$token = self::get_payment_token( $reepay_token, $order->get_customer_id() );
 
 		if ( $token ) {
 			// Just assign token to order.
@@ -296,24 +300,18 @@ abstract class ReepayTokens {
 			throw new Exception( esc_html__( 'Card not found', 'reepay-checkout-gateway' ) );
 		}
 
-		// Check if token already exists to prevent duplicates.
-		$existing_token = self::get_payment_token( $card_info['id'] );
-		if ( $existing_token && $existing_token->get_user_id() === $customer_id ) {
+		// Reuse the token if this customer already owns it.
+		$existing_token = self::get_payment_token( $card_info['id'], $customer_id );
+		if ( $existing_token ) {
 			return array(
 				'token'     => $existing_token,
 				'card_info' => $card_info,
 			);
 		}
 
-		// Additional check using user-specific method.
-		if ( self::user_has_token( $customer_id, $card_info['id'] ) ) {
-			$existing_token = self::get_payment_token( $card_info['id'] );
-			if ( $existing_token ) {
-				return array(
-					'token'     => $existing_token,
-					'card_info' => $card_info,
-				);
-			}
+		// A token row owned by someone else means the card belongs to another customer.
+		if ( self::get_payment_token( $card_info['id'] ) ) {
+			throw new Exception( esc_html__( 'Card already belongs to another customer', 'reepay-checkout-gateway' ) );
 		}
 
 		if ( 'ms_' === substr( $card_info['id'], 0, 3 ) ) {
@@ -404,76 +402,47 @@ abstract class ReepayTokens {
 	/**
 	 * Get Payment Token by Token string.
 	 *
-	 * @param string $token token string.
+	 * @param string   $token   token string.
+	 * @param int|null $user_id Optional. Only match a token owned by this user.
 	 *
 	 * @return WC_Payment_Token|null
 	 */
-	public static function get_payment_token( string $token ) {
+	public static function get_payment_token( string $token, ?int $user_id = null ) {
 		global $wpdb;
 
 		if ( empty( $token ) ) {
 			return null;
 		}
 
-		$token_id = wp_cache_get( $token, 'reepay_tokens' );
+		$cache_key = null === $user_id ? $token : $user_id . ':' . $token;
+		$token_id  = wp_cache_get( $cache_key, 'reepay_tokens' );
 
 		if ( ! empty( $token_id ) ) {
 			return WC_Payment_Tokens::get( $token_id );
 		}
 
-		$token_id = (int) $wpdb->get_var( //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			$wpdb->prepare(
-				"SELECT token_id FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE token = %s;",
+		if ( null === $user_id ) {
+			$query = $wpdb->prepare(
+				"SELECT token_id FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE token = %s ORDER BY token_id ASC LIMIT 1;",
 				$token
-			)
-		);
+			);
+		} else {
+			$query = $wpdb->prepare(
+				"SELECT token_id FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE token = %s AND user_id = %d ORDER BY token_id ASC LIMIT 1;",
+				$token,
+				$user_id
+			);
+		}
+
+		$token_id = (int) $wpdb->get_var( $query ); //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.PreparedSQL.NotPrepared
 
 		if ( empty( $token_id ) ) {
 			return null;
 		}
 
-		wp_cache_set( $token, $token_id, 'reepay_tokens' );
+		wp_cache_set( $cache_key, $token_id, 'reepay_tokens' );
 
 		return WC_Payment_Tokens::get( $token_id );
-	}
-
-	/**
-	 * Check if user already has this token to prevent duplicates
-	 *
-	 * @param int    $user_id User ID.
-	 * @param string $token   Token string.
-	 *
-	 * @return bool
-	 */
-	public static function user_has_token( int $user_id, string $token ): bool {
-		global $wpdb;
-
-		if ( empty( $token ) || $user_id < 1 ) {
-			return false;
-		}
-
-		// Create a unique cache key for this user-token combination.
-		$cache_key     = "user_{$user_id}_token_{$token}";
-		$cached_result = wp_cache_get( $cache_key, 'reepay_user_tokens' );
-
-		if ( false !== $cached_result ) {
-			return (bool) $cached_result;
-		}
-
-		$count = (int) $wpdb->get_var( //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE token = %s AND user_id = %d",
-				$token,
-				$user_id
-			)
-		);
-
-		$has_token = $count > 0;
-
-		// Cache the result for future requests.
-		wp_cache_set( $cache_key, $has_token, 'reepay_user_tokens' );
-
-		return $has_token;
 	}
 
 	/**

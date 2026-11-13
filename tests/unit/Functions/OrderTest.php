@@ -252,6 +252,18 @@ class OrderTest extends Reepay_UnitTestCase {
 		$this->assertSame( '', $result );
 	}
 
+	/**
+	 * Test @see rp_get_order_by_customer sends the customer id as one encoded query value (RSCC-007).
+	 */
+	public function test_rp_get_order_by_customer_encodes_customer_in_query() {
+		$this->api_mock->expects( $this->once() )
+			->method( 'request' )
+			->with( 'GET', 'https://api.reepay.com/v1/list/invoice?customer=cust-1%26size%3D1%23x' )
+			->willReturn( array( 'content' => array() ) );
+
+		rp_get_order_by_customer( 'cust-1&size=1#x' );
+	}
+
 	// -----------------------------------------------------------------------
 	// rp_get_order_vat_number()
 	// -----------------------------------------------------------------------

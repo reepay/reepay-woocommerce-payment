@@ -540,7 +540,10 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 	 * doesn't leak into unrelated tests.
 	 */
 	public function tear_down() {
-		unset( $_GET['tab'], $_GET['section'] );
+		unset( $_GET['tab'], $_GET['section'], $_GET['key'] );
+		remove_filter( 'woocommerce_is_checkout', '__return_true' );
+		set_query_var( 'order-pay', '' );
+		unset( $GLOBALS['wp']->query_vars['order-pay'] );
 
 		parent::tear_down();
 	}
@@ -628,5 +631,93 @@ class ReepayCheckoutTest extends Reepay_UnitTestCase {
 			'legacy-handle',
 			self::$gateway->form_fields['payment_window_configuration']['options']
 		);
+	}
+
+	// -----------------------------------------------------------------------
+	// RSCC-013: pay_session_id
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Puts the request on the pay page of an order with the given key in the URL.
+	 *
+	 * @param int    $order_id Order id in the order-pay endpoint.
+	 * @param string $key      Value of the key query parameter; empty for none.
+	 */
+	private function go_to_pay_page( int $order_id, string $key ) {
+		add_filter( 'woocommerce_is_checkout', '__return_true' );
+		set_query_var( 'order-pay', $order_id );
+		$GLOBALS['wp']->query_vars['order-pay'] = $order_id; // is_checkout_pay_page() reads the global.
+
+		if ( '' === $key ) {
+			unset( $_GET['key'] );
+		} else {
+			$_GET['key'] = $key;
+		}
+	}
+
+	/**
+	 * Creates an order with a stored session id.
+	 *
+	 * @return WC_Order
+	 */
+	private function create_order_with_session(): WC_Order {
+		$order = wc_create_order();
+		$order->update_meta_data( 'reepay_session_id', 'cs_' . str_repeat( 'a', 32 ) );
+		$order->save();
+
+		return $order;
+	}
+
+	/**
+	 * The order's own session id is given to the script on its pay page with the right key.
+	 */
+	public function test_pay_session_id_is_given_for_matching_order_key() {
+		$order = $this->create_order_with_session();
+		$this->go_to_pay_page( $order->get_id(), $order->get_order_key() );
+
+		$this->assertSame( 'cs_' . str_repeat( 'a', 32 ), self::$gateway->get_localize_script_data()['pay_session_id'] );
+	}
+
+	/**
+	 * A wrong, missing or array order key gives no session id.
+	 */
+	public function test_pay_session_id_is_empty_for_wrong_missing_or_array_key() {
+		$order = $this->create_order_with_session();
+
+		$this->go_to_pay_page( $order->get_id(), 'wc_order_wrong' );
+		$this->assertSame( '', self::$gateway->get_localize_script_data()['pay_session_id'] );
+
+		$this->go_to_pay_page( $order->get_id(), '' );
+		$this->assertSame( '', self::$gateway->get_localize_script_data()['pay_session_id'] );
+
+		$this->go_to_pay_page( $order->get_id(), 'x' );
+		$_GET['key'] = array( $order->get_order_key() );
+		$this->assertSame( '', self::$gateway->get_localize_script_data()['pay_session_id'] );
+	}
+
+	/**
+	 * The key of another order does not give this order's session id, and an unknown order gives none.
+	 */
+	public function test_pay_session_id_is_empty_for_other_orders_key_and_unknown_order() {
+		$order = $this->create_order_with_session();
+		$other = $this->create_order_with_session();
+
+		$this->go_to_pay_page( $order->get_id(), $other->get_order_key() );
+		$this->assertSame( '', self::$gateway->get_localize_script_data()['pay_session_id'] );
+
+		$this->go_to_pay_page( 999999, $order->get_order_key() );
+		$this->assertSame( '', self::$gateway->get_localize_script_data()['pay_session_id'] );
+	}
+
+	/**
+	 * Outside the pay page no session id is given, even with a valid key in the URL.
+	 */
+	public function test_pay_session_id_is_empty_outside_pay_page() {
+		$order = $this->create_order_with_session();
+		$this->go_to_pay_page( $order->get_id(), $order->get_order_key() );
+		set_query_var( 'order-pay', '' );
+		unset( $GLOBALS['wp']->query_vars['order-pay'] );
+
+		$this->assertSame( '', self::$gateway->get_localize_script_data()['pay_session_id'] );
 	}
 }

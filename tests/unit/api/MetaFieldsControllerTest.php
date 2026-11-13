@@ -295,6 +295,8 @@ class MetaFieldsControllerTest extends Reepay_UnitTestCase {
 	 * @testdox BWPM-307: get_user_meta_fields() ignores a forged query-string user_id
 	 */
 	public function test_get_user_meta_fields_ignores_query_string_user_id() {
+		// An administrator, so the RSCC-011 key filter for customers does not hide the test keys.
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 		$self_id   = self::factory()->user->create();
 		$victim_id = self::factory()->user->create();
 
@@ -481,5 +483,531 @@ class MetaFieldsControllerTest extends Reepay_UnitTestCase {
 			$result,
 			'A protected key must be rejected before add/edit handlers ever run, even for the user\'s own route.'
 		);
+	}
+
+	/**
+	 * Calls the permission check for a user route and returns the result and the security log lines.
+	 *
+	 * @param int|string $route_user_id user_id in the URL.
+	 * @param mixed      $key           Value of the key query parameter, or null for none.
+	 *
+	 * @return array{0: mixed, 1: string[]}
+	 */
+	private function check_user_route( $route_user_id, $key = null ): array {
+		$logs = array();
+		$grab = function ( $message ) use ( &$logs ) {
+			if ( false !== strpos( (string) $message, 'SECURITY' ) || false !== strpos( (string) $message, 'Security Event' ) ) {
+				$logs[ (string) $message ] = (string) $message;
+			}
+
+			return $message;
+		};
+		add_filter( 'woocommerce_logger_log_message', $grab );
+
+		$request = new WP_REST_Request( 'GET', "/billwerk/v1/meta-fields/user/$route_user_id" );
+		$request->set_url_params( array( 'user_id' => $route_user_id ) );
+		if ( null !== $key ) {
+			$request->set_query_params( array( 'key' => $key ) );
+		}
+
+		$result = $this->controller->get_items_permissions_check( $request );
+		remove_filter( 'woocommerce_logger_log_message', $grab );
+
+		return array( $result, array_values( $logs ) );
+	}
+
+	/**
+	 * RSCC-010: an anonymous caller (user id 0) must not match the "own user" comparison.
+	 *
+	 * @testdox RSCC-010 - Anonymous caller is refused and nothing is logged
+	 */
+	public function test_user_route_refuses_anonymous_caller_without_logging() {
+		wp_set_current_user( 0 );
+
+		list( $result, $logs ) = $this->check_user_route( 0, 'forged_key' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 401, $result->get_error_data()['status'] );
+		$this->assertCount( 0, $logs );
+	}
+
+	/**
+	 * RSCC-010: ids that are not positive integers are refused before any key check.
+	 *
+	 * @testdox RSCC-010 - Invalid user ids are refused and nothing is logged
+	 */
+	public function test_user_route_refuses_invalid_user_ids() {
+		wp_set_current_user( self::factory()->user->create() );
+
+		foreach ( array( '0', '-1', 'abc' ) as $id ) {
+			list( $result, $logs ) = $this->check_user_route( $id, 'forged_key' );
+
+			$this->assertWPError( $result, "user_id $id" );
+			$this->assertCount( 0, $logs, "user_id $id" );
+		}
+	}
+
+	/**
+	 * RSCC-010: genuine own-user and administrator access is unchanged.
+	 *
+	 * @testdox RSCC-010 - Own user and administrator keep access
+	 */
+	public function test_user_route_still_allows_own_user_and_administrator() {
+		$user_id = self::factory()->user->create();
+		wp_set_current_user( $user_id );
+		list( $result ) = $this->check_user_route( $user_id, 'nickname' );
+		$this->assertTrue( $result );
+
+		list( $result ) = $this->check_user_route( $user_id + 1000, 'nickname' );
+		$this->assertWPError( $result );
+
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		list( $result ) = $this->check_user_route( $user_id, 'nickname' );
+		$this->assertTrue( $result );
+	}
+
+	/**
+	 * RSCC-010: request-derived values reach the log short and on one line, and an array key is not printed.
+	 *
+	 * @testdox RSCC-010 - Logged key is cleaned and capped
+	 */
+	public function test_logged_key_is_single_line_and_capped() {
+		wp_set_current_user( self::factory()->user->create() );
+
+		list( $result, $logs ) = $this->check_user_route( get_current_user_id(), "bad\r\n[2026-01-01] forged " . str_repeat( 'A', 10000 ) );
+
+		$this->assertWPError( $result );
+		$this->assertCount( 1, $logs );
+		$this->assertLessThan( 1500, strlen( $logs[0] ) );
+		$this->assertStringNotContainsString( "\r", $logs[0] );
+		$this->assertSame( 0, preg_match( '/^\[2026-01-01\]/m', $logs[0] ), 'Forged text must not start a log line.' );
+
+		wp_set_current_user( self::factory()->user->create() );
+		list( , $logs ) = $this->check_user_route( get_current_user_id(), array( 'a' => 'b' ) );
+		$this->assertCount( 1, $logs );
+		$this->assertStringContainsString( '[set_meta_key] => invalid', $logs[0] );
+	}
+
+	/**
+	 * RSCC-010: forwarding headers must not decide the logged IP.
+	 *
+	 * @testdox RSCC-010 - Logged IP comes from REMOTE_ADDR only
+	 */
+	public function test_logged_ip_ignores_forwarding_headers() {
+		wp_set_current_user( self::factory()->user->create() );
+		$_SERVER['REMOTE_ADDR']           = '203.0.113.7';
+		$_SERVER['HTTP_X_FORWARDED_FOR']  = '198.51.100.99';
+		$_SERVER['HTTP_CF_CONNECTING_IP'] = '198.51.100.98';
+
+		list( , $logs ) = $this->check_user_route( get_current_user_id(), 'forged_key' );
+
+		unset( $_SERVER['HTTP_X_FORWARDED_FOR'], $_SERVER['HTTP_CF_CONNECTING_IP'] );
+
+		$this->assertCount( 1, $logs );
+		$this->assertStringContainsString( '203.0.113.7', $logs[0] );
+		$this->assertStringNotContainsString( '198.51.100', $logs[0] );
+	}
+
+	/**
+	 * RSCC-010: values of a successful edit reach the audit log capped and on one line.
+	 *
+	 * @testdox RSCC-010 - Old and new values of an edit are cleaned and capped in the log
+	 */
+	public function test_edit_event_values_are_single_line_and_capped() {
+		$user_id = self::factory()->user->create();
+		// An administrator-only key: allow-listed profile keys refuse a value this long (RSCC-012).
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$meta_id = add_user_meta( $user_id, 'reepay_audit_note', "old\r\n[2026-01-01] forged " . str_repeat( 'O', 10000 ) );
+		$new     = "new\r\n[2026-01-01] forged " . str_repeat( 'N', 10000 );
+
+		$logs = array();
+		$grab = function ( $message ) use ( &$logs ) {
+			if ( false !== strpos( (string) $message, 'user_metadata_modification' ) ) {
+				$logs[ (string) $message ] = (string) $message;
+			}
+
+			return $message;
+		};
+		add_filter( 'woocommerce_logger_log_message', $grab );
+
+		$request = new WP_REST_Request( 'PUT', "/billwerk/v1/meta-fields/user/$user_id/$meta_id" );
+		$request->set_url_params(
+			array(
+				'user_id'  => $user_id,
+				'field_id' => $meta_id,
+			)
+		);
+		$request->set_param( 'key', 'reepay_audit_note' );
+		$request->set_param( 'value', $new );
+		$this->controller->edit_user_meta_field( $request );
+		remove_filter( 'woocommerce_logger_log_message', $grab );
+
+		$logs = array_values( $logs );
+		$this->assertCount( 1, $logs );
+		$this->assertLessThan( 2500, strlen( $logs[0] ) );
+		$this->assertStringNotContainsString( "\r", $logs[0] );
+		$this->assertSame( 0, preg_match( '/^\[2026-01-01\]/m', $logs[0] ), 'Forged text must not start a log line.' );
+	}
+
+	/**
+	 * RSCC-010: a user can log one denied attempt per interval, and the Allow-header re-run logs nothing.
+	 *
+	 * @testdox RSCC-010 - Denied attempts are limited and logged once per request
+	 */
+	public function test_denied_attempts_are_rate_limited_and_not_repeated_for_allow_header() {
+		$user_id = self::factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		list( , $logs ) = $this->check_user_route( $user_id, 'forged_one' );
+		$this->assertCount( 1, $logs, 'The first denied attempt is logged.' );
+
+		list( $result, $logs ) = $this->check_user_route( $user_id, 'forged_two' );
+		$this->assertWPError( $result, 'The request is still refused.' );
+		$this->assertCount( 0, $logs, 'A second denied attempt inside the interval is not logged.' );
+
+		wp_set_current_user( self::factory()->user->create() );
+		$inside_allow_header = array();
+		add_filter(
+			'rest_post_dispatch',
+			function ( $response ) use ( &$inside_allow_header ) {
+				$inside_allow_header = $this->check_user_route( get_current_user_id(), 'forged_three' )[1];
+
+				return $response;
+			}
+		);
+		apply_filters( 'rest_post_dispatch', new WP_REST_Response(), rest_get_server(), new WP_REST_Request() );
+		$this->assertCount( 0, $inside_allow_header, 'The permission callback re-run for the Allow header does not log.' );
+	}
+
+	/**
+	 * Runs the permission callback for a user route that names a meta row by id.
+	 *
+	 * @param int    $route_user_id User id in the route.
+	 * @param int    $meta_id       Meta row id in the route.
+	 * @param string $method        HTTP method.
+	 *
+	 * @return true|WP_Error
+	 */
+	private function check_row_route( int $route_user_id, int $meta_id, string $method = 'DELETE' ) {
+		$request = new WP_REST_Request( $method, "/billwerk/v1/meta-fields/user/$route_user_id/$meta_id" );
+		$request->set_url_params(
+			array(
+				'user_id'  => $route_user_id,
+				'field_id' => $meta_id,
+			)
+		);
+
+		return $this->controller->get_items_permissions_check( $request );
+	}
+
+	/**
+	 * RSCC-011: DELETE and PUT carry a meta id, so the allow-list applies to the key stored in that row.
+	 *
+	 * @testdox RSCC-011 - Customer cannot delete or edit a meta row outside the allow-list
+	 */
+	public function test_customer_row_routes_refuse_keys_outside_allow_list() {
+		$user_id = self::factory()->user->create();
+		wp_set_current_user( $user_id );
+		$meta_id = add_user_meta( $user_id, 'reepay_customer_id', 'cust-1' );
+
+		foreach ( array( 'DELETE', 'PUT' ) as $method ) {
+			$result = $this->check_row_route( $user_id, $meta_id, $method );
+			$this->assertWPError( $result, "$method must be refused." );
+			$this->assertSame( 'rest_forbidden_meta_key', $result->get_error_code() );
+			$this->assertSame( 403, $result->get_error_data()['status'] );
+		}
+	}
+
+	/**
+	 * RSCC-011: allow-listed rows, and administrators, are not affected.
+	 *
+	 * @testdox RSCC-011 - Allow-listed rows and administrators still pass
+	 */
+	public function test_row_routes_still_allow_allow_listed_keys_and_administrator() {
+		$user_id = self::factory()->user->create();
+		wp_set_current_user( $user_id );
+		$nickname_id = add_user_meta( $user_id, 'nickname', 'nick' );
+		$this->assertTrue( $this->check_row_route( $user_id, $nickname_id ) );
+
+		$other_id = add_user_meta( $user_id, 'reepay_customer_id', 'cust-1' );
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->assertTrue( $this->check_row_route( $user_id, $other_id ) );
+	}
+
+	/**
+	 * RSCC-011: another user's row id is not allowed through, and the row is not deleted.
+	 *
+	 * @testdox RSCC-011 - A row of another user is not reachable
+	 */
+	public function test_customer_row_route_with_other_users_row_does_not_delete_it() {
+		$user_id  = self::factory()->user->create();
+		$other_id = self::factory()->user->create();
+		wp_set_current_user( $user_id );
+		$meta_id = add_user_meta( $other_id, 'nickname', 'nick' );
+
+		$request = new WP_REST_Request( 'DELETE', "/billwerk/v1/meta-fields/user/$user_id/$meta_id" );
+		$request->set_url_params(
+			array(
+				'user_id'  => $user_id,
+				'field_id' => $meta_id,
+			)
+		);
+		$result = $this->controller->delete_user_meta_field( $request );
+
+		$this->assertWPError( $result );
+		$this->assertNotFalse( get_metadata_by_mid( 'user', $meta_id ) );
+	}
+
+	/**
+	 * RSCC-011: the list for a customer holds only allow-listed keys; the administrator list is unchanged.
+	 *
+	 * @testdox RSCC-011 - GET list is filtered for customers
+	 */
+	public function test_get_user_meta_fields_lists_only_allow_listed_keys_for_customer() {
+		$user_id = self::factory()->user->create();
+		add_user_meta( $user_id, 'reepay_customer_id', 'cust-1' );
+		add_user_meta( $user_id, 'nickname', 'nick' );
+
+		$keys_for = function () use ( $user_id ) {
+			$request = new WP_REST_Request( 'GET', "/billwerk/v1/meta-fields/user/$user_id" );
+			$request->set_url_params( array( 'user_id' => $user_id ) );
+			$data = $this->controller->get_user_meta_fields( $request )->get_data();
+
+			return array_column( $data, 'key' );
+		};
+
+		wp_set_current_user( $user_id );
+		$keys = $keys_for();
+		$this->assertContains( 'nickname', $keys );
+		$this->assertSame( array(), array_diff( $keys, MetaFieldsController::NON_ADMIN_USER_META_KEYS ) );
+
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->assertContains( 'reepay_customer_id', $keys_for() );
+	}
+
+	/**
+	 * RSCC-011: the row id comes from the URL, as the permission check reads it; a query or body field_id
+	 * must not select another row.
+	 *
+	 * @testdox RSCC-011 - A forged query or body field_id does not select another row
+	 */
+	public function test_user_row_handlers_ignore_forged_field_id() {
+		$user_id = self::factory()->user->create();
+		wp_set_current_user( $user_id );
+		$nickname_id = add_user_meta( $user_id, 'nickname', 'nick' );
+		$other_id    = add_user_meta( $user_id, 'reepay_customer_id', 'cust-1' );
+
+		foreach ( array( 'query', 'body' ) as $where ) {
+			$request = new WP_REST_Request( 'DELETE', "/billwerk/v1/meta-fields/user/$user_id/$nickname_id" );
+			$request->set_url_params(
+				array(
+					'user_id'  => $user_id,
+					'field_id' => $nickname_id,
+				)
+			);
+			if ( 'query' === $where ) {
+				$request->set_query_params( array( 'field_id' => $other_id ) );
+			} else {
+				$request->set_body_params( array( 'field_id' => $other_id ) );
+			}
+
+			$this->controller->delete_user_meta_field( $request );
+			$this->assertNotFalse( get_metadata_by_mid( 'user', $other_id ), "A $where field_id must not delete another row." );
+			$this->assertFalse( get_metadata_by_mid( 'user', $nickname_id ), 'The row named in the URL is deleted.' );
+			$nickname_id = add_user_meta( $user_id, 'nickname', 'nick' );
+		}
+
+		$request = new WP_REST_Request( 'PUT', "/billwerk/v1/meta-fields/user/$user_id/$nickname_id" );
+		$request->set_url_params(
+			array(
+				'user_id'  => $user_id,
+				'field_id' => $nickname_id,
+			)
+		);
+		$request->set_query_params( array( 'field_id' => $other_id ) );
+		$request->set_param( 'key', 'nickname' );
+		$request->set_param( 'value', 'changed' );
+		$this->controller->edit_user_meta_field( $request );
+		$this->assertSame( 'cust-1', get_metadata_by_mid( 'user', $other_id )->meta_value, 'A query field_id must not edit another row.' );
+		$this->assertSame( 'changed', get_metadata_by_mid( 'user', $nickname_id )->meta_value );
+	}
+
+	/**
+	 * Send a POST (add) or PUT (edit) for one of the user's profile keys straight to the handler.
+	 *
+	 * @param int    $user_id Route user.
+	 * @param string $key     Meta key.
+	 * @param mixed  $value   Value.
+	 * @param int    $meta_id Row id; when set the request is an edit.
+	 *
+	 * @return mixed Handler result.
+	 */
+	private function write_profile_field( int $user_id, string $key, $value, int $meta_id = 0 ) {
+		$route   = "/billwerk/v1/meta-fields/user/$user_id" . ( $meta_id ? "/$meta_id" : '' );
+		$request = new WP_REST_Request( $meta_id ? 'PUT' : 'POST', $route );
+		$request->set_url_params(
+			array(
+				'user_id'  => $user_id,
+				'field_id' => $meta_id,
+			)
+		);
+		$request->set_param( 'key', $key );
+		$request->set_param( 'value', $value );
+
+		return $meta_id ? $this->controller->edit_user_meta_field( $request ) : $this->controller->add_user_meta_field( $request );
+	}
+
+	/**
+	 * RSCC-012: markup in a profile field is stored in the form WordPress would store it.
+	 *
+	 * @testdox RSCC-012 - Markup in profile fields is cleaned on add and edit
+	 */
+	public function test_profile_fields_are_sanitised() {
+		$user_id = self::factory()->user->create();
+		wp_set_current_user( $user_id );
+		// Core creates a nickname row for every new user; start without it.
+		delete_user_meta( $user_id, 'nickname' );
+
+		$result = $this->write_profile_field( $user_id, 'nickname', '<script>alert(1)</script><b>Bob</b>' );
+		$this->assertNotWPError( $result );
+		$stored = get_user_meta( $user_id, 'nickname', true );
+		$this->assertSame( sanitize_user_field( 'nickname', '<script>alert(1)</script><b>Bob</b>', $user_id, 'db' ), $stored );
+		$this->assertStringNotContainsString( '<', $stored );
+		$this->assertSame( $stored, $result->get_data()['value'] );
+
+		$meta_id = $result->get_data()['id'];
+		$result  = $this->write_profile_field( $user_id, 'nickname', "Line1\n<img src=x onerror=alert(1)>", $meta_id );
+		$this->assertNotWPError( $result );
+		$stored = get_user_meta( $user_id, 'nickname', true );
+		$this->assertStringNotContainsString( '<', $stored );
+		$this->assertSame( sanitize_user_field( 'nickname', "Line1\n<img src=x onerror=alert(1)>", $user_id, 'db' ), $stored );
+	}
+
+	/**
+	 * RSCC-012: unsupported locale, non-string and oversize values are refused and nothing is stored.
+	 *
+	 * @testdox RSCC-012 - Bad locale, non-string and oversize values are refused
+	 */
+	public function test_profile_fields_refuse_invalid_values() {
+		$user_id = self::factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		$cases = array(
+			'locale'      => 'xx_XX',
+			'nickname'    => array( 'a', 'b' ),
+			'first_name'  => str_repeat( 'a', 256 ),
+			'description' => str_repeat( 'a', 1001 ),
+		);
+		foreach ( $cases as $key => $value ) {
+			delete_user_meta( $user_id, $key );
+			$result = $this->write_profile_field( $user_id, $key, $value );
+			$this->assertWPError( $result, "$key must be refused." );
+			$this->assertSame( 'rest_invalid_meta_value', $result->get_error_code() );
+			$this->assertSame( 400, $result->get_error_data()['status'] );
+			$this->assertSame( array(), get_user_meta( $user_id, $key ), "$key must not be stored." );
+		}
+
+		// An edit is refused too, and the stored row is unchanged.
+		$meta_id = add_user_meta( $user_id, 'locale', 'en_US' );
+		$result  = $this->write_profile_field( $user_id, 'locale', 'xx_XX', $meta_id );
+		$this->assertWPError( $result );
+		$this->assertSame( 'en_US', get_metadata_by_mid( 'user', $meta_id )->meta_value );
+	}
+
+	/**
+	 * RSCC-012: a second POST for the same profile key does not add a row.
+	 *
+	 * @testdox RSCC-012 - Repeated POST for a profile key keeps one row
+	 */
+	public function test_profile_field_post_does_not_duplicate_rows() {
+		$user_id = self::factory()->user->create();
+		wp_set_current_user( $user_id );
+		// Core creates a nickname row for every new user, so start from a key it does not create.
+		delete_user_meta( $user_id, 'description' );
+
+		$this->assertNotWPError( $this->write_profile_field( $user_id, 'description', 'first' ) );
+		$second = $this->write_profile_field( $user_id, 'description', 'second' );
+
+		$this->assertWPError( $second );
+		$this->assertSame( 'meta_key_exists', $second->get_error_code() );
+		$this->assertSame( 409, $second->get_error_data()['status'] );
+		$this->assertSame( array( 'first' ), get_user_meta( $user_id, 'description' ) );
+	}
+
+	/**
+	 * RSCC-012: normal values, an installed locale and the empty locale are stored as sent.
+	 *
+	 * @testdox RSCC-012 - Valid profile values are stored
+	 */
+	public function test_profile_fields_store_valid_values() {
+		$user_id = self::factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		$valid = array(
+			'first_name'  => 'Anna',
+			'last_name'   => 'Andersen',
+			'description' => 'Hello there',
+			'locale'      => 'en_US',
+		);
+		foreach ( $valid as $key => $value ) {
+			delete_user_meta( $user_id, $key );
+			$result = $this->write_profile_field( $user_id, $key, $value );
+			$this->assertNotWPError( $result, "$key must be accepted." );
+			$this->assertSame( $value, get_user_meta( $user_id, $key, true ) );
+		}
+
+		// A numeric string stays a string (it used to be JSON-decoded to an int).
+		$meta_id = add_user_meta( $user_id, 'nickname', 'x' );
+		$this->assertNotWPError( $this->write_profile_field( $user_id, 'nickname', '123', $meta_id ) );
+		$this->assertSame( '123', get_metadata_by_mid( 'user', $meta_id )->meta_value );
+	}
+
+	/**
+	 * RSCC-012: other keys written by an administrator keep the old JSON handling.
+	 *
+	 * @testdox RSCC-012 - Administrator writes to other keys are unchanged
+	 */
+	public function test_administrator_other_keys_unchanged() {
+		$user_id = self::factory()->user->create();
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+		$result = $this->write_profile_field( $user_id, 'reepay_custom', '{"a":1}' );
+		$this->assertNotWPError( $result );
+		$this->assertSame( array( 'a' => 1 ), get_user_meta( $user_id, 'reepay_custom', true ) );
+	}
+
+	/**
+	 * RSCC-012 review finding: apostrophes, quotes and backslashes are stored as sent, not with an added backslash.
+	 *
+	 * @testdox RSCC-012 - Apostrophes and quotes are stored without an added backslash
+	 */
+	public function test_profile_fields_keep_apostrophes_quotes_and_backslashes() {
+		$user_id = self::factory()->user->create();
+		wp_set_current_user( $user_id );
+
+		$cases = array(
+			'last_name'  => "O'Brien",
+			'first_name' => 'Say "hi" a\\b',
+			'nickname'   => 'Tom & Jerry',
+		);
+		// Nickname is stored HTML-encoded by the WordPress field filters, as in core.
+		$expected = array(
+			'last_name'  => "O'Brien",
+			'first_name' => 'Say "hi" a\\b',
+			'nickname'   => 'Tom &amp; Jerry',
+		);
+
+		foreach ( $cases as $key => $value ) {
+			delete_user_meta( $user_id, $key );
+
+			$added = $this->write_profile_field( $user_id, $key, $value );
+			$this->assertNotWPError( $added );
+			$this->assertSame( $expected[ $key ], get_user_meta( $user_id, $key, true ), "POST $key" );
+			$this->assertSame( $expected[ $key ], $added->get_data()['value'], "POST response $key" );
+
+			$edited = $this->write_profile_field( $user_id, $key, $value, $added->get_data()['id'] );
+			$this->assertNotWPError( $edited );
+			$this->assertSame( $expected[ $key ], get_user_meta( $user_id, $key, true ), "PUT $key" );
+		}
 	}
 }
