@@ -43,7 +43,7 @@ class ReepayCustomer {
 	 * @return string Handle, or an empty string if the user has none yet.
 	 */
 	public static function set_reepay_handle( int $user_id ): string {
-		// Per-request cache: prevents repeating the order lookup for the same user within one request.
+		// Per-request cache (found handles only): prevents repeating the order lookup for the same user within one request.
 		// This avoids a double lookup when user_register hook fires first, then rp_get_customer_handle()
 		// calls set_reepay_handle() again during the same checkout process.
 		static $cache = array();
@@ -57,31 +57,44 @@ class ReepayCustomer {
 
 		if ( $user_id > 0 ) {
 			// meta_query is not supported by every order datastore (legacy posts storage), so filter in PHP.
-			// Only the 20 oldest orders are inspected; otherwise the caller falls back to customer-<id>.
-			$orders = wc_get_orders(
-				array(
-					'customer_id' => $user_id,
-					'limit'       => 20,
-					'orderby'     => 'ID',
-					'order'       => 'ASC',
-				)
-			);
+			// Orders are scanned page by page (oldest first) so a handle on an older order is not missed
+			// when the store used another gateway first. The scan is bounded to keep checkout fast.
+			$per_page = 50;
+			for ( $page = 1; $page <= 20 && '' === $customer_handle; $page++ ) {
+				$orders = wc_get_orders(
+					array(
+						'customer_id' => $user_id,
+						'limit'       => $per_page,
+						'paged'       => $page,
+						'orderby'     => 'ID',
+						'order'       => 'ASC',
+					)
+				);
 
-			foreach ( $orders as $order ) {
-				$order_handle = (string) $order->get_meta( '_reepay_customer' );
-				if ( '' !== $order_handle ) {
-					$customer_handle = $order_handle;
+				foreach ( $orders as $order ) {
+					$order_handle = (string) $order->get_meta( '_reepay_customer' );
+					if ( '' !== $order_handle ) {
+						$customer_handle = $order_handle;
+						break;
+					}
+				}
+
+				if ( count( $orders ) < $per_page ) {
 					break;
 				}
 			}
 		}
 
-		if ( ! empty( $customer_handle ) ) {
-			update_user_meta( $user_id, 'reepay_customer_id', $customer_handle );
+		if ( '' === $customer_handle ) {
+			// Do not cache an empty result: user_register runs before WooCommerce links guest orders,
+			// so a later call in the same request (checkout) must be able to find the handle.
+			return '';
 		}
 
+		update_user_meta( $user_id, 'reepay_customer_id', $customer_handle );
+
 		$cache[ $user_id ] = $customer_handle;
-		return $cache[ $user_id ];
+		return $customer_handle;
 	}
 
 	/**

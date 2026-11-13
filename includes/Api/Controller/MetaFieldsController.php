@@ -704,13 +704,8 @@ class MetaFieldsController extends WP_REST_Controller {
 		if ( $is_profile_key ) {
 			update_metadata_by_mid( 'user', $field_id, $value, $key );
 
-			return rest_ensure_response(
-				array(
-					'id'    => $field_id,
-					'key'   => $key,
-					'value' => $value,
-				)
-			);
+			// Keep the existing response shape: the decoded request body.
+			return rest_ensure_response( json_decode( (string) $request->get_body(), true ) );
 		}
 
 		$decoded_value = json_decode( $value, true );

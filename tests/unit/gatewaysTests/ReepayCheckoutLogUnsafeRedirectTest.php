@@ -38,6 +38,12 @@ class ReepayCheckoutLogUnsafeRedirectTest extends Reepay_Ajax_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
+		// _handleAjax() fires admin_init; WooCommerce hooks into it and needs its admin helpers,
+		// which are not loaded when the test runs in the main process.
+		if ( ! function_exists( 'wc_get_page_screen_id' ) ) {
+			require_once WC_ABSPATH . 'includes/admin/wc-admin-functions.php';
+		}
+
 		$this->logs = array();
 		wp_set_current_user( 0 );
 		new ReepayCheckout();

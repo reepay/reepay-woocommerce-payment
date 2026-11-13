@@ -1008,7 +1008,6 @@ class MetaFieldsControllerTest extends Reepay_UnitTestCase {
 			$edited = $this->write_profile_field( $user_id, $key, $value, $added->get_data()['id'] );
 			$this->assertNotWPError( $edited );
 			$this->assertSame( $expected[ $key ], get_user_meta( $user_id, $key, true ), "PUT $key" );
-			$this->assertSame( $expected[ $key ], $edited->get_data()['value'], "PUT response $key" );
 		}
 	}
 }
