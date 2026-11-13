@@ -9,6 +9,7 @@
 namespace Reepay\Checkout\Plugin;
 
 use Reepay\Checkout\OrderFlow\UnsettledOrdersMonitor;
+use Reepay\Checkout\OrderFlow\WebhookLock;
 
 defined( 'ABSPATH' ) || exit();
 
@@ -32,6 +33,8 @@ class LifeCycle {
 	 * Plugin activated hook
 	 */
 	public static function activation_hook() {
+		WebhookLock::install();
+
 		if ( ! get_option( 'woocommerce_reepay_version' ) ) {
 			add_option( 'woocommerce_reepay_version', UpdateDB::DB_VERSION );
 		}

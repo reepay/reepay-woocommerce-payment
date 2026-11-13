@@ -40,6 +40,7 @@ class ApiTest extends Reepay_UnitTestCase {
 		self::$options->set_options(
 			array(
 				'test_mode'   => 'no',
+				'debug'       => 'no',
 				'private_key' => 'priv_test_key_for_unit_tests',
 			)
 		);
@@ -128,6 +129,133 @@ class ApiTest extends Reepay_UnitTestCase {
 			10,
 			3
 		);
+	}
+
+	// -----------------------------------------------------------------------
+	// request() debug logging
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test @see Api::request does not write secret values from the response to the log.
+	 */
+	public function test_request_debug_log_redacts_secret() {
+		self::$options->set_options( array( 'debug' => 'yes' ) );
+
+		$captured = array();
+		$this->mock_http_request(
+			$captured,
+			array(
+				'urls'   => array( 'https://example.test/' ),
+				'secret' => 'super_secret_value_123',
+			)
+		);
+
+		$logged = array();
+		add_filter(
+			'woocommerce_logger_log_message',
+			function ( $message ) use ( &$logged ) {
+				$logged[] = $message;
+
+				return null;
+			}
+		);
+
+		$result = $this->api->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
+		remove_all_filters( 'woocommerce_logger_log_message' );
+
+		$this->assertSame( 'super_secret_value_123', $result['secret'], 'The caller still receives the secret' );
+		$this->assertNotEmpty( $logged );
+		$this->assertStringNotContainsString( 'super_secret_value_123', implode( "\n", $logged ) );
+		$this->assertStringContainsString( '***REDACTED***', implode( "\n", $logged ) );
+	}
+
+	/**
+	 * Test @see Api::recurring does not write the customer's personal data to the log.
+	 */
+	public function test_recurring_log_has_no_customer_personal_data() {
+		$order = $this->order_generator->order();
+		$order->set_billing_email( 'pii-test@example.com' );
+		$order->set_billing_phone( '+4512345678' );
+		$order->set_billing_address_1( 'Secret Street 1' );
+		$order->save();
+
+		$captured = array();
+		$this->mock_http_request( $captured, array( 'id' => 'session_1' ) );
+
+		$logged = array();
+		add_filter(
+			'woocommerce_logger_log_message',
+			function ( $message ) use ( &$logged ) {
+				$logged[] = $message;
+
+				return null;
+			}
+		);
+
+		$this->api->recurring(
+			array(),
+			$order,
+			array(
+				'language'        => 'en_US',
+				'test_mode'       => 'no',
+				'customer_handle' => 'customer-1',
+				'return_url'      => 'https://example.com/return',
+			)
+		);
+		remove_all_filters( 'woocommerce_logger_log_message' );
+
+		$all = implode( "\n", $logged );
+		$this->assertStringContainsString( 'session_recurring_request', $all );
+		$this->assertStringContainsString( 'customer-1', $all );
+		$this->assertStringNotContainsString( 'pii-test@example.com', $all );
+		$this->assertStringNotContainsString( '+4512345678', $all );
+		$this->assertStringNotContainsString( 'Secret Street 1', $all );
+
+		$body = json_decode( $captured['body'], true );
+		$this->assertSame( 'pii-test@example.com', $body['create_customer']['email'], 'The request to Frisbii still carries the data' );
+	}
+
+	/**
+	 * Test @see Api::request keeps the live key on the retry after a rate-limit response
+	 * when force_live is set while test mode is on. Takes about 10 seconds (the retry waits).
+	 */
+	public function test_request_retry_after_rate_limit_keeps_force_live() {
+		self::$options->set_options(
+			array(
+				'test_mode'        => 'yes',
+				'private_key_test' => 'priv_test_mode_key',
+				'private_key'      => 'priv_live_mode_key',
+			)
+		);
+
+		$authorizations = array();
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $parsed_args ) use ( &$authorizations ) {
+				$authorizations[] = $parsed_args['headers']['Authorization'];
+				$limited          = 1 === count( $authorizations );
+
+				return array(
+					'headers'  => array(),
+					'body'     => wp_json_encode( $limited ? array( 'error' => 'Request rate limit exceeded' ) : array( 'ok' => true ) ),
+					'response' => array(
+						'code'    => $limited ? 429 : 200,
+						'message' => $limited ? 'Too Many Requests' : 'OK',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			},
+			10,
+			2
+		);
+
+		$result = $this->api->request( 'GET', 'https://api.reepay.com/v1/account', array(), true );
+
+		$this->assertSame( array( 'ok' => true ), $result );
+		$this->assertCount( 2, $authorizations );
+		$this->assertSame( $authorizations[0], $authorizations[1], 'The retry must use the same key as the first request' );
+		$this->assertSame( 'Basic ' . base64_encode( 'priv_live_mode_key:' ), $authorizations[0] );
 	}
 
 	// -----------------------------------------------------------------------
@@ -735,6 +863,232 @@ class ApiTest extends Reepay_UnitTestCase {
 		$sent_body = json_decode( $captured_settle_args['body'], true );
 
 		$this->assertSame( 2000, $sent_body['amount'] ?? null, 'With neither $amount nor $items_data provided, settle() must derive both from InstantSettle' );
+	}
+
+	/**
+	 * Regression test for RSCC-005: a failed invoice lookup must make capture_payment()
+	 * return the WP_Error instead of raising "Cannot use object of type WP_Error as array".
+	 *
+	 * @see \Reepay\Checkout\Api::capture_payment
+	 */
+	public function test_capture_payment_returns_wp_error_when_invoice_lookup_fails() {
+		// Default order is not paid via Reepay, so get_invoice_data() returns a WP_Error.
+		$order = $this->order_generator->order();
+
+		$result = $this->api->capture_payment( $order, 20.00 );
+
+		$this->assertTrue( is_wp_error( $result ) );
+	}
+
+	/**
+	 * Regression test for RSCC-005: when settle() is rejected with "Amount higher than
+	 * authorized amount" and the follow-up invoice lookup fails, the original WP_Error
+	 * must be returned instead of a fatal error.
+	 *
+	 * @see \Reepay\Checkout\Api::settle
+	 */
+	public function test_settle_returns_wp_error_when_invoice_lookup_fails_during_retry() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+		$this->order_generator->add_product( 'simple', array( 'regular_price' => 20.00 ) );
+
+		$order = $this->order_generator->order();
+		$order->calculate_totals();
+		$order->save();
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $parsed_args, $url ) {
+				$is_settle = false !== strpos( $url, '/settle' );
+
+				return array(
+					'headers'  => array(),
+					'body'     => wp_json_encode(
+						$is_settle ?
+							array(
+								'code'    => 102,
+								'error'   => 'Amount higher than authorized amount',
+								'message' => 'Amount higher than authorized amount',
+							) :
+							array(
+								'code'    => 2,
+								'error'   => 'Internal error',
+								'message' => 'Internal error',
+							)
+					),
+					'response' => array(
+						'code'    => $is_settle ? 400 : 500,
+						'message' => 'Error',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			},
+			10,
+			3
+		);
+
+		$result = $this->api->settle(
+			$order,
+			2000,
+			array(
+				array(
+					'ordertext' => 'Item',
+					'amount'    => 2000,
+					'vat'       => 0.25,
+					'quantity'  => 1,
+				),
+			),
+			true
+		);
+
+		$this->assertTrue( is_wp_error( $result ) );
+		$this->assertStringContainsString( 'Amount higher than authorized amount', $result->get_error_message() );
+	}
+
+	/**
+	 * Regression test for RSCC-006: on a transient miss get_customer_handle() used to fetch the
+	 * invoice and then discard it. It must return null without calling the API.
+	 *
+	 * @see \Reepay\Checkout\Api::get_customer_handle
+	 */
+	public function test_get_customer_handle_makes_no_api_call_on_transient_miss() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+
+		$order = $this->order_generator->order();
+		$order->set_status( 'processing' );
+		$order->save();
+
+		$requests = 0;
+		add_filter(
+			'pre_http_request',
+			function ( $preempt ) use ( &$requests ) {
+				++$requests;
+
+				return $preempt;
+			}
+		);
+
+		$this->assertNull( $this->api->get_customer_handle( $order ) );
+		$this->assertSame( 0, $requests );
+	}
+
+	/**
+	 * A cached invoice with a customer is still used.
+	 *
+	 * @see \Reepay\Checkout\Api::get_customer_handle
+	 */
+	public function test_get_customer_handle_uses_cached_invoice_customer() {
+		$this->order_generator->set_prop( 'payment_method', reepay()->gateways()->checkout() );
+
+		$order = $this->order_generator->order();
+		$order->set_status( 'processing' );
+		$order->save();
+
+		set_transient( 'reepay_invoice_' . rp_get_order_handle( $order ), array( 'customer' => 'customer-cached' ), 60 );
+
+		$this->assertSame( 'customer-cached', $this->api->get_customer_handle( $order ) );
+	}
+
+	/**
+	 * Values that change a URL when they are concatenated unencoded (RSCC-007).
+	 *
+	 * @return array<string, array{0: string, 1: string}> raw value => expected path segment.
+	 */
+	public function special_handle_provider(): array {
+		return array(
+			'slash'     => array( 'a/b', 'a%2Fb' ),
+			'query'     => array( 'a?x=1', 'a%3Fx%3D1' ),
+			'fragment'  => array( 'a#b', 'a%23b' ),
+			'ampersand' => array( 'a&size=1', 'a%26size%3D1' ),
+			'traversal' => array( '../x', '..%2Fx' ),
+			'space'     => array( 'a b', 'a%20b' ),
+			'non-ascii' => array( 'å-ø', '%C3%A5-%C3%B8' ),
+		);
+	}
+
+	/**
+	 * A handle with special characters stays one path segment.
+	 *
+	 * @dataProvider special_handle_provider
+	 *
+	 * @param string $raw      handle as received.
+	 * @param string $expected expected encoded segment.
+	 */
+	public function test_invoice_handle_is_one_path_segment( string $raw, string $expected ) {
+		$captured_args = array();
+		$this->mock_http_request( $captured_args, array( 'handle' => 'x' ) );
+
+		$this->api->get_invoice_by_handle( $raw );
+
+		$this->assertSame( 'https://api.reepay.com/v1/invoice/' . $expected, $captured_args['url'] ?? null );
+	}
+
+	/**
+	 * A normal handle gives the same URL as before the change.
+	 */
+	public function test_normal_handle_url_is_unchanged() {
+		$captured_args = array();
+		$this->mock_http_request( $captured_args, array( 'handle' => 'x' ) );
+
+		$this->api->get_invoice_by_handle( 'order-123' );
+
+		$this->assertSame( 'https://api.reepay.com/v1/invoice/order-123', $captured_args['url'] ?? null );
+	}
+
+	/**
+	 * Dot segments and empty segments are refused and no request is sent.
+	 *
+	 * @testWith ["."]
+	 *           [".."]
+	 *           [""]
+	 *
+	 * @param string $raw handle as received.
+	 */
+	public function test_dot_and_empty_segments_are_not_sent( string $raw ) {
+		$captured_args = array();
+		$this->mock_http_request( $captured_args, array( 'handle' => 'x' ) );
+
+		$result = $this->api->delete_payment_method( $raw );
+
+		$this->assertWPError( $result );
+		$this->assertSame( array(), $captured_args, 'No HTTP request must be sent for an invalid path.' );
+	}
+
+	/**
+	 * A URL that carries an already encoded dot segment is refused by request() itself.
+	 */
+	public function test_encoded_dot_segment_in_url_is_not_sent() {
+		$captured_args = array();
+		$this->mock_http_request( $captured_args, array() );
+
+		$result = $this->api->request( 'GET', 'https://api.reepay.com/v1/customer/%2e%2e/account' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( array(), $captured_args );
+	}
+
+	/**
+	 * A raw value that already looks encoded is encoded again, so it stays one literal segment.
+	 */
+	public function test_percent_sequence_in_handle_is_encoded_again() {
+		$captured_args = array();
+		$this->mock_http_request( $captured_args, array() );
+
+		$this->api->get_invoice_by_handle( '%2e%2e' );
+
+		$this->assertSame( 'https://api.reepay.com/v1/invoice/%252e%252e', $captured_args['url'] ?? null );
+	}
+
+	/**
+	 * Invoice and transaction ids from an event are encoded as separate segments.
+	 */
+	public function test_session_event_id_is_encoded() {
+		$captured_args = array();
+		$this->mock_http_request( $captured_args, array() );
+
+		$this->api->get_session_events( 'cs_1/../../account' );
+
+		$this->assertSame( 'https://checkout-api.reepay.com/v1/event/cs_1%2F..%2F..%2Faccount', $captured_args['url'] ?? null );
 	}
 
 	/**

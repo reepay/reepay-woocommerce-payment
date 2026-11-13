@@ -57,8 +57,17 @@ jQuery(function ($) {
             let rid = params.get('rid'),
                 accept_url = params.get('accept_url');
 
+            // RSCC-013: open only the session stored for this order; ignore one taken from a foreign link.
+            const pay_session_id = typeof WC_Gateway_Reepay_Checkout !== 'undefined'
+                ? WC_Gateway_Reepay_Checkout.pay_session_id
+                : '';
+
             window.setTimeout(function () {
-                wc_reepay.buildModalCheckout(rid, accept_url);
+                if (rid && pay_session_id && rid === pay_session_id) {
+                    wc_reepay.buildModalCheckout(rid, accept_url);
+                } else {
+                    console.warn('Reepay: ignored a payment session that does not belong to this order');
+                }
                 history.pushState('', document.title, window.location.pathname);
             }, 300);
         }

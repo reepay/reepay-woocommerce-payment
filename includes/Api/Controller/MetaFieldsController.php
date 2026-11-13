@@ -58,6 +58,28 @@ class MetaFieldsController extends WP_REST_Controller {
 		'_customer_',
 	);
 
+	/**
+	 * User meta keys a non-administrator may read, add, edit or delete on their own user.
+	 */
+	public const NON_ADMIN_USER_META_KEYS = array(
+		'locale',
+		'description',
+		'nickname',
+		'first_name',
+		'last_name',
+	);
+
+	/**
+	 * Longest value stored for each allow-listed user key (RSCC-012).
+	 */
+	public const NON_ADMIN_USER_META_MAX_LENGTH = array(
+		'locale'      => 255,
+		'description' => 1000,
+		'nickname'    => 255,
+		'first_name'  => 255,
+		'last_name'   => 255,
+	);
+
 	public const ORDER_ROUTE = 'shop_order';
 	public const USER_ROUTE  = 'user';
 
@@ -320,7 +342,7 @@ class MetaFieldsController extends WP_REST_Controller {
 		}
 		$order->save_meta_data();
 
-		return rest_ensure_response( json_decode( $request->get_body(), true ) );
+		return rest_ensure_response( json_decode( (string) $request->get_body(), true ) );
 	}
 
 	/**
@@ -455,9 +477,14 @@ class MetaFieldsController extends WP_REST_Controller {
 		}
 
 		$meta_data = get_user_meta( $id );
+		$is_admin  = current_user_can( 'manage_options' );
 
 		foreach ( $meta_data as $key => $item ) {
 			if ( in_array( $key, self::EXCLUDE_KEYS_META_FIELDS, true ) ) {
+				continue;
+			}
+			// Non-administrators see the same keys they are allowed to change.
+			if ( ! $is_admin && ! in_array( $key, self::NON_ADMIN_USER_META_KEYS, true ) ) {
 				continue;
 			}
 			$fields = MetaField::get_raw_user_meta( $id, $key );
@@ -500,6 +527,32 @@ class MetaFieldsController extends WP_REST_Controller {
 			return new WP_Error( 'not_found', esc_html__( 'Not found user.', 'reepay-checkout-gateway' ) );
 		}
 
+		if ( in_array( $key, self::NON_ADMIN_USER_META_KEYS, true ) ) {
+			// Profile fields are plain strings, one row per key (RSCC-012).
+			$value = $this->sanitise_profile_value( $key, $value, $id );
+			if ( is_wp_error( $value ) ) {
+				return $value;
+			}
+
+			// add_user_meta() expects slashed data and unslashes it.
+			$meta_id = add_user_meta( $id, $key, wp_slash( $value ), true );
+			if ( false === $meta_id ) {
+				return new WP_Error(
+					'meta_key_exists',
+					esc_html__( 'This metadata key already has a value; edit the existing one.', 'reepay-checkout-gateway' ),
+					array( 'status' => 409 )
+				);
+			}
+
+			return rest_ensure_response(
+				array(
+					'id'    => $meta_id,
+					'key'   => $key,
+					'value' => $value,
+				)
+			);
+		}
+
 		$decoded_value = json_decode( $value, true );
 		if ( null !== $decoded_value ) {
 			$meta_id = add_user_meta( $id, $key, $decoded_value );
@@ -530,8 +583,10 @@ class MetaFieldsController extends WP_REST_Controller {
 		// Read user_id from the URL route only; see get_user_meta_fields() for why (BWPM-307).
 		// The ownership check below compares against this value, so sourcing it correctly is what
 		// makes that check actually mean something.
-		$id       = (int) $request->get_url_params()['user_id'];
-		$field_id = (int) $request['field_id'];
+		$id = (int) $request->get_url_params()['user_id'];
+		// Same for field_id: get_items_permissions_check() checks the key of the row named in the URL,
+		// so a query or body field_id must not select a different row here (RSCC-011).
+		$field_id = (int) $request->get_url_params()['field_id'];
 		$user     = get_user_by( 'id', $id );
 
 		if ( ! $user ) {
@@ -582,9 +637,10 @@ class MetaFieldsController extends WP_REST_Controller {
 		// The ownership check below compares against this value, so sourcing it correctly is what
 		// makes that check actually mean something.
 		$id       = (int) $request->get_url_params()['user_id'];
-		$field_id = (int) $request['field_id'];
+		$field_id = (int) $request->get_url_params()['field_id'];
 		$key      = (string) $request['key'];
-		$value    = (string) $request['value'];
+		$raw      = $request['value'];
+		$value    = is_scalar( $raw ) ? (string) $raw : '';
 
 		if ( ! isset( $field_id ) || ! isset( $key ) || ! isset( $value ) ) {
 			return new WP_Error( 'incorrect_body', esc_html__( 'Incorrect body.', 'reepay-checkout-gateway' ) );
@@ -623,6 +679,15 @@ class MetaFieldsController extends WP_REST_Controller {
 			);
 		}
 
+		$is_profile_key = in_array( $key, self::NON_ADMIN_USER_META_KEYS, true );
+		if ( $is_profile_key ) {
+			// Profile fields are plain strings, stored the way WordPress would store them (RSCC-012).
+			$value = $this->sanitise_profile_value( $key, $raw, $id );
+			if ( is_wp_error( $value ) ) {
+				return $value;
+			}
+		}
+
 		// Log the metadata change for audit purposes.
 		$this->log_security_event(
 			array(
@@ -636,6 +701,18 @@ class MetaFieldsController extends WP_REST_Controller {
 			)
 		);
 
+		if ( $is_profile_key ) {
+			update_metadata_by_mid( 'user', $field_id, $value, $key );
+
+			return rest_ensure_response(
+				array(
+					'id'    => $field_id,
+					'key'   => $key,
+					'value' => $value,
+				)
+			);
+		}
+
 		$decoded_value = json_decode( $value, true );
 		if ( null !== $decoded_value ) {
 			update_metadata_by_mid( 'user', $field_id, $decoded_value, $key );
@@ -643,7 +720,39 @@ class MetaFieldsController extends WP_REST_Controller {
 			update_metadata_by_mid( 'user', $field_id, $value, $key );
 		}
 
-		return rest_ensure_response( json_decode( $request->get_body(), true ) );
+		return rest_ensure_response( json_decode( (string) $request->get_body(), true ) );
+	}
+
+	/**
+	 * Validate and sanitise a value for one of the allow-listed user profile keys (RSCC-012).
+	 *
+	 * @param string $key     Allow-listed key.
+	 * @param mixed  $value   Value from the request.
+	 * @param int    $user_id User the value is stored for.
+	 *
+	 * @return string|WP_Error The value to store, or a 400 error.
+	 */
+	private function sanitise_profile_value( string $key, $value, int $user_id ) {
+		$invalid = new WP_Error(
+			'rest_invalid_meta_value',
+			esc_html__( 'Invalid value for this metadata key.', 'reepay-checkout-gateway' ),
+			array( 'status' => 400 )
+		);
+
+		if ( ! is_string( $value ) || mb_strlen( $value ) > self::NON_ADMIN_USER_META_MAX_LENGTH[ $key ] ) {
+			return $invalid;
+		}
+
+		if ( 'locale' === $key ) {
+			// An empty locale means "site default" in WordPress.
+			$allowed = array_merge( array( '', 'en_US' ), get_available_languages() );
+
+			return in_array( $value, $allowed, true ) ? $value : $invalid;
+		}
+
+		// WordPress field filters work on slashed text and return slashed text (core unslashes it again
+		// when it stores the value), so slash going in and unslash the result.
+		return wp_unslash( (string) sanitize_user_field( $key, wp_slash( $value ), $user_id, 'db' ) );
 	}
 
 	/**
@@ -700,6 +809,11 @@ class MetaFieldsController extends WP_REST_Controller {
 	 * @param array $log_data Log data array.
 	 */
 	private function log_security_event( $log_data ) {
+		// A logged-in user can trigger denied attempts at will, so those are limited. Changes made by the user are always logged.
+		if ( 'user_metadata_modification' !== ( $log_data['event_type'] ?? 'user_metadata_modification' ) && ! $this->may_log_denied_attempt() ) {
+			return;
+		}
+
 		// Ensure required fields have defaults.
 		$defaults = array(
 			'event_type'   => $log_data['event_type'] ?? 'user_metadata_modification',
@@ -713,6 +827,17 @@ class MetaFieldsController extends WP_REST_Controller {
 
 		// Merge provided data with defaults.
 		$log_entry = array_merge( $defaults, $log_data );
+
+		// These values come from the request: keep them on one line and short.
+		$log_entry['user_id']      = (int) $log_entry['user_id'];
+		$log_entry['set_meta_key'] = $this->clean_log_value( $log_entry['set_meta_key'], 100 );
+		$log_entry['user_agent']   = $this->clean_log_value( $log_entry['user_agent'], 200 );
+		$log_entry['request_uri']  = $this->clean_log_value( $log_entry['request_uri'], 200 );
+		foreach ( array( 'old_value', 'new_value' ) as $value_key ) {
+			if ( isset( $log_entry[ $value_key ] ) ) {
+				$log_entry[ $value_key ] = $this->clean_log_value( is_scalar( $log_entry[ $value_key ] ) ? $log_entry[ $value_key ] : wp_json_encode( $log_entry[ $value_key ] ), 100 );
+			}
+		}
 
 		// Add context information for debugging (only in development/debug mode).
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
@@ -809,6 +934,16 @@ class MetaFieldsController extends WP_REST_Controller {
 		if ( isset( $url_params['user_id'] ) ) {
 			$user_id = (int) $url_params['user_id'];
 
+			// User routes need a logged-in caller and a real user id. Without this an anonymous caller
+			// (id 0) matches the "own user" comparison below and can write to the security log.
+			if ( $user_id <= 0 || ! is_user_logged_in() ) {
+				return new WP_Error(
+					'rest_forbidden',
+					esc_html__( 'Sorry, you are not allowed to do that.', 'reepay-checkout-gateway' ),
+					array( 'status' => rest_authorization_required_code() )
+				);
+			}
+
 			// Only administrators can modify user metadata.
 			// OR users can modify their own non-sensitive metadata.
 			if ( ! current_user_can( 'manage_options' ) ) {
@@ -823,13 +958,7 @@ class MetaFieldsController extends WP_REST_Controller {
 
 				// For non-admin users, only allow specific safe metadata keys.
 				if ( isset( $request['key'] ) ) {
-					$allowed_keys = array(
-						'locale',
-						'description',
-						'nickname',
-						'first_name',
-						'last_name',
-					);
+					$allowed_keys = self::NON_ADMIN_USER_META_KEYS;
 
 					if ( ! in_array( $request['key'], $allowed_keys, true ) ) {
 						// Log unauthorized metadata key access attempt.
@@ -855,6 +984,34 @@ class MetaFieldsController extends WP_REST_Controller {
 						);
 					}
 				}
+
+				// DELETE and PUT name the row by id, not by key. Check the key stored in that row.
+				if ( isset( $url_params['field_id'] ) ) {
+					$stored_row = get_metadata_by_mid( 'user', (int) $url_params['field_id'] );
+
+					if ( $stored_row && (int) $stored_row->user_id === $user_id && ! in_array( $stored_row->meta_key, self::NON_ADMIN_USER_META_KEYS, true ) ) {
+						$this->log_security_event(
+							array(
+								'event_type'   => 'unauthorized_metadata_key_access',
+								'user_id'      => $user_id,
+								'set_meta_key' => $stored_row->meta_key,
+								'attempted_by' => get_current_user_id(),
+								'timestamp'    => current_time( 'mysql' ),
+								'ip_address'   => $this->get_client_ip(),
+								'user_agent'   => $this->get_user_agent(),
+								'request_uri'  => $this->get_request_uri(),
+								'error_type'   => 'forbidden_meta_key',
+								'allowed_keys' => self::NON_ADMIN_USER_META_KEYS,
+							)
+						);
+
+						return new WP_Error(
+							'rest_forbidden_meta_key',
+							esc_html__( 'You cannot modify this metadata key.', 'reepay-checkout-gateway' ),
+							array( 'status' => rest_authorization_required_code() )
+						);
+					}
+				}
 			}
 
 			// Consolidated security check: Block protected keys for ALL users at permission level.
@@ -867,7 +1024,7 @@ class MetaFieldsController extends WP_REST_Controller {
 					$this->log_security_event(
 						array(
 							'event_type'       => $security_violation['event_type'],
-							'user_id'          => $request['user_id'] ?? 'unknown',
+							'user_id'          => $user_id,
 							'set_meta_key'     => $key,
 							'attempted_by'     => get_current_user_id(),
 							'timestamp'        => current_time( 'mysql' ),
@@ -981,38 +1138,56 @@ class MetaFieldsController extends WP_REST_Controller {
 	}
 
 	/**
-	 * Get client IP address safely
+	 * Get the client IP address.
+	 *
+	 * Only REMOTE_ADDR is used: forwarding headers are set by the caller, so a log line built from
+	 * them can be forged. Behind a reverse proxy this is the proxy address.
 	 *
 	 * @return string Client IP address
 	 */
 	private function get_client_ip(): string {
-		// Check for various headers that might contain the real IP.
-		$ip_headers = array(
-			'HTTP_CF_CONNECTING_IP',     // Cloudflare.
-			'HTTP_CLIENT_IP',            // Proxy.
-			'HTTP_X_FORWARDED_FOR',      // Load balancer/proxy.
-			'HTTP_X_FORWARDED',          // Proxy.
-			'HTTP_X_CLUSTER_CLIENT_IP',  // Cluster.
-			'HTTP_FORWARDED_FOR',        // Proxy.
-			'HTTP_FORWARDED',            // Proxy.
-			'REMOTE_ADDR',                // Standard.
-		);
+		$ip = ! empty( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 
-		foreach ( $ip_headers as $header ) {
-			if ( ! empty( $_SERVER[ $header ] ) ) {
-				$ip = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
-				// Handle comma-separated IPs (take the first one).
-				if ( strpos( $ip, ',' ) !== false ) {
-					$ip = trim( explode( ',', $ip )[0] );
-				}
-				// Validate IP address.
-				if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-					return $ip;
-				}
-			}
+		return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : 'unknown';
+	}
+
+	/**
+	 * Whether a denied attempt may be written to the security log.
+	 *
+	 * WordPress runs the permission callback again to build the Allow header, which would log the same
+	 * request several times; that run is skipped. Otherwise one entry per user every 10 seconds.
+	 *
+	 * @return bool
+	 */
+	private function may_log_denied_attempt(): bool {
+		if ( doing_filter( 'rest_post_dispatch' ) ) {
+			return false;
 		}
 
-		return 'unknown';
+		$rate_limit_id = 'reepay_meta_denied_' . get_current_user_id();
+		if ( \WC_Rate_Limiter::retried_too_soon( $rate_limit_id ) ) {
+			return false;
+		}
+
+		\WC_Rate_Limiter::set_rate_limit( $rate_limit_id, 10 );
+
+		return true;
+	}
+
+	/**
+	 * Returns a request-derived value as a short single line for the log.
+	 *
+	 * @param mixed $value      Value to log.
+	 * @param int   $max_length Maximum number of characters.
+	 *
+	 * @return string
+	 */
+	private function clean_log_value( $value, int $max_length ): string {
+		if ( ! is_scalar( $value ) ) {
+			return 'invalid';
+		}
+
+		return mb_substr( wc_clean( (string) $value ), 0, $max_length );
 	}
 
 	/**

@@ -850,10 +850,13 @@ class ReepayCheckout extends ReepayGateway {
 		}
 
 		try {
+			// The query holds the order key, the payment token and the nonce, so only the invoice handle (an order handle, not a secret) and which parameters were present are logged.
 			$this->log(
 				array(
-					'source' => 'reepay_finalize',
-					'data'   => $_GET,
+					'source'    => 'reepay_finalize',
+					'invoice'   => isset( $_GET['invoice'] ) && is_string( $_GET['invoice'] ) ? $this->clean_log_value( wp_unslash( $_GET['invoice'] ), 64 ) : '',
+					'has_key'   => ! empty( $_GET['key'] ),
+					'has_token' => ! empty( $_GET['payment_method'] ),
 				)
 			);
 
@@ -915,9 +918,9 @@ class ReepayCheckout extends ReepayGateway {
 					throw new Exception( $result->get_error_message() );
 				}
 
-				$result = reepay()->api( $this )->get_invoice_by_handle( wc_clean( $_GET['invoice'] ) );
-				if ( is_wp_error( $result ) ) {
-					throw new Exception( $result->get_error_message() );
+				if ( in_array( $result['state'] ?? '', array( 'authorized', 'settled' ), true )
+					&& ! OrderStatuses::invoice_matches_order( $order, $result, 'reepay_finalize' ) ) {
+					throw new Exception( __( 'The payment does not match the order. Please contact the shop.', 'reepay-checkout-gateway' ) );
 				}
 
 				switch ( $result['state'] ) {
@@ -972,18 +975,44 @@ class ReepayCheckout extends ReepayGateway {
 	public function ajax_log_unsafe_redirect() {
 		check_ajax_referer( 'reepay', 'nonce' );
 
-		$rid = isset( $_POST['rid'] ) ? wc_clean( wp_unslash( $_POST['rid'] ) ) : '';
-		$url = isset( $_POST['url'] ) ? wc_clean( wp_unslash( $_POST['url'] ) ) : '';
+		// The nonce is printed for every visitor, so it does not stop floods: allow one report per client every 10 seconds.
+		$rate_limit_id = 'reepay_unsafe_redirect_' . md5( \WC_Geolocation::get_ip_address() );
+
+		if ( \WC_Rate_Limiter::retried_too_soon( $rate_limit_id ) ) {
+			wp_send_json_error( null, 429 );
+		}
+
+		\WC_Rate_Limiter::set_rate_limit( $rate_limit_id, 10 );
+
+		if ( ! isset( $_POST['rid'], $_POST['url'] ) || ! is_string( $_POST['rid'] ) || ! is_string( $_POST['url'] ) ) {
+			wp_send_json_error( null, 400 );
+		}
+
+		// Log only a short single-line id and the scheme and host of the URL: its query string carries payment parameters.
+		$url_parts = wp_parse_url( wp_unslash( $_POST['url'] ) );
+		$origin    = is_array( $url_parts ) ? ( $url_parts['scheme'] ?? '' ) . '://' . ( $url_parts['host'] ?? '' ) : '';
 
 		$this->log(
 			array(
 				'source' => 'checkout_js_blocked_unsafe_accept_url',
-				'rid'    => $rid,
-				'url'    => $url,
+				'rid'    => $this->clean_log_value( wp_unslash( $_POST['rid'] ), 64 ),
+				'url'    => $this->clean_log_value( $origin, 100 ),
 			)
 		);
 
 		wp_send_json_success();
+	}
+
+	/**
+	 * Make a client-supplied value safe for one log line: wc_clean() drops tags, line breaks and control characters; the length is capped.
+	 *
+	 * @param string $value      Raw value.
+	 * @param int    $max_length Maximum number of characters kept.
+	 *
+	 * @return string
+	 */
+	private function clean_log_value( string $value, int $max_length ): string {
+		return mb_substr( wc_clean( $value ), 0, $max_length );
 	}
 
 	/**
@@ -1005,6 +1034,8 @@ class ReepayCheckout extends ReepayGateway {
 			'guest_checkout_disabled'      => WC()->checkout()->is_registration_required(),
 			'registration_enabled'         => WC()->checkout()->is_registration_enabled(),
 			'is_user_logged_in'            => is_user_logged_in(),
+			// RSCC-013: the only session id the pay-page fragment may open; empty elsewhere.
+			'pay_session_id'               => $this->get_pay_page_session_id(),
 			'guest_checkout_error_message' => sprintf(
 				/* translators: 1: login URL, 2: register URL */
 				__( 'You must be logged in to checkout. Please <a href="%1$s" class="showlogin">log in</a> or <a href="%2$s">create an account</a> to continue.', 'reepay-checkout-gateway' ),
@@ -1012,6 +1043,29 @@ class ReepayCheckout extends ReepayGateway {
 				esc_url( wc_get_account_endpoint_url( 'register' ) )
 			),
 		);
+	}
+
+	/**
+	 * Session id stored for the order on the current pay-for-order page.
+	 *
+	 * Returned only when the order key in the URL matches the order, so the checkout script can tell a
+	 * fragment created for this order from one taken from a foreign link (RSCC-013).
+	 *
+	 * @return string Session id, or an empty string when this is not a pay page for a valid order and key.
+	 */
+	private function get_pay_page_session_id(): string {
+		if ( ! is_checkout_pay_page() ) {
+			return '';
+		}
+
+		$order = wc_get_order( absint( get_query_var( 'order-pay' ) ) );
+		$key   = isset( $_GET['key'] ) && is_string( $_GET['key'] ) ? wc_clean( wp_unslash( $_GET['key'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		if ( ! $order instanceof \WC_Order || '' === $key || ! hash_equals( $order->get_order_key(), $key ) ) {
+			return '';
+		}
+
+		return (string) $order->get_meta( 'reepay_session_id' );
 	}
 
 	/**

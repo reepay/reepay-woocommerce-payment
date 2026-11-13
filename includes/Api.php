@@ -220,6 +220,35 @@ class Api {
 	}
 
 	/**
+	 * Replace secret values in a JSON response body so they are not written to the log.
+	 *
+	 * @param string $body Raw response body.
+	 *
+	 * @return string Body safe for logging; unchanged when it holds no secret.
+	 */
+	private function redact_secrets_for_log( string $body ): string {
+		if ( false === stripos( $body, 'secret' ) ) {
+			return $body;
+		}
+
+		$data = json_decode( $body, true );
+		if ( ! is_array( $data ) ) {
+			return '***REDACTED*** (response contains "secret" but is not valid JSON)';
+		}
+
+		array_walk_recursive(
+			$data,
+			function ( &$value, $key ) {
+				if ( is_string( $key ) && false !== stripos( $key, 'secret' ) ) {
+					$value = '***REDACTED***';
+				}
+			}
+		);
+
+		return (string) wp_json_encode( $data );
+	}
+
+	/**
 	 * Request
 	 *
 	 * @param string $method http method.
@@ -231,6 +260,17 @@ class Api {
 	 */
 	public function request( string $method, string $url, $params = array(), $force_live = false ) {
 		$start = microtime( true );
+
+		// rawurlencode() leaves '.' and '..' unchanged, and an empty value leaves an empty segment. Either one
+		// changes which resource is called, so such a URL is never sent.
+		$segments = explode( '/', (string) wp_parse_url( $url, PHP_URL_PATH ) );
+		array_shift( $segments );
+		foreach ( $segments as $segment ) {
+			if ( in_array( rawurldecode( $segment ), array( '', '.', '..' ), true ) ) {
+				return new WP_Error( 400, __( 'Frisbii Pay: invalid API request path.', 'reepay-checkout-gateway' ) );
+			}
+		}
+
 		if ( reepay()->get_setting( 'debug' ) === 'yes' ) {
 			$this->log( sprintf( 'Request: %s %s %s', $method, $url, wp_json_encode( $params, JSON_PRETTY_PRINT ) ) );
 		}
@@ -278,7 +318,7 @@ class Api {
 					'url'          => $url,
 					'method'       => $method,
 					'request'      => $params,
-					'response'     => $body,
+					'response'     => $this->redact_secrets_for_log( $body ),
 					'time'         => microtime( true ) - $start,
 					'http_code'    => $http_code,
 					'backtrace(3)' => debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 ), //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
@@ -311,7 +351,7 @@ class Api {
 					// Wait and try it again.
 					sleep( 10 );
 					$this->request_retry = true;
-					$result              = $this->request( $method, $url, $params );
+					$result              = $this->request( $method, $url, $params, $force_live );
 					$this->request_retry = false;
 
 					return $result;
@@ -377,7 +417,7 @@ class Api {
 			return self::$invoice_not_found_cache[ $handle ];
 		}
 
-		$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $handle );
+		$result = $this->request( 'GET', 'https://api.reepay.com/v1/invoice/' . rawurlencode( $handle ) );
 
 		// Cache not-found results (error code 31) for the duration of this request.
 		if ( is_wp_error( $result ) && 31 === (int) $result->get_error_code() ) {
@@ -395,7 +435,7 @@ class Api {
 	 * @return array|WP_Error
 	 */
 	public function get_session_events( string $session_id ) {
-		return $this->request( 'GET', 'https://checkout-api.reepay.com/v1/event/' . $session_id );
+		return $this->request( 'GET', 'https://checkout-api.reepay.com/v1/event/' . rawurlencode( $session_id ) );
 	}
 
 	/**
@@ -600,6 +640,18 @@ class Api {
 
 		$order_data = $this->get_invoice_data( $order );
 
+		if ( is_wp_error( $order_data ) ) {
+			$this->log(
+				sprintf(
+					'Payment can\'t be captured. Error: %s. Order ID: %s',
+					$order_data->get_error_message(),
+					$order->get_id()
+				)
+			);
+
+			return $order_data;
+		}
+
 		if ( $order->get_total() * 100 === $order_data['settled_amount'] ) {
 			return false;
 		}
@@ -796,11 +848,17 @@ class Api {
 			$params['configuration'] = 'default';
 		}
 
+		// Do not log the customer's personal data (e-mail, address, phone, name).
+		$log_params = $params;
+		if ( isset( $log_params['create_customer'] ) ) {
+			$log_params['create_customer'] = array_intersect_key( $log_params['create_customer'], array_flip( array( 'handle', 'test' ) ) );
+		}
+
 		$this->log(
 			array(
 				'source'   => 'session_recurring_request',
 				'order_id' => $order->get_id(),
-				'params'   => $params,
+				'params'   => $log_params,
 			)
 		);
 
@@ -818,7 +876,7 @@ class Api {
 			// just 'vat'.
 			$this->request(
 				'PUT',
-				'https://api.reepay.com/v1/customer/' . $data['customer_handle'],
+				'https://api.reepay.com/v1/customer/' . rawurlencode( (string) $data['customer_handle'] ),
 				$params['create_customer']
 			);
 		}
@@ -947,7 +1005,7 @@ class Api {
 
 		$result = $this->request(
 			'POST',
-			'https://api.reepay.com/v1/charge/' . $handle . '/settle',
+			'https://api.reepay.com/v1/charge/' . rawurlencode( (string) $handle ) . '/settle',
 			$request_data
 		);
 
@@ -957,9 +1015,14 @@ class Api {
 				return array();
 			}
 
+			$order_data = false;
 			if ( mb_strpos( $result->get_error_message(), 'Amount higher than authorized amount', 0, 'UTF-8' ) !== false && ! empty( $line_item ) ) {
 				$order_data = $this->get_invoice_data( $order );
-				$remaining  = $order_data['authorized_amount'] - $order_data['settled_amount'];
+			}
+
+			// Retry only when the invoice data could be read; otherwise report the original settle error below.
+			if ( is_array( $order_data ) ) {
+				$remaining = $order_data['authorized_amount'] - $order_data['settled_amount'];
 
 				if ( ! empty( $request_data['order_lines'] ) && count( $request_data['order_lines'] ) > 1 && is_array( $line_item ) ) {
 					$request_data['amount'] = $remaining;
@@ -967,7 +1030,7 @@ class Api {
 
 					$retry_result = $this->request(
 						'POST',
-						'https://api.reepay.com/v1/charge/' . $handle . '/settle',
+						'https://api.reepay.com/v1/charge/' . rawurlencode( (string) $handle ) . '/settle',
 						$request_data
 					);
 
@@ -999,7 +1062,7 @@ class Api {
 
 							$retry_result = $this->request(
 								'POST',
-								'https://api.reepay.com/v1/charge/' . $handle . '/settle',
+								'https://api.reepay.com/v1/charge/' . rawurlencode( (string) $handle ) . '/settle',
 								$request_data
 							);
 
@@ -1110,7 +1173,7 @@ class Api {
 			return new WP_Error( 0, 'Unable to get order handle' );
 		}
 
-		$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . $handle . '/cancel' );
+		$result = $this->request( 'POST', 'https://api.reepay.com/v1/charge/' . rawurlencode( (string) $handle ) . '/cancel' );
 		if ( is_wp_error( $result ) ) {
 			$error = sprintf(
 				// translators: %s error message.
@@ -1294,7 +1357,7 @@ class Api {
 	public function delete_payment_method( string $id ) {
 		return $this->request(
 			'DELETE',
-			"https://api.reepay.com/v1/payment_method/$id"
+			'https://api.reepay.com/v1/payment_method/' . rawurlencode( $id )
 		);
 	}
 
@@ -1485,13 +1548,6 @@ class Api {
 		$handle = rp_get_order_handle( $order );
 
 		$result = get_transient( 'reepay_invoice_' . $handle );
-
-		if ( ! $result ) {
-			$invoice_data = $this->get_invoice_by_handle( wc_clean( $handle ) );
-			if ( is_wp_error( $invoice_data ) ) {
-				return null;
-			}
-		}
 
 		if ( is_array( $result ) && isset( $result['customer'] ) ) {
 			return $result['customer'];

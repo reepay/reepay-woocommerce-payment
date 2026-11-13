@@ -10,6 +10,7 @@ namespace Reepay\Checkout\OrderFlow;
 use Exception;
 use Reepay\Checkout\Utils\LoggingTrait;
 use Reepay\Checkout\Tokens\ReepayTokens;
+use Automattic\WooCommerce\Caches\OrderCache;
 use WC_Order;
 use WC_Order_Item_Fee;
 use WC_Subscriptions_Manager;
@@ -26,11 +27,37 @@ class Webhook {
 	use LoggingTrait;
 
 	/**
+	 * Maximum accepted request body size in bytes.
+	 */
+	const MAX_BODY_SIZE = 65536;
+
+	/**
 	 * Logging source
 	 *
 	 * @var string
 	 */
 	private string $logging_source = 'reepay-webhook';
+
+	/**
+	 * Seconds to wait for an order lock held by another request.
+	 *
+	 * @var int
+	 */
+	private int $lock_wait = 10;
+
+	/**
+	 * Order lock held by this request.
+	 *
+	 * @var WebhookLock|null
+	 */
+	private ?WebhookLock $order_lock = null;
+
+	/**
+	 * Set when the event could not be handled because of a temporary error and Frisbii should send it again.
+	 *
+	 * @var bool
+	 */
+	private bool $retry_requested = false;
 
 	/**
 	 * Constructor.
@@ -112,6 +139,121 @@ class Webhook {
 	}
 
 	/**
+	 * Make a request-supplied value safe for a single log line: no control characters, bounded length.
+	 *
+	 * @param mixed $value Value to log.
+	 * @param int   $max   Maximum length.
+	 *
+	 * @return string
+	 */
+	private function sanitize_log_value( $value, int $max = 100 ): string {
+		if ( ! is_scalar( $value ) ) {
+			return '';
+		}
+
+		return substr( preg_replace( '/[\x00-\x1F\x7F]+/', ' ', (string) $value ), 0, $max );
+	}
+
+	/**
+	 * Allow a bounded number of Reepay secret requests per minute.
+	 *
+	 * @param bool $initial True for the first fetch when no secret is cached, false for a refresh
+	 *                      forced by a failed signature.
+	 *
+	 * @return bool True if a request may be made now.
+	 */
+	private function may_refresh_secret( bool $initial = false ): bool {
+		if ( $initial ) {
+			/**
+			 * Maximum number of webhook secret fetches per minute when no secret is cached.
+			 *
+			 * @param int $limit Default 30.
+			 */
+			$limit = (int) apply_filters( 'reepay_webhook_secret_fetch_limit', 30 );
+			$key   = 'reepay_webhook_secret_fetch';
+		} else {
+			/**
+			 * Maximum number of webhook secret refreshes caused by failed signatures per minute.
+			 *
+			 * @param int $limit Default 5.
+			 */
+			$limit = (int) apply_filters( 'reepay_webhook_secret_refresh_limit', 5 );
+			$key   = 'reepay_webhook_secret_refresh';
+		}
+		$state = get_transient( $key );
+
+		if ( ! is_array( $state ) || time() - $state['start'] >= MINUTE_IN_SECONDS ) {
+			$state = array(
+				'start' => time(),
+				'count' => 0,
+			);
+		}
+
+		if ( $state['count'] >= $limit ) {
+			$this->log( 'WebHook: Secret refresh limit reached' );
+
+			return false;
+		}
+
+		++$state['count'];
+		set_transient( $key, $state, MINUTE_IN_SECONDS );
+
+		return true;
+	}
+
+	/**
+	 * Check the webhook signature in constant time.
+	 *
+	 * @param array  $data   webhook payload with string timestamp, id and signature.
+	 * @param string $secret webhook secret.
+	 *
+	 * @return bool
+	 */
+	private function is_signature_valid( array $data, string $secret ): bool {
+		if ( '' === $secret ) {
+			return false;
+		}
+
+		$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
+
+		return hash_equals( $check, $data['signature'] );
+	}
+
+	/**
+	 * Reject events outside the allowed time window and events already processed.
+	 * Call only after the signature has been verified.
+	 *
+	 * @param array $data webhook payload with verified timestamp and id.
+	 *
+	 * @return bool True if the event may be processed.
+	 */
+	private function is_fresh_and_new( array $data ): bool {
+		/**
+		 * Allowed difference in seconds between the webhook timestamp and now.
+		 *
+		 * @param int $window Default 900 (15 minutes). Frisbii retries a webhook that was answered with a server error, with the original timestamp, so the window must cover the retry delay.
+		 */
+		$window = (int) apply_filters( 'reepay_webhook_timestamp_window', 15 * MINUTE_IN_SECONDS );
+		$time   = ctype_digit( $data['timestamp'] ) ? (int) $data['timestamp'] : strtotime( $data['timestamp'] );
+
+		if ( false === $time || abs( time() - $time ) > $window ) {
+			$this->log( sprintf( 'WebHook: Error: Timestamp outside allowed window. ID: %s', $data['id'] ) );
+
+			return false;
+		}
+
+		$key = 'reepay_webhook_event_' . md5( $data['id'] );
+		if ( false !== get_transient( $key ) ) {
+			$this->log( sprintf( 'WebHook: Duplicate event ignored. ID: %s', $data['id'] ) );
+
+			return false;
+		}
+		set_transient( $key, 1, 2 * $window );
+
+		return true;
+	}
+
+	/**
 	 * WebHook Callback
 	 *
 	 * @return void
@@ -119,26 +261,52 @@ class Webhook {
 	public function return_handler() {
 		http_response_code( 200 );
 
-		$raw_body = file_get_contents( 'php://input' );
-		$this->log( sprintf( 'WebHook: Initialized %s from %s', sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) ), sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) ) ) );
-		$this->log( sprintf( 'WebHook: Post data: %s', wp_json_encode( $this->filter_sensitive_data( json_decode( $raw_body, true ) ?: array() ) ) ) );
+		// Read one byte more than the limit to detect an oversized body without loading it all.
+		$raw_body = (string) file_get_contents( 'php://input', false, null, 0, self::MAX_BODY_SIZE + 1 );
+		// Before the signature is verified only minimal, bounded metadata is logged.
+		$this->log( sprintf( 'WebHook: Initialized from %s, body length %d', $this->sanitize_log_value( $_SERVER['REMOTE_ADDR'] ?? '' ), strlen( $raw_body ) ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+		if ( strlen( $raw_body ) > self::MAX_BODY_SIZE ) {
+			$this->log( 'WebHook: Error: Body too large' );
+
+			return;
+		}
+
 		$data = json_decode( $raw_body, true );
-		if ( ! $data ) {
+		if ( ! $data || ! is_array( $data ) ) {
 			$this->log( 'WebHook: Error: Missing parameters' );
 
 			return;
 		}
 
-		$secret = get_transient( 'reepay_webhook_settings_secret' );
+		foreach ( array( 'timestamp', 'id', 'signature' ) as $field ) {
+			if ( empty( $data[ $field ] ) || ! is_string( $data[ $field ] ) ) {
+				$this->log( sprintf( 'WebHook: Error: Missing or invalid field: %s', $field ) );
+
+				return;
+			}
+		}
+
+		$secret            = get_transient( 'reepay_webhook_settings_secret' );
+		$secret_from_cache = ! empty( $secret );
 
 		if ( empty( $secret ) ) {
+			if ( ! $this->may_refresh_secret( true ) ) {
+				return;
+			}
+
 			$result = reepay()->api( $this->logging_source )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
 			if ( is_wp_error( $result ) ) {
 				$this->log( 'WebHook: Error: ' . $result->get_error_message() );
 				return;
 			}
 
-			$secret = $result['secret'];
+			$secret = $result['secret'] ?? '';
+			if ( empty( $secret ) || ! is_string( $secret ) ) {
+				$this->log( 'WebHook: Error: Webhook secret is not available' );
+
+				return;
+			}
 
 			/**
 			 * Cache webhook secret for 10 minutes to reduce API calls while limiting exposure window.
@@ -154,33 +322,40 @@ class Webhook {
 			}
 		}
 
-		$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
-		if ( $check !== $data['signature'] ) {
-			// FIX: Retry with fresh secret in case it was recently rotated.
-			delete_transient( 'reepay_webhook_settings_secret' );
-			$result = reepay()->api( $this->logging_source )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
-			if ( ! is_wp_error( $result ) && ! empty( $result['secret'] ) ) {
+		$valid = $this->is_signature_valid( $data, $secret );
+		if ( ! $valid ) {
+			// Retry with a fresh secret in case it was recently rotated, unless it was just fetched
+			// in this request or too many refreshes were made recently (unauthenticated traffic).
+			$result = false;
+			if ( $secret_from_cache && $this->may_refresh_secret() ) {
+				$result = reepay()->api( $this->logging_source )->request( 'GET', 'https://api.reepay.com/v1/account/webhook_settings' );
+			}
+			if ( $result && ! is_wp_error( $result ) && ! empty( $result['secret'] ) && is_string( $result['secret'] ) ) {
 				$secret = $result['secret'];
 				// Use the same cache TTL as above for consistency.
 				$cache_ttl = apply_filters( 'reepay_webhook_secret_cache_ttl', 10 * MINUTE_IN_SECONDS );
 				if ( $cache_ttl > 0 ) {
 					set_transient( 'reepay_webhook_settings_secret', $secret, $cache_ttl );
 				}
-				$check = bin2hex( hash_hmac( 'sha256', $data['timestamp'] . $data['id'], $secret, true ) );
+				$valid = $this->is_signature_valid( $data, $secret );
 			}
 
-			if ( $check !== $data['signature'] ) {
+			if ( ! $valid ) {
 				$this->log(
 					sprintf(
 						'WebHook: Error: Signature verification failed. Event: %s, ID: %s, Remote IP: %s',
-						$data['event_type'] ?? 'unknown',
-						$data['id'] ?? 'unknown',
-						sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ) )
+						$this->sanitize_log_value( $data['event_type'] ?? 'unknown', 64 ),
+						$this->sanitize_log_value( $data['id'] ),
+						$this->sanitize_log_value( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					)
 				);
 
 				return;
 			}
+		}
+
+		if ( ! $this->is_fresh_and_new( $data ) ) {
+			return;
 		}
 
 		try {
@@ -189,7 +364,74 @@ class Webhook {
 			$this->log( 'WebHook: Error:' . $e->getMessage() );
 		}
 
+		if ( $this->retry_requested ) {
+			// Forget the event id so that the retry from Frisbii is processed and not ignored as a duplicate.
+			delete_transient( 'reepay_webhook_event_' . md5( $data['id'] ) );
+			http_response_code( 503 );
+
+			return;
+		}
+
 		http_response_code( 200 );
+	}
+
+	/**
+	 * Whether the Frisbii API error is temporary, so that sending the event again can succeed.
+	 * Network errors, rate limits and server errors are temporary; other errors are not.
+	 *
+	 * @param WP_Error $error error from the API client.
+	 *
+	 * @return bool
+	 */
+	private function is_temporary_error( WP_Error $error ): bool {
+		$code = (int) $error->get_error_code();
+
+		return 0 === $code || 429 === $code || $code >= 500;
+	}
+
+	/**
+	 * Ask Frisbii to send the event again. The order is left unchanged.
+	 *
+	 * @param array    $data  webhook payload.
+	 * @param WP_Error $error error from the API client.
+	 *
+	 * @return void
+	 */
+	private function request_retry( array $data, WP_Error $error ) {
+		$this->retry_requested = true;
+		$this->log(
+			sprintf(
+				'WebHook: Temporary error, retry requested. Event: %s, ID: %s, Error: %s',
+				$this->sanitize_log_value( $data['event_type'] ?? 'unknown', 64 ),
+				$this->sanitize_log_value( $data['id'] ),
+				$this->sanitize_log_value( $error->get_error_message() )
+			)
+		);
+	}
+
+	/**
+	 * Whether the last processed event asked Frisbii to send it again.
+	 *
+	 * @return bool
+	 */
+	public function is_retry_requested(): bool {
+		return $this->retry_requested;
+	}
+
+	/**
+	 * Process WebHook and release the order lock on every exit path.
+	 *
+	 * @param array $data data from Reepay.
+	 *
+	 * @return void
+	 * @throws Exception If invalid data.
+	 */
+	public function process( array $data ) {
+		try {
+			$this->process_event( $data );
+		} finally {
+			$this->unlock_order();
+		}
 	}
 
 	/**
@@ -203,16 +445,16 @@ class Webhook {
 	 * @todo split switch into methods
 	 * @todo remove code duplication
 	 */
-	public function process( array $data ) {
+	private function process_event( array $data ) {
 		// Log caller information to reepay_order_statuses log.
 		$caller       = 'unknown';
 		$caller_class = '';
 
 		// Only collect backtrace information when debugging is enabled.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			$backtrace    = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
-			$caller       = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
-			$caller_class = isset( $backtrace[1]['class'] ) ? $backtrace[1]['class'] . '::' : '';
+			$backtrace    = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 4 ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+			$caller       = isset( $backtrace[2] ) ? $backtrace[2]['function'] : 'unknown';
+			$caller_class = isset( $backtrace[2]['class'] ) ? $backtrace[2]['class'] . '::' : '';
 		}
 
 		if ( function_exists( 'wc_get_logger' ) ) {
@@ -258,9 +500,9 @@ class Webhook {
 					return;
 				}
 
-				$needs_reload = self::wait_for_unlock( $order->get_id() );
-				if ( $needs_reload ) {
-					$order = wc_get_order( $order->get_id() );
+				$order = $this->lock_and_reload_order( $order );
+				if ( ! $order ) {
+					return;
 				}
 
 				if ( $order->has_status( OrderStatuses::$status_sync_enabled ? OrderStatuses::$status_authorized : 'on-hold' ) ) {
@@ -277,17 +519,26 @@ class Webhook {
 					return;
 				}
 
-				self::lock_order( $order->get_id() );
-
-				$order->set_transaction_id( $data['transaction'] );
-				$order->save();
-
 				$invoice_data = reepay()->api( $order )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
+					if ( $this->is_temporary_error( $invoice_data ) ) {
+						$this->request_retry( $data, $invoice_data );
+
+						return;
+					}
 					$invoice_data = array();
 				}
 
 				$this->log( sprintf( 'WebHook: Invoice data: %s', wp_json_encode( $invoice_data, JSON_PRETTY_PRINT ) ) );
+
+				if ( ! OrderStatuses::invoice_matches_order( $order, $invoice_data, 'webhook_invoice_authorized', array( 'authorized', 'settled' ) ) ) {
+					http_response_code( 200 );
+
+					return;
+				}
+
+				$order->set_transaction_id( $data['transaction'] );
+				$order->save();
 
 				// skip set authorized status for settled charge of the Vipps MobilePay Recurring.
 				if ( array_key_exists( 'recurring_payment_method', $invoice_data ) && 'vr_' === substr( $invoice_data['recurring_payment_method'], 0, 3 ) && 'settled' === $invoice_data['state'] ) {
@@ -332,7 +583,7 @@ class Webhook {
 
 				$this->save_age_verification_result( $order );
 
-				self::unlock_order( $order->get_id() );
+				$this->unlock_order();
 
 				$data['order_id'] = $order->get_id();
 				do_action( 'reepay_webhook_invoice_authorized', $data );
@@ -401,9 +652,9 @@ class Webhook {
 					return;
 				}
 
-				$needs_reload = self::wait_for_unlock( $order->get_id() );
-				if ( $needs_reload ) {
-					$order = wc_get_order( $order->get_id() );
+				$order = $this->lock_and_reload_order( $order );
+				if ( ! $order ) {
+					return;
 				}
 
 				if ( $order->has_status( OrderStatuses::$status_settled ) && ! empty( $order->get_meta( '_reepay_state_settled' ) ) ) {
@@ -420,20 +671,30 @@ class Webhook {
 					return;
 				}
 
-				self::lock_order( $order->get_id() );
-
 				$invoice_data = reepay()->api( $order )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
+					if ( $this->is_temporary_error( $invoice_data ) ) {
+						$this->request_retry( $data, $invoice_data );
+
+						return;
+					}
 					$invoice_data = array();
 				}
 
 				$this->log( sprintf( 'WebHook: Invoice data: %s', var_export( $invoice_data, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 
+				if ( ! OrderStatuses::invoice_matches_order( $order, $invoice_data, 'webhook_invoice_settled', array( 'settled' ) ) ) {
+					http_response_code( 200 );
+
+					return;
+				}
+
 				if ( ! empty( $invoice_data['id'] ) && ! empty( $data['transaction'] ) ) {
-					$transaction = reepay()->api( $order )->request( 'GET', 'https://api.reepay.com/v1/invoice/' . $invoice_data['id'] . '/transaction/' . $data['transaction'] );
+					$transaction = reepay()->api( $order )->request( 'GET', 'https://api.reepay.com/v1/invoice/' . rawurlencode( (string) $invoice_data['id'] ) . '/transaction/' . rawurlencode( (string) $data['transaction'] ) );
 					$this->log( sprintf( 'WebHook: Transaction data: %s', var_export( $transaction, true ) ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 
-					if ( ! empty( $transaction['card_transaction']['card'] ) ) {
+					// A failed lookup is logged above and does not stop the settled handling.
+					if ( is_array( $transaction ) && ! empty( $transaction['card_transaction']['card'] ) ) {
 						if ( ! empty( $transaction['card_transaction']['error'] ) && ! empty( $transaction['card_transaction']['acquirer_message'] ) ) {
 							$order->add_order_note( 'Item settle error: ' . $transaction['card_transaction']['acquirer_message'] );
 
@@ -522,7 +783,7 @@ class Webhook {
 				$order->update_meta_data( '_reepay_capture_transaction', $data['transaction'] );
 				$order->save_meta_data();
 
-				self::unlock_order( $order->get_id() );
+				$this->unlock_order();
 
 				$data['order_id'] = $order->get_id();
 				do_action( 'reepay_webhook_invoice_settled', $data );
@@ -546,6 +807,11 @@ class Webhook {
 				if ( ! $order ) {
 					$this->log( sprintf( 'WebHook: Order is not found. Invoice: %s', $data['invoice'] ) );
 
+					return;
+				}
+
+				$order = $this->lock_and_reload_order( $order );
+				if ( ! $order ) {
 					return;
 				}
 
@@ -594,12 +860,18 @@ class Webhook {
 					return;
 				}
 
+				$order = $this->lock_and_reload_order( $order );
+				if ( ! $order ) {
+					return;
+				}
+
 				$invoice_data = reepay()->api( $order )->get_invoice_by_handle( $data['invoice'] );
 				if ( is_wp_error( $invoice_data ) ) {
+					$this->log( sprintf( 'WebHook: Error: Failed to get invoice %s: %s', $data['invoice'], $invoice_data->get_error_message() ) );
 					$invoice_data = array();
 				}
 
-				$credit_notes = $invoice_data['credit_notes'];
+				$credit_notes = $invoice_data['credit_notes'] ?? array();
 				foreach ( $credit_notes as $credit_note ) {
 					// Get registered credit notes.
 					$credit_note_ids = $order->get_meta( '_reepay_credit_note_ids' );
@@ -702,7 +974,7 @@ class Webhook {
 			case 'customer_payment_method_added':
 				if ( ! empty( $data['payment_method_reference'] ) ) {
 					$order = rp_get_order_by_session( $data['payment_method_reference'], $data['customer'] );
-					if ( $order && order_contains_subscription( $order ) ) {
+					if ( $order && order_contains_subscription( $order ) && $this->order_payment_verified( $order ) ) {
 						WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
 
 						if ( ! empty( $data['payment_method'] ) ) {
@@ -759,62 +1031,129 @@ class Webhook {
 	}
 
 	/**
-	 * Lock the order.
+	 * Verify that an order genuinely received payment before a
+	 * customer_payment_method_added webhook is allowed to activate its
+	 * subscription and mark it paid.
 	 *
-	 * @param int $order_id order id to lock.
+	 * The order lookup can fall back to matching purely by customer handle
+	 * (rp_get_order_by_customer()) when the webhook's session reference does
+	 * not belong to any order. That fallback does not check payment state, so
+	 * without this verification any pending order of the customer that
+	 * happens to contain a subscription would be completed for free by an
+	 * unrelated action such as adding a new card.
 	 *
-	 * @return void
-	 * @see wait_for_unlock()
-	 */
-	private static function lock_order( int $order_id ) {
-		$order = wc_get_order( $order_id );
-		$order->update_meta_data( '_reepay_locked', '1' );
-		$order->save_meta_data();
-	}
-
-	/**
-	 * Unlock the order.
-	 *
-	 * @param mixed $order_id order id to unlock.
-	 *
-	 * @return void
-	 * @see wait_for_unlock()
-	 */
-	private static function unlock_order( $order_id ) {
-		$order = wc_get_order( $order_id );
-		$order->delete_meta_data( '_reepay_locked' );
-		$order->save_meta_data();
-	}
-
-	/**
-	 * Wait for unlock.
-	 *
-	 * @param int $order_id order id to wait.
+	 * @param WC_Order $order order matched for the webhook.
 	 *
 	 * @return bool
 	 */
-	private static function wait_for_unlock( int $order_id ): bool {
-		set_time_limit( 0 );
+	private function order_payment_verified( WC_Order $order ): bool {
+		if ( ! $order->needs_payment() ) {
+			return true;
+		}
 
-		$order        = wc_get_order( $order_id );
-		$is_locked    = (bool) $order->get_meta( '_reepay_locked' );
-		$needs_reload = false;
-		$attempts     = 0;
-		while ( $is_locked ) {
-			usleep( 500 );
-			++$attempts;
-			if ( $attempts > 30 ) {
+		$invoice = reepay()->api( $this )->get_invoice_data( $order );
+
+		if ( is_wp_error( $invoice ) ) {
+			return false;
+		}
+
+		$expected = rp_prepare_amount( (float) $order->get_total(), $order->get_currency() );
+
+		return (float) $invoice['settled_amount'] >= $expected || (float) $invoice['authorized_amount'] >= $expected;
+	}
+
+	/**
+	 * Lock the order for this request, waiting for another request that holds the lock.
+	 * If the lock is still held after the wait, or the lock table cannot be used, the event is processed without it.
+	 *
+	 * @param int $order_id order id to lock.
+	 *
+	 * @return bool True if the order may have been changed by another request and must be reloaded.
+	 */
+	private function lock_order( int $order_id ): bool {
+		$lock     = new WebhookLock();
+		$deadline = microtime( true ) + $this->lock_wait;
+		$waited   = false;
+
+		while ( true ) {
+			$acquired = $lock->acquire( $order_id );
+
+			if ( true === $acquired ) {
+				$this->order_lock = $lock;
+
+				// Another request may have finished between the order lookup and this lock.
+				return true;
+			}
+
+			if ( null === $acquired ) {
+				$this->log( sprintf( 'WebHook: Order lock table cannot be used, continuing without the lock for order %d', $order_id ) );
+
 				break;
 			}
 
-			wp_cache_delete( $order_id, 'post_meta' );
-			$is_locked = (bool) $order->get_meta( '_reepay_locked' );
-			if ( $is_locked ) {
-				$needs_reload = true;
-				clean_post_cache( $order_id );
+			$waited = true;
+
+			if ( microtime( true ) >= $deadline ) {
+				$this->log( sprintf( 'WebHook: Order %d is still locked by another request, continuing without the lock', $order_id ) );
+
+				break;
 			}
+
+			usleep( 100000 );
 		}
 
-		return $needs_reload;
+		return $waited;
+	}
+
+	/**
+	 * Lock the order and load it again, so the checks that follow see what a request that finished
+	 * before this one wrote.
+	 *
+	 * @param WC_Order $order order found by the webhook.
+	 *
+	 * @return WC_Order|null Null if the order cannot be loaded any more.
+	 */
+	private function lock_and_reload_order( WC_Order $order ): ?WC_Order {
+		if ( ! $this->lock_order( $order->get_id() ) ) {
+			return $order;
+		}
+
+		$reloaded = $this->reload_order( $order->get_id() );
+
+		return $reloaded instanceof WC_Order ? $reloaded : null;
+	}
+
+	/**
+	 * Load the order again from the database. After waiting for a lock the order was changed by another
+	 * request, so the copies of it cached in this request must not be used.
+	 *
+	 * @param int $order_id order id.
+	 *
+	 * @return WC_Order|false
+	 */
+	private function reload_order( int $order_id ) {
+		clean_post_cache( $order_id );
+		wp_cache_delete( $order_id, 'post_meta' );
+		wp_cache_delete( WC_Order::generate_meta_cache_key( $order_id, 'orders' ), 'orders' );
+
+		if ( class_exists( OrderCache::class ) ) {
+			wc_get_container()->get( OrderCache::class )->remove( $order_id );
+		}
+
+		return wc_get_order( $order_id );
+	}
+
+	/**
+	 * Release the lock held by this request, if any.
+	 *
+	 * @return void
+	 */
+	private function unlock_order() {
+		if ( null === $this->order_lock ) {
+			return;
+		}
+
+		$this->order_lock->release();
+		$this->order_lock = null;
 	}
 }

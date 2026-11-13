@@ -384,6 +384,7 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 	 * Test @see OrderStatuses::set_settled_status  with data for authorized status from api
 	 */
 	public function test_set_settled_status_with_authorized_data() {
+		$this->order_generator->set_prop( 'total', 1 ); // The invoice amounts below are 1.00 in minor units.
 		$expected_status = 'completed';
 		$default_status = 'on-hold';
 
@@ -402,6 +403,8 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 		$api_mock = $this->getMockBuilder( Api::class )->getMock();
 		$api_mock->method( 'get_invoice_data' )->willReturn(
 			array(
+				'amount'            => 0,
+				'currency'          => get_woocommerce_currency(),
 				'authorized_amount' => 100,
 				'settled_amount'    => 10
 			)
@@ -417,6 +420,7 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 	 * Test @see OrderStatuses::set_settled_status
 	 */
 	public function test_set_settled_status() {
+		$this->order_generator->set_prop( 'total', 1 ); // The invoice amounts below are 1.00 in minor units.
 		$order_note = 'Test note';
 		$order_transaction_id = 'test_2077';
 
@@ -438,6 +442,8 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 		$api_mock = $this->getMockBuilder( Api::class )->getMock();
 		$api_mock->method( 'get_invoice_data' )->willReturn(
 			array(
+				'amount'            => 0,
+				'currency'          => get_woocommerce_currency(),
 				'authorized_amount' => 100,
 				'settled_amount'    => 100
 			)
@@ -459,6 +465,7 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 	 * @group orderflow_statuses
 	 */
 	public function test_set_settled_status_does_not_downgrade_completed_order() {
+		$this->order_generator->set_prop( 'total', 1 ); // The invoice amounts below are 1.00 in minor units.
 		$order_note           = 'Test note';
 		$order_transaction_id = 'test_2077';
 
@@ -481,6 +488,8 @@ class OrderStatusesTest extends Reepay_UnitTestCase {
 		$api_mock = $this->getMockBuilder( Api::class )->getMock();
 		$api_mock->method( 'get_invoice_data' )->willReturn(
 			array(
+				'amount'            => 0,
+				'currency'          => get_woocommerce_currency(),
 				'authorized_amount' => 100,
 				'settled_amount'    => 100,
 			)
